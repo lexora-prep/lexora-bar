@@ -1,0 +1,197 @@
+{
+  "Agency — Formation": {
+    "rule": "An agency relationship is created when a principal manifests assent that an agent act on the principal’s behalf and subject to the principal’s control, and the agent consents.",
+    "buzzwords": [
+      "principal",
+      "agent",
+      "manifestation of assent",
+      "control",
+      "consent"
+    ],
+    "application": "Because the principal authorized the agent to act on her behalf and controlled the work, an agency relationship existed."
+  },
+
+  "Agency — Actual and Apparent Authority": {
+    "rule": "Actual authority arises from the principal’s manifestations to the agent, while apparent authority arises from the principal’s manifestations to third parties causing reasonable reliance.",
+    "buzzwords": [
+      "actual authority",
+      "apparent authority",
+      "manifestations",
+      "reasonable reliance"
+    ],
+    "application": "Because the principal’s conduct led the third party to reasonably believe the agent was authorized, apparent authority existed."
+  },
+
+  "Agency — Ratification": {
+    "rule": "A principal may ratify an unauthorized act by knowingly accepting its benefits or affirming the act with full knowledge of material facts.",
+    "buzzwords": [
+      "ratification",
+      "unauthorized act",
+      "knowledge of material facts"
+    ],
+    "application": "Because the principal accepted the benefits after learning of the transaction, the act was ratified."
+  },
+
+  "Agency — Agent’s Liability": {
+    "rule": "An agent is personally liable when acting without authority, when the principal is undisclosed or partially disclosed, or when the agent expressly assumes liability.",
+    "buzzwords": [
+      "undisclosed principal",
+      "partially disclosed principal",
+      "personal liability"
+    ],
+    "application": "Because the principal was undisclosed, the agent was personally liable on the contract."
+  },
+
+  "Partnership — Formation": {
+    "rule": "A partnership is formed when two or more persons carry on as co-owners of a business for profit, regardless of intent to form a partnership.",
+    "buzzwords": [
+      "co-owners",
+      "for profit",
+      "partnership formation"
+    ],
+    "application": "Because the parties shared profits and jointly controlled the business, a partnership existed."
+  },
+
+  "Partnership — Partner Authority and Liability": {
+    "rule": "Each partner is an agent of the partnership and may bind it in the ordinary course of business, and partners are jointly and severally liable for partnership obligations.",
+    "buzzwords": [
+      "partner as agent",
+      "ordinary course of business",
+      "joint and several liability"
+    ],
+    "application": "Because the contract was within the ordinary course, the partnership was bound."
+  },
+
+  "Partnership — Fiduciary Duties": {
+    "rule": "Partners owe duties of loyalty and care to the partnership and to each other, including avoiding self-dealing and usurpation of partnership opportunities.",
+    "buzzwords": [
+      "duty of loyalty",
+      "duty of care",
+      "partnership opportunity"
+    ],
+    "application": "Because the partner diverted a partnership opportunity, the duty of loyalty was breached."
+  },
+
+  "Limited Partnerships (LP and LLP)": {
+    "rule": "In a limited partnership, general partners manage and are personally liable, while limited partners have limited liability if they do not participate in control; LLPs limit liability for partnership obligations.",
+    "buzzwords": [
+      "limited partnership",
+      "general partner",
+      "limited partner",
+      "LLP"
+    ],
+    "application": "Because the limited partner did not exercise control, limited liability applied."
+  },
+
+  "Corporation — Formation": {
+    "rule": "A corporation is formed by filing articles of incorporation with the state, creating a separate legal entity distinct from its shareholders.",
+    "buzzwords": [
+      "articles of incorporation",
+      "separate legal entity",
+      "state filing"
+    ],
+    "application": "Because the articles were properly filed, the corporation was validly formed."
+  },
+
+  "Corporation — Promoter Liability": {
+    "rule": "Promoters are personally liable on pre-incorporation contracts unless the corporation adopts the contract and the parties agree to a novation.",
+    "buzzwords": [
+      "promoter",
+      "pre-incorporation contract",
+      "novation"
+    ],
+    "application": "Because no novation occurred, the promoter remained liable."
+  },
+
+  "Corporation — Piercing the Corporate Veil": {
+    "rule": "Courts may pierce the corporate veil when shareholders abuse the corporate form through undercapitalization, commingling, or fraud, causing injustice.",
+    "buzzwords": [
+      "piercing the corporate veil",
+      "undercapitalization",
+      "commingling",
+      "fraud"
+    ],
+    "application": "Because the corporation was undercapitalized and used to perpetrate fraud, the veil was pierced."
+  },
+
+  "Corporation — Fiduciary Duties of Directors and Officers": {
+    "rule": "Directors and officers owe duties of care and loyalty to the corporation and its shareholders, subject to the business judgment rule.",
+    "buzzwords": [
+      "duty of care",
+      "duty of loyalty",
+      "business judgment rule"
+    ],
+    "application": "Because the decision was informed and made in good faith, the business judgment rule applied."
+  },
+
+  "Corporation — Duty of Loyalty and Conflicts of Interest": {
+    "rule": "Conflicted transactions are voidable unless approved by disinterested directors or shareholders after full disclosure or shown to be fair to the corporation.",
+    "buzzwords": [
+      "conflict of interest",
+      "self-dealing",
+      "entire fairness"
+    ],
+    "application": "Because the transaction lacked disclosure and fairness, it was voidable."
+  },
+
+  "Shareholders — Voting and Management": {
+    "rule": "Shareholders elect directors and vote on fundamental changes but do not manage daily corporate affairs.",
+    "buzzwords": [
+      "shareholder voting",
+      "board of directors",
+      "fundamental changes"
+    ],
+    "application": "Because management authority rests with the board, the shareholder vote was limited."
+  },
+
+  "Shareholders — Derivative Actions": {
+    "rule": "A shareholder may bring a derivative action on behalf of the corporation after making a demand on the board or showing demand futility.",
+    "buzzwords": [
+      "derivative action",
+      "demand requirement",
+      "demand futility"
+    ],
+    "application": "Because demand was futile, the shareholder could proceed derivatively."
+  },
+
+  "Distributions and Dividends": {
+    "rule": "Corporations may make distributions only if solvent, meaning they can pay debts as they come due and assets exceed liabilities.",
+    "buzzwords": [
+      "distributions",
+      "dividends",
+      "insolvency test"
+    ],
+    "application": "Because the corporation was insolvent, the dividend was improper."
+  },
+
+  "Corporate Dissolution": {
+    "rule": "A corporation may dissolve voluntarily, administratively, or judicially, followed by winding up and distribution of assets.",
+    "buzzwords": [
+      "corporate dissolution",
+      "winding up",
+      "distribution of assets"
+    ],
+    "application": "Because the corporation ceased operations, dissolution and winding up followed."
+  },
+
+  "Limited Liability Companies (LLCs)": {
+    "rule": "LLCs combine limited liability of corporations with pass-through taxation and flexible management governed primarily by an operating agreement.",
+    "buzzwords": [
+      "LLC",
+      "limited liability",
+      "operating agreement",
+      "pass-through taxation"
+    ],
+    "application": "Because the operating agreement controlled management, the LLC members were bound by its terms."
+  },
+
+  "LLC — Fiduciary Duties and Management": {
+    "rule": "LLC managers and members owe fiduciary duties as defined by statute and the operating agreement, which may modify but not eliminate the duty of loyalty in many states.",
+    "buzzwords": [
+      "LLC fiduciary duties",
+      "operating agreement",
+      "duty of loyalty"
+    ],
+    "application": "Because the manager engaged in self-dealing prohibited by the agreement, the duty of loyalty was breached."
+  }
+}

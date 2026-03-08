@@ -1,0 +1,1322 @@
+{
+  "Subject Matter Jurisdiction — General Rule": {
+    "rule": "Federal courts have subject matter jurisdiction only if authorized by the Constitution and statute.",
+    "buzzwords": [
+      "subject matter jurisdiction",
+      "federal courts",
+      "Constitution",
+      "statute"
+    ],
+    "application": "Because federal jurisdiction is statutorily authorized, the court may hear the case."
+  },
+
+  "Federal Question Jurisdiction": {
+    "rule": "Federal question jurisdiction exists when a claim arises under the Constitution, laws, or treaties of the United States.",
+    "buzzwords": [
+      "federal question jurisdiction",
+      "arises under",
+      "Constitution",
+      "laws of the United States",
+      "treaties"
+    ],
+    "application": "Because the claim arises under federal law, jurisdiction exists."
+  },
+
+  "Well-Pleaded Complaint Rule": {
+    "rule": "Federal question jurisdiction must appear on the face of the plaintiff’s well-pleaded complaint.",
+    "buzzwords": [
+      "well-pleaded complaint",
+      "face of the complaint"
+    ],
+    "application": "Because federal law appears in the complaint, jurisdiction is proper."
+  },
+
+  "Diversity Jurisdiction — General Rule": {
+    "rule": "Diversity jurisdiction exists when there is complete diversity between plaintiffs and defendants and the amount in controversy exceeds $75,000.",
+    "buzzwords": [
+      "diversity jurisdiction",
+      "complete diversity",
+      "amount in controversy",
+      "$75,000"
+    ],
+    "application": "Because the parties are completely diverse and the amount exceeds $75,000, jurisdiction exists."
+  },
+
+  "Complete Diversity": {
+    "rule": "Complete diversity requires that no plaintiff share citizenship with any defendant.",
+    "buzzwords": [
+      "complete diversity",
+      "citizenship",
+      "plaintiff",
+      "defendant"
+    ],
+    "application": "Because no plaintiff shares citizenship with a defendant, the requirement is met."
+  },
+
+  "Citizenship — Individuals": {
+    "rule": "An individual is a citizen of the state in which the person is domiciled.",
+    "buzzwords": [
+      "citizenship",
+      "individual",
+      "domicile"
+    ],
+    "application": "Because the party intended to remain indefinitely, domicile is established."
+  },
+
+  "Citizenship — Corporations": {
+    "rule": "A corporation is a citizen of its state of incorporation and the state of its principal place of business.",
+    "buzzwords": [
+      "corporation",
+      "state of incorporation",
+      "principal place of business"
+    ],
+    "application": "Because the corporation is incorporated and headquartered in different states, it has dual citizenship."
+  },
+
+  "Principal Place of Business": {
+    "rule": "A corporation’s principal place of business is the state where its high-level officers direct, control, and coordinate activities.",
+    "buzzwords": [
+      "principal place of business",
+      "direct",
+      "control",
+      "coordinate"
+    ],
+    "application": "Because corporate decisions are made there, that state is the principal place of business."
+  },
+
+  "Amount in Controversy": {
+    "rule": "The amount in controversy requirement is satisfied if the plaintiff’s good-faith claim exceeds $75,000.",
+    "buzzwords": [
+      "amount in controversy",
+      "good faith",
+      "exceeds $75,000"
+    ],
+    "application": "Because the claim exceeds $75,000 in good faith, the requirement is met."
+  },
+
+  "Aggregation of Claims": {
+    "rule": "A single plaintiff may aggregate all claims against a single defendant to satisfy the amount in controversy.",
+    "buzzwords": [
+      "aggregation",
+      "single plaintiff",
+      "single defendant"
+    ],
+    "application": "Because the claims are aggregated, the amount requirement is satisfied."
+  },
+
+  "Suppl. Jurisdiction — General Rule": {
+    "rule": "Federal courts may exercise supplemental jurisdiction over claims that form part of the same case or controversy.",
+    "buzzwords": [
+      "supplemental jurisdiction",
+      "same case or controversy"
+    ],
+    "application": "Because the claims arise from the same nucleus of facts, supplemental jurisdiction applies."
+  },
+
+  "Personal Jurisdiction — General Rule": {
+    "rule": "A court has personal jurisdiction over a defendant if authorized by statute and consistent with due process.",
+    "buzzwords": [
+      "personal jurisdiction",
+      "authorized by statute",
+      "due process"
+    ],
+    "application": "Because jurisdiction is authorized by statute and due process is satisfied, personal jurisdiction exists."
+  },
+
+  "Traditional Bases of Personal Jurisdiction": {
+    "rule": "Personal jurisdiction exists where the defendant is domiciled in the forum, personally served in the forum, or consents to jurisdiction.",
+    "buzzwords": [
+      "domicile",
+      "personal service",
+      "consent"
+    ],
+    "application": "Because the defendant was served in the forum, jurisdiction exists."
+  },
+
+  "Long-Arm Statute": {
+    "rule": "A long-arm statute authorizes personal jurisdiction over nonresident defendants to the extent permitted by due process.",
+    "buzzwords": [
+      "long-arm statute",
+      "nonresident defendant",
+      "due process"
+    ],
+    "application": "Because the statute reaches to constitutional limits, jurisdiction is proper."
+  },
+
+  "Due Process — Minimum Contacts": {
+    "rule": "Due process requires that the defendant have minimum contacts with the forum such that jurisdiction does not offend traditional notions of fair play and substantial justice.",
+    "buzzwords": [
+      "minimum contacts",
+      "fair play",
+      "substantial justice"
+    ],
+    "application": "Because the defendant purposefully contacted the forum, due process is satisfied."
+  },
+
+  "Purposeful Availment": {
+    "rule": "Minimum contacts require that the defendant purposefully avail themselves of the privilege of conducting activities in the forum.",
+    "buzzwords": [
+      "purposeful availment",
+      "privilege of conducting activities"
+    ],
+    "application": "Because the defendant deliberately targeted the forum, purposeful availment exists."
+  },
+
+  "Specific Jurisdiction": {
+    "rule": "Specific jurisdiction exists when the plaintiff’s claim arises out of or relates to the defendant’s contacts with the forum.",
+    "buzzwords": [
+      "specific jurisdiction",
+      "arises out of",
+      "relates to"
+    ],
+    "application": "Because the claim arose from forum contacts, specific jurisdiction applies."
+  },
+
+  "General Jurisdiction": {
+    "rule": "General jurisdiction exists when the defendant’s contacts with the forum are so continuous and systematic as to render the defendant essentially at home in the forum.",
+    "buzzwords": [
+      "general jurisdiction",
+      "continuous and systematic",
+      "essentially at home"
+    ],
+    "application": "Because the defendant is at home in the forum, general jurisdiction applies."
+  },
+
+  "General Jurisdiction — Corporations": {
+    "rule": "A corporation is subject to general jurisdiction in its state of incorporation and principal place of business.",
+    "buzzwords": [
+      "corporation",
+      "state of incorporation",
+      "principal place of business"
+    ],
+    "application": "Because the corporation is headquartered in the forum, general jurisdiction exists."
+  },
+
+  "Fairness Factors": {
+    "rule": "Courts consider the burden on the defendant, the forum state’s interest, the plaintiff’s interest, and judicial efficiency.",
+    "buzzwords": [
+      "burden on the defendant",
+      "forum state interest",
+      "plaintiff interest",
+      "judicial efficiency"
+    ],
+    "application": "Because fairness factors favor jurisdiction, it is reasonable."
+  },
+
+  "In Rem and Quasi In Rem Jurisdiction": {
+    "rule": "In rem and quasi in rem jurisdiction require minimum contacts between the defendant, the forum, and the property.",
+    "buzzwords": [
+      "in rem",
+      "quasi in rem",
+      "minimum contacts",
+      "property"
+    ],
+    "application": "Because the property is connected to the forum, jurisdiction is proper."
+  },
+
+  "Notice — Due Process": {
+    "rule": "Due process requires notice reasonably calculated to apprise interested parties of the action.",
+    "buzzwords": [
+      "notice",
+      "reasonably calculated",
+      "apprise interested parties"
+    ],
+    "application": "Because notice was reasonably calculated, due process is satisfied."
+  },
+
+  "Service of Process — Rule 4": {
+    "rule": "Service of process must comply with Rule 4 and provide notice of the action and the court.",
+    "buzzwords": [
+      "service of process",
+      "Rule 4",
+      "notice of the action"
+    ],
+    "application": "Because service complied with Rule 4, it was proper."
+  },
+
+  "Methods of Service — Individuals": {
+    "rule": "Individuals may be served personally, at their dwelling with a suitable person, or by an authorized agent.",
+    "buzzwords": [
+      "personal service",
+      "dwelling",
+      "authorized agent"
+    ],
+    "application": "Because service was left at the dwelling, it was valid."
+  },
+
+  "Methods of Service — Corporations": {
+    "rule": "Corporations may be served by delivering process to an officer, managing agent, or authorized agent.",
+    "buzzwords": [
+      "corporation",
+      "officer",
+      "managing agent",
+      "authorized agent"
+    ],
+    "application": "Because service was made on a managing agent, it was proper."
+  },
+
+  "Waiver of Service": {
+    "rule": "A defendant may waive service of process by returning a waiver request, avoiding formal service.",
+    "buzzwords": [
+      "waiver of service",
+      "avoid formal service"
+    ],
+    "application": "Because the defendant waived service, formal service was unnecessary."
+  },
+
+  "Venue — General Rule": {
+    "rule": "Venue is proper in a judicial district where any defendant resides if all defendants reside in the same state, where a substantial part of the events occurred, or where any defendant is subject to personal jurisdiction if no other district is available.",
+    "buzzwords": [
+      "venue",
+      "judicial district",
+      "defendant resides",
+      "substantial part of the events",
+      "personal jurisdiction"
+    ],
+    "application": "Because the events giving rise to the claim occurred in the district, venue is proper."
+  },
+
+  "Residence — Individuals": {
+    "rule": "For venue purposes, an individual resides in the judicial district where they are domiciled.",
+    "buzzwords": [
+      "residence",
+      "individual",
+      "domicile"
+    ],
+    "application": "Because the defendant is domiciled in the district, venue is proper."
+  },
+
+  "Residence — Corporations": {
+    "rule": "For venue purposes, a corporation resides in any judicial district where it is subject to personal jurisdiction.",
+    "buzzwords": [
+      "corporation",
+      "resides",
+      "personal jurisdiction"
+    ],
+    "application": "Because the corporation is subject to jurisdiction in the district, venue is proper."
+  },
+
+  "Venue — Multiple Defendants": {
+    "rule": "When all defendants reside in the same state, venue is proper in any district where any defendant resides.",
+    "buzzwords": [
+      "multiple defendants",
+      "same state",
+      "any defendant resides"
+    ],
+    "application": "Because all defendants reside in the same state, venue is proper in the chosen district."
+  },
+
+  "Improper Venue — Dismissal or Transfer": {
+    "rule": "If venue is improper, the court must dismiss the case or transfer it to a proper venue in the interest of justice.",
+    "buzzwords": [
+      "improper venue",
+      "dismiss",
+      "transfer",
+      "interest of justice"
+    ],
+    "application": "Because venue was improper, the court transferred the case."
+  },
+
+  "Transfer — For Convenience (1404)": {
+    "rule": "A court may transfer a case to another proper venue for the convenience of parties and witnesses and in the interest of justice.",
+    "buzzwords": [
+      "transfer",
+      "convenience",
+      "parties",
+      "witnesses",
+      "interest of justice"
+    ],
+    "application": "Because the transferee forum is more convenient, transfer is appropriate."
+  },
+
+  "Transfer — Transferee Court Law": {
+    "rule": "After transfer for convenience, the transferee court applies the law of the transferor court.",
+    "buzzwords": [
+      "transferee court",
+      "law of the transferor court"
+    ],
+    "application": "Because the case was transferred for convenience, the original law applies."
+  },
+
+  "Transfer — Improper Venue (1406)": {
+    "rule": "When venue is improper, the transferee court applies its own choice-of-law rules.",
+    "buzzwords": [
+      "improper venue",
+      "transferee court",
+      "choice-of-law rules"
+    ],
+    "application": "Because venue was improper, the transferee court applies its own law."
+  },
+
+  "Forum Selection Clauses": {
+    "rule": "Valid forum selection clauses are generally enforced unless unreasonable or unjust.",
+    "buzzwords": [
+      "forum selection clause",
+      "enforced",
+      "unreasonable",
+      "unjust"
+    ],
+    "application": "Because the clause was valid, the court enforced it."
+  },
+
+  "Forum Non Conveniens — General Rule": {
+    "rule": "A court may dismiss a case under forum non conveniens when there is an alternative forum that is substantially more appropriate.",
+    "buzzwords": [
+      "forum non conveniens",
+      "dismiss",
+      "alternative forum",
+      "substantially more appropriate"
+    ],
+    "application": "Because a foreign forum is more appropriate, dismissal is proper."
+  },
+
+  "Forum Non Conveniens — Requirements": {
+    "rule": "Forum non conveniens requires an available and adequate alternative forum and a balance of private and public factors favoring dismissal.",
+    "buzzwords": [
+      "available forum",
+      "adequate forum",
+      "private factors",
+      "public factors"
+    ],
+    "application": "Because the alternative forum is adequate and factors favor dismissal, forum non conveniens applies."
+  },
+
+  "Forum Non Conveniens — Factors": {
+    "rule": "Private factors include access to evidence and witnesses, while public factors include court congestion and local interest.",
+    "buzzwords": [
+      "private factors",
+      "access to evidence",
+      "witnesses",
+      "public factors",
+      "local interest"
+    ],
+    "application": "Because evidence and witnesses are abroad, dismissal is appropriate."
+  },
+
+  "Pleadings — General Rule": {
+    "rule": "Pleadings are formal documents filed by the parties stating their claims and defenses.",
+    "buzzwords": [
+      "pleadings",
+      "claims",
+      "defenses"
+    ],
+    "application": "Because the complaint sets forth claims and defenses, it is a proper pleading."
+  },
+
+  "Complaint — Requirements": {
+    "rule": "A complaint must contain a short and plain statement of the grounds for jurisdiction, the claim showing entitlement to relief, and a demand for relief.",
+    "buzzwords": [
+      "complaint",
+      "short and plain statement",
+      "jurisdiction",
+      "entitlement to relief",
+      "demand for relief"
+    ],
+    "application": "Because the complaint alleges jurisdiction and entitlement to relief, it is sufficient."
+  },
+
+  "Pleading Standard — Rule 8": {
+    "rule": "Under Rule 8, a pleading must contain sufficient factual matter to state a claim that is plausible on its face.",
+    "buzzwords": [
+      "Rule 8",
+      "factual matter",
+      "plausible on its face"
+    ],
+    "application": "Because the facts plausibly suggest liability, the pleading is adequate."
+  },
+
+  "Heightened Pleading — Rule 9(b)": {
+    "rule": "Claims of fraud or mistake must be pleaded with particularity regarding the circumstances constituting the fraud or mistake.",
+    "buzzwords": [
+      "Rule 9(b)",
+      "fraud",
+      "mistake",
+      "particularity"
+    ],
+    "application": "Because the fraud was pleaded with specificity, Rule 9(b) is satisfied."
+  },
+
+  "Answer — Timing": {
+    "rule": "A defendant must serve an answer within 21 days after service of the complaint, unless a motion is filed.",
+    "buzzwords": [
+      "answer",
+      "21 days",
+      "service of the complaint"
+    ],
+    "application": "Because the answer was timely filed, it is valid."
+  },
+
+  "Answer — Admissions and Denials": {
+    "rule": "An answer must admit or deny each allegation, and failure to deny constitutes an admission.",
+    "buzzwords": [
+      "admit",
+      "deny",
+      "failure to deny",
+      "admission"
+    ],
+    "application": "Because the defendant failed to deny the allegation, it is admitted."
+  },
+
+  "Affirmative Defenses": {
+    "rule": "Affirmative defenses must be stated in the answer or they are waived.",
+    "buzzwords": [
+      "affirmative defenses",
+      "stated in the answer",
+      "waived"
+    ],
+    "application": "Because the defense was not raised in the answer, it is waived."
+  },
+
+  "Counterclaims — Compulsory": {
+    "rule": "A compulsory counterclaim arises out of the same transaction or occurrence and must be raised in the defendant’s answer.",
+    "buzzwords": [
+      "compulsory counterclaim",
+      "same transaction or occurrence",
+      "must be raised"
+    ],
+    "application": "Because the claim arises from the same transaction, it is compulsory."
+  },
+
+  "Counterclaims — Permissive": {
+    "rule": "A permissive counterclaim does not arise from the same transaction or occurrence and may be brought separately.",
+    "buzzwords": [
+      "permissive counterclaim",
+      "separate transaction",
+      "may be brought separately"
+    ],
+    "application": "Because the claim is unrelated, it is permissive."
+  },
+
+  "Amendments — As of Right": {
+    "rule": "A party may amend a pleading once as a matter of course within 21 days of service or within 21 days after a responsive pleading or motion.",
+    "buzzwords": [
+      "amendment as of right",
+      "21 days",
+      "responsive pleading"
+    ],
+    "application": "Because the amendment was filed within 21 days, it is allowed."
+  },
+
+  "Amendments — By Leave of Court": {
+    "rule": "After the time for amendment as of right, pleadings may be amended only with the opposing party’s consent or the court’s leave, which should be freely given.",
+    "buzzwords": [
+      "leave of court",
+      "freely given",
+      "opposing party consent"
+    ],
+    "application": "Because justice requires amendment, leave should be granted."
+  },
+
+  "Relation Back of Amendments": {
+    "rule": "An amendment relates back to the date of the original pleading if it arises out of the same conduct, transaction, or occurrence.",
+    "buzzwords": [
+      "relation back",
+      "same conduct",
+      "transaction",
+      "occurrence"
+    ],
+    "application": "Because the amendment concerns the same event, it relates back."
+  },
+
+  "Relation Back — New Parties": {
+    "rule": "An amendment adding a new party relates back if the party received notice and knew or should have known they would have been named but for a mistake.",
+    "buzzwords": [
+      "new party",
+      "notice",
+      "mistake"
+    ],
+    "application": "Because the party had notice, relation back applies."
+  },
+
+  "Joinder of Parties — General Rule": {
+    "rule": "The Federal Rules permit joinder of parties and claims to promote efficiency and avoid multiple lawsuits.",
+    "buzzwords": [
+      "joinder",
+      "parties",
+      "claims",
+      "efficiency"
+    ],
+    "application": "Because joinder promotes efficient resolution, it is permitted."
+  },
+
+  "Permissive Joinder of Plaintiffs": {
+    "rule": "Plaintiffs may join in one action if their claims arise out of the same transaction or occurrence and share a common question of law or fact.",
+    "buzzwords": [
+      "permissive joinder",
+      "same transaction or occurrence",
+      "common question of law or fact"
+    ],
+    "application": "Because the claims arise from the same transaction, joinder is proper."
+  },
+
+  "Permissive Joinder of Defendants": {
+    "rule": "Defendants may be joined if the claims arise out of the same transaction or occurrence and share a common question of law or fact.",
+    "buzzwords": [
+      "joinder of defendants",
+      "same transaction or occurrence",
+      "common question"
+    ],
+    "application": "Because the defendants’ conduct is related, joinder is proper."
+  },
+
+  "Compulsory Joinder — Required Parties": {
+    "rule": "A party must be joined if complete relief cannot be accorded without them or if their absence may impair their interests or expose existing parties to inconsistent obligations.",
+    "buzzwords": [
+      "compulsory joinder",
+      "required party",
+      "complete relief",
+      "inconsistent obligations"
+    ],
+    "application": "Because complete relief cannot be granted without the party, joinder is required."
+  },
+
+  "Indispensable Parties": {
+    "rule": "If a required party cannot be joined and proceeding would be inequitable, the court must dismiss the action.",
+    "buzzwords": [
+      "indispensable party",
+      "cannot be joined",
+      "dismiss"
+    ],
+    "application": "Because the party is indispensable and cannot be joined, dismissal is required."
+  },
+
+  "Intervention — As of Right": {
+    "rule": "Intervention as of right is permitted when the applicant claims an interest that may be impaired and is not adequately represented by existing parties.",
+    "buzzwords": [
+      "intervention as of right",
+      "interest",
+      "impaired",
+      "not adequately represented"
+    ],
+    "application": "Because the applicant’s interest may be impaired, intervention is allowed."
+  },
+
+  "Intervention — Permissive": {
+    "rule": "Permissive intervention is allowed when the applicant’s claim or defense shares a common question of law or fact with the main action.",
+    "buzzwords": [
+      "permissive intervention",
+      "common question of law or fact"
+    ],
+    "application": "Because the claims share common issues, permissive intervention is proper."
+  },
+
+  "Impleader — Third-Party Practice": {
+    "rule": "A defendant may implead a third party who may be liable for all or part of the plaintiff’s claim.",
+    "buzzwords": [
+      "impleader",
+      "third-party defendant",
+      "liable for all or part"
+    ],
+    "application": "Because the third party may be liable for contribution, impleader is proper."
+  },
+
+  "Interpleader — Rule Interpleader": {
+    "rule": "Rule interpleader allows a stakeholder exposed to multiple liability to join all claimants in one action.",
+    "buzzwords": [
+      "interpleader",
+      "stakeholder",
+      "multiple liability"
+    ],
+    "application": "Because multiple claimants seek the same fund, interpleader applies."
+  },
+
+  "Interpleader — Statutory Interpleader": {
+    "rule": "Statutory interpleader requires minimal diversity, an amount in controversy of $500, and deposit of the disputed property.",
+    "buzzwords": [
+      "statutory interpleader",
+      "minimal diversity",
+      "$500",
+      "deposit"
+    ],
+    "application": "Because minimal diversity exists, statutory interpleader is proper."
+  },
+
+  "Supplemental Jurisdiction — General Rule": {
+    "rule": "Federal courts may exercise supplemental jurisdiction over claims that form part of the same case or controversy.",
+    "buzzwords": [
+      "supplemental jurisdiction",
+      "same case or controversy"
+    ],
+    "application": "Because the claims arise from a common nucleus of facts, supplemental jurisdiction applies."
+  },
+
+  "Supplemental Jurisdiction — Diversity Limitation": {
+    "rule": "In diversity cases, supplemental jurisdiction does not allow claims by plaintiffs that would destroy complete diversity.",
+    "buzzwords": [
+      "diversity cases",
+      "supplemental jurisdiction",
+      "destroy complete diversity"
+    ],
+    "application": "Because the claim would destroy diversity, it is barred."
+  },
+
+  "Supplemental Jurisdiction — Discretionary Decline": {
+    "rule": "A court may decline supplemental jurisdiction if the claim raises novel state issues, substantially predominates, or if the original claims are dismissed.",
+    "buzzwords": [
+      "decline supplemental jurisdiction",
+      "novel state issues",
+      "substantially predominates",
+      "claims dismissed"
+    ],
+    "application": "Because the federal claim was dismissed, the court declined jurisdiction."
+  },
+  
+  "Discovery — Scope": {
+    "rule": "Parties may obtain discovery regarding any nonprivileged matter that is relevant to any party’s claim or defense and proportional to the needs of the case.",
+    "buzzwords": [
+      "discovery",
+      "nonprivileged matter",
+      "relevant",
+      "claim or defense",
+      "proportional"
+    ],
+    "application": "Because the information is relevant and proportional, it is discoverable."
+  },
+
+  "Discovery — Proportionality Factors": {
+    "rule": "Proportionality considers the importance of the issues, amount in controversy, access to information, resources of the parties, and burden versus benefit.",
+    "buzzwords": [
+      "proportionality",
+      "amount in controversy",
+      "access to information",
+      "burden versus benefit"
+    ],
+    "application": "Because the burden outweighs the benefit, discovery may be limited."
+  },
+
+  "Initial Disclosures": {
+    "rule": "Parties must provide initial disclosures identifying witnesses, documents, damages, and insurance without awaiting a discovery request.",
+    "buzzwords": [
+      "initial disclosures",
+      "witnesses",
+      "documents",
+      "damages",
+      "insurance"
+    ],
+    "application": "Because disclosures were required automatically, failure to disclose may result in sanctions."
+  },
+
+  "Discovery Devices": {
+    "rule": "Discovery devices include depositions, interrogatories, requests for production, requests for admission, and physical or mental examinations.",
+    "buzzwords": [
+      "depositions",
+      "interrogatories",
+      "requests for production",
+      "requests for admission",
+      "physical examination"
+    ],
+    "application": "Because interrogatories are permitted, written questions may be served."
+  },
+
+  "Interrogatories — Limits": {
+    "rule": "A party may serve up to 25 interrogatories unless the court permits more.",
+    "buzzwords": [
+      "interrogatories",
+      "25 interrogatories",
+      "court permission"
+    ],
+    "application": "Because the party exceeded 25 interrogatories, court approval was required."
+  },
+
+  "Depositions — Limits": {
+    "rule": "Each deposition is limited to one day of seven hours unless otherwise ordered by the court.",
+    "buzzwords": [
+      "deposition",
+      "seven hours",
+      "one day"
+    ],
+    "application": "Because the deposition exceeded seven hours, court approval was required."
+  },
+
+  "Requests for Admission": {
+    "rule": "Requests for admission ask a party to admit the truth of facts, the application of law to fact, or the genuineness of documents.",
+    "buzzwords": [
+      "requests for admission",
+      "truth of facts",
+      "application of law to fact",
+      "genuineness of documents"
+    ],
+    "application": "Because the request sought admission of fact, it was proper."
+  },
+
+  "Duty to Supplement": {
+    "rule": "A party must timely supplement discovery responses if they learn the information is incomplete or incorrect.",
+    "buzzwords": [
+      "duty to supplement",
+      "incomplete",
+      "incorrect"
+    ],
+    "application": "Because new information was discovered, supplementation was required."
+  },
+
+  "Discovery — Privilege": {
+    "rule": "Privileged matters, including attorney-client communications, are not discoverable.",
+    "buzzwords": [
+      "privilege",
+      "attorney-client communications",
+      "not discoverable"
+    ],
+    "application": "Because the communication was privileged, it is protected."
+  },
+
+  "Work Product Doctrine": {
+    "rule": "Materials prepared in anticipation of litigation are protected from discovery unless substantial need and undue hardship are shown.",
+    "buzzwords": [
+      "work product",
+      "anticipation of litigation",
+      "substantial need",
+      "undue hardship"
+    ],
+    "application": "Because no substantial need was shown, the materials are protected."
+  },
+
+  "Expert Discovery": {
+    "rule": "Parties must disclose expert witnesses and provide written reports for retained experts.",
+    "buzzwords": [
+      "expert witnesses",
+      "written reports",
+      "retained experts"
+    ],
+    "application": "Because the expert was retained, a report was required."
+  },
+
+  "Discovery — Sanctions": {
+    "rule": "Courts may impose sanctions for failure to comply with discovery obligations.",
+    "buzzwords": [
+      "sanctions",
+      "failure to comply",
+      "discovery obligations"
+    ],
+    "application": "Because the party disobeyed a discovery order, sanctions were appropriate."
+  },
+
+  "Case Management — Judicial Control": {
+    "rule": "Courts may issue scheduling orders and manage discovery to secure the just, speedy, and inexpensive determination of actions.",
+    "buzzwords": [
+      "case management",
+      "scheduling orders",
+      "just",
+      "speedy",
+      "inexpensive"
+    ],
+    "application": "Because the court limited discovery, case management authority was proper."
+  },
+
+  "Pretrial Conferences": {
+    "rule": "Courts may hold pretrial conferences to formulate issues, eliminate frivolous claims, and facilitate settlement.",
+    "buzzwords": [
+      "pretrial conference",
+      "formulate issues",
+      "settlement"
+    ],
+    "application": "Because the conference narrowed issues, it was proper."
+  }, 
+
+  "Pretrial Motions — General Rule": {
+    "rule": "Pretrial motions are used to challenge pleadings, jurisdiction, venue, or the legal sufficiency of claims before trial.",
+    "buzzwords": [
+      "pretrial motions",
+      "challenge pleadings",
+      "jurisdiction",
+      "venue",
+      "legal sufficiency"
+    ],
+    "application": "Because the motion challenges legal sufficiency, it is properly raised before trial."
+  },
+
+  "Rule 12(b) Motions — Overview": {
+    "rule": "Rule 12(b) permits defenses to be raised by motion before filing an answer.",
+    "buzzwords": [
+      "Rule 12(b)",
+      "defenses",
+      "motion",
+      "before answer"
+    ],
+    "application": "Because the defendant raised the defense by motion, Rule 12(b) applies."
+  },
+
+  "Rule 12(b)(1) — Subject Matter Jurisdiction": {
+    "rule": "Lack of subject matter jurisdiction may be raised at any time.",
+    "buzzwords": [
+      "subject matter jurisdiction",
+      "raised at any time"
+    ],
+    "application": "Because the court lacks jurisdiction, the case must be dismissed."
+  },
+
+  "Rule 12(b)(2) — Personal Jurisdiction": {
+    "rule": "Lack of personal jurisdiction must be raised in the first Rule 12 response or it is waived.",
+    "buzzwords": [
+      "personal jurisdiction",
+      "first response",
+      "waived"
+    ],
+    "application": "Because the defendant failed to raise it initially, the defense is waived."
+  },
+
+  "Rule 12(b)(3) — Improper Venue": {
+    "rule": "Improper venue must be raised in the first Rule 12 response or it is waived.",
+    "buzzwords": [
+      "improper venue",
+      "waived",
+      "first response"
+    ],
+    "application": "Because venue was not challenged initially, the defense is waived."
+  },
+
+  "Rule 12(b)(4) and 12(b)(5) — Process and Service": {
+    "rule": "Insufficient process and insufficient service of process must be raised in the first Rule 12 response or they are waived.",
+    "buzzwords": [
+      "insufficient process",
+      "insufficient service",
+      "waived"
+    ],
+    "application": "Because service defects were not timely raised, they are waived."
+  },
+
+  "Rule 12(b)(6) — Failure to State a Claim": {
+    "rule": "A motion to dismiss for failure to state a claim tests whether the complaint plausibly alleges entitlement to relief.",
+    "buzzwords": [
+      "failure to state a claim",
+      "plausibly alleges",
+      "entitlement to relief"
+    ],
+    "application": "Because the complaint lacks sufficient facts, dismissal is proper."
+  },
+
+  "Rule 12(e) — More Definite Statement": {
+    "rule": "A motion for a more definite statement is appropriate when a pleading is so vague or ambiguous that a response cannot be framed.",
+    "buzzwords": [
+      "more definite statement",
+      "vague",
+      "ambiguous"
+    ],
+    "application": "Because the pleading is unclear, a more definite statement is required."
+  },
+
+  "Rule 12(f) — Motion to Strike": {
+    "rule": "A court may strike insufficient defenses or redundant, immaterial, or scandalous matter.",
+    "buzzwords": [
+      "motion to strike",
+      "insufficient defenses",
+      "immaterial",
+      "scandalous"
+    ],
+    "application": "Because the allegation is scandalous, it may be stricken."
+  },
+
+  "Waiver of Rule 12 Defenses": {
+    "rule": "Certain Rule 12 defenses are waived if not raised in the first Rule 12 response.",
+    "buzzwords": [
+      "waiver",
+      "Rule 12 defenses",
+      "first response"
+    ],
+    "application": "Because the defense was omitted, it is waived."
+  },
+
+  "Summary Judgment — General Rule": {
+    "rule": "Summary judgment is granted when there is no genuine dispute of material fact and the movant is entitled to judgment as a matter of law.",
+    "buzzwords": [
+      "summary judgment",
+      "no genuine dispute",
+      "material fact",
+      "entitled to judgment as a matter of law"
+    ],
+    "application": "Because no factual dispute exists, summary judgment is appropriate."
+  },
+
+  "Summary Judgment — Burden of Proof": {
+    "rule": "The moving party must show the absence of a genuine issue of material fact.",
+    "buzzwords": [
+      "moving party",
+      "absence",
+      "genuine issue",
+      "material fact"
+    ],
+    "application": "Because the movant met the burden, the motion may be granted."
+  },
+
+  "Summary Judgment — Evidence": {
+    "rule": "Courts consider pleadings, depositions, documents, affidavits, and admissions when deciding summary judgment.",
+    "buzzwords": [
+      "pleadings",
+      "depositions",
+      "affidavits",
+      "admissions"
+    ],
+    "application": "Because the evidence shows no dispute, judgment is proper."
+  },
+
+  "Timing of Summary Judgment": {
+    "rule": "A party may move for summary judgment after 20 days from commencement of the action or after service of a motion for summary judgment.",
+    "buzzwords": [
+      "timing",
+      "20 days",
+      "commencement of the action"
+    ],
+    "application": "Because the motion was timely, it is properly considered."
+  }, 
+
+  "Trial — Right to Jury Trial": {
+    "rule": "The Seventh Amendment preserves the right to a jury trial in civil actions at law.",
+    "buzzwords": [
+      "Seventh Amendment",
+      "right to jury trial",
+      "civil actions at law"
+    ],
+    "application": "Because the claim seeks legal relief, the right to a jury trial applies."
+  },
+
+  "Bench Trial": {
+    "rule": "In a bench trial, the judge serves as the trier of fact and determines both law and facts.",
+    "buzzwords": [
+      "bench trial",
+      "judge",
+      "trier of fact"
+    ],
+    "application": "Because no jury was requested, the judge decided the case."
+  },
+
+  "Judgment as a Matter of Law — JMOL": {
+    "rule": "Judgment as a matter of law may be granted when a reasonable jury would not have a legally sufficient evidentiary basis to find for the nonmoving party.",
+    "buzzwords": [
+      "judgment as a matter of law",
+      "reasonable jury",
+      "legally sufficient evidentiary basis"
+    ],
+    "application": "Because no reasonable jury could find for the nonmoving party, JMOL was proper."
+  },
+
+  "Timing — JMOL": {
+    "rule": "A motion for judgment as a matter of law must be made before the case is submitted to the jury.",
+    "buzzwords": [
+      "timing",
+      "before submission to the jury"
+    ],
+    "application": "Because the motion was made after submission, it was untimely."
+  },
+
+  "Renewed JMOL": {
+    "rule": "A renewed motion for judgment as a matter of law may be made after trial if a prior JMOL motion was made.",
+    "buzzwords": [
+      "renewed JMOL",
+      "after trial",
+      "prior motion"
+    ],
+    "application": "Because a prior motion was made, renewed JMOL was permitted."
+  },
+
+  "Motion for New Trial": {
+    "rule": "A court may grant a new trial for errors of law, newly discovered evidence, or a verdict against the weight of the evidence.",
+    "buzzwords": [
+      "new trial",
+      "errors of law",
+      "newly discovered evidence",
+      "weight of the evidence"
+    ],
+    "application": "Because the verdict was against the weight of the evidence, a new trial was granted."
+  },
+
+  "Jury Verdict — General Verdict": {
+    "rule": "A general verdict states which party prevails and the amount of damages, if any.",
+    "buzzwords": [
+      "general verdict",
+      "prevailing party",
+      "damages"
+    ],
+    "application": "Because the jury awarded damages, a general verdict was rendered."
+  },
+
+  "Jury Verdict — Special Verdict": {
+    "rule": "A special verdict requires the jury to make written findings on specific factual issues.",
+    "buzzwords": [
+      "special verdict",
+      "written findings",
+      "specific factual issues"
+    ],
+    "application": "Because the jury answered specific questions, a special verdict was used."
+  },
+
+  "Jury Verdict — General Verdict with Interrogatories": {
+    "rule": "A general verdict with interrogatories allows the jury to return a general verdict and answer written questions.",
+    "buzzwords": [
+      "general verdict",
+      "interrogatories",
+      "written questions"
+    ],
+    "application": "Because interrogatories clarified the verdict, the judgment was upheld."
+  },
+
+  "Default Judgment": {
+    "rule": "A default judgment may be entered when a defendant fails to plead or otherwise defend.",
+    "buzzwords": [
+      "default judgment",
+      "fails to plead",
+      "fails to defend"
+    ],
+    "application": "Because the defendant failed to respond, default judgment was entered."
+  },
+
+  "Setting Aside Default Judgment": {
+    "rule": "A court may set aside a default judgment for good cause, mistake, or excusable neglect.",
+    "buzzwords": [
+      "set aside",
+      "default judgment",
+      "good cause",
+      "excusable neglect"
+    ],
+    "application": "Because neglect was excusable, the default judgment was set aside."
+  },
+
+  "Final Judgment Rule": {
+    "rule": "Only final judgments resolving all claims and parties are appealable as of right.",
+    "buzzwords": [
+      "final judgment",
+      "appealable as of right",
+      "all claims and parties"
+    ],
+    "application": "Because the judgment resolved all claims, it was final."
+  },
+
+  "Relief from Judgment — Rule 60": {
+    "rule": "A court may grant relief from a final judgment for mistake, newly discovered evidence, fraud, or void judgments.",
+    "buzzwords": [
+      "relief from judgment",
+      "mistake",
+      "newly discovered evidence",
+      "fraud",
+      "void judgment"
+    ],
+    "application": "Because the judgment was procured by fraud, relief was granted."
+  },
+
+  "Claim Preclusion — General Rule": {
+    "rule": "Claim preclusion bars a subsequent action between the same parties or their privies arising out of the same transaction after a final judgment on the merits.",
+    "buzzwords": [
+      "claim preclusion",
+      "same parties",
+      "privies",
+      "same transaction",
+      "final judgment on the merits"
+    ],
+    "application": "Because the prior case resulted in a final judgment between the same parties, the claim is barred."
+  },
+
+  "Claim Preclusion — Same Claim": {
+    "rule": "Claims are considered the same if they arise out of the same transaction or occurrence.",
+    "buzzwords": [
+      "same claim",
+      "same transaction",
+      "same occurrence"
+    ],
+    "application": "Because both claims arise from the same transaction, claim preclusion applies."
+  },
+
+  "Claim Preclusion — Final Judgment": {
+    "rule": "A final judgment includes judgments after trial, summary judgment, and default judgment.",
+    "buzzwords": [
+      "final judgment",
+      "summary judgment",
+      "default judgment"
+    ],
+    "application": "Because summary judgment was entered, the judgment is final."
+  },
+
+  "Claim Preclusion — On the Merits": {
+    "rule": "A judgment is on the merits unless it is based on lack of jurisdiction, improper venue, or failure to join a party.",
+    "buzzwords": [
+      "on the merits",
+      "lack of jurisdiction",
+      "improper venue",
+      "failure to join"
+    ],
+    "application": "Because the case was dismissed for lack of jurisdiction, claim preclusion does not apply."
+  },
+
+  "Issue Preclusion — General Rule": {
+    "rule": "Issue preclusion bars relitigation of an issue that was actually litigated and necessarily decided in a prior action.",
+    "buzzwords": [
+      "issue preclusion",
+      "actually litigated",
+      "necessarily decided"
+    ],
+    "application": "Because the issue was fully litigated and decided, relitigation is barred."
+  },
+
+  "Issue Preclusion — Requirements": {
+    "rule": "Issue preclusion requires the same issue, actually litigated, essential to the judgment, and asserted against a party to the prior action.",
+    "buzzwords": [
+      "same issue",
+      "actually litigated",
+      "essential to the judgment",
+      "party to the prior action"
+    ],
+    "application": "Because the issue was essential to the prior judgment, issue preclusion applies."
+  },
+
+  "Issue Preclusion — Mutuality": {
+    "rule": "Issue preclusion does not require mutuality, allowing nonparties to assert it defensively or offensively.",
+    "buzzwords": [
+      "mutuality",
+      "defensive",
+      "offensive",
+      "nonparties"
+    ],
+    "application": "Because the defendant asserts issue preclusion defensively, mutuality is not required."
+  },
+
+  "Offensive Issue Preclusion": {
+    "rule": "Offensive issue preclusion may be denied if the plaintiff could have joined the prior action or if application would be unfair.",
+    "buzzwords": [
+      "offensive issue preclusion",
+      "could have joined",
+      "unfair"
+    ],
+    "application": "Because applying preclusion would be unfair, the court declined to apply it."
+  },
+
+  "Issue Preclusion — Criminal Convictions": {
+    "rule": "A criminal conviction may have issue preclusive effect in subsequent civil litigation.",
+    "buzzwords": [
+      "criminal conviction",
+      "civil litigation",
+      "issue preclusive effect"
+    ],
+    "application": "Because the defendant was convicted, the issue may not be relitigated."
+  },
+
+  "Full Faith and Credit": {
+    "rule": "Federal courts must give state court judgments the same preclusive effect they would receive in the rendering state.",
+    "buzzwords": [
+      "full faith and credit",
+      "state court judgments",
+      "preclusive effect"
+    ],
+    "application": "Because the state judgment would bar the claim, the federal court must honor it."
+  },
+
+  "Erie Doctrine — General Rule": {
+    "rule": "In diversity cases, federal courts must apply federal procedural law and state substantive law.",
+    "buzzwords": [
+      "Erie doctrine",
+      "diversity cases",
+      "federal procedural law",
+      "state substantive law"
+    ],
+    "application": "Because the case is based on diversity jurisdiction, Erie applies."
+  },
+
+  "Source of Erie Doctrine": {
+    "rule": "The Erie doctrine requires federal courts to apply state substantive law to prevent forum shopping and inequitable administration of the laws.",
+    "buzzwords": [
+      "forum shopping",
+      "inequitable administration of the laws",
+      "state substantive law"
+    ],
+    "application": "Because applying federal law would encourage forum shopping, state law applies."
+  },
+
+  "Federal Procedural Law": {
+    "rule": "Federal courts apply valid Federal Rules of Civil Procedure when they directly conflict with state law.",
+    "buzzwords": [
+      "Federal Rules of Civil Procedure",
+      "direct conflict",
+      "valid"
+    ],
+    "application": "Because a Federal Rule directly governs, it applies."
+  },
+
+  "Hanna Test": {
+    "rule": "Under Hanna, a valid Federal Rule applies if it is arguably procedural and within the Rules Enabling Act.",
+    "buzzwords": [
+      "Hanna test",
+      "arguably procedural",
+      "Rules Enabling Act"
+    ],
+    "application": "Because the Federal Rule is procedural, it applies."
+  },
+
+  "Rules Enabling Act": {
+    "rule": "The Rules Enabling Act prohibits Federal Rules from abridging, enlarging, or modifying substantive rights.",
+    "buzzwords": [
+      "Rules Enabling Act",
+      "substantive rights",
+      "abridging",
+      "enlarging",
+      "modifying"
+    ],
+    "application": "Because the rule does not alter substantive rights, it is valid."
+  },
+
+  "State Substantive Law": {
+    "rule": "State substantive law includes elements of claims, statutes of limitations, and rules governing damages.",
+    "buzzwords": [
+      "state substantive law",
+      "elements of claims",
+      "statutes of limitations",
+      "damages"
+    ],
+    "application": "Because the statute of limitations is substantive, state law applies."
+  },
+
+  "Judge-Made Federal Law": {
+    "rule": "When no Federal Rule applies, federal courts balance state and federal interests to determine whether to apply state law.",
+    "buzzwords": [
+      "judge-made law",
+      "state interests",
+      "federal interests"
+    ],
+    "application": "Because state interests predominate, state law applies."
+  },
+
+  "Outcome-Determinative Test": {
+    "rule": "A law is substantive if applying federal law instead of state law would affect the outcome of the case.",
+    "buzzwords": [
+      "outcome-determinative",
+      "affect the outcome"
+    ],
+    "application": "Because applying federal law would change the outcome, state law applies."
+  },
+
+  "Balancing Test — Byrd": {
+    "rule": "Courts balance the state’s interest against the federal interest in maintaining the federal system.",
+    "buzzwords": [
+      "balancing test",
+      "state interest",
+      "federal system"
+    ],
+    "application": "Because the federal interest is strong, federal practice applies."
+  },
+
+  "Choice of Law — Klaxon Rule": {
+    "rule": "A federal court sitting in diversity applies the choice-of-law rules of the forum state.",
+    "buzzwords": [
+      "choice-of-law",
+      "forum state",
+      "diversity"
+    ],
+    "application": "Because the case is in diversity, forum state choice-of-law rules apply."
+  },
+
+  "Transferred Cases — Choice of Law": {
+    "rule": "After transfer for convenience, the transferee court applies the choice-of-law rules of the transferor court.",
+    "buzzwords": [
+      "transfer for convenience",
+      "transferee court",
+      "transferor court"
+    ],
+    "application": "Because the case was transferred for convenience, the original choice-of-law rules apply."
+  },
+
+  "Transferred Cases — Improper Venue": {
+    "rule": "After transfer due to improper venue, the transferee court applies its own choice-of-law rules.",
+    "buzzwords": [
+      "improper venue",
+      "transferee court",
+      "choice-of-law rules"
+    ],
+    "application": "Because venue was improper, the transferee court applies its own law."
+  }
+}
+

@@ -1,0 +1,1210 @@
+{
+  "Offer — Definition": {
+    "rule": "An offer is a manifestation of present intent to enter into a bargain, such that acceptance will create a contract.",
+    "buzzwords": [
+      "offer",
+      "manifestation of present intent",
+      "bargain",
+      "acceptance"
+    ],
+    "application": "Because the statement showed present intent to be bound, it constituted an offer."
+  },
+
+  "Offer vs Preliminary Negotiations": {
+    "rule": "A statement is not an offer if it merely reflects preliminary negotiations or a willingness to discuss terms.",
+    "buzzwords": [
+      "preliminary negotiations",
+      "willingness to discuss terms"
+    ],
+    "application": "Because the statement invited further negotiation, it was not an offer."
+  },
+
+  "Advertisements": {
+    "rule": "Advertisements are generally not offers unless they are clear, definite, and explicit, leaving nothing open for negotiation.",
+    "buzzwords": [
+      "advertisements",
+      "clear",
+      "definite",
+      "explicit",
+      "nothing open for negotiation"
+    ],
+    "application": "Because the advertisement was clear and definite, it constituted an offer."
+  },
+
+  "Termination of Offer — Methods": {
+    "rule": "An offer may be terminated by revocation, rejection, counteroffer, lapse of time, or death or incapacity of either party.",
+    "buzzwords": [
+      "termination",
+      "revocation",
+      "rejection",
+      "counteroffer",
+      "lapse of time",
+      "death",
+      "incapacity"
+    ],
+    "application": "Because the offer was revoked before acceptance, it was terminated."
+  },
+
+  "Revocation — General Rule": {
+    "rule": "An offeror may revoke an offer at any time before acceptance unless the offer is irrevocable.",
+    "buzzwords": [
+      "revocation",
+      "before acceptance",
+      "irrevocable"
+    ],
+    "application": "Because the offer was revoked before acceptance, no contract was formed."
+  },
+
+  "Revocation — Indirect Revocation": {
+    "rule": "An offer is revoked indirectly when the offeree learns from a reliable source that the offeror has taken action inconsistent with the offer.",
+    "buzzwords": [
+      "indirect revocation",
+      "reliable source",
+      "action inconsistent with the offer"
+    ],
+    "application": "Because the offeree learned the offeror sold the subject matter, the offer was revoked."
+  },
+
+  "Option Contracts": {
+    "rule": "An option contract is a promise to keep an offer open that is supported by consideration or made irrevocable by statute.",
+    "buzzwords": [
+      "option contract",
+      "keep an offer open",
+      "consideration",
+      "irrevocable"
+    ],
+    "application": "Because consideration was given to keep the offer open, the offer was irrevocable."
+  },
+
+  "Firm Offers (UCC)": {
+    "rule": "Under the UCC, a merchant’s signed written offer to buy or sell goods is irrevocable for the time stated or a reasonable time not exceeding three months.",
+    "buzzwords": [
+      "merchant",
+      "signed written offer",
+      "irrevocable",
+      "three months"
+    ],
+    "application": "Because the merchant made a signed firm offer, it was irrevocable."
+  },
+
+  "Acceptance — Definition": {
+    "rule": "Acceptance is a manifestation of assent to the terms of the offer in the manner invited or required by the offer.",
+    "buzzwords": [
+      "acceptance",
+      "manifestation of assent",
+      "terms of the offer"
+    ],
+    "application": "Because the offeree assented as required, acceptance occurred."
+  },
+
+  "Acceptance by Silence": {
+    "rule": "Silence constitutes acceptance only when the offeree takes the benefit of offered services with reasonable opportunity to reject and reason to know compensation is expected, or when prior dealings make silence reasonable.",
+    "buzzwords": [
+      "silence",
+      "benefit of services",
+      "prior dealings",
+      "reasonable opportunity to reject"
+    ],
+    "application": "Because prior dealings made silence reasonable, acceptance occurred."
+  },
+
+  "Mailbox Rule": {
+    "rule": "Acceptance is effective upon dispatch if properly addressed and mailed, unless the offer provides otherwise.",
+    "buzzwords": [
+      "mailbox rule",
+      "effective upon dispatch",
+      "properly addressed"
+    ],
+    "application": "Because acceptance was mailed properly, it was effective upon dispatch."
+  },
+
+  "Mirror Image Rule": {
+    "rule": "At common law, acceptance must mirror the terms of the offer or it is treated as a counteroffer.",
+    "buzzwords": [
+      "mirror image rule",
+      "counteroffer"
+    ],
+    "application": "Because the acceptance altered the terms, it was a counteroffer."
+  },
+
+  "Battle of the Forms (UCC 2-207)": {
+    "rule": "Under UCC 2-207, a definite and seasonable expression of acceptance forms a contract despite additional or different terms unless acceptance is expressly conditional on assent to those terms.",
+    "buzzwords": [
+      "UCC 2-207",
+      "definite expression of acceptance",
+      "additional terms",
+      "expressly conditional"
+    ],
+    "application": "Because acceptance was not expressly conditional, a contract was formed."
+  },
+
+  "Consideration — Definition": {
+    "rule": "Consideration requires a bargained-for exchange in which each party incurs a legal detriment or confers a legal benefit.",
+    "buzzwords": [
+      "consideration",
+      "bargained-for exchange",
+      "legal detriment",
+      "legal benefit"
+    ],
+    "application": "Because each party exchanged promises that imposed legal detriment, consideration existed."
+  },
+
+  "Adequacy vs Sufficiency of Consideration": {
+    "rule": "Courts do not inquire into the adequacy of consideration as long as the consideration is legally sufficient.",
+    "buzzwords": [
+      "adequacy of consideration",
+      "legally sufficient"
+    ],
+    "application": "Because the consideration was legally sufficient, its adequacy is irrelevant."
+  },
+
+  "Past Consideration": {
+    "rule": "Past consideration is not valid consideration because it was not bargained for at the time of the promise.",
+    "buzzwords": [
+      "past consideration",
+      "not bargained for"
+    ],
+    "application": "Because the act occurred before the promise, there was no valid consideration."
+  },
+
+  "Preexisting Duty Rule": {
+    "rule": "A promise to perform a preexisting legal duty is not valid consideration unless an exception applies.",
+    "buzzwords": [
+      "preexisting legal duty",
+      "not valid consideration",
+      "exception applies"
+    ],
+    "application": "Because the party was already legally obligated, no new consideration was given."
+  },
+
+  "Preexisting Duty — Common Law Modification": {
+    "rule": "Under common law, a contract modification requires new consideration to be enforceable.",
+    "buzzwords": [
+      "common law",
+      "contract modification",
+      "new consideration"
+    ],
+    "application": "Because no new consideration supported the modification, it was unenforceable."
+  },
+
+  "Preexisting Duty — UCC Modification": {
+    "rule": "Under the UCC, a contract modification is enforceable without new consideration if made in good faith.",
+    "buzzwords": [
+      "UCC",
+      "contract modification",
+      "good faith",
+      "without new consideration"
+    ],
+    "application": "Because the modification was made in good faith, it was enforceable."
+  },
+
+  "Illusory Promises": {
+    "rule": "An illusory promise is not consideration because it does not bind the promisor to any performance.",
+    "buzzwords": [
+      "illusory promise",
+      "not consideration",
+      "does not bind"
+    ],
+    "application": "Because the promise imposed no obligation, it was illusory."
+  },
+
+  "Output Contracts": {
+    "rule": "An output contract is enforceable when one party agrees to sell all of its output to another in good faith.",
+    "buzzwords": [
+      "output contract",
+      "all of its output",
+      "good faith"
+    ],
+    "application": "Because the seller acted in good faith, the output contract was enforceable."
+  },
+
+  "Requirements Contracts": {
+    "rule": "A requirements contract is enforceable when one party agrees to buy all of its requirements from another in good faith.",
+    "buzzwords": [
+      "requirements contract",
+      "all of its requirements",
+      "good faith"
+    ],
+    "application": "Because the buyer acted in good faith, the requirements contract was enforceable."
+  },
+
+  "Settlement of Claims": {
+    "rule": "Forbearance to assert a legal claim is valid consideration if the claim is asserted in good faith.",
+    "buzzwords": [
+      "forbearance",
+      "legal claim",
+      "good faith"
+    ],
+    "application": "Because the claim was asserted in good faith, forbearance was valid consideration."
+  },
+
+  "Promissory Estoppel — Elements": {
+    "rule": "Promissory estoppel applies when a promisor should reasonably expect reliance, the promisee relies to their detriment, and injustice can be avoided only by enforcement of the promise.",
+    "buzzwords": [
+      "promissory estoppel",
+      "reasonable expectation of reliance",
+      "detrimental reliance",
+      "injustice"
+    ],
+    "application": "Because the promise induced detrimental reliance, it is enforceable under promissory estoppel."
+  },
+
+  "Promissory Estoppel — Remedy": {
+    "rule": "The remedy under promissory estoppel is limited to the amount necessary to prevent injustice.",
+    "buzzwords": [
+      "remedy",
+      "prevent injustice"
+    ],
+    "application": "Because full expectation damages were unnecessary, recovery was limited."
+  },
+
+  "Moral Obligation": {
+    "rule": "A moral obligation alone is not sufficient consideration to support a promise.",
+    "buzzwords": [
+      "moral obligation",
+      "not sufficient consideration"
+    ],
+    "application": "Because the promise was based solely on moral obligation, it was unenforceable."
+  }, 
+  
+  "Capacity — General Rule": {
+    "rule": "A person lacks capacity to contract if the person is a minor, mentally incapacitated, or intoxicated at the time of contracting.",
+    "buzzwords": [
+      "capacity",
+      "minor",
+      "mentally incapacitated",
+      "intoxicated"
+    ],
+    "application": "Because the party was a minor at the time of contracting, capacity was lacking."
+  },
+
+  "Capacity — Effect": {
+    "rule": "A contract entered into by a person lacking capacity is voidable at the election of the incapacitated party.",
+    "buzzwords": [
+      "voidable",
+      "incapacitated party"
+    ],
+    "application": "Because the incapacitated party chose to avoid the contract, it was voided."
+  },
+
+  "Duress": {
+    "rule": "Duress renders a contract voidable when assent is induced by an improper threat that leaves the victim with no reasonable alternative.",
+    "buzzwords": [
+      "duress",
+      "improper threat",
+      "no reasonable alternative"
+    ],
+    "application": "Because assent was induced by an improper threat, the contract is voidable."
+  },
+
+  "Undue Influence": {
+    "rule": "Undue influence occurs when a party uses excessive pressure to overcome the free will of another who is in a confidential relationship.",
+    "buzzwords": [
+      "undue influence",
+      "excessive pressure",
+      "confidential relationship"
+    ],
+    "application": "Because excessive pressure was applied in a confidential relationship, undue influence occurred."
+  },
+
+  "Misrepresentation — Fraudulent": {
+    "rule": "Fraudulent misrepresentation occurs when a party makes a false statement of material fact with intent to deceive, inducing reliance.",
+    "buzzwords": [
+      "fraudulent misrepresentation",
+      "false statement",
+      "material fact",
+      "intent to deceive",
+      "reliance"
+    ],
+    "application": "Because the false statement was made with intent to deceive, the contract is voidable."
+  },
+
+  "Misrepresentation — Negligent or Innocent": {
+    "rule": "A contract is voidable when a party justifiably relies on a false statement of material fact, even if the misrepresentation is negligent or innocent.",
+    "buzzwords": [
+      "misrepresentation",
+      "false statement",
+      "material fact",
+      "justifiable reliance"
+    ],
+    "application": "Because the party relied on a material misrepresentation, the contract is voidable."
+  },
+
+  "Nondisclosure": {
+    "rule": "Nondisclosure constitutes misrepresentation when there is a duty to disclose material facts.",
+    "buzzwords": [
+      "nondisclosure",
+      "duty to disclose",
+      "material facts"
+    ],
+    "application": "Because the party had a duty to disclose material facts, nondisclosure rendered the contract voidable."
+  },
+
+  "Mutual Mistake": {
+    "rule": "A contract is voidable for mutual mistake when both parties share a mistaken belief about a basic assumption that has a material effect on the exchange.",
+    "buzzwords": [
+      "mutual mistake",
+      "basic assumption",
+      "material effect"
+    ],
+    "application": "Because both parties were mistaken about a basic assumption, the contract is voidable."
+  },
+
+  "Unilateral Mistake": {
+    "rule": "A contract is voidable for unilateral mistake when one party is mistaken and the other party knew or should have known of the mistake.",
+    "buzzwords": [
+      "unilateral mistake",
+      "knew or should have known"
+    ],
+    "application": "Because the non-mistaken party knew of the error, the contract is voidable."
+  },
+
+  "Illegality": {
+    "rule": "A contract is unenforceable if its subject matter or performance is illegal.",
+    "buzzwords": [
+      "illegality",
+      "unenforceable",
+      "illegal"
+    ],
+    "application": "Because the contract involved illegal conduct, it is unenforceable."
+  },
+
+  "Public Policy": {
+    "rule": "A contract is unenforceable if it violates public policy.",
+    "buzzwords": [
+      "public policy",
+      "unenforceable"
+    ],
+    "application": "Because the agreement violated public policy, it is unenforceable."
+  },
+
+  "Unconscionability": {
+    "rule": "A contract or term is unenforceable if it is unconscionable due to unfair surprise and oppressive terms.",
+    "buzzwords": [
+      "unconscionable",
+      "unfair surprise",
+      "oppressive terms"
+    ],
+    "application": "Because the terms were oppressive and unexpected, the contract was unconscionable."
+  },
+
+  "Statute of Frauds — General Rule": {
+    "rule": "Certain contracts must be in writing and signed by the party to be charged to be enforceable.",
+    "buzzwords": [
+      "statute of frauds",
+      "writing",
+      "signed",
+      "party to be charged"
+    ],
+    "application": "Because the agreement was not in writing, it is unenforceable under the Statute of Frauds."
+  },
+
+  "Statute of Frauds — Covered Contracts (MYLEGS)": {
+    "rule": "The Statute of Frauds applies to contracts for marriage, contracts that cannot be performed within one year, interests in land, executor promises, guarantees, and contracts for the sale of goods priced at $500 or more.",
+    "buzzwords": [
+      "marriage",
+      "one year",
+      "land",
+      "executor",
+      "guarantee",
+      "sale of goods",
+      "500"
+    ],
+    "application": "Because the contract involved land, it fell within the Statute of Frauds."
+  },
+
+  "Statute of Frauds — Writing Requirements": {
+    "rule": "The writing must reasonably identify the subject matter, indicate that a contract has been made, and state the essential terms with reasonable certainty.",
+    "buzzwords": [
+      "writing",
+      "subject matter",
+      "essential terms",
+      "reasonable certainty"
+    ],
+    "application": "Because the writing identified the subject matter and essential terms, the requirement was satisfied."
+  },
+
+  "Statute of Frauds — Signature Requirement": {
+    "rule": "The Statute of Frauds requires a signature by the party against whom enforcement is sought.",
+    "buzzwords": [
+      "signature",
+      "party against whom enforcement is sought"
+    ],
+    "application": "Because the defendant signed the writing, the Statute of Frauds was satisfied."
+  },
+
+  "Statute of Frauds — One-Year Provision": {
+    "rule": "The one-year provision applies only to contracts that cannot be fully performed within one year from the time of formation.",
+    "buzzwords": [
+      "one year",
+      "cannot be fully performed",
+      "time of formation"
+    ],
+    "application": "Because the contract could have been performed within one year, the Statute of Frauds does not apply."
+  },
+
+  "Statute of Frauds — Interest in Land": {
+    "rule": "The Statute of Frauds applies to contracts creating or transferring an interest in land.",
+    "buzzwords": [
+      "interest in land",
+      "transfer"
+    ],
+    "application": "Because the agreement transferred an interest in land, a writing was required."
+  },
+
+  "Statute of Frauds — Suretyship (Guarantee)": {
+    "rule": "The Statute of Frauds applies to a promise to answer for the debt or duty of another.",
+    "buzzwords": [
+      "suretyship",
+      "answer for the debt",
+      "another"
+    ],
+    "application": "Because the promise guaranteed another’s debt, a writing was required."
+  },
+
+  "Statute of Frauds — Main Purpose Exception": {
+    "rule": "The Statute of Frauds does not apply to a suretyship promise when the promisor’s main purpose is to serve the promisor’s own economic interest.",
+    "buzzwords": [
+      "main purpose",
+      "economic interest",
+      "suretyship"
+    ],
+    "application": "Because the guarantor acted to benefit themselves, the Statute of Frauds does not apply."
+  },
+
+  "UCC Statute of Frauds — General Rule": {
+    "rule": "Under the UCC, a contract for the sale of goods priced at $500 or more must be evidenced by a signed writing to be enforceable.",
+    "buzzwords": [
+      "UCC",
+      "sale of goods",
+      "500",
+      "signed writing"
+    ],
+    "application": "Because the contract involved goods over $500 and lacked a writing, it is unenforceable."
+  },
+
+  "UCC Statute of Frauds — Writing Requirements": {
+    "rule": "Under the UCC, the writing must indicate a contract for sale and state a quantity term.",
+    "buzzwords": [
+      "UCC",
+      "contract for sale",
+      "quantity term"
+    ],
+    "application": "Because the writing stated a quantity term, the requirement was satisfied."
+  },
+
+  "UCC Statute of Frauds — Merchant Confirmation": {
+    "rule": "Between merchants, a written confirmation sent within a reasonable time satisfies the Statute of Frauds unless written notice of objection is given within ten days.",
+    "buzzwords": [
+      "between merchants",
+      "written confirmation",
+      "ten days"
+    ],
+    "application": "Because no objection was made within ten days, the Statute of Frauds was satisfied."
+  },
+
+  "UCC Statute of Frauds — Specially Manufactured Goods": {
+    "rule": "The Statute of Frauds does not apply when goods are specially manufactured for the buyer and are not suitable for sale to others.",
+    "buzzwords": [
+      "specially manufactured goods",
+      "not suitable for sale"
+    ],
+    "application": "Because the goods were specially manufactured, a writing was not required."
+  },
+
+  "UCC Statute of Frauds — Admission Exception": {
+    "rule": "The Statute of Frauds is satisfied to the extent that a party admits in court that a contract for sale was made.",
+    "buzzwords": [
+      "admission",
+      "in court",
+      "contract for sale"
+    ],
+    "application": "Because the defendant admitted the contract in court, the Statute of Frauds was satisfied."
+  },
+
+  "UCC Statute of Frauds — Part Performance": {
+    "rule": "Under the UCC, part performance satisfies the Statute of Frauds to the extent that goods have been paid for or accepted.",
+    "buzzwords": [
+      "part performance",
+      "paid for",
+      "accepted"
+    ],
+    "application": "Because the buyer accepted the goods, the Statute of Frauds was satisfied."
+  },
+
+  "Statute of Frauds — Equitable Estoppel": {
+    "rule": "A party may be estopped from asserting the Statute of Frauds when reliance makes enforcement necessary to prevent injustice.",
+    "buzzwords": [
+      "equitable estoppel",
+      "reliance",
+      "prevent injustice"
+    ],
+    "application": "Because the promisee relied on the promise, enforcement is necessary to prevent injustice."
+  },
+
+  "Parol Evidence Rule — General Rule": {
+    "rule": "The parol evidence rule bars the admission of prior or contemporaneous extrinsic evidence that contradicts a final written agreement.",
+    "buzzwords": [
+      "parol evidence rule",
+      "prior or contemporaneous",
+      "extrinsic evidence",
+      "final written agreement",
+      "contradicts"
+    ],
+    "application": "Because the evidence contradicted a final written agreement, it was excluded."
+  },
+
+  "Integrated Agreements": {
+    "rule": "An integrated agreement is a final written expression of one or more terms of an agreement.",
+    "buzzwords": [
+      "integrated agreement",
+      "final written expression"
+    ],
+    "application": "Because the writing was intended as final, it was an integrated agreement."
+  },
+
+  "Completely vs Partially Integrated Agreements": {
+    "rule": "A completely integrated agreement bars extrinsic evidence of additional or contradictory terms, while a partially integrated agreement bars only contradictory terms.",
+    "buzzwords": [
+      "completely integrated",
+      "partially integrated",
+      "additional terms",
+      "contradictory terms"
+    ],
+    "application": "Because the agreement was completely integrated, additional terms were excluded."
+  },
+
+  "Parol Evidence — Permitted Uses": {
+    "rule": "Parol evidence is admissible to explain ambiguities, supplement incomplete terms, establish defenses to formation, or show a condition precedent to effectiveness.",
+    "buzzwords": [
+      "parol evidence",
+      "ambiguities",
+      "incomplete terms",
+      "defenses to formation",
+      "condition precedent"
+    ],
+    "application": "Because the evidence explained an ambiguity, it was admissible."
+  },
+
+  "Ambiguity": {
+    "rule": "A contract term is ambiguous if it is reasonably susceptible to more than one interpretation.",
+    "buzzwords": [
+      "ambiguous",
+      "reasonably susceptible",
+      "more than one interpretation"
+    ],
+    "application": "Because the term had multiple reasonable meanings, it was ambiguous."
+  },
+
+  "Rules of Contract Interpretation": {
+    "rule": "Contracts are interpreted to give effect to the parties’ intent as expressed in the contract language.",
+    "buzzwords": [
+      "contract interpretation",
+      "parties' intent",
+      "contract language"
+    ],
+    "application": "Because the language clearly expressed intent, it controlled interpretation."
+  },
+
+  "Hierarchy of Interpretation Evidence": {
+    "rule": "In interpreting contracts, courts consider express terms first, then course of performance, course of dealing, and usage of trade.",
+    "buzzwords": [
+      "express terms",
+      "course of performance",
+      "course of dealing",
+      "usage of trade"
+    ],
+    "application": "Because course of performance clarified the meaning, it controlled."
+  },
+
+  "Course of Performance": {
+    "rule": "Course of performance refers to how the parties have acted under the current contract.",
+    "buzzwords": [
+      "course of performance",
+      "current contract"
+    ],
+    "application": "Because the parties consistently performed in a certain way, that course of performance controlled."
+  },
+
+  "Course of Dealing": {
+    "rule": "Course of dealing refers to prior conduct between the parties that establishes a common basis of understanding.",
+    "buzzwords": [
+      "course of dealing",
+      "prior conduct",
+      "common basis of understanding"
+    ],
+    "application": "Because the parties’ prior conduct established expectations, it informed interpretation."
+  },
+
+  "Usage of Trade": {
+    "rule": "Usage of trade refers to practices or methods of dealing regularly observed in a particular trade or industry.",
+    "buzzwords": [
+      "usage of trade",
+      "regularly observed",
+      "trade or industry"
+    ],
+    "application": "Because the term had a trade meaning, usage of trade applied."
+  },
+
+  "UCC Parol Evidence Rule": {
+    "rule": "Under the UCC, a final written agreement may be explained or supplemented by course of performance, course of dealing, or usage of trade unless carefully negated.",
+    "buzzwords": [
+      "UCC",
+      "explained or supplemented",
+      "course of performance",
+      "course of dealing",
+      "usage of trade",
+      "carefully negated"
+    ],
+    "application": "Because the terms were not carefully negated, supplementation was permitted."
+  },
+
+  "Merger Clauses": {
+    "rule": "A merger clause provides strong evidence that an agreement is completely integrated.",
+    "buzzwords": [
+      "merger clause",
+      "completely integrated"
+    ],
+    "application": "Because the contract contained a merger clause, it was completely integrated."
+  },
+
+  "Contra Proferentem": {
+    "rule": "Ambiguous contract terms are construed against the drafter.",
+    "buzzwords": [
+      "ambiguous terms",
+      "construed against",
+      "drafter"
+    ],
+    "application": "Because the drafter created the ambiguity, the term was construed against them."
+  },
+
+  "Third-Party Beneficiaries — Definition": {
+    "rule": "A third-party beneficiary is a person whom the parties to a contract intend to benefit.",
+    "buzzwords": [
+      "third-party beneficiary",
+      "intend to benefit"
+    ],
+    "application": "Because the contract was intended to benefit the third party, third-party beneficiary status exists."
+  },
+
+  "Intended vs Incidental Beneficiaries": {
+    "rule": "Only an intended beneficiary has enforceable rights under a contract, while an incidental beneficiary has no enforceable rights.",
+    "buzzwords": [
+      "intended beneficiary",
+      "enforceable rights",
+      "incidental beneficiary"
+    ],
+    "application": "Because the benefit was merely incidental, the third party has no enforceable rights."
+  },
+
+  "Vesting of Third-Party Rights": {
+    "rule": "The rights of an intended beneficiary vest when the beneficiary manifests assent, materially changes position in reliance, or brings suit to enforce the contract.",
+    "buzzwords": [
+      "vest",
+      "manifests assent",
+      "materially changes position",
+      "brings suit"
+    ],
+    "application": "Because the beneficiary relied on the contract, the beneficiary’s rights vested."
+  },
+
+  "Modification or Rescission of Contract": {
+    "rule": "A contract may be modified or rescinded by the original parties until the third-party beneficiary’s rights have vested.",
+    "buzzwords": [
+      "modified",
+      "rescinded",
+      "rights have vested"
+    ],
+    "application": "Because the beneficiary’s rights had not vested, the parties could modify the contract."
+  },
+
+  "Assignment — Definition": {
+    "rule": "An assignment is a transfer of contractual rights from the assignor to the assignee.",
+    "buzzwords": [
+      "assignment",
+      "transfer",
+      "contractual rights",
+      "assignor",
+      "assignee"
+    ],
+    "application": "Because contractual rights were transferred, an assignment occurred."
+  },
+
+  "Valid Assignments": {
+    "rule": "An assignment is valid unless it materially alters the obligor’s duty, materially increases the burden or risk, or is prohibited by law or contract.",
+    "buzzwords": [
+      "materially alters",
+      "materially increases",
+      "burden",
+      "risk",
+      "prohibited"
+    ],
+    "application": "Because the assignment did not materially increase the obligor’s burden, it was valid."
+  },
+
+  "Revocation of Assignment": {
+    "rule": "An assignment is irrevocable if it is supported by consideration, made in a signed writing, or relied upon by the assignee.",
+    "buzzwords": [
+      "irrevocable",
+      "consideration",
+      "signed writing",
+      "relied upon"
+    ],
+    "application": "Because the assignment was supported by consideration, it was irrevocable."
+  },
+
+  "Rights of Assignee": {
+    "rule": "An assignee stands in the shoes of the assignor and is subject to all defenses that could be asserted against the assignor.",
+    "buzzwords": [
+      "stands in the shoes",
+      "defenses",
+      "assignor"
+    ],
+    "application": "Because the defense was valid against the assignor, it is valid against the assignee."
+  },
+
+  "Delegation — Definition": {
+    "rule": "A delegation is a transfer of contractual duties from the delegator to the delegatee.",
+    "buzzwords": [
+      "delegation",
+      "contractual duties",
+      "delegator",
+      "delegatee"
+    ],
+    "application": "Because duties were transferred, a delegation occurred."
+  },
+
+  "Delegable Duties": {
+    "rule": "Contractual duties may be delegated unless performance depends on the personal skill or judgment of the obligor or delegation is prohibited by contract.",
+    "buzzwords": [
+      "delegated",
+      "personal skill",
+      "judgment",
+      "prohibited by contract"
+    ],
+    "application": "Because the duty required personal skill, it could not be delegated."
+  },
+
+  "Liability After Delegation": {
+    "rule": "The delegator remains liable under the contract unless there is a novation.",
+    "buzzwords": [
+      "delegator",
+      "remains liable",
+      "novation"
+    ],
+    "application": "Because no novation occurred, the delegator remained liable."
+  },
+
+  "Novation": {
+    "rule": "A novation is a substituted contract that releases the original obligor and replaces it with a new party.",
+    "buzzwords": [
+      "novation",
+      "substituted contract",
+      "releases",
+      "original obligor"
+    ],
+    "application": "Because the parties agreed to substitute a new obligor, a novation occurred."
+  },
+
+  "Conditions — Definition": {
+    "rule": "A condition is an event that must occur before a duty to perform arises or is discharged.",
+    "buzzwords": [
+      "condition",
+      "event",
+      "duty to perform"
+    ],
+    "application": "Because the condition did not occur, the duty to perform did not arise."
+  },
+
+  "Express Conditions": {
+    "rule": "An express condition is a condition that is explicitly stated in the contract language.",
+    "buzzwords": [
+      "express condition",
+      "explicitly stated",
+      "contract language"
+    ],
+    "application": "Because the condition was explicitly stated, it was an express condition."
+  },
+
+  "Constructive Conditions": {
+    "rule": "A constructive condition is a condition implied by law that requires one party’s performance before the other party’s performance is due.",
+    "buzzwords": [
+      "constructive condition",
+      "implied by law",
+      "performance is due"
+    ],
+    "application": "Because performance was required first, a constructive condition applied."
+  },
+
+  "Excuse of Conditions — Substantial Performance": {
+    "rule": "An express condition may be excused when a party has substantially performed under the contract.",
+    "buzzwords": [
+      "excused",
+      "substantially performed",
+      "express condition"
+    ],
+    "application": "Because performance was substantial, the condition was excused."
+  },
+
+  "Excuse of Conditions — Waiver": {
+    "rule": "A condition may be excused by waiver when a party voluntarily relinquishes the right to enforce the condition.",
+    "buzzwords": [
+      "waiver",
+      "voluntarily relinquishes",
+      "right to enforce"
+    ],
+    "application": "Because the party waived the condition, it was excused."
+  },
+
+  "Excuse of Conditions — Estoppel": {
+    "rule": "A condition may be excused by estoppel when a party’s conduct causes reasonable reliance that the condition will not be enforced.",
+    "buzzwords": [
+      "estoppel",
+      "reasonable reliance",
+      "will not be enforced"
+    ],
+    "application": "Because reliance was induced, the condition was excused."
+  },
+
+  "Material Breach": {
+    "rule": "A material breach excuses the non-breaching party from further performance under the contract.",
+    "buzzwords": [
+      "material breach",
+      "excuses",
+      "further performance"
+    ],
+    "application": "Because the breach was material, the non-breaching party was excused from performance."
+  },
+
+  "Substantial Performance": {
+    "rule": "Substantial performance occurs when a party performs in good faith and any breach is minor rather than material.",
+    "buzzwords": [
+      "substantial performance",
+      "good faith",
+      "minor breach"
+    ],
+    "application": "Because performance was in good faith with only minor defects, substantial performance occurred."
+  },
+
+  "Anticipatory Repudiation": {
+    "rule": "Anticipatory repudiation occurs when a party unequivocally indicates before performance is due that the party will not perform.",
+    "buzzwords": [
+      "anticipatory repudiation",
+      "unequivocally indicates",
+      "will not perform"
+    ],
+    "application": "Because the party clearly stated it would not perform, anticipatory repudiation occurred."
+  },
+
+  "Retraction of Anticipatory Repudiation": {
+    "rule": "An anticipatory repudiation may be retracted unless the non-repudiating party has materially changed position or indicated the repudiation is final.",
+    "buzzwords": [
+      "retracted",
+      "materially changed position",
+      "repudiation is final"
+    ],
+    "application": "Because the non-repudiating party relied on the repudiation, retraction was not permitted."
+  },
+
+  "Adequate Assurances (UCC)": {
+    "rule": "Under the UCC, a party may demand adequate assurances of performance when there are reasonable grounds for insecurity.",
+    "buzzwords": [
+      "adequate assurances",
+      "UCC",
+      "reasonable grounds for insecurity"
+    ],
+    "application": "Because reasonable grounds for insecurity existed, a demand for adequate assurances was proper."
+  },
+
+  "Failure to Provide Adequate Assurances": {
+    "rule": "Failure to provide adequate assurances within a reasonable time constitutes a repudiation of the contract.",
+    "buzzwords": [
+      "failure",
+      "adequate assurances",
+      "repudiation"
+    ],
+    "application": "Because assurances were not provided, the failure constituted repudiation."
+  },
+
+  "Perfect Tender Rule (UCC)": {
+    "rule": "Under the UCC, the seller must deliver goods that conform exactly to the contract or the buyer may reject the goods.",
+    "buzzwords": [
+      "perfect tender rule",
+      "conform exactly",
+      "reject the goods"
+    ],
+    "application": "Because the goods did not conform exactly, the buyer could reject them."
+  },
+
+  "Cure (UCC)": {
+    "rule": "Under the UCC, a seller may cure a nonconforming tender within the contract time or within a reasonable time if the seller reasonably believed the tender would be acceptable.",
+    "buzzwords": [
+      "cure",
+      "nonconforming tender",
+      "reasonable time",
+      "reasonably believed"
+    ],
+    "application": "Because the seller cured within a reasonable time, the tender was valid."
+  },
+
+  "Discharge — Definition": {
+    "rule": "Discharge terminates contractual duties when performance is no longer required.",
+    "buzzwords": [
+      "discharge",
+      "terminates",
+      "contractual duties",
+      "performance"
+    ],
+    "application": "Because the duty was terminated, performance was no longer required."
+  },
+
+  "Accord and Satisfaction": {
+    "rule": "An accord and satisfaction discharges a contract when parties agree to substitute a new performance and that performance is completed.",
+    "buzzwords": [
+      "accord and satisfaction",
+      "substitute",
+      "new performance",
+      "completed"
+    ],
+    "application": "Because the substituted performance was completed, the original duty was discharged."
+  },
+
+  "Novation — Discharge": {
+    "rule": "A novation discharges the original obligor when the parties substitute a new party to the contract.",
+    "buzzwords": [
+      "novation",
+      "discharges",
+      "original obligor",
+      "substitute",
+      "new party"
+    ],
+    "application": "Because the original obligor was replaced by agreement, the duty was discharged."
+  },
+
+  "Rescission": {
+    "rule": "Rescission discharges a contract when both parties mutually agree to terminate their contractual obligations.",
+    "buzzwords": [
+      "rescission",
+      "mutually agree",
+      "terminate",
+      "contractual obligations"
+    ],
+    "application": "Because both parties agreed to terminate the contract, it was rescinded."
+  },
+
+  "Impossibility": {
+    "rule": "Impossibility discharges contractual duties when performance becomes objectively impossible due to an unforeseen event.",
+    "buzzwords": [
+      "impossibility",
+      "objectively impossible",
+      "unforeseen event"
+    ],
+    "application": "Because performance became objectively impossible, the duty was discharged."
+  },
+
+  "Impracticability": {
+    "rule": "Impracticability discharges contractual duties when performance becomes extremely and unreasonably difficult due to an unforeseen event.",
+    "buzzwords": [
+      "impracticability",
+      "extremely difficult",
+      "unreasonable",
+      "unforeseen event"
+    ],
+    "application": "Because performance became unreasonably difficult, the duty was discharged."
+  },
+
+  "Frustration of Purpose": {
+    "rule": "Frustration of purpose discharges contractual duties when an unforeseen event substantially frustrates the contract’s principal purpose.",
+    "buzzwords": [
+      "frustration of purpose",
+      "unforeseen event",
+      "principal purpose"
+    ],
+    "application": "Because the contract’s principal purpose was frustrated, performance was discharged."
+  },
+
+  "Destruction of Subject Matter": {
+    "rule": "Destruction of the subject matter discharges contractual duties when the subject matter essential to performance is destroyed without fault.",
+    "buzzwords": [
+      "destruction",
+      "subject matter",
+      "essential",
+      "without fault"
+    ],
+    "application": "Because the essential subject matter was destroyed without fault, the duty was discharged."
+  },
+
+  "Death or Incapacity": {
+    "rule": "Death or incapacity discharges contractual duties when performance depends on the personal skill or judgment of the obligor.",
+    "buzzwords": [
+      "death",
+      "incapacity",
+      "personal skill",
+      "judgment"
+    ],
+    "application": "Because performance required personal skill, death discharged the duty."
+  },
+
+  "Subsequent Illegality": {
+    "rule": "A contract is discharged when performance becomes illegal due to a change in law after formation.",
+    "buzzwords": [
+      "subsequent illegality",
+      "performance",
+      "illegal",
+      "change in law"
+    ],
+    "application": "Because a new law made performance illegal, the duty was discharged."
+  },
+
+  "Remedies — Purpose": {
+    "rule": "The purpose of contract remedies is to put the non-breaching party in the position they would have been in had the contract been performed.",
+    "buzzwords": [
+      "contract remedies",
+      "non-breaching party",
+      "position",
+      "performed"
+    ],
+    "application": "Because the goal is to protect the expectancy interest, damages are measured accordingly."
+  },
+
+  "Expectation Damages": {
+    "rule": "Expectation damages compensate the non-breaching party for the benefit of the bargain.",
+    "buzzwords": [
+      "expectation damages",
+      "benefit of the bargain"
+    ],
+    "application": "Because the plaintiff lost the benefit of the bargain, expectation damages apply."
+  },
+
+  "Reliance Damages": {
+    "rule": "Reliance damages reimburse the non-breaching party for expenses incurred in reliance on the contract.",
+    "buzzwords": [
+      "reliance damages",
+      "expenses",
+      "reliance"
+    ],
+    "application": "Because the plaintiff relied on the contract, reliance damages are appropriate."
+  },
+
+  "Restitution": {
+    "rule": "Restitution restores to the non-breaching party any benefit conferred on the breaching party.",
+    "buzzwords": [
+      "restitution",
+      "benefit conferred",
+      "breaching party"
+    ],
+    "application": "Because the defendant retained a benefit, restitution is available."
+  },
+
+  "Limitations on Damages — Foreseeability": {
+    "rule": "Damages are recoverable only if they were foreseeable at the time of contracting.",
+    "buzzwords": [
+      "foreseeable",
+      "time of contracting"
+    ],
+    "application": "Because the loss was foreseeable, damages are recoverable."
+  },
+
+  "Limitations on Damages — Certainty": {
+    "rule": "Damages must be proven with reasonable certainty and may not be speculative.",
+    "buzzwords": [
+      "reasonable certainty",
+      "not speculative"
+    ],
+    "application": "Because the damages were speculative, they are not recoverable."
+  },
+
+  "Limitations on Damages — Mitigation": {
+    "rule": "The non-breaching party has a duty to mitigate damages and cannot recover losses that could have been avoided.",
+    "buzzwords": [
+      "mitigate damages",
+      "duty",
+      "avoided"
+    ],
+    "application": "Because the plaintiff failed to mitigate, damages are reduced."
+  },
+
+  "Liquidated Damages": {
+    "rule": "A liquidated damages clause is enforceable if the amount is a reasonable forecast of anticipated damages and actual damages would be difficult to calculate.",
+    "buzzwords": [
+      "liquidated damages",
+      "reasonable forecast",
+      "difficult to calculate"
+    ],
+    "application": "Because the amount was reasonable and damages were difficult to estimate, the clause is enforceable."
+  },
+
+  "Penalty Clauses": {
+    "rule": "A liquidated damages clause that functions as a penalty is unenforceable.",
+    "buzzwords": [
+      "penalty",
+      "unenforceable"
+    ],
+    "application": "Because the clause imposed a penalty, it is unenforceable."
+  },
+
+  "Specific Performance": {
+    "rule": "Specific performance is available when monetary damages are inadequate to compensate the non-breaching party.",
+    "buzzwords": [
+      "specific performance",
+      "monetary damages",
+      "inadequate"
+    ],
+    "application": "Because damages were inadequate, specific performance was ordered."
+  },
+
+  "Specific Performance — Land Contracts": {
+    "rule": "Specific performance is commonly available for contracts involving land because land is considered unique.",
+    "buzzwords": [
+      "specific performance",
+      "land",
+      "unique"
+    ],
+    "application": "Because land is unique, specific performance is appropriate."
+  },
+
+  "Specific Performance — Personal Services": {
+    "rule": "Specific performance is not available for contracts involving personal services.",
+    "buzzwords": [
+      "personal services",
+      "not available"
+    ],
+    "application": "Because the contract involved personal services, specific performance was denied."
+  },
+
+  "UCC Remedies — Seller": {
+    "rule": "Under the UCC, a seller may withhold delivery, resell goods, recover damages, or cancel the contract upon buyer’s breach.",
+    "buzzwords": [
+      "UCC",
+      "seller",
+      "withhold delivery",
+      "resell goods",
+      "recover damages",
+      "cancel"
+    ],
+    "application": "Because the buyer breached, the seller exercised UCC remedies."
+  },
+
+  "UCC Remedies — Buyer": {
+    "rule": "Under the UCC, a buyer may cover, recover damages, or seek specific performance upon seller’s breach.",
+    "buzzwords": [
+      "UCC",
+      "buyer",
+      "cover",
+      "recover damages",
+      "specific performance"
+    ],
+    "application": "Because the seller breached, the buyer properly covered."
+  },
+
+  "Rescission and Restitution": {
+    "rule": "A party may seek rescission and restitution when there has been a material breach or a contract defense applies.",
+    "buzzwords": [
+      "rescission",
+      "restitution",
+      "material breach",
+      "contract defense"
+    ],
+    "application": "Because a material breach occurred, rescission and restitution are available."
+  }
+}

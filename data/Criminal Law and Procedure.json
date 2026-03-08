@@ -1,0 +1,2056 @@
+{
+  "Crime — Definition": {
+    "rule": "A crime requires a voluntary act or omission accompanied by a culpable mental state.",
+    "buzzwords": [
+      "crime",
+      "voluntary act",
+      "omission",
+      "culpable mental state"
+    ],
+    "application": "Because the defendant committed a voluntary act with the required mental state, a crime exists."
+  },
+
+  "Actus Reus — Voluntary Act": {
+    "rule": "Actus reus requires a voluntary physical act by the defendant.",
+    "buzzwords": [
+      "actus reus",
+      "voluntary act",
+      "physical act"
+    ],
+    "application": "Because the act was voluntary, actus reus is satisfied."
+  },
+
+  "Actus Reus — Omission": {
+    "rule": "An omission may satisfy actus reus only when the defendant had a legal duty to act and failed to do so.",
+    "buzzwords": [
+      "omission",
+      "legal duty",
+      "failed to act"
+    ],
+    "application": "Because the defendant had a legal duty and failed to act, actus reus is satisfied."
+  },
+
+  "Legal Duties to Act": {
+    "rule": "Legal duties to act arise from statute, contract, special relationship, voluntary assumption of care, or creation of the peril.",
+    "buzzwords": [
+      "legal duty",
+      "statute",
+      "contract",
+      "special relationship",
+      "voluntary assumption",
+      "creation of the peril"
+    ],
+    "application": "Because a special relationship existed, a legal duty arose."
+  },
+
+  "Mens Rea — General Principle": {
+    "rule": "Mens rea is the culpable mental state required to commit a crime.",
+    "buzzwords": [
+      "mens rea",
+      "culpable mental state"
+    ],
+    "application": "Because the defendant possessed the required mental state, mens rea is satisfied."
+  },
+
+  "Common Law Mens Rea Categories": {
+    "rule": "Common law mens rea categories include intent, knowledge, recklessness, and negligence.",
+    "buzzwords": [
+      "intent",
+      "knowledge",
+      "recklessness",
+      "negligence"
+    ],
+    "application": "Because the defendant acted knowingly, the mens rea requirement is met."
+  },
+
+  "Intent — Specific Intent": {
+    "rule": "Specific intent crimes require that the defendant intended to bring about a particular result.",
+    "buzzwords": [
+      "specific intent",
+      "intended result"
+    ],
+    "application": "Because the defendant intended the result, specific intent is established."
+  },
+
+  "Intent — General Intent": {
+    "rule": "General intent crimes require only that the defendant intended to perform the prohibited act.",
+    "buzzwords": [
+      "general intent",
+      "intended to perform the act"
+    ],
+    "application": "Because the defendant intended the act, general intent is satisfied."
+  },
+
+  "Transferred Intent": {
+    "rule": "Transferred intent applies when a defendant intends to harm one victim but accidentally harms another.",
+    "buzzwords": [
+      "transferred intent",
+      "intends to harm",
+      "another victim"
+    ],
+    "application": "Because intent transfers, liability applies to the actual victim."
+  },
+
+  "Concurrence": {
+    "rule": "The actus reus and mens rea must coincide in time for criminal liability.",
+    "buzzwords": [
+      "concurrence",
+      "actus reus",
+      "mens rea",
+      "coincide in time"
+    ],
+    "application": "Because intent existed at the time of the act, concurrence is satisfied."
+  },
+
+  "Strict Liability Crimes": {
+    "rule": "Strict liability crimes require no mens rea and typically involve public welfare offenses.",
+    "buzzwords": [
+      "strict liability",
+      "no mens rea",
+      "public welfare offenses"
+    ],
+    "application": "Because the offense is strict liability, intent is irrelevant."
+  },
+
+  "Homicide — Definition": {
+    "rule": "Homicide is the unlawful killing of another human being.",
+    "buzzwords": [
+      "homicide",
+      "unlawful killing",
+      "human being"
+    ],
+    "application": "Because the killing was unlawful, homicide occurred."
+  },
+
+  "Murder — Common Law Definition": {
+    "rule": "Common law murder is the unlawful killing of another human being with malice aforethought.",
+    "buzzwords": [
+      "murder",
+      "malice aforethought",
+      "unlawful killing"
+    ],
+    "application": "Because the defendant acted with malice aforethought, murder is established."
+  },
+
+  "Malice Aforethought — Intent to Kill": {
+    "rule": "Malice aforethought exists when the defendant intends to kill another human being.",
+    "buzzwords": [
+      "malice aforethought",
+      "intent to kill"
+    ],
+    "application": "Because the defendant intended to kill, malice aforethought is present."
+  },
+
+  "Malice Aforethought — Intent to Cause Serious Bodily Injury": {
+    "rule": "Malice aforethought exists when the defendant intends to cause serious bodily injury and death results.",
+    "buzzwords": [
+      "intent",
+      "serious bodily injury",
+      "death results"
+    ],
+    "application": "Because the defendant intended serious bodily injury, malice is satisfied."
+  },
+
+  "Malice Aforethought — Depraved Heart": {
+    "rule": "Malice aforethought exists when the defendant acts with reckless indifference to an unjustifiably high risk to human life.",
+    "buzzwords": [
+      "depraved heart",
+      "reckless indifference",
+      "high risk",
+      "human life"
+    ],
+    "application": "Because the conduct showed extreme recklessness, malice aforethought exists."
+  },
+
+  "Malice Aforethought — Felony Murder": {
+    "rule": "Malice aforethought is implied when a death occurs during the commission or attempted commission of a felony.",
+    "buzzwords": [
+      "felony murder",
+      "implied malice",
+      "during the commission",
+      "felony"
+    ],
+    "application": "Because the death occurred during a felony, felony murder applies."
+  },
+
+  "Felony Murder — Inherently Dangerous Felony": {
+    "rule": "Felony murder applies only when the underlying felony is inherently dangerous to human life.",
+    "buzzwords": [
+      "inherently dangerous felony",
+      "human life"
+    ],
+    "application": "Because the felony was inherently dangerous, felony murder applies."
+  },
+
+  "Felony Murder — Merger Doctrine": {
+    "rule": "The felony murder doctrine does not apply when the underlying felony merges with the homicide.",
+    "buzzwords": [
+      "merger doctrine",
+      "underlying felony",
+      "merges with the homicide"
+    ],
+    "application": "Because the felony merged, felony murder is unavailable."
+  },
+
+  "Felony Murder — Agency Rule": {
+    "rule": "Under the agency rule, felony murder liability applies only when the killing is committed by the defendant or a co-felon.",
+    "buzzwords": [
+      "agency rule",
+      "co-felon",
+      "felony murder liability"
+    ],
+    "application": "Because the killing was committed by a co-felon, liability applies."
+  },
+
+  "Felony Murder — Proximate Cause Rule": {
+    "rule": "Under the proximate cause rule, felony murder liability applies if the death is a foreseeable result of the felony.",
+    "buzzwords": [
+      "proximate cause rule",
+      "foreseeable result",
+      "felony"
+    ],
+    "application": "Because the death was foreseeable, felony murder applies."
+  },
+
+  "Degrees of Murder — First Degree": {
+    "rule": "First-degree murder requires willful, deliberate, and premeditated killing or murder committed during enumerated felonies.",
+    "buzzwords": [
+      "first-degree murder",
+      "willful",
+      "deliberate",
+      "premeditated",
+      "enumerated felonies"
+    ],
+    "application": "Because the killing was premeditated, first-degree murder applies."
+  },
+
+  "Degrees of Murder — Second Degree": {
+    "rule": "Second-degree murder includes all other murders that do not qualify as first-degree murder.",
+    "buzzwords": [
+      "second-degree murder"
+    ],
+    "application": "Because the murder lacked premeditation, it is second-degree."
+  },
+
+  "Voluntary Manslaughter": {
+    "rule": "Voluntary manslaughter is an intentional killing mitigated by adequate provocation or heat of passion.",
+    "buzzwords": [
+      "voluntary manslaughter",
+      "adequate provocation",
+      "heat of passion",
+      "intentional killing"
+    ],
+    "application": "Because the defendant acted in the heat of passion, the charge is mitigated."
+  },
+
+  "Adequate Provocation": {
+    "rule": "Adequate provocation exists when a reasonable person would lose self-control under the circumstances.",
+    "buzzwords": [
+      "adequate provocation",
+      "reasonable person",
+      "lose self-control"
+    ],
+    "application": "Because a reasonable person would lose control, provocation is adequate."
+  },
+
+  "Involuntary Manslaughter — Criminal Negligence": {
+    "rule": "Involuntary manslaughter occurs when a death results from criminal negligence.",
+    "buzzwords": [
+      "involuntary manslaughter",
+      "criminal negligence"
+    ],
+    "application": "Because the defendant acted negligently, involuntary manslaughter applies."
+  },
+
+  "Involuntary Manslaughter — Misdemeanor Manslaughter": {
+    "rule": "Involuntary manslaughter occurs when a death results from the commission of a non-dangerous misdemeanor.",
+    "buzzwords": [
+      "misdemeanor manslaughter",
+      "non-dangerous misdemeanor"
+    ],
+    "application": "Because death resulted from a misdemeanor, involuntary manslaughter applies."
+  },
+
+  "Vehicular Manslaughter": {
+    "rule": "Vehicular manslaughter occurs when a death results from negligent or reckless operation of a motor vehicle.",
+    "buzzwords": [
+      "vehicular manslaughter",
+      "negligent",
+      "reckless",
+      "motor vehicle"
+    ],
+    "application": "Because the defendant drove recklessly, vehicular manslaughter applies."
+  },
+
+  "Inchoate Crimes — Definition": {
+    "rule": "Inchoate crimes punish conduct undertaken toward the commission of another crime even if the crime is not completed.",
+    "buzzwords": [
+      "inchoate crimes",
+      "undertaken toward",
+      "commission of another crime",
+      "not completed"
+    ],
+    "application": "Because the defendant took steps toward a crime, inchoate liability applies."
+  },
+
+  "Attempt — Definition": {
+    "rule": "Attempt requires the specific intent to commit a crime and a substantial step toward its commission.",
+    "buzzwords": [
+      "attempt",
+      "specific intent",
+      "substantial step",
+      "commission"
+    ],
+    "application": "Because the defendant intended the crime and took a substantial step, attempt is established."
+  },
+
+  "Attempt — Substantial Step": {
+    "rule": "A substantial step is conduct that strongly corroborates the defendant’s criminal purpose.",
+    "buzzwords": [
+      "substantial step",
+      "strongly corroborates",
+      "criminal purpose"
+    ],
+    "application": "Because the conduct corroborated intent, the substantial step requirement is satisfied."
+  },
+
+  "Attempt — Impossibility": {
+    "rule": "Factual impossibility is not a defense to attempt, while legal impossibility is a defense.",
+    "buzzwords": [
+      "factual impossibility",
+      "not a defense",
+      "legal impossibility",
+      "defense"
+    ],
+    "application": "Because the impossibility was factual, attempt liability remains."
+  },
+
+  "Solicitation — Definition": {
+    "rule": "Solicitation occurs when a defendant intentionally invites, requests, or encourages another to commit a crime.",
+    "buzzwords": [
+      "solicitation",
+      "intentionally",
+      "invites",
+      "requests",
+      "encourages"
+    ],
+    "application": "Because the defendant encouraged another to commit a crime, solicitation is established."
+  },
+
+  "Solicitation — Completion": {
+    "rule": "Solicitation is complete once the request or encouragement is made, regardless of whether the crime is committed.",
+    "buzzwords": [
+      "solicitation",
+      "complete",
+      "request made",
+      "regardless"
+    ],
+    "application": "Because the request was made, solicitation is complete."
+  },
+
+  "Conspiracy — Definition": {
+    "rule": "Conspiracy requires an agreement between two or more persons to commit a crime and intent to enter the agreement.",
+    "buzzwords": [
+      "conspiracy",
+      "agreement",
+      "two or more persons",
+      "intent"
+    ],
+    "application": "Because the parties agreed to commit a crime, conspiracy exists."
+  },
+
+  "Conspiracy — Overt Act": {
+    "rule": "Most jurisdictions require an overt act in furtherance of the conspiracy by any conspirator.",
+    "buzzwords": [
+      "overt act",
+      "in furtherance",
+      "conspirator"
+    ],
+    "application": "Because an overt act occurred, the conspiracy is complete."
+  },
+
+  "Conspiracy — Pinkerton Liability": {
+    "rule": "Under Pinkerton liability, a conspirator is liable for crimes committed by co-conspirators in furtherance of the conspiracy and that are foreseeable.",
+    "buzzwords": [
+      "Pinkerton liability",
+      "co-conspirators",
+      "in furtherance",
+      "foreseeable"
+    ],
+    "application": "Because the crime was foreseeable and in furtherance, liability attaches."
+  },
+
+  "Conspiracy — Withdrawal": {
+    "rule": "Withdrawal from a conspiracy requires an affirmative act that communicates abandonment to co-conspirators.",
+    "buzzwords": [
+      "withdrawal",
+      "affirmative act",
+      "communicates abandonment",
+      "co-conspirators"
+    ],
+    "application": "Because the defendant communicated withdrawal, future liability is cut off."
+  },
+
+  "Merger — Attempt and Solicitation": {
+    "rule": "Attempt and solicitation merge into the completed crime if the crime is successfully committed.",
+    "buzzwords": [
+      "merger",
+      "attempt",
+      "solicitation",
+      "completed crime"
+    ],
+    "application": "Because the crime was completed, attempt merges into the offense."
+  },
+
+  "Merger — Conspiracy": {
+    "rule": "Conspiracy does not merge into the completed crime.",
+    "buzzwords": [
+      "conspiracy",
+      "does not merge",
+      "completed crime"
+    ],
+    "application": "Because conspiracy is separate, liability remains."
+  },
+
+  "Accomplice Liability — Definition": {
+    "rule": "An accomplice is one who intentionally aids, abets, or encourages the commission of a crime.",
+    "buzzwords": [
+      "accomplice",
+      "intentionally aids",
+      "abets",
+      "encourages",
+      "commission of a crime"
+    ],
+    "application": "Because the defendant intentionally assisted the crime, accomplice liability applies."
+  },
+
+  "Accomplice Liability — Mens Rea": {
+    "rule": "Accomplice liability requires the intent to assist the principal in committing the crime.",
+    "buzzwords": [
+      "intent",
+      "assist",
+      "principal",
+      "committing the crime"
+    ],
+    "application": "Because the defendant intended to assist, the mens rea requirement is satisfied."
+  },
+
+  "Accomplice Liability — Act Requirement": {
+    "rule": "Accomplice liability requires some act of aiding, abetting, counseling, or encouraging the principal.",
+    "buzzwords": [
+      "act of aiding",
+      "abetting",
+      "counseling",
+      "encouraging"
+    ],
+    "application": "Because the defendant provided assistance, the act requirement is met."
+  },
+
+  "Mere Presence": {
+    "rule": "Mere presence at the scene of a crime or mere knowledge of the crime is insufficient to establish accomplice liability.",
+    "buzzwords": [
+      "mere presence",
+      "mere knowledge",
+      "insufficient"
+    ],
+    "application": "Because the defendant merely observed, accomplice liability does not apply."
+  },
+
+  "Principal — Definition": {
+    "rule": "A principal is the person who actually commits the criminal act.",
+    "buzzwords": [
+      "principal",
+      "actually commits",
+      "criminal act"
+    ],
+    "application": "Because the defendant committed the act, the defendant is a principal."
+  },
+
+  "Accomplice Liability — Scope of Liability": {
+    "rule": "An accomplice is liable for the crimes the accomplice intended to facilitate and any other crimes that are the natural and probable consequences of the criminal conduct.",
+    "buzzwords": [
+      "scope of liability",
+      "intended to facilitate",
+      "natural and probable consequences"
+    ],
+    "application": "Because the additional crime was a natural consequence, liability extends."
+  },
+
+  "Accomplice Liability — Natural and Probable Consequences": {
+    "rule": "An accomplice is liable for additional crimes that are reasonably foreseeable results of the target crime.",
+    "buzzwords": [
+      "reasonably foreseeable",
+      "target crime",
+      "additional crimes"
+    ],
+    "application": "Because the offense was foreseeable, accomplice liability applies."
+  },
+
+  "Accomplice Liability — Withdrawal": {
+    "rule": "Withdrawal from accomplice liability requires timely notice to the principal and efforts to neutralize the assistance provided.",
+    "buzzwords": [
+      "withdrawal",
+      "timely notice",
+      "neutralize assistance"
+    ],
+    "application": "Because the defendant withdrew and attempted to stop the crime, liability is cut off."
+  },
+
+  "Accomplice Liability — Effect of Principal Acquittal": {
+    "rule": "An accomplice may be convicted even if the principal is not convicted or is acquitted.",
+    "buzzwords": [
+      "principal acquitted",
+      "may be convicted"
+    ],
+    "application": "Because accomplice liability is independent, conviction is permitted."
+  },
+
+  "Battery": {
+    "rule": "Battery is the unlawful application of force to another person resulting in harmful or offensive contact.",
+    "buzzwords": [
+      "battery",
+      "unlawful application of force",
+      "harmful or offensive contact"
+    ],
+    "application": "Because the defendant caused offensive contact, battery is established."
+  },
+
+  "Aggravated Battery": {
+    "rule": "Aggravated battery occurs when a battery results in serious bodily injury or is committed using a deadly weapon.",
+    "buzzwords": [
+      "aggravated battery",
+      "serious bodily injury",
+      "deadly weapon"
+    ],
+    "application": "Because a deadly weapon was used, the battery is aggravated."
+  },
+
+  "Assault — Attempted Battery": {
+    "rule": "Assault occurs when a defendant attempts to commit a battery but fails.",
+    "buzzwords": [
+      "assault",
+      "attempt",
+      "battery"
+    ],
+    "application": "Because the defendant attempted but failed to strike the victim, assault applies."
+  },
+
+  "Assault — Reasonable Apprehension": {
+    "rule": "Assault occurs when a defendant intentionally places another in reasonable apprehension of imminent harmful or offensive contact.",
+    "buzzwords": [
+      "reasonable apprehension",
+      "imminent",
+      "harmful or offensive contact"
+    ],
+    "application": "Because the victim reasonably feared imminent harm, assault is established."
+  },
+
+  "False Imprisonment": {
+    "rule": "False imprisonment is the unlawful confinement of a person without consent or legal authority.",
+    "buzzwords": [
+      "false imprisonment",
+      "unlawful confinement",
+      "without consent",
+      "legal authority"
+    ],
+    "application": "Because the victim was confined without consent, false imprisonment applies."
+  },
+
+  "Kidnapping": {
+    "rule": "Kidnapping is the unlawful confinement of a person involving movement or concealment that increases the risk of harm.",
+    "buzzwords": [
+      "kidnapping",
+      "unlawful confinement",
+      "movement",
+      "concealment",
+      "risk of harm"
+    ],
+    "application": "Because the victim was moved to a secluded location, kidnapping applies."
+  },
+
+  "Rape": {
+    "rule": "Rape is unlawful sexual intercourse accomplished by force or without consent.",
+    "buzzwords": [
+      "rape",
+      "sexual intercourse",
+      "force",
+      "without consent"
+    ],
+    "application": "Because intercourse occurred without consent, rape is established."
+  },
+
+  "Statutory Rape": {
+    "rule": "Statutory rape is sexual intercourse with a person under the age of consent regardless of consent or mistake of age.",
+    "buzzwords": [
+      "statutory rape",
+      "under the age of consent",
+      "regardless of consent",
+      "mistake of age"
+    ],
+    "application": "Because the victim was under the age of consent, statutory rape applies."
+  },
+
+  "Mayhem": {
+    "rule": "Mayhem occurs when a defendant intentionally maims or disfigures another person.",
+    "buzzwords": [
+      "mayhem",
+      "intentionally",
+      "maims",
+      "disfigures"
+    ],
+    "application": "Because the defendant permanently disfigured the victim, mayhem applies."
+  },
+
+  "Robbery": {
+    "rule": "Robbery is the taking of personal property from another by force or intimidation with intent to permanently deprive.",
+    "buzzwords": [
+      "robbery",
+      "taking",
+      "personal property",
+      "force or intimidation",
+      "intent to permanently deprive"
+    ],
+    "application": "Because force was used during the taking, robbery applies."
+  },
+
+  "Extortion": {
+    "rule": "Extortion is obtaining property through threats of future harm or exposure.",
+    "buzzwords": [
+      "extortion",
+      "obtaining property",
+      "threats",
+      "future harm",
+      "exposure"
+    ],
+    "application": "Because the defendant threatened future harm to obtain property, extortion applies."
+  },
+
+  "Larceny": {
+    "rule": "Larceny is the trespassory taking and carrying away of the personal property of another with intent to permanently deprive.",
+    "buzzwords": [
+      "larceny",
+      "trespassory taking",
+      "carrying away",
+      "personal property",
+      "intent to permanently deprive"
+    ],
+    "application": "Because the defendant trespassorily took and carried away property with intent to permanently deprive, larceny is established."
+  },
+
+  "Larceny — Continuing Trespass": {
+    "rule": "Larceny may be established by continuing trespass when the defendant initially takes property without intent but later forms intent to permanently deprive.",
+    "buzzwords": [
+      "continuing trespass",
+      "later forms intent",
+      "permanently deprive"
+    ],
+    "application": "Because intent formed during possession, continuing trespass applies."
+  },
+
+  "Larceny by Trick": {
+    "rule": "Larceny by trick occurs when possession is obtained through fraud with intent to permanently deprive.",
+    "buzzwords": [
+      "larceny by trick",
+      "possession",
+      "fraud",
+      "intent to permanently deprive"
+    ],
+    "application": "Because possession was obtained by fraud, larceny by trick applies."
+  },
+
+  "Embezzlement": {
+    "rule": "Embezzlement is the fraudulent conversion of personal property by a person in lawful possession of the property.",
+    "buzzwords": [
+      "embezzlement",
+      "fraudulent conversion",
+      "lawful possession",
+      "personal property"
+    ],
+    "application": "Because the defendant lawfully possessed and converted the property, embezzlement applies."
+  },
+
+  "False Pretenses": {
+    "rule": "False pretenses occurs when title to property is obtained through a false representation of a material fact with intent to defraud.",
+    "buzzwords": [
+      "false pretenses",
+      "title",
+      "false representation",
+      "material fact",
+      "intent to defraud"
+    ],
+    "application": "Because title was transferred by misrepresentation, false pretenses applies."
+  },
+
+  "Robbery — Property Aspect": {
+    "rule": "Robbery is larceny accomplished by force or intimidation from the person or presence of another.",
+    "buzzwords": [
+      "robbery",
+      "larceny",
+      "force or intimidation",
+      "person or presence"
+    ],
+    "application": "Because force accompanied the taking, robbery applies."
+  },
+
+  "Burglary": {
+    "rule": "Burglary is the breaking and entering of a dwelling of another at night with intent to commit a felony inside.",
+    "buzzwords": [
+      "burglary",
+      "breaking",
+      "entering",
+      "dwelling",
+      "night",
+      "intent to commit a felony"
+    ],
+    "application": "Because the defendant broke into a dwelling at night intending a felony, burglary applies."
+  },
+
+  "Burglary — Modern Statutes": {
+    "rule": "Modern burglary statutes eliminate the nighttime or dwelling requirements and require unlawful entry with intent to commit a crime.",
+    "buzzwords": [
+      "modern statutes",
+      "unlawful entry",
+      "intent to commit a crime"
+    ],
+    "application": "Because unlawful entry occurred with criminal intent, burglary applies under modern law."
+  },
+
+  "Arson": {
+    "rule": "Arson is the malicious burning of the dwelling of another.",
+    "buzzwords": [
+      "arson",
+      "malicious burning",
+      "dwelling",
+      "another"
+    ],
+    "application": "Because the defendant intentionally burned a dwelling, arson applies."
+  },
+
+  "Arson — Modern Statutes": {
+    "rule": "Modern arson statutes include burning of structures or personal property and may require only damage by fire or explosion.",
+    "buzzwords": [
+      "modern statutes",
+      "structures",
+      "personal property",
+      "fire",
+      "explosion"
+    ],
+    "application": "Because property was damaged by fire, modern arson applies."
+  },
+
+  "Receiving Stolen Property": {
+    "rule": "Receiving stolen property occurs when a defendant knowingly receives stolen property with intent to permanently deprive the owner.",
+    "buzzwords": [
+      "receiving stolen property",
+      "knowingly",
+      "stolen property",
+      "intent to permanently deprive"
+    ],
+    "application": "Because the defendant knew the property was stolen, liability applies."
+  },
+
+  "Forgery": {
+    "rule": "Forgery is the making or altering of a writing with intent to defraud so that it purports to be the act of another.",
+    "buzzwords": [
+      "forgery",
+      "making or altering",
+      "writing",
+      "intent to defraud",
+      "act of another"
+    ],
+    "application": "Because the document was altered to deceive, forgery applies."
+  },
+
+  "Uttering a Forged Instrument": {
+    "rule": "Uttering occurs when a defendant knowingly uses or presents a forged instrument with intent to defraud.",
+    "buzzwords": [
+      "uttering",
+      "knowingly",
+      "forged instrument",
+      "intent to defraud"
+    ],
+    "application": "Because the forged document was presented knowingly, uttering applies."
+  },
+
+  "Criminal Mischief": {
+    "rule": "Criminal mischief is the intentional or reckless damage or destruction of the property of another.",
+    "buzzwords": [
+      "criminal mischief",
+      "intentional",
+      "reckless",
+      "damage",
+      "property of another"
+    ],
+    "application": "Because the defendant damaged property recklessly, criminal mischief applies."
+  },
+
+  "Insanity — M'Naghten Rule": {
+    "rule": "Under the M'Naghten rule, a defendant is not criminally responsible if, due to mental disease or defect, the defendant did not know the nature of the act or that the act was wrong.",
+    "buzzwords": [
+      "M'Naghten rule",
+      "mental disease or defect",
+      "did not know",
+      "nature of the act",
+      "wrong"
+    ],
+    "application": "Because the defendant did not understand the wrongfulness of the act, the insanity defense applies."
+  },
+
+  "Insanity — Irresistible Impulse Test": {
+    "rule": "Under the irresistible impulse test, a defendant is not responsible if the defendant lacked the capacity to control conduct due to mental disease or defect.",
+    "buzzwords": [
+      "irresistible impulse",
+      "lacked capacity",
+      "control conduct",
+      "mental disease or defect"
+    ],
+    "application": "Because the defendant could not control behavior, the defense applies."
+  },
+
+  "Insanity — Model Penal Code Test": {
+    "rule": "Under the Model Penal Code, a defendant is not responsible if, due to mental disease or defect, the defendant lacked substantial capacity to appreciate the criminality or conform conduct to the law.",
+    "buzzwords": [
+      "Model Penal Code",
+      "mental disease or defect",
+      "lacked substantial capacity",
+      "appreciate criminality",
+      "conform conduct"
+    ],
+    "application": "Because the defendant lacked substantial capacity, the defense applies."
+  },
+
+  "Insanity — Burden of Proof": {
+    "rule": "The defendant generally bears the burden of proving insanity by a preponderance of the evidence.",
+    "buzzwords": [
+      "burden of proof",
+      "preponderance of the evidence",
+      "insanity"
+    ],
+    "application": "Because the defendant failed to meet the burden, the defense fails."
+  },
+
+  "Intoxication — Voluntary": {
+    "rule": "Voluntary intoxication is a defense to specific intent crimes but not to general intent crimes.",
+    "buzzwords": [
+      "voluntary intoxication",
+      "specific intent crimes",
+      "general intent crimes"
+    ],
+    "application": "Because the crime required specific intent, voluntary intoxication may negate intent."
+  },
+
+  "Intoxication — Involuntary": {
+    "rule": "Involuntary intoxication is a complete defense if it negates the required mens rea.",
+    "buzzwords": [
+      "involuntary intoxication",
+      "complete defense",
+      "negates mens rea"
+    ],
+    "application": "Because intoxication was involuntary and negated intent, the defense applies."
+  },
+
+  "Self-Defense — General Rule": {
+    "rule": "Self-defense justifies the use of force when the defendant reasonably believes force is necessary to prevent imminent unlawful harm.",
+    "buzzwords": [
+      "self-defense",
+      "reasonably believes",
+      "necessary",
+      "imminent",
+      "unlawful harm"
+    ],
+    "application": "Because the defendant reasonably feared imminent harm, self-defense applies."
+  },
+
+  "Self-Defense — Deadly Force": {
+    "rule": "Deadly force may be used only to prevent imminent death, serious bodily injury, or forcible sexual assault.",
+    "buzzwords": [
+      "deadly force",
+      "imminent death",
+      "serious bodily injury",
+      "forcible sexual assault"
+    ],
+    "application": "Because deadly force was necessary to prevent death, the defense applies."
+  },
+
+  "Self-Defense — Duty to Retreat": {
+    "rule": "A defendant must retreat before using deadly force if retreat can be accomplished safely, unless in the defendant’s home.",
+    "buzzwords": [
+      "duty to retreat",
+      "deadly force",
+      "safely",
+      "defendant’s home"
+    ],
+    "application": "Because retreat was not required in the home, deadly force was justified."
+  },
+
+  "Defense of Others": {
+    "rule": "A defendant may use force to defend others if the defendant reasonably believes the other person would have the right to self-defense.",
+    "buzzwords": [
+      "defense of others",
+      "reasonably believes",
+      "right to self-defense"
+    ],
+    "application": "Because the third party could defend themselves, the defense applies."
+  },
+
+  "Defense of Property": {
+    "rule": "A defendant may use reasonable non-deadly force to protect property but may not use deadly force solely to protect property.",
+    "buzzwords": [
+      "defense of property",
+      "reasonable force",
+      "non-deadly force",
+      "deadly force"
+    ],
+    "application": "Because only reasonable force was used, the defense applies."
+  },
+
+  "Necessity": {
+    "rule": "Necessity is a defense when the defendant reasonably believes criminal conduct is necessary to prevent a greater harm.",
+    "buzzwords": [
+      "necessity",
+      "reasonably believes",
+      "prevent a greater harm"
+    ],
+    "application": "Because the harm avoided outweighed the harm caused, necessity applies."
+  },
+
+  "Duress": {
+    "rule": "Duress is a defense when the defendant commits a crime due to an immediate threat of death or serious bodily injury.",
+    "buzzwords": [
+      "duress",
+      "immediate threat",
+      "death",
+      "serious bodily injury"
+    ],
+    "application": "Because the defendant acted under immediate threat, duress applies."
+  },
+
+  "Duress — Limitation": {
+    "rule": "Duress is not a defense to intentional homicide.",
+    "buzzwords": [
+      "duress",
+      "not a defense",
+      "intentional homicide"
+    ],
+    "application": "Because the crime was homicide, duress is unavailable."
+  },
+
+  "Mistake of Fact": {
+    "rule": "Mistake of fact is a defense if it negates the required mens rea of the offense.",
+    "buzzwords": [
+      "mistake of fact",
+      "negates mens rea"
+    ],
+    "application": "Because the mistake negated intent, the defense applies."
+  },
+
+  "Mistake of Law": {
+    "rule": "Mistake of law is generally not a defense unless the defendant reasonably relied on an official statement of the law.",
+    "buzzwords": [
+      "mistake of law",
+      "not a defense",
+      "official statement",
+      "reasonably relied"
+    ],
+    "application": "Because the defendant relied on official advice, the defense applies."
+  },
+
+  "Entrapment": {
+    "rule": "Entrapment occurs when law enforcement induces a defendant to commit a crime that the defendant was not predisposed to commit.",
+    "buzzwords": [
+      "entrapment",
+      "law enforcement",
+      "induces",
+      "not predisposed"
+    ],
+    "application": "Because the defendant lacked predisposition, entrapment applies."
+  },
+
+  "Fourth Amendment — Scope": {
+    "rule": "The Fourth Amendment protects against unreasonable searches and seizures by the government.",
+    "buzzwords": [
+      "Fourth Amendment",
+      "unreasonable searches",
+      "unreasonable seizures",
+      "government"
+    ],
+    "application": "Because government conduct was involved, the Fourth Amendment applies."
+  },
+
+  "Government Action Requirement": {
+    "rule": "The Fourth Amendment applies only to government action and not to searches conducted by private individuals acting independently.",
+    "buzzwords": [
+      "government action",
+      "private individuals",
+      "acting independently"
+    ],
+    "application": "Because the search was conducted by a private individual, the Fourth Amendment does not apply."
+  },
+
+  "Search — Definition": {
+    "rule": "A search occurs when the government violates a person’s reasonable expectation of privacy.",
+    "buzzwords": [
+      "search",
+      "reasonable expectation of privacy"
+    ],
+    "application": "Because the defendant had a reasonable expectation of privacy, a search occurred."
+  },
+
+  "Reasonable Expectation of Privacy": {
+    "rule": "A reasonable expectation of privacy exists when a person has a subjective expectation of privacy that society recognizes as reasonable.",
+    "buzzwords": [
+      "reasonable expectation of privacy",
+      "subjective expectation",
+      "society recognizes"
+    ],
+    "application": "Because society recognizes the expectation as reasonable, the Fourth Amendment applies."
+  },
+
+  "No Search — Open Fields": {
+    "rule": "There is no reasonable expectation of privacy in open fields outside the curtilage of a home.",
+    "buzzwords": [
+      "open fields",
+      "no reasonable expectation of privacy",
+      "curtilage"
+    ],
+    "application": "Because the area was an open field, no search occurred."
+  },
+
+  "Curtilage": {
+    "rule": "Curtilage is the area immediately surrounding a home that is associated with the intimate activities of the home.",
+    "buzzwords": [
+      "curtilage",
+      "immediately surrounding",
+      "intimate activities"
+    ],
+    "application": "Because the area was closely connected to the home, it is curtilage."
+  },
+
+  "Search — Physical Intrusion": {
+    "rule": "A search occurs when the government physically intrudes into a constitutionally protected area for the purpose of obtaining information.",
+    "buzzwords": [
+      "physical intrusion",
+      "constitutionally protected area",
+      "obtaining information"
+    ],
+    "application": "Because officers physically intruded to gather information, a search occurred."
+  },
+
+  "Seizure of Person": {
+    "rule": "A person is seized when, under the totality of circumstances, a reasonable person would not feel free to leave.",
+    "buzzwords": [
+      "seizure",
+      "reasonable person",
+      "not feel free to leave",
+      "totality of circumstances"
+    ],
+    "application": "Because a reasonable person would not feel free to leave, a seizure occurred."
+  },
+
+  "Seizure — Show of Authority": {
+    "rule": "A seizure by show of authority occurs only if the defendant submits to the authority.",
+    "buzzwords": [
+      "show of authority",
+      "submits"
+    ],
+    "application": "Because the defendant did not submit, no seizure occurred."
+  },
+
+  "Seizure of Property": {
+    "rule": "Property is seized when the government meaningfully interferes with an individual’s possessory interest.",
+    "buzzwords": [
+      "seizure of property",
+      "meaningful interference",
+      "possessory interest"
+    ],
+    "application": "Because officers interfered with possession, a seizure occurred."
+  },
+
+  "Warrant — General Rule": {
+    "rule": "A valid warrant must be issued by a neutral and detached magistrate upon probable cause and must particularly describe the place to be searched and the items to be seized.",
+    "buzzwords": [
+      "warrant",
+      "neutral and detached magistrate",
+      "probable cause",
+      "particularly describe",
+      "place to be searched",
+      "items to be seized"
+    ],
+    "application": "Because the warrant was properly issued and particularized, it is valid."
+  },
+
+  "Probable Cause — Definition": {
+    "rule": "Probable cause exists when there is a fair probability that evidence of a crime will be found in a particular place.",
+    "buzzwords": [
+      "probable cause",
+      "fair probability",
+      "evidence of a crime",
+      "particular place"
+    ],
+    "application": "Because a fair probability existed, probable cause was established."
+  },
+
+  "Probable Cause — Totality of the Circumstances": {
+    "rule": "Probable cause is determined under the totality of the circumstances.",
+    "buzzwords": [
+      "totality of the circumstances"
+    ],
+    "application": "Because all circumstances supported a finding of probability, probable cause exists."
+  },
+
+  "Warrant — Particularity Requirement": {
+    "rule": "A warrant must particularly describe the place to be searched and the persons or things to be seized.",
+    "buzzwords": [
+      "particularity",
+      "place to be searched",
+      "persons or things to be seized"
+    ],
+    "application": "Because the warrant specified the location and items, it satisfies particularity."
+  },
+
+  "Warrant — Execution": {
+    "rule": "A warrant must be executed reasonably and within the scope authorized by the warrant.",
+    "buzzwords": [
+      "executed reasonably",
+      "scope authorized"
+    ],
+    "application": "Because officers stayed within the warrant’s scope, execution was proper."
+  },
+
+  "Knock-and-Announce Rule": {
+    "rule": "Police generally must knock and announce their presence before executing a warrant unless an exception applies.",
+    "buzzwords": [
+      "knock-and-announce",
+      "exception applies"
+    ],
+    "application": "Because officers complied with the rule, execution was lawful."
+  },
+
+  "Knock-and-Announce — Exceptions": {
+    "rule": "The knock-and-announce requirement is excused when officers reasonably believe it would be dangerous, futile, or result in destruction of evidence.",
+    "buzzwords": [
+      "dangerous",
+      "futile",
+      "destruction of evidence"
+    ],
+    "application": "Because officers feared evidence destruction, the exception applied."
+  },
+
+  "Search Incident to Arrest — Probable Cause to Arrest": {
+    "rule": "An arrest is valid if supported by probable cause that the suspect committed a crime.",
+    "buzzwords": [
+      "arrest",
+      "probable cause",
+      "committed a crime"
+    ],
+    "application": "Because officers had probable cause, the arrest was valid."
+  },
+
+  "Arrest Warrant — Home Entry": {
+    "rule": "Police may enter a suspect’s home to execute an arrest warrant if there is reason to believe the suspect is inside.",
+    "buzzwords": [
+      "arrest warrant",
+      "suspect’s home",
+      "reason to believe"
+    ],
+    "application": "Because officers reasonably believed the suspect was inside, entry was permitted."
+  },
+
+  "Search Warrant — Third Party Home": {
+    "rule": "Police may not enter a third party’s home to execute an arrest warrant without a search warrant or consent.",
+    "buzzwords": [
+      "third party home",
+      "search warrant",
+      "consent"
+    ],
+    "application": "Because no search warrant was obtained, entry was unlawful."
+  },
+
+  "Good Faith. Exception": {
+    "rule": "Evidence obtained under a defective warrant is admissible if police acted in objectively reasonable reliance on the warrant.",
+    "buzzwords": [
+      "good faith exception",
+      "defective warrant",
+      "objectively reasonable reliance"
+    ],
+    "application": "Because officers relied in good faith, the evidence is admissible."
+  },
+
+  "Good Faith — Limitations": {
+    "rule": "The good faith exception does not apply when the magistrate is biased, the warrant is facially deficient, or officers misled the magistrate.",
+    "buzzwords": [
+      "biased magistrate",
+      "facially deficient",
+      "misled the magistrate"
+    ],
+    "application": "Because the warrant was facially deficient, good faith does not apply."
+  },
+
+  "Warrant Exceptions — General Rule": {
+    "rule": "A warrantless search is presumptively unreasonable unless it falls within a recognized exception to the warrant requirement.",
+    "buzzwords": [
+      "warrantless search",
+      "presumptively unreasonable",
+      "recognized exception"
+    ],
+    "application": "Because the search falls within an exception, no warrant was required."
+  },
+
+  "Consent Search": {
+    "rule": "Police may conduct a warrantless search if a person with actual or apparent authority voluntarily consents.",
+    "buzzwords": [
+      "consent",
+      "actual authority",
+      "apparent authority",
+      "voluntarily"
+    ],
+    "application": "Because consent was voluntarily given by someone with authority, the search was valid."
+  },
+
+  "Consent — Scope": {
+    "rule": "A consent search is limited to the scope of the consent given.",
+    "buzzwords": [
+      "scope of consent",
+      "limited"
+    ],
+    "application": "Because officers stayed within the scope, the search was lawful."
+  },
+
+  "Search Incident to Lawful Arrest — Person": {
+    "rule": "Police may search the arrestee’s person incident to a lawful arrest without a warrant.",
+    "buzzwords": [
+      "search incident to lawful arrest",
+      "arrestee’s person",
+      "lawful arrest"
+    ],
+    "application": "Because the arrest was lawful, the search of the person was valid."
+  },
+
+  "Search Incident to Lawful Arrest — Area": {
+    "rule": "Police may search the area within the arrestee’s immediate control to prevent access to weapons or destruction of evidence.",
+    "buzzwords": [
+      "immediate control",
+      "weapons",
+      "destruction of evidence"
+    ],
+    "application": "Because the area was within immediate control, the search was valid."
+  },
+
+  "Search Incident to Arrest — Vehicle": {
+    "rule": "Police may search a vehicle incident to arrest only if the arrestee is unsecured and within reaching distance or if evidence of the crime of arrest may be found in the vehicle.",
+    "buzzwords": [
+      "vehicle search",
+      "incident to arrest",
+      "unsecured",
+      "reaching distance",
+      "evidence of the crime"
+    ],
+    "application": "Because evidence of the crime could be found in the vehicle, the search was valid."
+  },
+
+  "Automobile Exception": {
+    "rule": "Police may search a vehicle without a warrant if they have probable cause to believe it contains evidence of a crime.",
+    "buzzwords": [
+      "automobile exception",
+      "probable cause",
+      "vehicle",
+      "evidence of a crime"
+    ],
+    "application": "Because officers had probable cause, the vehicle search was valid."
+  },
+
+  "Automobile Exception — Scope": {
+    "rule": "Under the automobile exception, police may search any part of the vehicle and containers that may conceal the object of the search.",
+    "buzzwords": [
+      "any part of the vehicle",
+      "containers",
+      "conceal the object"
+    ],
+    "application": "Because the container could hold the object, it was searchable."
+  },
+
+  "Plain View Doctrine": {
+    "rule": "Police may seize evidence without a warrant if they are lawfully present, the item is in plain view, and its incriminating nature is immediately apparent.",
+    "buzzwords": [
+      "plain view",
+      "lawfully present",
+      "immediately apparent",
+      "incriminating nature"
+    ],
+    "application": "Because the evidence was in plain view and obviously incriminating, seizure was valid."
+  },
+
+  "Exigent Circumstances": {
+    "rule": "Police may conduct a warrantless search when exigent circumstances make it impracticable to obtain a warrant.",
+    "buzzwords": [
+      "exigent circumstances",
+      "impracticable",
+      "obtain a warrant"
+    ],
+    "application": "Because the situation was urgent, the warrantless search was justified."
+  },
+
+  "Exigent Circumstances — Examples": {
+    "rule": "Exigent circumstances include hot pursuit, risk of destruction of evidence, and emergency aid situations.",
+    "buzzwords": [
+      "hot pursuit",
+      "destruction of evidence",
+      "emergency aid"
+    ],
+    "application": "Because officers were in hot pursuit, the search was justified."
+  },
+
+  "Stop and Frisk — Terry Stop": {
+    "rule": "Police may briefly detain a person if they have reasonable suspicion of criminal activity.",
+    "buzzwords": [
+      "stop and frisk",
+      "reasonable suspicion",
+      "criminal activity"
+    ],
+    "application": "Because officers had reasonable suspicion, the stop was lawful."
+  },
+
+  "Stop and Frisk — Frisk": {
+    "rule": "Police may frisk a detainee if they reasonably suspect the person is armed and dangerous.",
+    "buzzwords": [
+      "frisk",
+      "armed and dangerous",
+      "reasonable suspicion"
+    ],
+    "application": "Because officers suspected the defendant was armed, the frisk was lawful."
+  },
+
+  "Inventory Search": {
+    "rule": "Police may conduct a warrantless inventory search of lawfully impounded property pursuant to standardized procedures.",
+    "buzzwords": [
+      "inventory search",
+      "lawfully impounded",
+      "standardized procedures"
+    ],
+    "application": "Because officers followed procedures, the inventory search was valid."
+  },
+
+  "Special Needs Searches": {
+    "rule": "Warrantless searches may be conducted without probable cause when special needs beyond law enforcement make the search reasonable.",
+    "buzzwords": [
+      "special needs",
+      "beyond law enforcement",
+      "reasonable"
+    ],
+    "application": "Because the search served a special need, it was reasonable."
+  },
+
+  "Exclusionary Rule — General Rule": {
+    "rule": "The exclusionary rule prohibits the use of evidence obtained in violation of the Fourth Amendment in the prosecution’s case-in-chief.",
+    "buzzwords": [
+      "exclusionary rule",
+      "evidence obtained",
+      "violation of the Fourth Amendment",
+      "case-in-chief"
+    ],
+    "application": "Because the evidence was obtained unlawfully, it must be excluded."
+  },
+
+  "Exclusionary Rule — Scope": {
+    "rule": "The exclusionary rule applies only to criminal prosecutions and only to government misconduct.",
+    "buzzwords": [
+      "criminal prosecutions",
+      "government misconduct"
+    ],
+    "application": "Because the case is criminal and involved government action, the rule applies."
+  },
+
+  "Fruit of the Poisonous Tree": {
+    "rule": "The fruit of the poisonous tree doctrine excludes evidence derived from an initial illegal search or seizure.",
+    "buzzwords": [
+      "fruit of the poisonous tree",
+      "derived evidence",
+      "illegal search",
+      "illegal seizure"
+    ],
+    "application": "Because the evidence was derived from an illegal search, it is excluded."
+  },
+
+  "Independent Source Doctrine": {
+    "rule": "Evidence is admissible if it was obtained from a source independent of the illegal conduct.",
+    "buzzwords": [
+      "independent source",
+      "admissible",
+      "illegal conduct"
+    ],
+    "application": "Because the evidence came from an independent source, it is admissible."
+  },
+
+  "Inevitable Discovery Doctrine": {
+    "rule": "Evidence obtained illegally is admissible if it would have been inevitably discovered through lawful means.",
+    "buzzwords": [
+      "inevitable discovery",
+      "lawful means"
+    ],
+    "application": "Because the evidence would have been discovered anyway, it is admissible."
+  },
+
+  "Attenuation Doctrine": {
+    "rule": "Evidence is admissible if the connection between the illegal conduct and the discovery of evidence is sufficiently attenuated.",
+    "buzzwords": [
+      "attenuation",
+      "connection",
+      "illegal conduct",
+      "sufficiently attenuated"
+    ],
+    "application": "Because intervening circumstances weakened the connection, the evidence is admissible."
+  },
+
+  "Good Faith Exception": {
+    "rule": "The exclusionary rule does not apply when police act in objectively reasonable reliance on a warrant later found invalid.",
+    "buzzwords": [
+      "good faith exception",
+      "objectively reasonable reliance",
+      "invalid warrant"
+    ],
+    "application": "Because officers relied in good faith, exclusion is inappropriate."
+  },
+
+  "Good Faith — Limits": {
+    "rule": "The good faith exception does not apply when police rely on a warrant that is facially deficient, issued by a biased magistrate, or based on false information.",
+    "buzzwords": [
+      "facially deficient",
+      "biased magistrate",
+      "false information"
+    ],
+    "application": "Because the warrant was facially deficient, the exception does not apply."
+  },
+
+  "Standing — Personal Rights": {
+    "rule": "A defendant may invoke the exclusionary rule only if the defendant’s own Fourth Amendment rights were violated.",
+    "buzzwords": [
+      "standing",
+      "personal rights",
+      "Fourth Amendment rights"
+    ],
+    "application": "Because the defendant’s rights were violated, standing exists."
+  },
+
+  "Standing — No Vicarious Standing": {
+    "rule": "A defendant may not challenge a search or seizure based solely on the violation of another person’s rights.",
+    "buzzwords": [
+      "no vicarious standing",
+      "another person’s rights"
+    ],
+    "application": "Because the rights violated belonged to someone else, the defendant lacks standing."
+  },
+
+  "Use of Illegally Obtained Evidence — Impeachment": {
+    "rule": "Illegally obtained evidence may be used to impeach the defendant’s testimony but not to impeach other witnesses.",
+    "buzzwords": [
+      "impeachment",
+      "defendant’s testimony",
+      "not other witnesses"
+    ],
+    "application": "Because the defendant testified inconsistently, the evidence may be used for impeachment."
+  },
+
+  "Harmless Error": {
+    "rule": "A conviction will not be reversed if the admission of illegally obtained evidence was harmless beyond a reasonable doubt.",
+    "buzzwords": [
+      "harmless error",
+      "beyond a reasonable doubt"
+    ],
+    "application": "Because the error did not affect the verdict, the conviction stands."
+  },
+  
+  "Fifth Amendment — Self-Incrimination": {
+    "rule": "The Fifth Amendment protects individuals from being compelled to incriminate themselves.",
+    "buzzwords": [
+      "Fifth Amendment",
+      "self-incrimination",
+      "compelled"
+    ],
+    "application": "Because the defendant was compelled to incriminate himself, the Fifth Amendment applies."
+  },
+
+  "Miranda — General Rule": {
+    "rule": "Miranda warnings are required before custodial interrogation by law enforcement.",
+    "buzzwords": [
+      "Miranda warnings",
+      "custodial interrogation",
+      "law enforcement"
+    ],
+    "application": "Because the defendant was interrogated while in custody, Miranda warnings were required."
+  },
+
+  "Custody — Definition": {
+    "rule": "Custody exists when a reasonable person would not feel free to terminate the interrogation and leave.",
+    "buzzwords": [
+      "custody",
+      "reasonable person",
+      "not feel free to leave"
+    ],
+    "application": "Because a reasonable person would not feel free to leave, the defendant was in custody."
+  },
+
+  "Interrogation — Definition": {
+    "rule": "Interrogation includes express questioning or its functional equivalent likely to elicit an incriminating response.",
+    "buzzwords": [
+      "interrogation",
+      "express questioning",
+      "functional equivalent",
+      "incriminating response"
+    ],
+    "application": "Because police conduct was likely to elicit a response, interrogation occurred."
+  },
+
+  "Miranda Warnings — Content": {
+    "rule": "Miranda warnings must inform the suspect of the right to remain silent, that statements may be used against the suspect, and the right to an attorney.",
+    "buzzwords": [
+      "right to remain silent",
+      "used against",
+      "right to an attorney"
+    ],
+    "application": "Because all required warnings were given, Miranda was satisfied."
+  },
+
+  "Miranda — Waiver": {
+    "rule": "A Miranda waiver must be knowing, voluntary, and intelligent.",
+    "buzzwords": [
+      "waiver",
+      "knowing",
+      "voluntary",
+      "intelligent"
+    ],
+    "application": "Because the waiver was knowing and voluntary, statements are admissible."
+  },
+
+  "Invocation of Right to Silence": {
+    "rule": "If a suspect invokes the right to remain silent, interrogation must cease.",
+    "buzzwords": [
+      "invokes",
+      "right to remain silent",
+      "interrogation must cease"
+    ],
+    "application": "Because the defendant invoked silence, questioning had to stop."
+  },
+
+  "Invocation of Right to Counsel": {
+    "rule": "If a suspect invokes the right to counsel, all interrogation must cease until counsel is provided.",
+    "buzzwords": [
+      "invokes",
+      "right to counsel",
+      "interrogation must cease"
+    ],
+    "application": "Because counsel was requested, further interrogation was prohibited."
+  },
+
+  "Reinitiation by Suspect": {
+    "rule": "After invoking Miranda rights, interrogation may resume only if the suspect initiates further communication.",
+    "buzzwords": [
+      "reinitiation",
+      "suspect initiates",
+      "further communication"
+    ],
+    "application": "Because the suspect reinitiated contact, questioning could resume."
+  },
+
+  "Miranda — Public Safety Exception": {
+    "rule": "Miranda warnings are not required when police questioning is reasonably prompted by an immediate concern for public safety.",
+    "buzzwords": [
+      "public safety exception",
+      "immediate concern",
+      "public safety"
+    ],
+    "application": "Because officers faced an immediate danger, Miranda warnings were not required."
+  },
+
+  "Use of Statements — Case-in-Chief": {
+    "rule": "Statements obtained in violation of Miranda are inadmissible in the prosecution’s case-in-chief.",
+    "buzzwords": [
+      "inadmissible",
+      "case-in-chief",
+      "Miranda violation"
+    ],
+    "application": "Because Miranda was violated, the statement is excluded."
+  },
+
+  "Use of Statements — Impeachment": {
+    "rule": "Statements obtained in violation of Miranda may be used to impeach the defendant’s testimony if voluntary.",
+    "buzzwords": [
+      "impeachment",
+      "voluntary",
+      "defendant’s testimony"
+    ],
+    "application": "Because the statement was voluntary, it may be used for impeachment."
+  },
+
+  "Confessions — Voluntariness": {
+    "rule": "A confession is inadmissible if it is involuntary under the totality of the circumstances.",
+    "buzzwords": [
+      "confession",
+      "involuntary",
+      "totality of the circumstances"
+    ],
+    "application": "Because coercive tactics were used, the confession is inadmissible."
+  },
+
+  "Voluntariness — Police Coercion": {
+    "rule": "Police coercion is required for a confession to be deemed involuntary.",
+    "buzzwords": [
+      "police coercion",
+      "involuntary"
+    ],
+    "application": "Because police used coercive tactics, the confession is involuntary."
+  },
+
+  "Fruit of an Involuntary Confession": {
+    "rule": "Evidence derived from an involuntary confession is inadmissible as fruit of the poisonous tree.",
+    "buzzwords": [
+      "involuntary confession",
+      "derived evidence",
+      "fruit of the poisonous tree"
+    ],
+    "application": "Because the confession was involuntary, derivative evidence is excluded."
+  },
+
+  "Sixth Amendment — Right to Counsel": {
+    "rule": "The Sixth Amendment guarantees the right to counsel in all criminal prosecutions after the initiation of adversarial judicial proceedings.",
+    "buzzwords": [
+      "Sixth Amendment",
+      "right to counsel",
+      "criminal prosecutions",
+      "adversarial judicial proceedings"
+    ],
+    "application": "Because formal charges had been filed, the Sixth Amendment right attached."
+  },
+
+  "Attachment of the Right to Counsel": {
+    "rule": "The Sixth Amendment right to counsel attaches at the initiation of formal judicial proceedings, such as indictment, arraignment, or filing of charges.",
+    "buzzwords": [
+      "attachment",
+      "formal judicial proceedings",
+      "indictment",
+      "arraignment",
+      "filing of charges"
+    ],
+    "application": "Because the defendant was indicted, the right to counsel attached."
+  },
+
+  "Critical Stage": {
+    "rule": "Once the right to counsel attaches, it applies to all critical stages of the prosecution.",
+    "buzzwords": [
+      "critical stage",
+      "prosecution",
+      "right to counsel attaches"
+    ],
+    "application": "Because the lineup was a critical stage, counsel was required."
+  },
+
+  "Critical Stage — Examples": {
+    "rule": "Critical stages include post-indictment interrogations, lineups, preliminary hearings, and plea negotiations.",
+    "buzzwords": [
+      "post-indictment interrogation",
+      "lineup",
+      "preliminary hearing",
+      "plea negotiations"
+    ],
+    "application": "Because the interrogation occurred after indictment, it was a critical stage."
+  },
+
+  "Offense-Specific Nature": {
+    "rule": "The Sixth Amendment right to counsel is offense-specific and applies only to the charged offense.",
+    "buzzwords": [
+      "offense-specific",
+      "charged offense"
+    ],
+    "application": "Because questioning concerned an uncharged offense, the Sixth Amendment did not apply."
+  },
+
+  "Waiver of Right to Counsel": {
+    "rule": "A defendant may waive the Sixth Amendment right to counsel if the waiver is knowing, voluntary, and intelligent.",
+    "buzzwords": [
+      "waiver",
+      "knowing",
+      "voluntary",
+      "intelligent"
+    ],
+    "application": "Because the defendant knowingly waived counsel, questioning was permitted."
+  },
+
+  "Police-Initiated Interrogation After Attachment": {
+    "rule": "After the right to counsel attaches, police may not deliberately elicit statements from the defendant without counsel present.",
+    "buzzwords": [
+      "police-initiated interrogation",
+      "deliberately elicit",
+      "counsel present"
+    ],
+    "application": "Because police deliberately elicited statements without counsel, the Sixth Amendment was violated."
+  },
+
+  "Use of Statements — Sixth Amendment Violation": {
+    "rule": "Statements obtained in violation of the Sixth Amendment right to counsel are inadmissible in the prosecution’s case-in-chief.",
+    "buzzwords": [
+      "inadmissible",
+      "case-in-chief",
+      "Sixth Amendment violation"
+    ],
+    "application": "Because the statement was obtained without counsel, it must be excluded."
+  },
+
+  "Use of Statements. — Impeachment": {
+    "rule": "Statements obtained in violation of the Sixth Amendment may be used to impeach the defendant’s testimony if voluntary.",
+    "buzzwords": [
+      "impeachment",
+      "voluntary",
+      "defendant’s testimony"
+    ],
+    "application": "Because the statement was voluntary, it may be used for impeachment."
+  },
+
+  "Massiah Doctrine": {
+    "rule": "Under the Massiah doctrine, the government violates the Sixth Amendment by deliberately eliciting statements from a charged defendant through an informant.",
+    "buzzwords": [
+      "Massiah doctrine",
+      "deliberately eliciting",
+      "informant",
+      "charged defendant"
+    ],
+    "application": "Because an informant elicited statements after indictment, the Sixth Amendment was violated."
+  },
+  
+  "Pretrial Identification — General Rule": {
+    "rule": "Pretrial identification procedures must comply with the Sixth Amendment right to counsel and the Due Process Clause.",
+    "buzzwords": [
+      "pretrial identification",
+      "Sixth Amendment",
+      "right to counsel",
+      "Due Process Clause"
+    ],
+    "application": "Because the identification occurred before trial, constitutional protections apply."
+  },
+
+  "Right to Counsel — Attachment": {
+    "rule": "The Sixth Amendment right to counsel applies to pretrial identifications conducted after the initiation of formal judicial proceedings.",
+    "buzzwords": [
+      "right to counsel",
+      "pretrial identification",
+      "formal judicial proceedings"
+    ],
+    "application": "Because the lineup occurred after indictment, counsel was required."
+  },
+
+  "Lineups — Right to Counsel": {
+    "rule": "A defendant has the right to counsel at post-indictment lineups and showups.",
+    "buzzwords": [
+      "lineups",
+      "showups",
+      "post-indictment",
+      "right to counsel"
+    ],
+    "application": "Because the lineup was post-indictment, counsel was required."
+  },
+
+  "Photographic Identifications": {
+    "rule": "The Sixth Amendment right to counsel does not apply to photographic identifications.",
+    "buzzwords": [
+      "photographic identification",
+      "no right to counsel"
+    ],
+    "application": "Because the identification was photographic, no counsel was required."
+  },
+
+  "Due Process — Suggestive Identification": {
+    "rule": "An identification violates due process if the procedure was unnecessarily suggestive and created a substantial likelihood of misidentification.",
+    "buzzwords": [
+      "due process",
+      "unnecessarily suggestive",
+      "substantial likelihood",
+      "misidentification"
+    ],
+    "application": "Because the procedure was suggestive and unreliable, due process was violated."
+  },
+
+  "Reliability Factors": {
+    "rule": "Identification reliability is evaluated based on the witness’s opportunity to view, degree of attention, accuracy of prior description, level of certainty, and time between crime and identification.",
+    "buzzwords": [
+      "opportunity to view",
+      "degree of attention",
+      "accuracy of description",
+      "level of certainty",
+      "time between"
+    ],
+    "application": "Because reliability factors support accuracy, the identification is admissible."
+  },
+
+  "Remedy — Exclusion": {
+    "rule": "An identification obtained in violation of the right to counsel or due process is excluded from evidence.",
+    "buzzwords": [
+      "exclusion",
+      "violation",
+      "right to counsel",
+      "due process"
+    ],
+    "application": "Because constitutional rights were violated, the identification is excluded."
+  },
+
+  "In-Court Identification": {
+    "rule": "An in-court identification is admissible if it has an independent source separate from any unconstitutional pretrial identification.",
+    "buzzwords": [
+      "in-court identification",
+      "independent source",
+      "pretrial identification"
+    ],
+    "application": "Because the witness had an independent basis, the in-court identification is admissible."
+  },
+  
+  "Right to Jury Trial — Sixth Amendment": {
+    "rule": "The Sixth Amendment guarantees the right to a jury trial in criminal prosecutions for serious offenses.",
+    "buzzwords": [
+      "Sixth Amendment",
+      "right to jury trial",
+      "criminal prosecutions",
+      "serious offenses"
+    ],
+    "application": "Because the offense was serious, the defendant was entitled to a jury trial."
+  },
+
+  "Serious vs Petty Offenses": {
+    "rule": "An offense is considered serious if the authorized punishment exceeds six months of imprisonment.",
+    "buzzwords": [
+      "serious offense",
+      "six months",
+      "imprisonment"
+    ],
+    "application": "Because the potential sentence exceeded six months, the offense was serious."
+  },
+
+  "Number of Jurors": {
+    "rule": "A jury must consist of at least six jurors, but need not consist of twelve jurors.",
+    "buzzwords": [
+      "jury",
+      "six jurors",
+      "not twelve"
+    ],
+    "application": "Because the jury included six jurors, the requirement was satisfied."
+  },
+
+  "Unanimity": {
+    "rule": "A criminal jury verdict must be unanimous.",
+    "buzzwords": [
+      "unanimous",
+      "jury verdict"
+    ],
+    "application": "Because the verdict was unanimous, it was valid."
+  },
+
+  "Impartial Jury": {
+    "rule": "The Sixth Amendment guarantees the right to an impartial jury.",
+    "buzzwords": [
+      "impartial jury",
+      "Sixth Amendment"
+    ],
+    "application": "Because jurors were unbiased, the right was satisfied."
+  },
+
+  "Jury Pool — Fair Cross-Section": {
+    "rule": "Jury pools must represent a fair cross-section of the community.",
+    "buzzwords": [
+      "jury pool",
+      "fair cross-section",
+      "community"
+    ],
+    "application": "Because the jury pool was representative, the requirement was met."
+  },
+
+  "Peremptory Challenges — Equal Protection": {
+    "rule": "Peremptory challenges may not be used to exclude jurors based on race or gender.",
+    "buzzwords": [
+      "peremptory challenges",
+      "exclude jurors",
+      "race",
+      "gender"
+    ],
+    "application": "Because jurors were excluded based on race, the challenge was unconstitutional."
+  },
+
+  "Batson Challenge": {
+    "rule": "A Batson challenge requires a prima facie showing of discrimination, a race-neutral explanation, and a determination of purposeful discrimination.",
+    "buzzwords": [
+      "Batson challenge",
+      "prima facie showing",
+      "race-neutral explanation",
+      "purposeful discrimination"
+    ],
+    "application": "Because the explanation was pretextual, the Batson challenge succeeded."
+  },
+
+  "Right to Public Trial": {
+    "rule": "The Sixth Amendment guarantees the right to a public trial.",
+    "buzzwords": [
+      "public trial",
+      "Sixth Amendment"
+    ],
+    "application": "Because the courtroom was improperly closed, the right was violated."
+  },
+
+  "Speedy Trial — Right": {
+    "rule": "The Sixth Amendment guarantees the right to a speedy trial.",
+    "buzzwords": [
+      "speedy trial",
+      "Sixth Amendment"
+    ],
+    "application": "Because the delay was excessive, the right may have been violated."
+  },
+
+  "Speedy Trial — Barker v. Wingo Factors": {
+    "rule": "Speedy trial claims are evaluated by balancing length of delay, reason for delay, defendant’s assertion of the right, and prejudice to the defendant.",
+    "buzzwords": [
+      "length of delay",
+      "reason for delay",
+      "assertion of the right",
+      "prejudice"
+    ],
+    "application": "Because the delay caused prejudice, a speedy trial violation exists."
+  },
+
+  "Right to Confront Witnesses": {
+    "rule": "The Sixth Amendment guarantees the right to confront and cross-examine adverse witnesses.",
+    "buzzwords": [
+      "confront witnesses",
+      "cross-examine",
+      "Sixth Amendment"
+    ],
+    "application": "Because the defendant was denied cross-examination, the right was violated."
+  },
+
+  "Prosecutorial Misconduct": {
+    "rule": "Prosecutorial misconduct violates due process when it renders the trial fundamentally unfair.",
+    "buzzwords": [
+      "prosecutorial misconduct",
+      "due process",
+      "fundamentally unfair"
+    ],
+    "application": "Because the misconduct affected fairness, reversal may be required."
+  },
+
+  "Harmless Error — Trial Rights": {
+    "rule": "A constitutional trial error does not require reversal if it was harmless beyond a reasonable doubt.",
+    "buzzwords": [
+      "harmless error",
+      "beyond a reasonable doubt"
+    ],
+    "application": "Because the error did not affect the verdict, reversal is not required."
+  },
+
+  "Double Jeopardy — General Rule": {
+    "rule": "The Double Jeopardy Clause prohibits multiple prosecutions or multiple punishments for the same offense.",
+    "buzzwords": [
+      "Double Jeopardy Clause",
+      "multiple prosecutions",
+      "multiple punishments",
+      "same offense"
+    ],
+    "application": "Because the defendant is being prosecuted twice for the same offense, double jeopardy applies."
+  },
+
+  "Attachment of Jeopardy — Jury Trial": {
+    "rule": "In a jury trial, jeopardy attaches when the jury is sworn.",
+    "buzzwords": [
+      "jeopardy attaches",
+      "jury trial",
+      "jury sworn"
+    ],
+    "application": "Because the jury had been sworn, jeopardy attached."
+  },
+
+  "Attachment of Jeopardy — Bench Trial": {
+    "rule": "In a bench trial, jeopardy attaches when the first witness is sworn.",
+    "buzzwords": [
+      "bench trial",
+      "jeopardy attaches",
+      "first witness sworn"
+    ],
+    "application": "Because the first witness was sworn, jeopardy attached."
+  },
+
+  "Same Offense — Blockburger Test": {
+    "rule": "Two offenses are the same offense for double jeopardy purposes unless each offense requires proof of a fact the other does not.",
+    "buzzwords": [
+      "same offense",
+      "Blockburger test",
+      "requires proof",
+      "fact the other does not"
+    ],
+    "application": "Because each offense requires a different element, double jeopardy does not bar prosecution."
+  },
+
+  "Multiple Punishments": {
+    "rule": "Double jeopardy prohibits multiple punishments for the same offense unless the legislature clearly intended cumulative punishment.",
+    "buzzwords": [
+      "multiple punishments",
+      "same offense",
+      "legislative intent",
+      "cumulative punishment"
+    ],
+    "application": "Because the legislature intended multiple punishments, double jeopardy is not violated."
+  },
+
+  "Lesser Included Offenses": {
+    "rule": "Double jeopardy bars prosecution for a lesser included offense after conviction or acquittal of the greater offense.",
+    "buzzwords": [
+      "lesser included offense",
+      "greater offense",
+      "conviction",
+      "acquittal"
+    ],
+    "application": "Because the lesser offense is included in the greater, prosecution is barred."
+  },
+
+  "Acquittal — Finality": {
+    "rule": "An acquittal bars retrial even if the acquittal was based on an erroneous legal ruling.",
+    "buzzwords": [
+      "acquittal",
+      "bars retrial",
+      "erroneous legal ruling"
+    ],
+    "application": "Because the defendant was acquitted, retrial is prohibited."
+  },
+
+  "Mistrial — Defendant Request": {
+    "rule": "When a defendant requests a mistrial, retrial is generally permitted unless the mistrial was caused by prosecutorial misconduct intended to provoke the request.",
+    "buzzwords": [
+      "mistrial",
+      "defendant requests",
+      "prosecutorial misconduct",
+      "intended to provoke"
+    ],
+    "application": "Because the mistrial was requested by the defendant, retrial is permitted."
+  },
+
+  "Mistrial — Manifest Necessity": {
+    "rule": "When a mistrial is declared due to manifest necessity, retrial is not barred by double jeopardy.",
+    "buzzwords": [
+      "manifest necessity",
+      "mistrial",
+      "retrial"
+    ],
+    "application": "Because manifest necessity existed, retrial is allowed."
+  },
+
+  "Appeals by Prosecution": {
+    "rule": "The prosecution may appeal a dismissal or legal ruling as long as reversal would not require a retrial after acquittal.",
+    "buzzwords": [
+      "prosecution appeal",
+      "legal ruling",
+      "no retrial after acquittal"
+    ],
+    "application": "Because reversal would not require retrial, the appeal is permitted."
+  },
+
+  "Separate Sovereigns Doctrine": {
+    "rule": "Double jeopardy does not bar successive prosecutions by separate sovereigns for the same conduct.",
+    "buzzwords": [
+      "separate sovereigns",
+      "successive prosecutions",
+      "same conduct"
+    ],
+    "application": "Because different sovereigns are involved, prosecution is allowed."
+  }
+}

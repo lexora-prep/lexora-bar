@@ -1,0 +1,155 @@
+{
+  "Choice of Law — General Rule": {
+    "rule": "A court applies its own procedural law but applies substantive law according to choice of law rules.",
+    "buzzwords": [
+      "procedural law",
+      "substantive law",
+      "choice of law rules"
+    ],
+    "application": "Because the issue is procedural, forum law applies."
+  },
+
+  "Traditional Approach — Vested Rights": {
+    "rule": "Under the traditional approach, the law of the place where the rights vested governs.",
+    "buzzwords": [
+      "traditional approach",
+      "vested rights",
+      "place where the rights vested"
+    ],
+    "application": "Because the rights vested in another state, that law applies."
+  },
+
+  "Modern Approach — Most Significant Relationship": {
+    "rule": "Under the modern approach, the law of the state with the most significant relationship to the issue applies.",
+    "buzzwords": [
+      "most significant relationship",
+      "modern approach"
+    ],
+    "application": "Because the forum has the most significant relationship, its law applies."
+  },
+
+  "Restatement (Second) Factors": {
+    "rule": "The most significant relationship test considers contacts and policy interests of the states involved.",
+    "buzzwords": [
+      "contacts",
+      "policy interests",
+      "states involved"
+    ],
+    "application": "Because the forum has stronger policy interests, its law governs."
+  },
+
+  "Torts — Choice of Law": {
+    "rule": "In tort cases, courts apply the law of the place of the injury under the traditional approach.",
+    "buzzwords": [
+      "tort cases",
+      "place of the injury"
+    ],
+    "application": "Because the injury occurred in another state, that law applies."
+  },
+
+  "Contracts — Choice of Law": {
+    "rule": "In contract cases, courts apply the law of the place of contracting or the law chosen by the parties.",
+    "buzzwords": [
+      "contract cases",
+      "place of contracting",
+      "law chosen by the parties"
+    ],
+    "application": "Because the contract was formed elsewhere, that law applies."
+  },
+
+  "Contractual Choice of Law Clause": {
+    "rule": "A contractual choice of law clause is enforced unless unreasonable or contrary to public policy.",
+    "buzzwords": [
+      "choice of law clause",
+      "unreasonable",
+      "public policy"
+    ],
+    "application": "Because the clause is reasonable, it is enforced."
+  },
+
+  "Property — Real Property": {
+    "rule": "The law of the situs governs issues involving real property.",
+    "buzzwords": [
+      "real property",
+      "law of the situs"
+    ],
+    "application": "Because the land is located in another state, that law governs."
+  },
+
+  "Property — Personal Property": {
+    "rule": "The law of the owner’s domicile governs issues involving personal property.",
+    "buzzwords": [
+      "personal property",
+      "domicile"
+    ],
+    "application": "Because the owner is domiciled elsewhere, that law applies."
+  },
+
+  "Family Law — Marriage": {
+    "rule": "A marriage valid where celebrated is generally valid everywhere.",
+    "buzzwords": [
+      "marriage",
+      "valid where celebrated",
+      "valid everywhere"
+    ],
+    "application": "Because the marriage was valid where formed, it is recognized."
+  },
+
+  "Family Law — Divorce": {
+    "rule": "A state may grant divorce if one spouse is domiciled in the state.",
+    "buzzwords": [
+      "divorce",
+      "domiciled"
+    ],
+    "application": "Because one spouse was domiciled in the forum, the divorce is valid."
+  },
+
+  "Full Faith and Credit — Judgments": {
+    "rule": "A final judgment rendered with jurisdiction must be recognized by other states.",
+    "buzzwords": [
+      "full faith and credit",
+      "final judgment",
+      "jurisdiction"
+    ],
+    "application": "Because jurisdiction existed, the judgment must be enforced."
+  },
+
+  "Penal Laws Exception": {
+    "rule": "A forum will not enforce the penal laws of another state.",
+    "buzzwords": [
+      "penal laws",
+      "not enforced"
+    ],
+    "application": "Because the law is penal, it is not enforced."
+  },
+
+  "Procedural vs Substantive Law": {
+    "rule": "Procedural matters are governed by forum law, while substantive matters are governed by choice of law principles.",
+    "buzzwords": [
+      "procedural matters",
+      "forum law",
+      "substantive matters"
+    ],
+    "application": "Because the rule affects procedure, forum law applies."
+  },
+
+  "Public Policy Exception": {
+    "rule": "A forum may refuse to apply foreign law that violates a strong public policy.",
+    "buzzwords": [
+      "public policy",
+      "foreign law",
+      "violates"
+    ],
+    "application": "Because the law violates public policy, it is not applied."
+  },
+
+  "Statute of Limitations": {
+    "rule": "Statutes of limitations are generally considered procedural and governed by forum law.",
+    "buzzwords": [
+      "statute of limitations",
+      "procedural",
+      "forum law"
+    ],
+    "application": "Because limitations are procedural, forum law applies."
+  }
+}

@@ -1,0 +1,1405 @@
+{
+  "Present Estates — Fee Simple Absolute": {
+    "rule": "A fee simple absolute is an estate of indefinite duration with no conditions or limitations.",
+    "buzzwords": [
+      "fee simple absolute",
+      "indefinite duration",
+      "no conditions"
+    ],
+    "application": "Because the grant contains no limitations, a fee simple absolute is created."
+  },
+
+  "Present Estates — Fee Simple Determinable": {
+    "rule": "A fee simple determinable automatically terminates upon the occurrence of a stated event.",
+    "buzzwords": [
+      "fee simple determinable",
+      "automatically terminates",
+      "stated event"
+    ],
+    "application": "Because the estate ends automatically on the event, it is a fee simple determinable."
+  },
+
+  "Future Interest — Possibility of Reverter": {
+    "rule": "A possibility of reverter is a future interest retained by the grantor following a fee simple determinable.",
+    "buzzwords": [
+      "possibility of reverter",
+      "future interest",
+      "grantor"
+    ],
+    "application": "Because the grantor retains the future interest, a possibility of reverter exists."
+  },
+
+  "Present Estates — Fee Simple Subject to Condition Subsequent": {
+    "rule": "A fee simple subject to condition subsequent does not automatically terminate but may be terminated by the grantor upon breach of a condition.",
+    "buzzwords": [
+      "fee simple subject to condition subsequent",
+      "not automatically terminate",
+      "right to terminate"
+    ],
+    "application": "Because termination requires action by the grantor, the estate is subject to condition subsequent."
+  },
+
+  "Future Interest — Right of Entry": {
+    "rule": "A right of entry is a future interest retained by the grantor following a fee simple subject to condition subsequent.",
+    "buzzwords": [
+      "right of entry",
+      "future interest",
+      "grantor"
+    ],
+    "application": "Because the grantor must act to terminate, a right of entry exists."
+  },
+
+  "Present Estates — Fee Simple Subject to Executory Limitation": {
+    "rule": "A fee simple subject to executory limitation automatically transfers to a third party upon the occurrence of a stated event.",
+    "buzzwords": [
+      "fee simple subject to executory limitation",
+      "automatically transfers",
+      "third party"
+    ],
+    "application": "Because the estate shifts to a third party, an executory limitation exists."
+  },
+
+  "Future Interest — Executory Interest": {
+    "rule": "An executory interest is a future interest held by a third party that divests a prior estate upon the occurrence of a condition.",
+    "buzzwords": [
+      "executory interest",
+      "third party",
+      "divests"
+    ],
+    "application": "Because the future interest divests another estate, it is an executory interest."
+  },
+
+  "Life Estate": {
+    "rule": "A life estate is an estate measured by the life of a specified person.",
+    "buzzwords": [
+      "life estate",
+      "measured by life"
+    ],
+    "application": "Because the duration is tied to a life, a life estate is created."
+  },
+
+  "Future Interest — Remainder": {
+    "rule": "A remainder is a future interest that becomes possessory upon the natural termination of a prior estate.",
+    "buzzwords": [
+      "remainder",
+      "future interest",
+      "natural termination"
+    ],
+    "application": "Because the interest follows a life estate, it is a remainder."
+  },
+
+  "Vested Remainder": {
+    "rule": "A vested remainder is a remainder held by an ascertained person with no condition precedent.",
+    "buzzwords": [
+      "vested remainder",
+      "ascertained person",
+      "no condition precedent"
+    ],
+    "application": "Because the taker is known and unconditional, the remainder is vested."
+  },
+
+  "Contingent Remainder": {
+    "rule": "A contingent remainder is a remainder that depends on an unfulfilled condition precedent or an unascertained person.",
+    "buzzwords": [
+      "contingent remainder",
+      "condition precedent",
+      "unascertained person"
+    ],
+    "application": "Because the taker is not yet known, the remainder is contingent."
+  },
+
+  "Doctrine of Waste": {
+    "rule": "A life tenant has a duty not to commit waste that unreasonably impairs the future interest.",
+    "buzzwords": [
+      "waste",
+      "life tenant",
+      "future interest"
+    ],
+    "application": "Because the tenant damaged the property, waste occurred."
+  },
+
+  "Rule Against Perpetuities — General Rule": {
+    "rule": "A future interest is invalid unless it must vest, if at all, within 21 years after a life in being at the creation of the interest.",
+    "buzzwords": [
+      "rule against perpetuities",
+      "must vest",
+      "21 years",
+      "life in being"
+    ],
+    "application": "Because the interest may vest too late, it is void."
+  },
+
+  "Tenancy in Common": {
+    "rule": "A tenancy in common allows each co-tenant to hold an undivided interest with no right of survivorship.",
+    "buzzwords": [
+      "tenancy in common",
+      "undivided interest",
+      "no right of survivorship"
+    ],
+    "application": "Because there is no survivorship right, the estate is a tenancy in common."
+  },
+
+  "Joint Tenancy": {
+    "rule": "A joint tenancy requires the four unities of time, title, interest, and possession and includes a right of survivorship.",
+    "buzzwords": [
+      "joint tenancy",
+      "four unities",
+      "time",
+      "title",
+      "interest",
+      "possession",
+      "right of survivorship"
+    ],
+    "application": "Because all four unities exist, a joint tenancy is created."
+  },
+
+  "Creation of Joint Tenancy": {
+    "rule": "A joint tenancy must be expressly created with clear survivorship language.",
+    "buzzwords": [
+      "expressly created",
+      "survivorship language"
+    ],
+    "application": "Because survivorship language was used, joint tenancy exists."
+  },
+
+  "Severance of Joint Tenancy": {
+    "rule": "A joint tenancy is severed when one co-tenant transfers their interest, destroying the unities.",
+    "buzzwords": [
+      "severance",
+      "transfer",
+      "destroying unities"
+    ],
+    "application": "Because a co-tenant conveyed their interest, severance occurred."
+  },
+
+  "Tenancy by the Entirety": {
+    "rule": "Tenancy by the entirety is a concurrent estate between married spouses with a right of survivorship and protection from unilateral transfer.",
+    "buzzwords": [
+      "tenancy by the entirety",
+      "married spouses",
+      "right of survivorship",
+      "unilateral transfer"
+    ],
+    "application": "Because the owners are married, tenancy by the entirety applies."
+  },
+
+  "Rights of Co-Tenants — Possession": {
+    "rule": "Each co-tenant has an equal right to possess the whole property.",
+    "buzzwords": [
+      "equal right",
+      "possess the whole property"
+    ],
+    "application": "Because each co-tenant may occupy the property, possession is shared."
+  },
+
+  "Ouster": {
+    "rule": "Ouster occurs when one co-tenant wrongfully excludes another from possession.",
+    "buzzwords": [
+      "ouster",
+      "wrongfully excludes",
+      "possession"
+    ],
+    "application": "Because access was denied, ouster occurred."
+  },
+
+  "Co-Tenant Rent Liability": {
+    "rule": "A co-tenant in possession is not liable for rent absent ouster.",
+    "buzzwords": [
+      "rent liability",
+      "absent ouster"
+    ],
+    "application": "Because no ouster occurred, rent is not owed."
+  },
+
+  "Co-Tenant Expenses — Contribution": {
+    "rule": "Co-tenants must contribute to necessary expenses such as taxes and mortgage payments.",
+    "buzzwords": [
+      "contribution",
+      "necessary expenses",
+      "taxes",
+      "mortgage"
+    ],
+    "application": "Because expenses were necessary, contribution is required."
+  },
+
+  "Co-Tenant Repairs": {
+    "rule": "A co-tenant is not entitled to contribution for repairs unless they are necessary.",
+    "buzzwords": [
+      "repairs",
+      "necessary"
+    ],
+    "application": "Because the repair was not necessary, no contribution is owed."
+  },
+
+  "Co-Tenant Improvements": {
+    "rule": "A co-tenant is not entitled to contribution for improvements but may recover their value upon partition.",
+    "buzzwords": [
+      "improvements",
+      "partition",
+      "value"
+    ],
+    "application": "Because the improvement increased value, recovery may occur at partition."
+  },
+
+  "Partition — General Rule": {
+    "rule": "Any co-tenant may seek partition of the property.",
+    "buzzwords": [
+      "partition",
+      "any co-tenant"
+    ],
+    "application": "Because a co-tenant requested partition, the action is permitted."
+  },
+
+  "Partition in Kind": {
+    "rule": "Partition in kind physically divides the property and is preferred when feasible.",
+    "buzzwords": [
+      "partition in kind",
+      "physical division",
+      "preferred"
+    ],
+    "application": "Because the land can be divided, partition in kind applies."
+  },
+
+  "Partition by Sale": {
+    "rule": "Partition by sale is ordered when physical division is impracticable or inequitable.",
+    "buzzwords": [
+      "partition by sale",
+      "impracticable",
+      "inequitable"
+    ],
+    "application": "Because division is impracticable, partition by sale is ordered."
+  },
+
+  "Leasehold Estates — General Rule": {
+    "rule": "A leasehold estate grants the tenant the right to exclusive possession of property for a period of time.",
+    "buzzwords": [
+      "leasehold estate",
+      "exclusive possession",
+      "period of time"
+    ],
+    "application": "Because the tenant has exclusive possession, a leasehold estate exists."
+  },
+
+  "Tenancy for Years": {
+    "rule": "A tenancy for years lasts for a fixed, definite period of time and terminates automatically.",
+    "buzzwords": [
+      "tenancy for years",
+      "fixed period",
+      "terminates automatically"
+    ],
+    "application": "Because the lease has a definite term, it is a tenancy for years."
+  },
+
+  "Periodic Tenancy": {
+    "rule": "A periodic tenancy continues for successive periods until terminated by proper notice.",
+    "buzzwords": [
+      "periodic tenancy",
+      "successive periods",
+      "proper notice"
+    ],
+    "application": "Because the lease renews monthly, it is a periodic tenancy."
+  },
+
+  "Tenancy at Will": {
+    "rule": "A tenancy at will continues until terminated by either party without advance notice.",
+    "buzzwords": [
+      "tenancy at will",
+      "either party",
+      "without advance notice"
+    ],
+    "application": "Because either party may terminate at any time, a tenancy at will exists."
+  },
+
+  "Tenancy at Sufferance": {
+    "rule": "A tenancy at sufferance arises when a tenant wrongfully remains in possession after lease termination.",
+    "buzzwords": [
+      "tenancy at sufferance",
+      "wrongfully remains",
+      "after termination"
+    ],
+    "application": "Because the tenant stayed after expiration, a tenancy at sufferance exists."
+  },
+
+  "Tenant Duties — Rent": {
+    "rule": "A tenant has a duty to pay rent as specified in the lease.",
+    "buzzwords": [
+      "pay rent",
+      "duty"
+    ],
+    "application": "Because rent was not paid, the tenant breached the lease."
+  },
+
+  "Landlord Duties — Deliver Possession": {
+    "rule": "A landlord must deliver actual possession of the premises at the start of the lease.",
+    "buzzwords": [
+      "deliver possession",
+      "actual possession",
+      "start of the lease"
+    ],
+    "application": "Because the premises were occupied, the landlord breached the duty."
+  },
+
+  "Implied Covenant of Quiet Enjoyment": {
+    "rule": "Every lease includes an implied covenant that the tenant will have quiet enjoyment without interference by the landlord.",
+    "buzzwords": [
+      "quiet enjoyment",
+      "without interference",
+      "landlord"
+    ],
+    "application": "Because the landlord interfered, the covenant was breached."
+  },
+
+  "Constructive Eviction": {
+    "rule": "Constructive eviction occurs when the landlord substantially interferes with use and the tenant vacates within a reasonable time.",
+    "buzzwords": [
+      "constructive eviction",
+      "substantial interference",
+      "vacates"
+    ],
+    "application": "Because the tenant vacated due to interference, constructive eviction occurred."
+  },
+
+  "Actual Eviction": {
+    "rule": "Actual eviction occurs when the tenant is physically excluded from the premises.",
+    "buzzwords": [
+      "actual eviction",
+      "physically excluded"
+    ],
+    "application": "Because the tenant was locked out, actual eviction occurred."
+  },
+
+  "Implied Warranty of Habitability": {
+    "rule": "Residential leases include an implied warranty that premises are fit for human habitation.",
+    "buzzwords": [
+      "implied warranty of habitability",
+      "fit for human habitation",
+      "residential leases"
+    ],
+    "application": "Because essential services were lacking, the warranty was breached."
+  },
+
+  "Tenant Remedies — Habitability": {
+    "rule": "If the implied warranty of habitability is breached, the tenant may withhold rent, repair and deduct, or terminate the lease.",
+    "buzzwords": [
+      "withhold rent",
+      "repair and deduct",
+      "terminate the lease"
+    ],
+    "application": "Because the premises were uninhabitable, the tenant could withhold rent."
+  },
+
+  "Landlord Remedies — Tenant Breach": {
+    "rule": "If a tenant breaches, the landlord may evict, sue for rent, or mitigate damages.",
+    "buzzwords": [
+      "evict",
+      "sue for rent",
+      "mitigate damages"
+    ],
+    "application": "Because the tenant abandoned, the landlord must mitigate damages."
+  },
+
+  "Duty to Mitigate": {
+    "rule": "A landlord has a duty to mitigate damages by making reasonable efforts to re-rent the premises.",
+    "buzzwords": [
+      "duty to mitigate",
+      "reasonable efforts",
+      "re-rent"
+    ],
+    "application": "Because the landlord attempted to re-rent, the duty was satisfied."
+  },
+
+  "Assignment": {
+    "rule": "An assignment transfers the tenant’s entire remaining interest in the lease.",
+    "buzzwords": [
+      "assignment",
+      "entire remaining interest"
+    ],
+    "application": "Because the entire term was transferred, an assignment occurred."
+  },
+
+  "Sublease": {
+    "rule": "A sublease transfers less than the tenant’s entire remaining interest.",
+    "buzzwords": [
+      "sublease",
+      "less than entire interest"
+    ],
+    "application": "Because part of the term was retained, a sublease occurred."
+  },
+
+  "Privity of Estate": {
+    "rule": "Privity of estate exists between parties who hold successive interests in the same property.",
+    "buzzwords": [
+      "privity of estate",
+      "successive interests"
+    ],
+    "application": "Because interests were successive, privity of estate existed."
+  },
+
+  "Privity of Contract": {
+    "rule": "Privity of contract exists between parties to the lease agreement.",
+    "buzzwords": [
+      "privity of contract",
+      "lease agreement"
+    ],
+    "application": "Because the parties signed the lease, privity of contract exists."
+  },
+
+  "Real Estate Contracts — General Rule": {
+    "rule": "A contract for the sale of land requires mutual assent, consideration, and compliance with the statute of frauds.",
+    "buzzwords": [
+      "contract for the sale of land",
+      "mutual assent",
+      "consideration",
+      "statute of frauds"
+    ],
+    "application": "Because the parties agreed and consideration was exchanged, a valid contract exists."
+  },
+
+  "Statute of Frauds — Land Contracts": {
+    "rule": "A contract for the sale of land must be in writing and signed by the party to be charged.",
+    "buzzwords": [
+      "statute of frauds",
+      "writing",
+      "signed",
+      "party to be charged"
+    ],
+    "application": "Because the contract was signed in writing, the statute of frauds is satisfied."
+  },
+
+  "Statute of Frauds — Essential Terms": {
+    "rule": "The writing must identify the parties, describe the land, and state the price.",
+    "buzzwords": [
+      "essential terms",
+      "identify the parties",
+      "describe the land",
+      "price"
+    ],
+    "application": "Because the writing included the land and price, it is sufficient."
+  },
+
+  "Part Performance Exception": {
+    "rule": "Part performance removes a land contract from the statute of frauds when the buyer takes possession, pays consideration, or makes improvements.",
+    "buzzwords": [
+      "part performance",
+      "possession",
+      "consideration",
+      "improvements"
+    ],
+    "application": "Because the buyer took possession and made improvements, the contract is enforceable."
+  },
+
+  "Equitable Conversion": {
+    "rule": "Under equitable conversion, the buyer is treated as the equitable owner of the land once the contract is signed.",
+    "buzzwords": [
+      "equitable conversion",
+      "equitable owner",
+      "contract signed"
+    ],
+    "application": "Because the contract was executed, equitable conversion applies."
+  },
+
+  "Risk of Loss": {
+    "rule": "After equitable conversion, the risk of loss passes to the buyer unless the contract provides otherwise.",
+    "buzzwords": [
+      "risk of loss",
+      "passes to the buyer",
+      "equitable conversion"
+    ],
+    "application": "Because the buyer bore the risk, loss is allocated to the buyer."
+  },
+
+  "Marketable Title — General Rule": {
+    "rule": "At closing, the seller must deliver marketable title free from unreasonable doubt.",
+    "buzzwords": [
+      "marketable title",
+      "free from unreasonable doubt",
+      "closing"
+    ],
+    "application": "Because title was free from defects, it was marketable."
+  },
+
+  "Unmarketable Title — Defects": {
+    "rule": "Title is unmarketable if it is subject to encumbrances, adverse possession claims, or zoning violations.",
+    "buzzwords": [
+      "unmarketable title",
+      "encumbrances",
+      "adverse possession",
+      "zoning violations"
+    ],
+    "application": "Because an encumbrance existed, title was unmarketable."
+  },
+
+  "Time Is of the Essence": {
+    "rule": "Time is not of the essence in land contracts unless expressly stated.",
+    "buzzwords": [
+      "time is of the essence",
+      "expressly stated"
+    ],
+    "application": "Because time was not stated as essential, delay did not breach the contract."
+  },
+
+  "Seller Remedies — Buyer Breach": {
+    "rule": "If the buyer breaches, the seller may retain the deposit, sue for damages, or seek specific performance.",
+    "buzzwords": [
+      "buyer breach",
+      "retain the deposit",
+      "damages",
+      "specific performance"
+    ],
+    "application": "Because the buyer failed to close, the seller may seek specific performance."
+  },
+
+  "Buyer Remedies — Seller Breach": {
+    "rule": "If the seller breaches, the buyer may recover damages or seek specific performance.",
+    "buzzwords": [
+      "seller breach",
+      "damages",
+      "specific performance"
+    ],
+    "application": "Because the seller failed to convey, the buyer may compel performance."
+  },
+
+  "Merger Doctrine": {
+    "rule": "At closing, the contract merges into the deed and contractual obligations are extinguished.",
+    "buzzwords": [
+      "merger doctrine",
+      "closing",
+      "merges into the deed"
+    ],
+    "application": "Because closing occurred, prior contract terms merged into the deed."
+  },
+
+  "Implied Covenants — Deed Delivery": {
+    "rule": "Delivery of a deed requires intent to transfer and acceptance by the grantee.",
+    "buzzwords": [
+      "delivery of deed",
+      "intent to transfer",
+      "acceptance"
+    ],
+    "application": "Because the grantor intended transfer and the grantee accepted, delivery occurred."
+  },
+
+  "Deeds — General Rule": {
+    "rule": "A deed transfers an interest in land and requires execution and delivery to be effective.",
+    "buzzwords": [
+      "deed",
+      "transfers an interest",
+      "execution",
+      "delivery"
+    ],
+    "application": "Because the deed was executed and delivered, title transferred."
+  },
+
+  "Execution of Deed": {
+    "rule": "Execution of a deed requires the grantor’s signature and compliance with any required formalities.",
+    "buzzwords": [
+      "execution",
+      "grantor’s signature",
+      "formalities"
+    ],
+    "application": "Because the grantor signed the deed, execution is satisfied."
+  },
+
+  "Delivery of Deed": {
+    "rule": "Delivery of a deed requires intent to make the deed presently effective.",
+    "buzzwords": [
+      "delivery",
+      "intent",
+      "presently effective"
+    ],
+    "application": "Because the grantor intended immediate transfer, delivery occurred."
+  },
+
+  "Acceptance of Deed": {
+    "rule": "Acceptance of a deed by the grantee is required and is presumed if the transfer benefits the grantee.",
+    "buzzwords": [
+      "acceptance",
+      "grantee",
+      "presumed"
+    ],
+    "application": "Because the conveyance benefited the grantee, acceptance is presumed."
+  },
+
+  "Quitclaim Deed": {
+    "rule": "A quitclaim deed conveys whatever interest the grantor has without warranties of title.",
+    "buzzwords": [
+      "quitclaim deed",
+      "whatever interest",
+      "no warranties"
+    ],
+    "application": "Because no warranties were given, the deed is a quitclaim deed."
+  },
+
+  "General Warranty Deed": {
+    "rule": "A general warranty deed provides warranties against defects in title arising before and during the grantor’s ownership.",
+    "buzzwords": [
+      "general warranty deed",
+      "warranties",
+      "before and during ownership"
+    ],
+    "application": "Because the deed warranted title against all defects, it is a general warranty deed."
+  },
+
+  "Special Warranty Deed": {
+    "rule": "A special warranty deed provides warranties only against defects arising during the grantor’s ownership.",
+    "buzzwords": [
+      "special warranty deed",
+      "defects",
+      "during ownership"
+    ],
+    "application": "Because the warranty was limited to the grantor’s period, it is a special warranty deed."
+  },
+
+  "Covenant of Seisin": {
+    "rule": "The covenant of seisin warrants that the grantor owns the estate conveyed.",
+    "buzzwords": [
+      "covenant of seisin",
+      "grantor owns",
+      "estate conveyed"
+    ],
+    "application": "Because the grantor owned the land, the covenant was not breached."
+  },
+
+  "Covenant of Right to Convey": {
+    "rule": "The covenant of right to convey warrants that the grantor has the authority to transfer the property.",
+    "buzzwords": [
+      "right to convey",
+      "authority",
+      "transfer"
+    ],
+    "application": "Because the grantor had authority, the covenant was satisfied."
+  },
+
+  "Covenant Against Encumbrances": {
+    "rule": "The covenant against encumbrances warrants that the land is free from undisclosed encumbrances.",
+    "buzzwords": [
+      "against encumbrances",
+      "free from encumbrances",
+      "undisclosed"
+    ],
+    "application": "Because an easement existed, the covenant was breached."
+  },
+
+  "Covenant of Quiet Enjoyment": {
+    "rule": "The covenant of quiet enjoyment warrants that the grantee will not be disturbed by superior title.",
+    "buzzwords": [
+      "quiet enjoyment",
+      "not be disturbed",
+      "superior title"
+    ],
+    "application": "Because the grantee was evicted by a titleholder, the covenant was breached."
+  },
+
+  "Covenant of Warranty": {
+    "rule": "The covenant of warranty obligates the grantor to defend the grantee against lawful claims of title.",
+    "buzzwords": [
+      "covenant of warranty",
+      "defend",
+      "lawful claims"
+    ],
+    "application": "Because a third party asserted title, the grantor must defend."
+  },
+
+  "Covenant of Further Assurances": {
+    "rule": "The covenant of further assurances requires the grantor to take reasonable steps to perfect title.",
+    "buzzwords": [
+      "further assurances",
+      "perfect title",
+      "reasonable steps"
+    ],
+    "application": "Because corrective action was needed, the grantor must comply."
+  },
+
+  "Recording Acts — Purpose": {
+    "rule": "Recording acts protect bona fide purchasers from prior unrecorded interests.",
+    "buzzwords": [
+      "recording acts",
+      "bona fide purchasers",
+      "unrecorded interests"
+    ],
+    "application": "Because the buyer recorded first, protection applies."
+  },
+
+  "Notice Recording Statute": {
+    "rule": "Under a notice statute, a bona fide purchaser without notice of a prior interest prevails.",
+    "buzzwords": [
+      "notice statute",
+      "bona fide purchaser",
+      "without notice"
+    ],
+    "application": "Because the buyer lacked notice, the buyer prevails."
+  },
+
+  "Race Recording Statute": {
+    "rule": "Under a race statute, the first party to record prevails regardless of notice.",
+    "buzzwords": [
+      "race statute",
+      "first to record",
+      "regardless of notice"
+    ],
+    "application": "Because the buyer recorded first, priority applies."
+  },
+
+  "Race-Notice Recording Statute": {
+    "rule": "Under a race-notice statute, a bona fide purchaser who records first prevails.",
+    "buzzwords": [
+      "race-notice statute",
+      "bona fide purchaser",
+      "records first"
+    ],
+    "application": "Because the buyer recorded first without notice, the buyer prevails."
+  },
+
+  "Types of Notice — Actual Notice": {
+    "rule": "Actual notice exists when a purchaser has direct knowledge of a prior interest.",
+    "buzzwords": [
+      "actual notice",
+      "direct knowledge",
+      "prior interest"
+    ],
+    "application": "Because the purchaser knew of the deed, actual notice existed."
+  },
+
+  "Types of Notice — Record Notice": {
+    "rule": "Record notice exists when a prior interest is properly recorded.",
+    "buzzwords": [
+      "record notice",
+      "properly recorded"
+    ],
+    "application": "Because the deed was recorded, record notice applied."
+  },
+
+  "Types of Notice — Inquiry Notice": {
+    "rule": "Inquiry notice exists when circumstances would prompt a reasonable purchaser to investigate.",
+    "buzzwords": [
+      "inquiry notice",
+      "reasonable purchaser",
+      "investigate"
+    ],
+    "application": "Because possession suggested another interest, inquiry notice applied."
+  },
+
+  "Shelter Rule": {
+    "rule": "Under the shelter rule, a transferee takes the same rights as the transferor.",
+    "buzzwords": [
+      "shelter rule",
+      "transferee",
+      "same rights"
+    ],
+    "application": "Because the transferor was protected, the transferee is protected."
+  },
+
+  "Mortgage — General Rule": {
+    "rule": "A mortgage is a security interest in land intended to secure repayment of a debt.",
+    "buzzwords": [
+      "mortgage",
+      "security interest",
+      "land",
+      "repayment of a debt"
+    ],
+    "application": "Because the loan is secured by land, a mortgage exists."
+  },
+
+  "Mortgage — Creation": {
+    "rule": "A mortgage requires a debt and an intent to secure the debt with land.",
+    "buzzwords": [
+      "debt",
+      "intent to secure",
+      "land"
+    ],
+    "application": "Because the parties intended to secure the loan with land, the mortgage is valid."
+  },
+
+  "Mortgage — Lien Theory": {
+    "rule": "Under lien theory, the mortgagee holds a lien while the mortgagor retains title.",
+    "buzzwords": [
+      "lien theory",
+      "mortgagee",
+      "lien",
+      "mortgagor retains title"
+    ],
+    "application": "Because the lender holds only a lien, lien theory applies."
+  },
+
+  "Mortgage — Title Theory": {
+    "rule": "Under title theory, the mortgagee holds legal title until the mortgage is satisfied.",
+    "buzzwords": [
+      "title theory",
+      "legal title",
+      "until satisfied"
+    ],
+    "application": "Because title passed to the lender, title theory applies."
+  },
+
+  "Mortgage — Priority Rule": {
+    "rule": "Mortgage priority is determined by the order of recording unless modified by statute.",
+    "buzzwords": [
+      "priority",
+      "order of recording"
+    ],
+    "application": "Because the mortgage was recorded first, it has priority."
+  },
+
+  "Purchase Money Mortgage — General Rule": {
+    "rule": "A purchase money mortgage has priority over prior liens against the mortgagor.",
+    "buzzwords": [
+      "purchase money mortgage",
+      "priority",
+      "prior liens"
+    ],
+    "application": "Because the loan enabled purchase, the mortgage has priority."
+  },
+
+  "Purchase Money Mortgage — Vendor vs Lender": {
+    "rule": "A vendor purchase money mortgage has priority over a third-party lender purchase money mortgage.",
+    "buzzwords": [
+      "vendor",
+      "purchase money mortgage",
+      "priority"
+    ],
+    "application": "Because the seller financed the purchase, the vendor mortgage prevails."
+  },
+
+  "Future Advance Mortgage": {
+    "rule": "A mortgage securing future advances has priority from the date of recording.",
+    "buzzwords": [
+      "future advances",
+      "priority",
+      "date of recording"
+    ],
+    "application": "Because the mortgage covered future advances, priority relates back."
+  },
+
+  "Transfer of Mortgaged Property": {
+    "rule": "A mortgagor may transfer property subject to the mortgage, but the mortgage remains attached.",
+    "buzzwords": [
+      "transfer",
+      "subject to the mortgage",
+      "remains attached"
+    ],
+    "application": "Because the buyer took subject to the mortgage, the lien remains."
+  },
+
+  "Assumption of Mortgage": {
+    "rule": "When a buyer assumes the mortgage, the buyer becomes personally liable for the debt.",
+    "buzzwords": [
+      "assumption",
+      "personally liable",
+      "debt"
+    ],
+    "application": "Because the buyer assumed the mortgage, personal liability exists."
+  },
+
+  "Foreclosure — General Rule": {
+    "rule": "Foreclosure terminates the mortgagor’s equity of redemption and junior interests.",
+    "buzzwords": [
+      "foreclosure",
+      "equity of redemption",
+      "junior interests"
+    ],
+    "application": "Because foreclosure occurred, junior liens were extinguished."
+  },
+
+  "Necessary Parties — Foreclosure": {
+    "rule": "Junior lienholders must be joined in a foreclosure action to terminate their interests.",
+    "buzzwords": [
+      "junior lienholders",
+      "joined",
+      "terminate interests"
+    ],
+    "application": "Because the junior lienholder was joined, the lien was terminated."
+  },
+
+  "Effect of Foreclosure on Senior Interests": {
+    "rule": "Senior interests are not affected by foreclosure and remain attached to the property.",
+    "buzzwords": [
+      "senior interests",
+      "not affected",
+      "remain attached"
+    ],
+    "application": "Because the lien was senior, it survived foreclosure."
+  },
+
+  "Equity of Redemption": {
+    "rule": "The mortgagor has the right to redeem the property by paying the debt before foreclosure.",
+    "buzzwords": [
+      "equity of redemption",
+      "redeem",
+      "before foreclosure"
+    ],
+    "application": "Because the mortgagor paid before foreclosure, redemption occurred."
+  },
+
+  "Statutory Right of Redemption": {
+    "rule": "Some states allow redemption after foreclosure by statute.",
+    "buzzwords": [
+      "statutory redemption",
+      "after foreclosure"
+    ],
+    "application": "Because the statute allows post-sale redemption, the right applies."
+  },
+
+  "Deficiency Judgment": {
+    "rule": "If foreclosure sale proceeds are insufficient, the lender may seek a deficiency judgment.",
+    "buzzwords": [
+      "deficiency judgment",
+      "insufficient proceeds"
+    ],
+    "application": "Because the sale did not satisfy the debt, a deficiency judgment may be sought."
+  },
+
+  "Anti-Deficiency Statutes": {
+    "rule": "Anti-deficiency statutes may bar lenders from obtaining deficiency judgments.",
+    "buzzwords": [
+      "anti-deficiency statutes",
+      "bar deficiency judgments"
+    ],
+    "application": "Because the statute applies, no deficiency judgment is allowed."
+  },
+
+  "Easements — General Rule": {
+    "rule": "An easement is a nonpossessory interest that grants the right to use another’s land.",
+    "buzzwords": [
+      "easement",
+      "nonpossessory interest",
+      "right to use",
+      "another’s land"
+    ],
+    "application": "Because the interest grants use without possession, it is an easement."
+  },
+
+  "Easement Appurtenant": {
+    "rule": "An easement appurtenant benefits a dominant estate and burdens a servient estate.",
+    "buzzwords": [
+      "easement appurtenant",
+      "dominant estate",
+      "servient estate"
+    ],
+    "application": "Because the easement benefits the land, it is appurtenant."
+  },
+
+  "Easement in Gross": {
+    "rule": "An easement in gross benefits a person rather than a parcel of land.",
+    "buzzwords": [
+      "easement in gross",
+      "benefits a person"
+    ],
+    "application": "Because the easement benefits an individual, it is in gross."
+  },
+
+  "Creation of Easement — Express Grant": {
+    "rule": "An easement may be created by express grant that satisfies the statute of frauds.",
+    "buzzwords": [
+      "express grant",
+      "statute of frauds"
+    ],
+    "application": "Because the easement was created in writing, it is valid."
+  },
+
+  "Creation of Easement — Implication": {
+    "rule": "An easement may be implied when prior use was apparent, continuous, and reasonably necessary.",
+    "buzzwords": [
+      "implied easement",
+      "apparent",
+      "continuous",
+      "reasonably necessary"
+    ],
+    "application": "Because the prior use was continuous and necessary, an implied easement exists."
+  },
+
+  "Creation of Easement — Necessity": {
+    "rule": "An easement by necessity arises when land is landlocked and access is necessary.",
+    "buzzwords": [
+      "easement by necessity",
+      "landlocked",
+      "necessary"
+    ],
+    "application": "Because the land lacks access, an easement by necessity exists."
+  },
+
+  "Creation of Easement — Prescription": {
+    "rule": "An easement by prescription arises from open, notorious, adverse, and continuous use.",
+    "buzzwords": [
+      "prescriptive easement",
+      "open",
+      "notorious",
+      "adverse",
+      "continuous"
+    ],
+    "application": "Because use was open and adverse, a prescriptive easement arose."
+  },
+
+  "Scope of Easement": {
+    "rule": "The scope of an easement is limited to the terms of its creation.",
+    "buzzwords": [
+      "scope",
+      "terms of creation"
+    ],
+    "application": "Because the use exceeded the grant, the scope was violated."
+  },
+
+  "Termination of Easement": {
+    "rule": "An easement may be terminated by merger, release, abandonment, prescription, or necessity ending.",
+    "buzzwords": [
+      "termination",
+      "merger",
+      "release",
+      "abandonment",
+      "prescription"
+    ],
+    "application": "Because the dominant and servient estates merged, the easement terminated."
+  },
+
+  "Real Covenants — General Rule": {
+    "rule": "A real covenant is a promise concerning land that runs with the land at law.",
+    "buzzwords": [
+      "real covenant",
+      "promise",
+      "runs with the land"
+    ],
+    "application": "Because the promise binds successors, it is a real covenant."
+  },
+
+  "Real Covenant — Elements": {
+    "rule": "A real covenant requires writing, intent, touch and concern, and privity.",
+    "buzzwords": [
+      "writing",
+      "intent",
+      "touch and concern",
+      "privity"
+    ],
+    "application": "Because all elements are met, the covenant runs with the land."
+  },
+
+  "Horizontal Privity": {
+    "rule": "Horizontal privity requires the covenant to be made in connection with a transfer of land.",
+    "buzzwords": [
+      "horizontal privity",
+      "transfer of land"
+    ],
+    "application": "Because the covenant was made during conveyance, horizontal privity exists."
+  },
+
+  "Vertical Privity": {
+    "rule": "Vertical privity requires a successor to hold the same estate as the original party.",
+    "buzzwords": [
+      "vertical privity",
+      "same estate"
+    ],
+    "application": "Because the successor holds the same estate, vertical privity exists."
+  },
+
+  "Equitable Servitudes — General Rule": {
+    "rule": "An equitable servitude is a covenant enforceable in equity that binds successors with notice.",
+    "buzzwords": [
+      "equitable servitude",
+      "enforceable in equity",
+      "successors",
+      "notice"
+    ],
+    "application": "Because the buyer had notice, the servitude is enforceable."
+  },
+
+  "Equitable Servitude — Elements": {
+    "rule": "An equitable servitude requires intent, touch and concern, and notice.",
+    "buzzwords": [
+      "intent",
+      "touch and concern",
+      "notice"
+    ],
+    "application": "Because the purchaser had notice and intent existed, the servitude applies."
+  },
+
+  "Notice — Servitudes": {
+    "rule": "Notice for servitudes may be actual, record, or inquiry notice.",
+    "buzzwords": [
+      "actual notice",
+      "record notice",
+      "inquiry notice"
+    ],
+    "application": "Because possession was visible, inquiry notice existed."
+  },
+
+  "Common Scheme Doctrine": {
+    "rule": "Under a common scheme, restrictions apply to all lots when a developer intends uniform restrictions.",
+    "buzzwords": [
+      "common scheme",
+      "uniform restrictions",
+      "developer intent"
+    ],
+    "application": "Because a common plan existed, the restriction applies."
+  },
+
+  "Termination of Covenants and Servitudes": {
+    "rule": "Covenants and servitudes may terminate by release, merger, changed conditions, or abandonment.",
+    "buzzwords": [
+      "termination",
+      "release",
+      "merger",
+      "changed conditions",
+      "abandonment"
+    ],
+    "application": "Because conditions changed drastically, the servitude terminated."
+  },
+
+  "Zoning — General Rule": {
+    "rule": "Zoning ordinances regulate land use pursuant to the state’s police power.",
+    "buzzwords": [
+      "zoning ordinances",
+      "land use",
+      "police power"
+    ],
+    "application": "Because the ordinance regulates land use, zoning authority applies."
+  },
+
+  "Zoning — Constitutionality": {
+    "rule": "Zoning ordinances are constitutional if they are rationally related to a legitimate government purpose.",
+    "buzzwords": [
+      "constitutional",
+      "rationally related",
+      "legitimate government purpose"
+    ],
+    "application": "Because the ordinance promotes public welfare, it is constitutional."
+  },
+
+  "Zoning — Variance": {
+    "rule": "A variance permits deviation from a zoning ordinance when strict enforcement would cause undue hardship.",
+    "buzzwords": [
+      "variance",
+      "deviation",
+      "undue hardship"
+    ],
+    "application": "Because strict enforcement causes hardship, a variance may be granted."
+  },
+
+  "Zoning — Use Variance vs Area Variance": {
+    "rule": "A use variance permits a prohibited land use, while an area variance allows deviation from dimensional requirements.",
+    "buzzwords": [
+      "use variance",
+      "area variance",
+      "prohibited use",
+      "dimensional requirements"
+    ],
+    "application": "Because the variance affects lot size, it is an area variance."
+  },
+
+  "Nonconforming Use": {
+    "rule": "A nonconforming use is an existing use that does not comply with new zoning regulations.",
+    "buzzwords": [
+      "nonconforming use",
+      "existing use",
+      "new zoning regulations"
+    ],
+    "application": "Because the use existed before rezoning, it is nonconforming."
+  },
+
+  "Nonconforming Use — Limitation": {
+    "rule": "A nonconforming use may continue but may not be expanded or resumed after abandonment.",
+    "buzzwords": [
+      "nonconforming use",
+      "not expanded",
+      "abandonment"
+    ],
+    "application": "Because the owner attempted expansion, the use is prohibited."
+  },
+
+  "Eminent Domain — General Rule": {
+    "rule": "Eminent domain allows the government to take private property for public use with just compensation.",
+    "buzzwords": [
+      "eminent domain",
+      "public use",
+      "just compensation"
+    ],
+    "application": "Because the taking is for public use, compensation is required."
+  },
+
+  "Public Use Requirement": {
+    "rule": "Public use includes public purpose such as economic development.",
+    "buzzwords": [
+      "public use",
+      "public purpose",
+      "economic development"
+    ],
+    "application": "Because the taking serves economic development, public use exists."
+  },
+
+  "Just Compensation": {
+    "rule": "Just compensation is measured by the fair market value of the property at the time of the taking.",
+    "buzzwords": [
+      "just compensation",
+      "fair market value",
+      "time of the taking"
+    ],
+    "application": "Because compensation equals market value, the requirement is satisfied."
+  },
+
+  "Regulatory Taking": {
+    "rule": "A regulatory taking occurs when a regulation deprives property of all economically viable use.",
+    "buzzwords": [
+      "regulatory taking",
+      "all economically viable use"
+    ],
+    "application": "Because the regulation eliminated all value, a taking occurred."
+  },
+
+  "Temporary Taking": {
+    "rule": "A temporary regulation that denies use of property may constitute a compensable taking.",
+    "buzzwords": [
+      "temporary taking",
+      "denies use",
+      "compensable"
+    ],
+    "application": "Because use was denied temporarily, compensation may be required."
+  },
+
+  "Exactions": {
+    "rule": "Land-use exactions must have an essential nexus and rough proportionality to the government interest.",
+    "buzzwords": [
+      "exactions",
+      "essential nexus",
+      "rough proportionality"
+    ],
+    "application": "Because the exaction lacks proportionality, it is invalid."
+  },
+  
+  "Adverse Possession — General Rule": {
+    "rule": "Adverse possession allows a possessor to acquire title by open, notorious, actual, exclusive, adverse, and continuous possession for the statutory period.",
+    "buzzwords": [
+      "adverse possession",
+      "open",
+      "notorious",
+      "actual",
+      "exclusive",
+      "adverse",
+      "continuous",
+      "statutory period"
+    ],
+    "application": "Because possession satisfied all elements for the statutory period, title was acquired."
+  },
+
+  "Actual Possession": {
+    "rule": "Actual possession requires physical occupation of the land in a manner appropriate to its nature.",
+    "buzzwords": [
+      "actual possession",
+      "physical occupation"
+    ],
+    "application": "Because the possessor physically occupied the land, actual possession existed."
+  },
+
+  "Open and Notorious": {
+    "rule": "Possession is open and notorious when it is visible and obvious such that the true owner is on notice.",
+    "buzzwords": [
+      "open and notorious",
+      "visible",
+      "notice"
+    ],
+    "application": "Because the use was visible, the owner was on notice."
+  },
+
+  "Exclusive Possession": {
+    "rule": "Exclusive possession requires that the possessor not share control of the property with the true owner or the public.",
+    "buzzwords": [
+      "exclusive possession",
+      "not shared",
+      "true owner"
+    ],
+    "application": "Because the possessor excluded others, possession was exclusive."
+  },
+
+  "Adverse and Hostile": {
+    "rule": "Adverse possession requires possession without permission of the true owner.",
+    "buzzwords": [
+      "adverse",
+      "hostile",
+      "without permission"
+    ],
+    "application": "Because the owner did not consent, possession was hostile."
+  },
+
+  "Continuous Possession": {
+    "rule": "Continuous possession requires uninterrupted possession for the statutory period.",
+    "buzzwords": [
+      "continuous possession",
+      "uninterrupted",
+      "statutory period"
+    ],
+    "application": "Because possession was uninterrupted, continuity was satisfied."
+  },
+
+  "Statutory Period": {
+    "rule": "The statutory period for adverse possession is set by state law.",
+    "buzzwords": [
+      "statutory period",
+      "state law"
+    ],
+    "application": "Because the statutory period elapsed, adverse possession is complete."
+  },
+
+  "Tacking": {
+    "rule": "Successive possessors may tack periods of possession if there is privity between them.",
+    "buzzwords": [
+      "tacking",
+      "successive possessors",
+      "privity"
+    ],
+    "application": "Because privity existed, possession periods were tacked."
+  },
+
+  "Privity — Tacking": {
+    "rule": "Privity exists when possession is transferred voluntarily between possessors.",
+    "buzzwords": [
+      "privity",
+      "voluntary transfer"
+    ],
+    "application": "Because the transfer was voluntary, privity existed."
+  },
+
+  "Disabilities — General Rule": {
+    "rule": "The statutory period is tolled if the true owner is under a disability at the start of adverse possession.",
+    "buzzwords": [
+      "disability",
+      "tolled",
+      "start of possession"
+    ],
+    "application": "Because the owner was disabled at entry, the statute was tolled."
+  },
+
+  "Types of Disabilities": {
+    "rule": "Recognized disabilities include minority, mental incapacity, and imprisonment.",
+    "buzzwords": [
+      "minority",
+      "mental incapacity",
+      "imprisonment"
+    ],
+    "application": "Because the owner was a minor, the disability applied."
+  },
+
+  "Color of Title": {
+    "rule": "Color of title exists when a possessor enters under a defective written instrument.",
+    "buzzwords": [
+      "color of title",
+      "defective written instrument"
+    ],
+    "application": "Because entry was under a defective deed, color of title existed."
+  },
+
+  "Constructive Adverse Possession": {
+    "rule": "Under color of title, constructive adverse possession extends to the entire parcel described in the instrument.",
+    "buzzwords": [
+      "constructive adverse possession",
+      "entire parcel",
+      "described in the instrument"
+    ],
+    "application": "Because possession was under color of title, it extended to the whole parcel."
+  },
+
+  "Boundary Disputes — Acquiescence": {
+    "rule": "Boundary by acquiescence may be established when neighbors accept a boundary for a long period.",
+    "buzzwords": [
+      "boundary by acquiescence",
+      "accepted boundary",
+      "long period"
+    ],
+    "application": "Because both parties accepted the boundary, acquiescence applied."
+   }
+  }

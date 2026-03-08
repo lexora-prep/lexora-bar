@@ -1,0 +1,203 @@
+{
+  "Marriage — Formation Requirements": {
+    "rule": "A valid marriage requires legal capacity, mutual consent, and compliance with statutory formalities, unless an exception applies.",
+    "buzzwords": [
+      "capacity",
+      "mutual consent",
+      "state formalities",
+      "marriage license"
+    ],
+    "application": "Because both parties had capacity and consented in compliance with formalities, the marriage is valid."
+  },
+
+  "Marriage — Common Law Marriage": {
+    "rule": "Where recognized, a common law marriage requires capacity, present intent to be married, cohabitation, and holding out as married.",
+    "buzzwords": [
+      "common law marriage",
+      "present intent",
+      "cohabitation",
+      "holding out"
+    ],
+    "application": "Because the parties cohabited and held themselves out as married, a common law marriage exists."
+  },
+
+  "Marriage — Void and Voidable Marriages": {
+    "rule": "Void marriages are invalid from inception, while voidable marriages are valid unless annulled due to defects such as fraud, duress, incapacity, or age.",
+    "buzzwords": [
+      "void marriage",
+      "voidable marriage",
+      "fraud",
+      "duress",
+      "annulment"
+    ],
+    "application": "Because the defect affected consent, the marriage is voidable and subject to annulment."
+  },
+
+  "Putative Spouse Doctrine": {
+    "rule": "A putative spouse is entitled to marital protections when a party has a good faith belief in the validity of the marriage.",
+    "buzzwords": [
+      "putative spouse",
+      "good faith belief",
+      "invalid marriage"
+    ],
+    "application": "Because the spouse believed in good faith that the marriage was valid, putative spouse protections apply."
+  },
+
+  "Annulment": {
+    "rule": "Annulment declares a marriage invalid from the beginning based on a defect existing at the time of formation.",
+    "buzzwords": [
+      "annulment",
+      "void vs voidable",
+      "invalid from inception"
+    ],
+    "application": "Because fraud existed at formation, annulment is appropriate."
+  },
+
+  "Premarital and Separation Agreements": {
+    "rule": "Premarital and separation agreements are enforceable if voluntary, supported by full disclosure, and not unconscionable; courts review child-related provisions.",
+    "buzzwords": [
+      "prenup",
+      "separation agreement",
+      "full disclosure",
+      "voluntary",
+      "unconscionable"
+    ],
+    "application": "Because the agreement lacked disclosure, it is unenforceable."
+  },
+
+  "Divorce — Grounds and Jurisdiction": {
+    "rule": "Divorce may be granted on fault or no-fault grounds, and jurisdiction exists where at least one spouse is domiciled in the state.",
+    "buzzwords": [
+      "fault divorce",
+      "no-fault divorce",
+      "irreconcilable differences",
+      "domicile"
+    ],
+    "application": "Because one spouse was domiciled in the state and irreconcilable differences existed, the court had jurisdiction to grant divorce."
+  },
+
+  "Property Division — Marital vs Separate Property": {
+    "rule": "Marital property includes assets acquired during marriage, while separate property includes premarital assets, gifts, and inheritances unless transmuted.",
+    "buzzwords": [
+      "marital property",
+      "separate property",
+      "commingling",
+      "transmutation"
+    ],
+    "application": "Because the asset was acquired before marriage and not transmuted, it remains separate."
+  },
+
+  "Property Division — Equitable Distribution vs Community Property": {
+    "rule": "Equitable distribution divides marital property fairly but not necessarily equally, while community property states divide marital property equally.",
+    "buzzwords": [
+      "equitable distribution",
+      "community property",
+      "fairness"
+    ],
+    "application": "Because the state applies equitable distribution, the court divided property based on fairness."
+  },
+
+  "Spousal Support (Alimony)": {
+    "rule": "Spousal support may be awarded and modified based on factors including need, ability to pay, duration of marriage, and a substantial change in circumstances.",
+    "buzzwords": [
+      "alimony",
+      "need",
+      "ability to pay",
+      "modification"
+    ],
+    "application": "Because the marriage was long-term and earning capacity was unequal, spousal support was appropriate."
+  },
+
+  "Child Custody — Best Interests and Types": {
+    "rule": "Child custody determinations are based on the best interests of the child and may include legal custody, physical custody, or joint custody.",
+    "buzzwords": [
+      "best interests of the child",
+      "legal custody",
+      "physical custody",
+      "joint custody"
+    ],
+    "application": "Because stability favored one parent, custody was awarded accordingly."
+  },
+
+  "Child Custody — Modification and Relocation": {
+    "rule": "Custody orders may be modified upon a substantial change in circumstances, and relocation requires good faith and consistency with the child’s best interests.",
+    "buzzwords": [
+      "custody modification",
+      "substantial change",
+      "relocation",
+      "best interests"
+    ],
+    "application": "Because the child’s environment changed significantly, modification was justified."
+  },
+
+  "Child Custody Jurisdiction (UCCJEA)": {
+    "rule": "Under the UCCJEA, initial custody jurisdiction lies in the child’s home state where the child lived for six months prior to filing.",
+    "buzzwords": [
+      "UCCJEA",
+      "home state",
+      "custody jurisdiction"
+    ],
+    "application": "Because the child lived in the state for six months, it is the home state."
+  },
+
+  "Child Support — Obligation and Modification": {
+    "rule": "Parents have a non-waivable duty to support their children, and support may be modified upon a substantial change in circumstances.",
+    "buzzwords": [
+      "child support",
+      "guidelines",
+      "non-waivable",
+      "modification"
+    ],
+    "application": "Because income changed substantially, child support was modified."
+  },
+
+  "Child Support Jurisdiction (UIFSA)": {
+    "rule": "Under UIFSA, the issuing state retains continuing exclusive jurisdiction over child support orders unless all parties leave the state.",
+    "buzzwords": [
+      "UIFSA",
+      "continuing exclusive jurisdiction",
+      "support order"
+    ],
+    "application": "Because one parent still resided in the issuing state, jurisdiction remained."
+  },
+
+  "Parentage (Paternity)": {
+    "rule": "Paternity may be established through marriage, voluntary acknowledgment, adjudication, or genetic testing, with a marital presumption for children born during marriage.",
+    "buzzwords": [
+      "paternity",
+      "marital presumption",
+      "genetic testing"
+    ],
+    "application": "Because the child was born during marriage, the husband is presumed to be the father."
+  },
+
+  "Adoption": {
+    "rule": "Adoption requires consent of biological parents unless parental rights have been terminated.",
+    "buzzwords": [
+      "adoption",
+      "consent",
+      "termination of parental rights"
+    ],
+    "application": "Because parental rights were terminated, adoption was permitted."
+  },
+
+  "Termination of Parental Rights": {
+    "rule": "Parental rights may be terminated upon clear and convincing evidence of abuse, neglect, abandonment, or unfitness.",
+    "buzzwords": [
+      "termination",
+      "clear and convincing evidence",
+      "unfitness"
+    ],
+    "application": "Because chronic abuse was proven, termination was appropriate."
+  },
+
+  "Domestic Violence — Protective Orders": {
+    "rule": "Courts may issue protective orders to prevent domestic violence, including ex parte orders based on affidavits of abuse or threats.",
+    "buzzwords": [
+      "domestic violence",
+      "protective order",
+      "ex parte"
+    ],
+    "application": "Because abuse was credibly alleged, a protective order was issued."
+  }
+}

@@ -1,0 +1,265 @@
+{
+  "Testamentary Capacity": {
+    "rule": "Testamentary capacity requires that the testator understand the nature of the act, the extent of the property, the natural objects of bounty, and the disposition being made.",
+    "buzzwords": [
+      "testamentary capacity",
+      "nature of the act",
+      "extent of the property",
+      "natural objects of bounty",
+      "disposition"
+    ],
+    "application": "Because the testator understood the property and beneficiaries, capacity existed."
+  },
+
+  "Formal Requirements — Attested Will": {
+    "rule": "An attested will must be in writing, signed by the testator, and witnessed by at least two witnesses.",
+    "buzzwords": [
+      "attested will",
+      "writing",
+      "signed",
+      "two witnesses"
+    ],
+    "application": "Because the will was signed and witnessed, it is valid."
+  },
+
+  "Holographic Will": {
+    "rule": "A holographic will is valid if it is entirely in the testator’s handwriting and signed.",
+    "buzzwords": [
+      "holographic will",
+      "handwriting",
+      "signed"
+    ],
+    "application": "Because the will was handwritten and signed, it is valid."
+  },
+
+  "Codicil": {
+    "rule": "A codicil is an amendment to a will that must satisfy will formalities.",
+    "buzzwords": [
+      "codicil",
+      "amendment",
+      "will formalities"
+    ],
+    "application": "Because the codicil met formalities, it is effective."
+  },
+
+  "Revocation — By Physical Act": {
+    "rule": "A will may be revoked by a physical act performed with intent to revoke.",
+    "buzzwords": [
+      "revocation",
+      "physical act",
+      "intent"
+    ],
+    "application": "Because the testator destroyed the will intentionally, it was revoked."
+  },
+
+  "Revocation — By Subsequent Writing": {
+    "rule": "A will may be revoked by a later will or codicil that expressly or impliedly revokes the prior will.",
+    "buzzwords": [
+      "subsequent writing",
+      "later will",
+      "implied revocation"
+    ],
+    "application": "Because the later will conflicted, the prior will was revoked."
+  },
+
+  "Dependent Relative Revocation": {
+    "rule": "Dependent relative revocation applies when a testator revokes a will based on a mistaken belief.",
+    "buzzwords": [
+      "dependent relative revocation",
+      "mistaken belief"
+    ],
+    "application": "Because the revocation was based on mistake, the prior will may be revived."
+  },
+
+  "Revival of Will": {
+    "rule": "A revoked will may be revived if the testator intends revival.",
+    "buzzwords": [
+      "revival",
+      "intent"
+    ],
+    "application": "Because the testator intended revival, the will is revived."
+  },
+
+  "Anti-Lapse Statute": {
+    "rule": "An anti-lapse statute saves a gift when the beneficiary predeceases the testator and is a close relative.",
+    "buzzwords": [
+      "anti-lapse statute",
+      "predeceases",
+      "close relative"
+    ],
+    "application": "Because the beneficiary was a relative, the gift passes to descendants."
+  },
+
+  "Ademption by Extinction": {
+    "rule": "Ademption occurs when specifically devised property is not in the estate at death.",
+    "buzzwords": [
+      "ademption",
+      "specific devise",
+      "not in the estate"
+    ],
+    "application": "Because the property was sold, the gift adeems."
+  },
+
+  "Abatement": {
+    "rule": "Abatement determines the order in which gifts are reduced to satisfy debts.",
+    "buzzwords": [
+      "abatement",
+      "debts",
+      "order of reduction"
+    ],
+    "application": "Because assets were insufficient, abatement applied."
+  },
+
+  "Elective Share": {
+    "rule": "A surviving spouse may claim an elective share of the decedent’s estate.",
+    "buzzwords": [
+      "elective share",
+      "surviving spouse"
+    ],
+    "application": "Because the spouse elected, the statutory share applies."
+  },
+
+  "Intestate Succession": {
+    "rule": "If a decedent dies intestate, property passes according to the state intestacy statute.",
+    "buzzwords": [
+      "intestate succession",
+      "intestacy statute"
+    ],
+    "application": "Because no will exists, intestate succession applies."
+  },
+
+  "Pretermitted Child": {
+    "rule": "A pretermitted child omitted from a will may take an intestate share.",
+    "buzzwords": [
+      "pretermitted child",
+      "intestate share"
+    ],
+    "application": "Because the child was omitted, a share is granted."
+  },
+
+  "Undue Influence": {
+    "rule": "Undue influence exists when influence overcomes the testator’s free will.",
+    "buzzwords": [
+      "undue influence",
+      "free will"
+    ],
+    "application": "Because domination existed, undue influence is presumed."
+  },
+
+  "Trust — General Rule": {
+    "rule": "A trust is a fiduciary relationship in which a trustee holds legal title for the benefit of beneficiaries.",
+    "buzzwords": [
+      "trust",
+      "fiduciary relationship",
+      "legal title",
+      "beneficiaries"
+    ],
+    "application": "Because legal title is held for beneficiaries, a trust exists."
+  },
+
+  "Trust Creation Requirements": {
+    "rule": "A valid trust requires intent, identifiable trust property, a trustee, and identifiable beneficiaries.",
+    "buzzwords": [
+      "intent",
+      "trust property",
+      "trustee",
+      "beneficiaries"
+    ],
+    "application": "Because all elements are present, the trust is valid."
+  },
+
+  "Revocable Trust": {
+    "rule": "A revocable trust may be amended or revoked by the settlor during life.",
+    "buzzwords": [
+      "revocable trust",
+      "amended",
+      "revoked"
+    ],
+    "application": "Because the settlor revoked it, the trust terminated."
+  },
+
+  "Irrevocable Trust": {
+    "rule": "An irrevocable trust cannot be modified without beneficiary consent or court approval.",
+    "buzzwords": [
+      "irrevocable trust",
+      "cannot be modified"
+    ],
+    "application": "Because consent was lacking, modification is denied."
+  },
+
+  "Spendthrift Trust": {
+    "rule": "A spendthrift trust restricts both voluntary and involuntary transfer of beneficiary interests.",
+    "buzzwords": [
+      "spendthrift trust",
+      "voluntary transfer",
+      "involuntary transfer"
+    ],
+    "application": "Because the trust has a spendthrift clause, creditors are barred."
+  },
+
+  "Trustee Duties — Loyalty": {
+    "rule": "A trustee owes a duty of loyalty and must act solely in the beneficiaries’ interests.",
+    "buzzwords": [
+      "duty of loyalty",
+      "solely in the beneficiaries’ interests"
+    ],
+    "application": "Because self-dealing occurred, the duty was breached."
+  },
+
+  "Trustee Duties — Care": {
+    "rule": "A trustee must administer the trust with reasonable care and skill.",
+    "buzzwords": [
+      "duty of care",
+      "reasonable care",
+      "skill"
+    ],
+    "application": "Because investments were reckless, the duty was breached."
+  },
+
+  "Trustee Duties — Impartiality": {
+    "rule": "A trustee must act impartially among beneficiaries.",
+    "buzzwords": [
+      "duty of impartiality",
+      "among beneficiaries"
+    ],
+    "application": "Because one beneficiary was favored, the duty was breached."
+  },
+
+  "Trust Modification — Cy Pres": {
+    "rule": "Cy pres allows modification of a charitable trust to approximate the settlor’s intent.",
+    "buzzwords": [
+      "cy pres",
+      "charitable trust",
+      "approximate intent"
+    ],
+    "application": "Because the purpose became impossible, cy pres applies."
+  },
+
+  "Trust Termination": {
+    "rule": "A trust may terminate when its purpose is fulfilled or becomes impossible.",
+    "buzzwords": [
+      "trust termination",
+      "purpose fulfilled",
+      "impossible"
+    ],
+    "application": "Because the purpose ended, the trust terminates."
+  },
+
+  "Resulting Trust": {
+    "rule": "A resulting trust arises when trust property is returned to the settlor or estate.",
+    "buzzwords": [
+      "resulting trust",
+      "returned to the settlor"
+    ],
+    "application": "Because the trust failed, a resulting trust arose."
+  },
+
+  "Constructive Trust": {
+    "rule": "A constructive trust is imposed to prevent unjust enrichment.",
+    "buzzwords": [
+      "constructive trust",
+      "unjust enrichment"
+    ],
+    "application": "Because property was obtained by wrongdoing, a constructive trust is imposed."
+  }
+}

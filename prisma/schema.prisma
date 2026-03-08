@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  jurisdiction String?
+  barExamDate  DateTime?
+  createdAt    DateTime  @default(now())
+  lastLogin    DateTime?
+
+  studyGoalMBE   Int? @default(60)
+  studyGoalRules Int? @default(20)
+
+  ruleStats     UserRuleStat[]
+  mbeAttempts   UserMBEAttempt[]
+  studySessions StudySession[]
+  weakAreas     WeakArea[]
+  subjectStats  UserSubjectStat[]
+
+  ruleAttempts RuleAttempt[]
+}
+
+model Subject {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  topics    Topic[]
+  rules     Rule[]
+  questions MBEQuestion[]
+
+  subjectStats UserSubjectStat[]
+}
+
+model Topic {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId Int
+
+  rules Rule[]
+
+  questions MBEQuestion[]
+}
+
+model Rule {
+  id       Int     @id @default(autoincrement())
+  title    String
+  ruleText String
+  subtopic String?
+
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId Int
+
+  topic   Topic? @relation(fields: [topicId], references: [id])
+  topicId Int?
+
+  keywords RuleKeyword[]
+
+  createdAt DateTime @default(now())
+
+  userStats UserRuleStat[]
+
+  ruleAttempts RuleAttempt[]
+  weakAreas    WeakArea[]
+}
+
+model RuleKeyword {
+  id       Int    @id @default(autoincrement())
+  keyword  String
+  position Int
+
+  rule   Rule @relation(fields: [ruleId], references: [id])
+  ruleId Int
+}
+
+model UserRuleStat {
+  id Int @id @default(autoincrement())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  rule   Rule @relation(fields: [ruleId], references: [id])
+  ruleId Int
+
+  attemptsTotal   Int @default(0)
+  attemptsCorrect Int @default(0)
+
+  typingAccuracy    Float @default(0)
+  fillBlankAccuracy Float @default(0)
+  orderingAccuracy  Float @default(0)
+  buzzwordAccuracy  Float @default(0)
+  flashcardAccuracy Float @default(0)
+
+  memoryLevel  Int       @default(0)
+  nextReviewAt DateTime?
+
+  lastSeenAt DateTime?
+}
+
+model RuleAttempt {
+  id Int @id @default(autoincrement())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  rule   Rule @relation(fields: [ruleId], references: [id])
+  ruleId Int
+
+  mode         String
+  scorePercent Float
+  timeSpentSec Int
+
+  createdAt DateTime @default(now())
+}
+
+model WeakArea {
+  id Int @id @default(autoincrement())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  rule   Rule @relation(fields: [ruleId], references: [id])
+  ruleId Int
+
+  accuracy Float
+  attempts Int
+
+  flaggedAt DateTime @default(now())
+}
+
+model MBEQuestion {
+  id Int @id @default(autoincrement())
+
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId Int
+
+  topic   Topic? @relation(fields: [topicId], references: [id])
+  topicId Int?
+
+  questionText String
+
+  answerA String
+  answerB String
+  answerC String
+  answerD String
+
+  correctAnswer String
+  explanation   String
+
+  difficulty Int?
+
+  attempts UserMBEAttempt[]
+}
+
+model UserMBEAttempt {
+  id Int @id @default(autoincrement())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  question   MBEQuestion @relation(fields: [questionId], references: [id])
+  questionId Int
+
+  selectedAnswer String
+  isCorrect      Boolean
+
+  timeSpentSec Int
+
+  createdAt DateTime @default(now())
+}
+
+model UserSubjectStat {
+  id Int @id @default(autoincrement())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  subjectId Int
+
+  questionsDone    Int @default(0)
+  questionsCorrect Int @default(0)
+
+  accuracy Float @default(0)
+}
+
+model StudySession {
+  id Int @id @default(autoincrement())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  date DateTime
+
+  mbeQuestionsDone Int @default(0)
+  rulesTrained     Int @default(0)
+  reviewsCompleted Int @default(0)
+
+  studyTimeMinutes Int @default(0)
+}

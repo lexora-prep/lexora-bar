@@ -1,0 +1,233 @@
+{
+  "Scope of Article 9": {
+    "rule": "Article 9 governs transactions that create a security interest in personal property or fixtures.",
+    "buzzwords": [
+      "Article 9",
+      "security interest",
+      "personal property",
+      "fixtures"
+    ],
+    "application": "Because the transaction creates a security interest in personal property, Article 9 applies."
+  },
+
+  "Attachment — Requirements": {
+    "rule": "A security interest attaches when value is given, the debtor has rights in the collateral, and there is an authenticated security agreement or possession or control by the secured party.",
+    "buzzwords": [
+      "attachment",
+      "value is given",
+      "debtor has rights",
+      "authenticated security agreement",
+      "possession",
+      "control"
+    ],
+    "application": "Because value was given and the debtor authenticated a security agreement, attachment occurred."
+  },
+
+  "Security Agreement": {
+    "rule": "A security agreement is an authenticated record that provides a description of the collateral.",
+    "buzzwords": [
+      "security agreement",
+      "authenticated record",
+      "description of the collateral"
+    ],
+    "application": "Because the agreement was authenticated and described the collateral, it is valid."
+  },
+
+  "Description of Collateral": {
+    "rule": "Collateral is sufficiently described if it reasonably identifies what is described, but supergeneric descriptions are insufficient in a security agreement.",
+    "buzzwords": [
+      "reasonably identifies",
+      "supergeneric description",
+      "security agreement"
+    ],
+    "application": "Because the collateral was specifically identified, the description is sufficient."
+  },
+
+  "Value": {
+    "rule": "Value includes any consideration sufficient to support a simple contract or an antecedent debt.",
+    "buzzwords": [
+      "value",
+      "consideration",
+      "antecedent debt"
+    ],
+    "application": "Because the loan satisfied an antecedent debt, value was given."
+  },
+
+  "Debtor Rights in Collateral": {
+    "rule": "A debtor has rights in collateral when the debtor has an ownership interest or the power to transfer rights.",
+    "buzzwords": [
+      "debtor rights",
+      "ownership interest",
+      "power to transfer"
+    ],
+    "application": "Because the debtor owned the property, debtor rights existed."
+  },
+
+  "Perfection — General Rule": {
+    "rule": "A security interest is perfected when it has attached and the secured party has taken all required steps.",
+    "buzzwords": [
+      "perfection",
+      "attached",
+      "required steps"
+    ],
+    "application": "Because attachment and filing occurred, the interest is perfected."
+  },
+
+  "Perfection — Filing": {
+    "rule": "Perfection by filing requires a financing statement that provides the debtor’s name, the secured party’s name, and indicates the collateral.",
+    "buzzwords": [
+      "financing statement",
+      "debtor name",
+      "secured party name",
+      "indicates the collateral"
+    ],
+    "application": "Because the financing statement listed the debtor and collateral, filing was effective."
+  },
+
+  "Perfection — Debtor Name": {
+    "rule": "A financing statement must provide the debtor’s correct legal name.",
+    "buzzwords": [
+      "debtor’s legal name",
+      "financing statement"
+    ],
+    "application": "Because the legal name was used, the filing is effective."
+  },
+
+  "Perfection — Possession": {
+    "rule": "A secured party may perfect by possession of tangible collateral.",
+    "buzzwords": [
+      "possession",
+      "tangible collateral"
+    ],
+    "application": "Because the secured party took possession, perfection occurred."
+  },
+
+  "Perfection — Control": {
+    "rule": "A security interest in deposit accounts, investment property, and electronic chattel paper may be perfected by control.",
+    "buzzwords": [
+      "control",
+      "deposit accounts",
+      "investment property",
+      "electronic chattel paper"
+    ],
+    "application": "Because the bank had control of the account, perfection occurred."
+  },
+
+  "Automatic Perfection — PMSI in Consumer Goods": {
+    "rule": "A purchase-money security interest in consumer goods is automatically perfected upon attachment.",
+    "buzzwords": [
+      "purchase-money security interest",
+      "consumer goods",
+      "automatically perfected"
+    ],
+    "application": "Because the goods were consumer goods, perfection was automatic."
+  },
+
+  "Collateral Classification": {
+    "rule": "Collateral is classified as consumer goods, inventory, equipment, or farm products based on the debtor’s use.",
+    "buzzwords": [
+      "consumer goods",
+      "inventory",
+      "equipment",
+      "farm products"
+    ],
+    "application": "Because the goods were used in business, they are equipment."
+  },
+
+  "Proceeds": {
+    "rule": "A security interest attaches to identifiable proceeds of collateral.",
+    "buzzwords": [
+      "proceeds",
+      "identifiable"
+    ],
+    "application": "Because the proceeds were traceable, the interest attached."
+  },
+
+  "Temporary Perfection — Proceeds": {
+    "rule": "A perfected security interest in proceeds remains perfected for 20 days.",
+    "buzzwords": [
+      "temporary perfection",
+      "20 days",
+      "proceeds"
+    ],
+    "application": "Because the proceeds were received within 20 days, perfection continued."
+  },
+
+  "Priority — General Rule": {
+    "rule": "Priority among conflicting security interests is determined by the first to file or perfect.",
+    "buzzwords": [
+      "priority",
+      "first to file",
+      "first to perfect"
+    ],
+    "application": "Because the creditor filed first, it has priority."
+  },
+
+  "Priority — Unperfected Interests": {
+    "rule": "Between unperfected security interests, priority goes to the first to attach.",
+    "buzzwords": [
+      "unperfected",
+      "first to attach"
+    ],
+    "application": "Because attachment occurred earlier, priority applies."
+  },
+
+  "Priority — Lien Creditors": {
+    "rule": "A perfected security interest has priority over a lien creditor.",
+    "buzzwords": [
+      "lien creditor",
+      "perfected"
+    ],
+    "application": "Because the interest was perfected, it has priority over the lien."
+  },
+
+  "Priority — PMSI in Goods": {
+    "rule": "A purchase-money security interest in goods has priority if perfected within the statutory time.",
+    "buzzwords": [
+      "purchase-money security interest",
+      "priority",
+      "statutory time"
+    ],
+    "application": "Because the PMSI was timely perfected, it has priority."
+  },
+
+  "Priority — Buyers in Ordinary Course": {
+    "rule": "A buyer in ordinary course of business takes free of a security interest created by the seller.",
+    "buzzwords": [
+      "buyer in ordinary course",
+      "takes free",
+      "created by the seller"
+    ],
+    "application": "Because the buyer purchased in ordinary course, the interest is cut off."
+  },
+
+  "Default — Secured Party Rights": {
+    "rule": "Upon default, a secured party may repossess collateral without breach of the peace and dispose of it commercially reasonably.",
+    "buzzwords": [
+      "default",
+      "repossession",
+      "without breach of the peace",
+      "commercially reasonable"
+    ],
+    "application": "Because repossession was peaceful, it was lawful."
+  },
+
+  "Debtor Rights After Default": {
+    "rule": "A debtor has the right to redeem collateral by paying the full balance before disposition.",
+    "buzzwords": [
+      "redeem",
+      "full balance",
+      "before disposition"
+    ],
+    "application": "Because the debtor tendered payment before sale, redemption occurred."
+  },
+
+  "Deficiency and Surplus": {
+    "rule": "After disposition, the secured party may seek a deficiency or must return any surplus.",
+    "buzzwords": [
+      "deficiency",
+      "surplus"
+    ],
+    "application": "Because sale proceeds were insufficient, a deficiency is owed."
+  }
+}

@@ -1,0 +1,1224 @@
+{
+     "Relevance — Definition": {
+    "rule": "Evidence is relevant if it has any tendency to make a fact of consequence more or less probable than it would be without the evidence.",
+    "buzzwords": [
+      "relevant",
+      "any tendency",
+      "fact of consequence",
+      "more or less probable"
+    ],
+    "application": "Because the evidence makes a fact of consequence more probable, it is relevant."
+  },
+
+  "Relevance — Admissibility": {
+    "rule": "Relevant evidence is admissible unless excluded by the Constitution, a statute, the Federal Rules of Evidence, or other rules.",
+    "buzzwords": [
+      "admissible",
+      "excluded",
+      "Federal Rules of Evidence"
+    ],
+    "application": "Because no rule excludes the evidence, it is admissible."
+  },
+
+  "Irrelevant Evidence": {
+    "rule": "Irrelevant evidence is not admissible.",
+    "buzzwords": [
+      "irrelevant",
+      "not admissible"
+    ],
+    "application": "Because the evidence is irrelevant, it is excluded."
+  },
+
+  "Rule 403 — Balancing Test": {
+    "rule": "Relevant evidence may be excluded if its probative value is substantially outweighed by the danger of unfair prejudice, confusion, or misleading the jury.",
+    "buzzwords": [
+      "Rule 403",
+      "probative value",
+      "substantially outweighed",
+      "unfair prejudice",
+      "confusion",
+      "misleading the jury"
+    ],
+    "application": "Because unfair prejudice substantially outweighs probative value, the evidence is excluded."
+  },
+
+  "Rule 403 — Other Considerations": {
+    "rule": "Relevant evidence may also be excluded for undue delay, wasting time, or needless presentation of cumulative evidence.",
+    "buzzwords": [
+      "undue delay",
+      "wasting time",
+      "cumulative evidence"
+    ],
+    "application": "Because the evidence is cumulative, it may be excluded."
+  },
+
+  "Policy Exclusion — Subsequent Remedial Measures": {
+    "rule": "Evidence of subsequent remedial measures is not admissible to prove negligence, culpable conduct, or product defect.",
+    "buzzwords": [
+      "subsequent remedial measures",
+      "not admissible",
+      "negligence",
+      "culpable conduct",
+      "product defect"
+    ],
+    "application": "Because the evidence concerns repairs after the accident, it is excluded."
+  },
+
+  "Subsequent Remedial Measures — Permitted Uses": {
+    "rule": "Evidence of subsequent remedial measures may be admitted to prove ownership, control, feasibility, or impeachment.",
+    "buzzwords": [
+      "ownership",
+      "control",
+      "feasibility",
+      "impeachment"
+    ],
+    "application": "Because ownership is disputed, the evidence is admissible for that purpose."
+  },
+
+  "Policy Exclusion — Settlement Offers": {
+    "rule": "Evidence of settlement offers or negotiations is not admissible to prove liability or the amount of a claim.",
+    "buzzwords": [
+      "settlement offers",
+      "negotiations",
+      "not admissible",
+      "liability",
+      "amount of a claim"
+    ],
+    "application": "Because the evidence relates to settlement discussions, it is excluded."
+  },
+
+  "Settlement — Permitted Uses": {
+    "rule": "Evidence of settlement negotiations may be admitted for purposes such as impeachment or proving bias.",
+    "buzzwords": [
+      "impeachment",
+      "bias"
+    ],
+    "application": "Because the evidence shows bias, it may be admitted."
+  },
+
+  "Policy Exclusion — Offers to Pay Medical Expenses": {
+    "rule": "Evidence of offers to pay medical expenses is not admissible to prove liability for an injury.",
+    "buzzwords": [
+      "offers to pay medical expenses",
+      "not admissible",
+      "liability"
+    ],
+    "application": "Because the statement offered to pay medical bills, it is excluded."
+  },
+
+  "Policy Exclusion — Pleas and Plea Discussions": {
+    "rule": "Evidence of withdrawn guilty pleas, nolo contendere pleas, and plea discussions is not admissible against the defendant.",
+    "buzzwords": [
+      "withdrawn guilty pleas",
+      "nolo contendere",
+      "plea discussions",
+      "not admissible"
+    ],
+    "application": "Because the statement occurred during plea discussions, it is excluded."
+  },
+
+  "Policy Exclusion — Liability Insurance": {
+    "rule": "Evidence that a person was insured against liability is not admissible to prove negligence or wrongful conduct.",
+    "buzzwords": [
+      "liability insurance",
+      "not admissible",
+      "negligence",
+      "wrongful conduct"
+    ],
+    "application": "Because insurance was offered to show negligence, it is excluded."
+  },
+
+  "Liability Insurance — Permitted Uses": {
+    "rule": "Evidence of liability insurance may be admitted to prove ownership, control, or bias.",
+    "buzzwords": [
+      "ownership",
+      "control",
+      "bias"
+    ],
+    "application": "Because control is disputed, the evidence is admissible."
+  },
+
+  "Character Evidence — General Rule": {
+    "rule": "Character evidence is not admissible to prove that a person acted in accordance with a character trait on a particular occasion.",
+    "buzzwords": [
+      "character evidence",
+      "not admissible",
+      "acted in accordance",
+      "character trait"
+    ],
+    "application": "Because the evidence was offered to show action in conformity, it is inadmissible."
+  },
+
+  "Character Evidence — Criminal Defendant Exception": {
+    "rule": "In a criminal case, a defendant may offer evidence of a pertinent character trait, and the prosecution may rebut that evidence.",
+    "buzzwords": [
+      "criminal case",
+      "defendant",
+      "pertinent character trait",
+      "rebut"
+    ],
+    "application": "Because the defendant introduced character evidence, the prosecution may rebut."
+  },
+
+  "Character Evidence — Victim in Criminal Case": {
+    "rule": "In a criminal case, a defendant may offer evidence of a pertinent character trait of the victim, and the prosecution may rebut or offer evidence of the defendant’s same trait.",
+    "buzzwords": [
+      "victim",
+      "criminal case",
+      "pertinent character trait",
+      "rebut"
+    ],
+    "application": "Because the defendant attacked the victim’s character, rebuttal is permitted."
+  },
+
+  "Character Evidence — Homicide Case": {
+    "rule": "In a homicide case, the prosecution may offer evidence of the victim’s peaceful character to rebut evidence that the victim was the first aggressor.",
+    "buzzwords": [
+      "homicide",
+      "peaceful character",
+      "first aggressor"
+    ],
+    "application": "Because the defendant claimed the victim was the aggressor, peaceful character evidence is admissible."
+  },
+
+  "Character Evidence — Methods of Proof": {
+    "rule": "Character may be proven by reputation testimony or opinion testimony, and by specific instances of conduct only on cross-examination.",
+    "buzzwords": [
+      "reputation",
+      "opinion",
+      "specific instances",
+      "cross-examination"
+    ],
+    "application": "Because the testimony was opinion evidence, it is an acceptable method of proof."
+  },
+
+  "Character Evidence — Civil Cases": {
+    "rule": "Character evidence is generally not admissible in civil cases unless character is an essential element of a claim or defense.",
+    "buzzwords": [
+      "civil cases",
+      "essential element",
+      "claim or defense"
+    ],
+    "application": "Because character was not an essential element, the evidence is inadmissible."
+  },
+
+  "Other Acts Evidence — Rule 404(b)": {
+    "rule": "Evidence of other crimes, wrongs, or acts is not admissible to prove character but may be admitted for other purposes such as motive, intent, or identity.",
+    "buzzwords": [
+      "other acts",
+      "not admissible",
+      "prove character",
+      "motive",
+      "intent",
+      "identity"
+    ],
+    "application": "Because the evidence was offered to show intent, it may be admitted."
+  },
+
+  "Other Acts Evidence — Permitted Purposes": {
+    "rule": "Other acts evidence may be admitted to prove motive, opportunity, intent, preparation, plan, knowledge, identity, or absence of mistake.",
+    "buzzwords": [
+      "motive",
+      "opportunity",
+      "intent",
+      "preparation",
+      "plan",
+      "knowledge",
+      "identity",
+      "absence of mistake"
+    ],
+    "application": "Because the evidence shows a common plan, it is admissible."
+  },
+
+  "Other Acts Evidence — Notice Requirement": {
+    "rule": "In a criminal case, the prosecution must provide reasonable notice of its intent to introduce other acts evidence.",
+    "buzzwords": [
+      "criminal case",
+      "reasonable notice",
+      "other acts evidence"
+    ],
+    "application": "Because notice was provided, the evidence may be admitted."
+  },
+
+  "Habit Evidence": {
+    "rule": "Evidence of a person’s habit or an organization’s routine practice is admissible to prove conduct in conformity with the habit or routine.",
+    "buzzwords": [
+      "habit",
+      "routine practice",
+      "admissible",
+      "conduct in conformity"
+    ],
+    "application": "Because the behavior was habitual, the evidence is admissible."
+  },
+
+  "Impeachment — Purpose": {
+    "rule": "Impeachment is the process of challenging the credibility of a witness.",
+    "buzzwords": [
+      "impeachment",
+      "credibility",
+      "witness"
+    ],
+    "application": "Because the evidence challenges credibility, it is proper impeachment."
+  },
+
+  "Impeachment — Who May Impeach": {
+    "rule": "Any party, including the party that called the witness, may impeach a witness.",
+    "buzzwords": [
+      "any party",
+      "called the witness",
+      "impeach"
+    ],
+    "application": "Because a party may impeach its own witness, impeachment is permitted."
+  },
+
+  "Impeachment — Bias or Interest": {
+    "rule": "A witness may be impeached by showing bias, interest, or motive to lie.",
+    "buzzwords": [
+      "bias",
+      "interest",
+      "motive to lie"
+    ],
+    "application": "Because the witness had a motive to lie, bias impeachment applies."
+  },
+
+  "Impeachment — Prior Inconsistent Statement": {
+    "rule": "A witness may be impeached by a prior inconsistent statement if the witness is given an opportunity to explain or deny the statement.",
+    "buzzwords": [
+      "prior inconsistent statement",
+      "opportunity to explain",
+      "opportunity to deny"
+    ],
+    "application": "Because the witness made a conflicting statement, impeachment is proper."
+  },
+
+  "Prior Inconsistent Statement — Extrinsic Evidence": {
+    "rule": "Extrinsic evidence of a prior inconsistent statement is admissible only if the witness is given an opportunity to explain or deny the statement.",
+    "buzzwords": [
+      "extrinsic evidence",
+      "prior inconsistent statement",
+      "explain or deny"
+    ],
+    "application": "Because the witness was confronted, extrinsic evidence is admissible."
+  },
+
+  "Impeachment — Sensory or Mental Defects": {
+    "rule": "A witness may be impeached by showing defects in perception, memory, or narration.",
+    "buzzwords": [
+      "sensory defects",
+      "mental defects",
+      "perception",
+      "memory",
+      "narration"
+    ],
+    "application": "Because the witness had impaired perception, credibility is weakened."
+  },
+
+  "Impeachment — Character for Truthfulness": {
+    "rule": "A witness’s character for truthfulness may be attacked or supported by reputation or opinion testimony.",
+    "buzzwords": [
+      "character for truthfulness",
+      "reputation",
+      "opinion"
+    ],
+    "application": "Because the witness’s honesty was attacked, character evidence is admissible."
+  },
+
+  "Impeachment — Specific Instances of Conduct": {
+    "rule": "Specific instances of conduct may be inquired into on cross-examination if probative of truthfulness but may not be proven by extrinsic evidence.",
+    "buzzwords": [
+      "specific instances",
+      "cross-examination",
+      "probative of truthfulness",
+      "extrinsic evidence"
+    ],
+    "application": "Because the conduct reflects truthfulness, questioning is permitted on cross."
+  },
+
+  "Impeachment — Criminal Convictions": {
+    "rule": "A witness may be impeached by evidence of certain criminal convictions.",
+    "buzzwords": [
+      "criminal convictions",
+      "impeached"
+    ],
+    "application": "Because the witness has a qualifying conviction, impeachment is allowed."
+  },
+
+  "Criminal Convictions — Crimes Involving Dishonesty": {
+    "rule": "Evidence of a crime involving dishonesty or false statement must be admitted for impeachment purposes.",
+    "buzzwords": [
+      "crime involving dishonesty",
+      "false statement",
+      "must be admitted"
+    ],
+    "application": "Because the conviction involved dishonesty, impeachment is mandatory."
+  },
+
+  "Criminal Convictions — Felonies": {
+    "rule": "Felony convictions may be admitted to impeach a witness if the probative value outweighs the prejudicial effect.",
+    "buzzwords": [
+      "felony convictions",
+      "probative value",
+      "prejudicial effect"
+    ],
+    "application": "Because probative value outweighed prejudice, the conviction was admitted."
+  },
+
+  "Criminal Convictions — Time Limit": {
+    "rule": "Convictions more than ten years old are admissible only if their probative value substantially outweighs their prejudicial effect.",
+    "buzzwords": [
+      "ten years",
+      "substantially outweighs",
+      "prejudicial effect"
+    ],
+    "application": "Because the conviction was old and prejudicial, it was excluded."
+  },
+
+  "Impeachment — Contradiction": {
+    "rule": "A witness may be impeached by contradiction when evidence shows that the witness’s testimony is factually incorrect.",
+    "buzzwords": [
+      "contradiction",
+      "factually incorrect"
+    ],
+    "application": "Because evidence contradicted the testimony, impeachment is proper."
+  },
+
+  "Rehabilitation": {
+    "rule": "A witness may be rehabilitated after impeachment by evidence explaining or countering the impeachment.",
+    "buzzwords": [
+      "rehabilitation",
+      "explaining",
+      "countering"
+    ],
+    "application": "Because the impeachment was attacked, rehabilitation is permitted."
+  },
+
+  "Hearsay — Definition": {
+    "rule": "Hearsay is an out-of-court statement offered to prove the truth of the matter asserted.",
+    "buzzwords": [
+      "hearsay",
+      "out-of-court statement",
+      "truth of the matter asserted"
+    ],
+    "application": "Because the statement was made out of court and offered for its truth, it is hearsay."
+  },
+
+  "Statement — Definition": {
+    "rule": "A statement is a person’s oral assertion, written assertion, or nonverbal conduct intended as an assertion.",
+    "buzzwords": [
+      "statement",
+      "oral assertion",
+      "written assertion",
+      "nonverbal conduct",
+      "intended as an assertion"
+    ],
+    "application": "Because the conduct was intended as an assertion, it qualifies as a statement."
+  },
+
+  "Declarant — Definition": {
+    "rule": "The declarant is the person who made the statement.",
+    "buzzwords": [
+      "declarant",
+      "person who made the statement"
+    ],
+    "application": "Because the witness made the statement, the witness is the declarant."
+  },
+
+  "Offered for the Truth": {
+    "rule": "A statement is offered for the truth when its relevance depends on the statement being true.",
+    "buzzwords": [
+      "offered for the truth",
+      "depends on the statement being true"
+    ],
+    "application": "Because the statement’s value depends on its truth, it is offered for the truth."
+  },
+
+  "Not Hearsay — Verbal Acts": {
+    "rule": "Statements that have independent legal significance, such as words of contract formation or defamation, are not hearsay.",
+    "buzzwords": [
+      "verbal acts",
+      "independent legal significance",
+      "contract formation",
+      "defamation"
+    ],
+    "application": "Because the words themselves create legal rights, the statement is not hearsay."
+  },
+
+  "Not Hearsay — Effect on Listener": {
+    "rule": "Statements offered to show their effect on the listener are not hearsay.",
+    "buzzwords": [
+      "effect on the listener",
+      "not hearsay"
+    ],
+    "application": "Because the statement explains the listener’s behavior, it is not hearsay."
+  },
+
+  "Not Hearsay — State of Mind": {
+    "rule": "Statements offered to show the declarant’s state of mind, such as intent or motive, are not hearsay.",
+    "buzzwords": [
+      "state of mind",
+      "intent",
+      "motive"
+    ],
+    "application": "Because the statement shows intent, it is not hearsay."
+  },
+
+  "Not Hearsay — Impeachment": {
+    "rule": "Prior statements offered solely to impeach a witness are not hearsay.",
+    "buzzwords": [
+      "impeach",
+      "prior statements",
+      "not hearsay"
+    ],
+    "application": "Because the statement was offered to impeach, it is not hearsay."
+  },
+
+  "Non-Hearsay — Prior Inconsistent Statement (Under Oath)": {
+    "rule": "A prior inconsistent statement is not hearsay if it was made under oath at a trial, hearing, or deposition.",
+    "buzzwords": [
+      "prior inconsistent statement",
+      "under oath",
+      "trial",
+      "hearing",
+      "deposition"
+    ],
+    "application": "Because the statement was sworn testimony, it is not hearsay."
+  },
+
+  "Non-Hearsay — Prior Consistent Statement": {
+    "rule": "A prior consistent statement is not hearsay when offered to rebut a charge of recent fabrication or improper influence.",
+    "buzzwords": [
+      "prior consistent statement",
+      "recent fabrication",
+      "improper influence"
+    ],
+    "application": "Because the statement rebuts a charge of fabrication, it is not hearsay."
+  },
+
+  "Non-Hearsay — Statement of Party Opponent": {
+    "rule": "A statement made by a party and offered against that party is not hearsay.",
+    "buzzwords": [
+      "statement of a party opponent",
+      "offered against",
+      "not hearsay"
+    ],
+    "application": "Because the statement was made by the opposing party, it is admissible."
+  },
+
+  "Party Opponent — Adoptive Admission": {
+    "rule": "An adoptive admission occurs when a party manifests belief in the truth of another person’s statement.",
+    "buzzwords": [
+      "adoptive admission",
+      "manifests belief",
+      "truth of the statement"
+    ],
+    "application": "Because the party adopted the statement, it is not hearsay."
+  },
+
+  "Party Opponent — Authorized Statement": {
+    "rule": "A statement made by a person authorized by the party to speak on the subject is not hearsay.",
+    "buzzwords": [
+      "authorized statement",
+      "authorized by the party"
+    ],
+    "application": "Because the speaker was authorized, the statement is admissible."
+  },
+
+  "Party Opponent — Agent or Employee": {
+    "rule": "A statement made by an agent or employee concerning a matter within the scope of the relationship during its existence is not hearsay.",
+    "buzzwords": [
+      "agent",
+      "employee",
+      "scope of the relationship",
+      "during its existence"
+    ],
+    "application": "Because the statement was within the scope of employment, it is admissible."
+  },
+
+  "Party Opponent — Co-Conspirator Statement": {
+    "rule": "A statement made by a co-conspirator during and in furtherance of the conspiracy is not hearsay.",
+    "buzzwords": [
+      "co-conspirator",
+      "during the conspiracy",
+      "in furtherance"
+    ],
+    "application": "Because the statement furthered the conspiracy, it is admissible."
+  },
+
+  "Present Sense Impression": {
+    "rule": "A present sense impression is a statement describing or explaining an event or condition made while or immediately after the declarant perceived it.",
+    "buzzwords": [
+      "present sense impression",
+      "describing or explaining",
+      "event or condition",
+      "while or immediately after",
+      "perceived"
+    ],
+    "application": "Because the statement described the event as it occurred, it qualifies as a present sense impression."
+  },
+
+  "Excited Utterance": {
+    "rule": "An excited utterance is a statement relating to a startling event made while the declarant was under the stress of excitement caused by the event.",
+    "buzzwords": [
+      "excited utterance",
+      "startling event",
+      "under the stress of excitement",
+      "relating to the event"
+    ],
+    "application": "Because the declarant was still under stress from the event, the statement is an excited utterance."
+  },
+
+  "Then-Existing Mental, Emotional, or Physical Condition": {
+    "rule": "A statement of the declarant’s then-existing state of mind, emotion, sensation, or physical condition is admissible to prove that condition.",
+    "buzzwords": [
+      "then-existing",
+      "state of mind",
+      "emotion",
+      "physical condition"
+    ],
+    "application": "Because the statement reflected the declarant’s present intent, it is admissible."
+  },
+
+  "Then-Existing Condition — Exclusion of Memory or Belief": {
+    "rule": "Statements of memory or belief are not admissible to prove the fact remembered or believed.",
+    "buzzwords": [
+      "memory or belief",
+      "not admissible",
+      "prove the fact"
+    ],
+    "application": "Because the statement recalled a past fact, it is excluded."
+  },
+
+  "Statements for Medical Diagnosis or Treatment": {
+    "rule": "Statements made for purposes of medical diagnosis or treatment describing medical history, symptoms, or cause are admissible.",
+    "buzzwords": [
+      "medical diagnosis",
+      "medical treatment",
+      "medical history",
+      "symptoms",
+      "cause"
+    ],
+    "application": "Because the statement was made to obtain treatment, it is admissible."
+  },
+
+  "Recorded Recollection": {
+    "rule": "A recorded recollection is admissible when a witness once had knowledge, now lacks sufficient recollection, and made or adopted a record when the matter was fresh.",
+    "buzzwords": [
+      "recorded recollection",
+      "once had knowledge",
+      "lacks sufficient recollection",
+      "made or adopted",
+      "fresh"
+    ],
+    "application": "Because the witness cannot recall and the record was made when fresh, it may be read into evidence."
+  },
+
+  "Business Records": {
+    "rule": "Records of a business activity are admissible if made at or near the time by someone with knowledge and kept in the regular course of business.",
+    "buzzwords": [
+      "business records",
+      "at or near the time",
+      "someone with knowledge",
+      "regular course of business"
+    ],
+    "application": "Because the record was kept routinely and timely, it qualifies as a business record."
+  },
+
+  "Business Records — Foundation Witness": {
+    "rule": "The foundation for a business record may be established by a custodian or other qualified witness.",
+    "buzzwords": [
+      "foundation",
+      "custodian",
+      "qualified witness"
+    ],
+    "application": "Because a custodian testified, the foundation is satisfied."
+  },
+
+  "Public Records": {
+    "rule": "Public records setting forth the activities of an office or matters observed pursuant to a legal duty are admissible.",
+    "buzzwords": [
+      "public records",
+      "activities of an office",
+      "legal duty"
+    ],
+    "application": "Because the record was prepared pursuant to legal duty, it is admissible."
+  },
+
+  "Public Records — Law Enforcement Limitation": {
+    "rule": "In criminal cases, matters observed by law enforcement personnel are not admissible against the defendant.",
+    "buzzwords": [
+      "criminal cases",
+      "law enforcement",
+      "not admissible",
+      "against the defendant"
+    ],
+    "application": "Because the record was prepared by police, it is excluded."
+  },
+
+  "Past Recollection Recorded — Use at Trial": {
+    "rule": "A recorded recollection may be read into evidence but may not be received as an exhibit unless offered by an adverse party.",
+    "buzzwords": [
+      "read into evidence",
+      "not received as an exhibit",
+      "adverse party"
+    ],
+    "application": "Because the rule permits reading only, the document itself is not admitted."
+  },
+
+  "Absence of Business or Public Record": {
+    "rule": "Evidence that a matter is not included in business or public records may be admitted to prove the matter did not occur.",
+    "buzzwords": [
+      "absence of record",
+      "business records",
+      "public records",
+      "did not occur"
+    ],
+    "application": "Because no record exists where one should, nonoccurrence is shown."
+  },
+
+  "Learned Treatises": {
+    "rule": "Statements in learned treatises may be read into evidence if established as reliable authority and relied upon by an expert.",
+    "buzzwords": [
+      "learned treatises",
+      "reliable authority",
+      "expert",
+      "read into evidence"
+    ],
+    "application": "Because the treatise was reliable and relied upon, it may be read to the jury."
+  },
+
+  "Declarant Unavailable — Definition": {
+    "rule": "A declarant is unavailable when the declarant is exempted by privilege, refuses to testify, lacks memory, is dead or ill, or cannot be procured by reasonable means.",
+    "buzzwords": [
+      "declarant unavailable",
+      "privilege",
+      "refuses to testify",
+      "lacks memory",
+      "dead or ill",
+      "cannot be procured"
+    ],
+    "application": "Because the declarant could not be procured despite reasonable efforts, the declarant is unavailable."
+  },
+
+  "Former Testimony": {
+    "rule": "Former testimony is admissible if the declarant is unavailable and the testimony was given under oath with an opportunity for cross-examination by a party with similar motive.",
+    "buzzwords": [
+      "former testimony",
+      "under oath",
+      "opportunity for cross-examination",
+      "similar motive"
+    ],
+    "application": "Because the opposing party previously cross-examined with similar motive, the testimony is admissible."
+  },
+
+  "Statement Against Interest": {
+    "rule": "A statement against interest is admissible when a declarant makes a statement so contrary to the declarant’s pecuniary, proprietary, or penal interest that a reasonable person would not have made it unless true.",
+    "buzzwords": [
+      "statement against interest",
+      "pecuniary interest",
+      "proprietary interest",
+      "penal interest",
+      "reasonable person"
+    ],
+    "application": "Because the statement exposed the declarant to criminal liability, it qualifies as a statement against interest."
+  },
+
+  "Statement Against Interest — Corroboration": {
+    "rule": "In criminal cases, a statement against penal interest offered to exculpate the accused must be supported by corroborating circumstances indicating trustworthiness.",
+    "buzzwords": [
+      "criminal cases",
+      "penal interest",
+      "exculpate",
+      "corroborating circumstances",
+      "trustworthiness"
+    ],
+    "application": "Because corroborating evidence supports the statement, it may be admitted."
+  },
+
+  "Dying Declaration": {
+    "rule": "A dying declaration is admissible when the declarant believes death is imminent and the statement concerns the cause or circumstances of death.",
+    "buzzwords": [
+      "dying declaration",
+      "death is imminent",
+      "cause or circumstances of death"
+    ],
+    "application": "Because the declarant believed death was imminent, the statement is admissible."
+  },
+
+  "Dying Declaration — Case Limitation": {
+    "rule": "Dying declarations are admissible only in homicide prosecutions or civil cases.",
+    "buzzwords": [
+      "homicide prosecutions",
+      "civil cases"
+    ],
+    "application": "Because the case is a homicide prosecution, the dying declaration is admissible."
+  },
+
+  "Statement of Personal or Family History": {
+    "rule": "Statements concerning a declarant’s own birth, marriage, divorce, ancestry, or similar family history are admissible when the declarant is unavailable.",
+    "buzzwords": [
+      "personal history",
+      "family history",
+      "birth",
+      "marriage",
+      "ancestry"
+    ],
+    "application": "Because the statement concerns family history, it is admissible."
+  },
+
+  "Forfeiture by Wrongdoing": {
+    "rule": "A party forfeits the right to object to hearsay when the party intentionally causes the declarant’s unavailability to prevent testimony.",
+    "buzzwords": [
+      "forfeiture by wrongdoing",
+      "intentionally causes",
+      "unavailability",
+      "prevent testimony"
+    ],
+    "application": "Because the defendant caused the witness’s absence, the hearsay objection is forfeited."
+  },
+
+  "Confrontation Clause — General Rule": {
+    "rule": "In a criminal case, the Sixth Amendment Confrontation Clause prohibits the admission of testimonial hearsay unless the declarant is unavailable and the defendant had a prior opportunity to cross-examine.",
+    "buzzwords": [
+      "Confrontation Clause",
+      "criminal case",
+      "testimonial hearsay",
+      "declarant unavailable",
+      "prior opportunity to cross-examine"
+    ],
+    "application": "Because the defendant had no prior opportunity to cross-examine, the testimonial statement is excluded."
+  },
+
+  "Testimonial Statements": {
+    "rule": "Testimonial statements include statements made during police interrogation or with the primary purpose of establishing evidence for prosecution.",
+    "buzzwords": [
+      "testimonial statements",
+      "police interrogation",
+      "primary purpose",
+      "establishing evidence"
+    ],
+    "application": "Because the statement was made to police for prosecution, it is testimonial."
+  },
+
+  "Non-Testimonial Statements": {
+    "rule": "Non-testimonial statements are not subject to the Confrontation Clause and are governed only by hearsay rules.",
+    "buzzwords": [
+      "non-testimonial",
+      "not subject",
+      "hearsay rules"
+    ],
+    "application": "Because the statement was non-testimonial, the Confrontation Clause does not apply."
+  },
+
+  "Emergency Doctrine": {
+    "rule": "Statements made to assist police during an ongoing emergency are non-testimonial.",
+    "buzzwords": [
+      "ongoing emergency",
+      "assist police",
+      "non-testimonial"
+    ],
+    "application": "Because the statement addressed an ongoing emergency, it is non-testimonial."
+  },
+
+  "Forfeiture by Wrongdoing — Confrontation Clause": {
+    "rule": "A defendant forfeits Confrontation Clause rights by intentionally causing a witness’s unavailability to prevent testimony.",
+    "buzzwords": [
+      "forfeiture by wrongdoing",
+      "intentionally causing",
+      "unavailability",
+      "prevent testimony"
+    ],
+    "application": "Because the defendant caused the witness’s absence, confrontation rights are forfeited."
+  },
+
+  "Dying Declarations — Confrontation Clause": {
+    "rule": "Dying declarations are admissible even if testimonial and do not violate the Confrontation Clause.",
+    "buzzwords": [
+      "dying declarations",
+      "testimonial",
+      "do not violate"
+    ],
+    "application": "Because the statement was a dying declaration, it is admissible."
+  },
+
+  "Attorney-Client Privilege": {
+    "rule": "The attorney-client privilege protects confidential communications between an attorney and client made for the purpose of obtaining legal advice.",
+    "buzzwords": [
+      "attorney-client privilege",
+      "confidential communications",
+      "attorney",
+      "client",
+      "legal advice"
+    ],
+    "application": "Because the communication sought legal advice, it is privileged."
+  },
+
+  "Attorney-Client Privilege — Waiver": {
+    "rule": "The attorney-client privilege is waived if the communication is disclosed to a third party.",
+    "buzzwords": [
+      "waiver",
+      "disclosed",
+      "third party"
+    ],
+    "application": "Because the communication was shared, the privilege is waived."
+  },
+
+  "Work Product Doctrine": {
+    "rule": "The work product doctrine protects materials prepared in anticipation of litigation from disclosure.",
+    "buzzwords": [
+      "work product doctrine",
+      "anticipation of litigation",
+      "materials"
+    ],
+    "application": "Because the document was prepared for litigation, it is protected."
+  },
+
+  "Work Product — Opinion Work Product": {
+    "rule": "Opinion work product reflecting an attorney’s mental impressions or legal theories receives heightened protection.",
+    "buzzwords": [
+      "opinion work product",
+      "mental impressions",
+      "legal theories"
+    ],
+    "application": "Because the material reflects legal strategy, it is highly protected."
+  },
+
+  "Spousal Privilege — Testimonial": {
+    "rule": "The spousal testimonial privilege allows a spouse to refuse to testify against the other spouse in a criminal case.",
+    "buzzwords": [
+      "spousal testimonial privilege",
+      "refuse to testify",
+      "criminal case"
+    ],
+    "application": "Because the witness is a spouse, testimony may be refused."
+  },
+
+  "Spousal Communications Privilege": {
+    "rule": "The spousal communications privilege protects confidential communications made between spouses during the marriage.",
+    "buzzwords": [
+      "spousal communications privilege",
+      "confidential communications",
+      "during the marriage"
+    ],
+    "application": "Because the statement was made privately during marriage, it is privileged."
+  },
+
+  "Physician-Patient Privilege": {
+    "rule": "The physician-patient privilege protects confidential communications made for purposes of medical diagnosis or treatment.",
+    "buzzwords": [
+      "physician-patient privilege",
+      "confidential communications",
+      "medical diagnosis",
+      "treatment"
+    ],
+    "application": "Because the communication was for treatment, it is privileged."
+  },
+
+  "Psychotherapist-Patient Privilege": {
+    "rule": "The psychotherapist-patient privilege protects confidential communications made for purposes of mental health treatment.",
+    "buzzwords": [
+      "psychotherapist-patient privilege",
+      "mental health treatment",
+      "confidential communications"
+    ],
+    "application": "Because the communication concerned therapy, it is privileged."
+  },
+
+  "Clergy-Penitent Privilege": {
+    "rule": "The clergy-penitent privilege protects confidential communications made to a clergy member for spiritual counseling.",
+    "buzzwords": [
+      "clergy-penitent privilege",
+      "confidential communications",
+      "spiritual counseling"
+    ],
+    "application": "Because the statement was made for spiritual guidance, it is privileged."
+  },
+
+  "Authentication — General Rule": {
+    "rule": "To authenticate evidence, the proponent must produce sufficient evidence to support a finding that the item is what the proponent claims it is.",
+    "buzzwords": [
+      "authenticate",
+      "proponent",
+      "sufficient evidence",
+      "what the proponent claims"
+    ],
+    "application": "Because sufficient evidence shows the item is authentic, it may be admitted."
+  },
+
+  "Authentication — Testimony of a Witness with Knowledge": {
+    "rule": "Evidence may be authenticated by testimony of a witness with knowledge that the item is what it is claimed to be.",
+    "buzzwords": [
+      "witness with knowledge",
+      "testimony",
+      "claimed to be"
+    ],
+    "application": "Because a knowledgeable witness testified, authentication is satisfied."
+  },
+
+  "Authentication — Non-Expert Opinion on Handwriting": {
+    "rule": "A non-expert may authenticate handwriting based on familiarity not acquired for purposes of litigation.",
+    "buzzwords": [
+      "non-expert opinion",
+      "handwriting",
+      "familiarity",
+      "not acquired for litigation"
+    ],
+    "application": "Because the witness was familiar with the handwriting beforehand, authentication is proper."
+  },
+
+  "Authentication — Comparison by Trier or Expert": {
+    "rule": "Handwriting may be authenticated by comparison by an expert witness or the trier of fact with an authenticated specimen.",
+    "buzzwords": [
+      "comparison",
+      "expert witness",
+      "trier of fact",
+      "authenticated specimen"
+    ],
+    "application": "Because the signature matches an authenticated exemplar, authentication is satisfied."
+  },
+
+  "Authentication — Distinctive Characteristics": {
+    "rule": "Evidence may be authenticated by its appearance, contents, substance, internal patterns, or other distinctive characteristics.",
+    "buzzwords": [
+      "distinctive characteristics",
+      "appearance",
+      "contents",
+      "internal patterns"
+    ],
+    "application": "Because the message contained unique details, it is authenticated."
+  },
+
+  "Authentication — Chain of Custody": {
+    "rule": "Physical evidence may be authenticated by leading evidence of a chain of custody sufficient to show no material alteration.",
+    "buzzwords": [
+      "chain of custody",
+      "physical evidence",
+      "no material alteration"
+    ],
+    "application": "Because custody was properly tracked, the evidence is authenticated."
+  },
+
+  "Authentication — Voice Identification": {
+    "rule": "A voice may be authenticated by opinion based on hearing the voice at any time under circumstances connecting it to the speaker.",
+    "buzzwords": [
+      "voice identification",
+      "opinion",
+      "connecting to the speaker"
+    ],
+    "application": "Because the witness recognized the voice, authentication is satisfied."
+  },
+
+  "Authentication — Telephone Conversations": {
+    "rule": "Telephone conversations may be authenticated by evidence that the call was made to the number assigned to a particular person or business.",
+    "buzzwords": [
+      "telephone conversations",
+      "assigned number",
+      "person or business"
+    ],
+    "application": "Because the call was placed to the listed number, authentication is satisfied."
+  },
+
+  "Self-Authentication — Definition": {
+    "rule": "Self-authenticating evidence requires no extrinsic evidence of authenticity to be admitted.",
+    "buzzwords": [
+      "self-authenticating",
+      "no extrinsic evidence"
+    ],
+    "application": "Because the document is self-authenticating, no foundation is required."
+  },
+
+  "Self-Authentication — Public Documents": {
+    "rule": "Certified copies of public records are self-authenticating.",
+    "buzzwords": [
+      "public records",
+      "certified copies",
+      "self-authenticating"
+    ],
+    "application": "Because the record was certified, it is self-authenticating."
+  },
+
+  "Self-Authentication — Business Records (Certified)": {
+    "rule": "Certified business records are self-authenticating if accompanied by a proper certification.",
+    "buzzwords": [
+      "business records",
+      "certified",
+      "proper certification"
+    ],
+    "application": "Because the record was properly certified, it is self-authenticating."
+  },
+
+  "Best Evidence Rule — General Rule": {
+    "rule": "The best evidence rule requires the original writing, recording, or photograph to prove its content.",
+    "buzzwords": [
+      "best evidence rule",
+      "original",
+      "writing",
+      "recording",
+      "photograph",
+      "prove its content"
+    ],
+    "application": "Because the content of the writing is at issue, the original is required."
+  },
+
+  "Best Evidence Rule — When Applicable": {
+    "rule": "The best evidence rule applies only when a party seeks to prove the contents of a writing, recording, or photograph.",
+    "buzzwords": [
+      "prove the contents",
+      "writing",
+      "recording",
+      "photograph"
+    ],
+    "application": "Because the contents are not at issue, the rule does not apply."
+  },
+
+  "Original — Definition": {
+    "rule": "An original includes the writing or recording itself and any counterpart intended to have the same effect.",
+    "buzzwords": [
+      "original",
+      "counterpart",
+      "same effect"
+    ],
+    "application": "Because the duplicate was intended as an original, it qualifies."
+  },
+
+  "Duplicates": {
+    "rule": "A duplicate is admissible to the same extent as an original unless there is a genuine question about authenticity or it would be unfair.",
+    "buzzwords": [
+      "duplicate",
+      "same extent",
+      "genuine question",
+      "unfair"
+    ],
+    "application": "Because no authenticity issue exists, the duplicate is admissible."
+  },
+
+  "Best Evidence — Exceptions": {
+    "rule": "Other evidence of content is admissible when the original is lost or destroyed, cannot be obtained, is in the opponent’s possession, or is not closely related to a controlling issue.",
+    "buzzwords": [
+      "lost or destroyed",
+      "cannot be obtained",
+      "opponent’s possession",
+      "not closely related"
+    ],
+    "application": "Because the original was lost, secondary evidence is admissible."
+  },
+
+  "Lay Opinion Testimony": {
+    "rule": "Lay opinion testimony is admissible if it is rationally based on the witness’s perception, helpful to understanding the testimony, and not based on scientific or technical knowledge.",
+    "buzzwords": [
+      "lay opinion",
+      "rationally based",
+      "perception",
+      "helpful",
+      "not based on scientific knowledge"
+    ],
+    "application": "Because the opinion was based on perception and helpful, it is admissible."
+  },
+
+  "Expert Testimony — General Rule": {
+    "rule": "Expert testimony is admissible if the expert is qualified and the testimony will help the trier of fact understand the evidence or determine a fact in issue.",
+    "buzzwords": [
+      "expert testimony",
+      "qualified",
+      "help the trier of fact",
+      "fact in issue"
+    ],
+    "application": "Because the expert was qualified and helpful, the testimony is admissible."
+  },
+
+  "Expert Qualification": {
+    "rule": "An expert may be qualified by knowledge, skill, experience, training, or education.",
+    "buzzwords": [
+      "qualified",
+      "knowledge",
+      "skill",
+      "experience",
+      "training",
+      "education"
+    ],
+    "application": "Because the witness had specialized experience, the expert was qualified."
+  },
+
+  "Expert Testimony — Reliability": {
+    "rule": "Expert testimony must be based on sufficient facts or data and reliable principles and methods reliably applied to the facts of the case.",
+    "buzzwords": [
+      "sufficient facts or data",
+      "reliable principles",
+      "reliable methods",
+      "reliably applied"
+    ],
+    "application": "Because the expert used reliable methods, the testimony is admissible."
+  },
+
+  "Bases of Expert Opinion": {
+    "rule": "An expert may base an opinion on facts or data personally observed or made known to the expert, including inadmissible evidence reasonably relied upon by experts in the field.",
+    "buzzwords": [
+      "bases of expert opinion",
+      "personally observed",
+      "made known",
+      "reasonably relied upon"
+    ],
+    "application": "Because experts reasonably rely on such data, the opinion is permitted."
+  },
+
+  "Disclosure of Inadmissible Facts": {
+    "rule": "Inadmissible facts underlying an expert’s opinion may be disclosed to the jury only if their probative value substantially outweighs their prejudicial effect.",
+    "buzzwords": [
+      "inadmissible facts",
+      "probative value",
+      "substantially outweighs",
+      "prejudicial effect"
+    ],
+    "application": "Because probative value outweighed prejudice, disclosure was allowed."
+  },
+
+  "Ultimate Issue": {
+    "rule": "Expert testimony is not objectionable merely because it embraces an ultimate issue to be decided by the trier of fact.",
+    "buzzwords": [
+      "ultimate issue",
+      "not objectionable",
+      "trier of fact"
+    ],
+    "application": "Because the testimony addressed an ultimate issue, it is admissible."
+  },
+
+  "Expert Opinion — Criminal Mental State Limitation": {
+    "rule": "An expert may not state an opinion about whether a criminal defendant had the required mental state constituting an element of the crime.",
+    "buzzwords": [
+      "criminal defendant",
+      "mental state",
+      "element of the crime"
+    ],
+    "application": "Because the expert opined on intent, the testimony is excluded."
+  },
+
+  "Judicial Notice — Adjudicative Facts": {
+    "rule": "A court may take judicial notice of an adjudicative fact that is not subject to reasonable dispute.",
+    "buzzwords": [
+      "judicial notice",
+      "adjudicative fact",
+      "not subject to reasonable dispute"
+    ],
+    "application": "Because the fact is indisputable, judicial notice is proper."
+  },
+
+  "Judicial Notice — Sources": {
+    "rule": "A fact may be judicially noticed if it is generally known or can be accurately and readily determined from reliable sources.",
+    "buzzwords": [
+      "generally known",
+      "accurately determined",
+      "reliable sources"
+    ],
+    "application": "Because the fact is verifiable from reliable sources, notice is proper."
+  },
+
+  "Judicial Notice — Civil vs Criminal Cases": {
+    "rule": "In a civil case, the jury must accept a judicially noticed fact as conclusive, while in a criminal case the jury may accept or reject it.",
+    "buzzwords": [
+      "civil case",
+      "criminal case",
+      "conclusive",
+      "may accept or reject"
+    ],
+    "application": "Because the case is criminal, the jury may reject the noticed fact."
+  }
+}

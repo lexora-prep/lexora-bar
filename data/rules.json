@@ -1,0 +1,28 @@
+[
+  {
+    "subject": "Contracts",
+    "topic": "Formation",
+    "subtopic": "Offer",
+    "title": "Offer definition",
+    "ruleText": "An offer is a manifestation of present contractual intent to enter a bargain that is definite and certain and communicated to the offeree.",
+    "keywords": [
+      "present contractual intent",
+      "definite and certain",
+      "communication to the offeree",
+      "objective standard"
+    ]
+  },
+  {
+    "subject": "Civil Procedure",
+    "topic": "Subject Matter Jurisdiction",
+    "subtopic": "Federal Question",
+    "title": "Federal Question Jurisdiction",
+    "ruleText": "Federal courts have jurisdiction over civil actions arising under the Constitution, laws, or treaties of the United States.",
+    "keywords": [
+      "arising under",
+      "federal law",
+      "constitution",
+      "treaties"
+    ]
+  }
+]

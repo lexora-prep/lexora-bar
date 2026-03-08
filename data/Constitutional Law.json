@@ -1,0 +1,989 @@
+{
+  "Judicial Review": {
+    "rule": "Judicial review is the power of the federal courts to review the constitutionality of legislative and executive actions.",
+    "buzzwords": [
+      "judicial review",
+      "federal courts",
+      "constitutionality",
+      "legislative actions",
+      "executive actions"
+    ],
+    "application": "Because the court reviewed the constitutionality of the statute, judicial review applies."
+  },
+
+  "Supremacy Clause": {
+    "rule": "The Supremacy Clause provides that federal law is the supreme law of the land and prevails over conflicting state law.",
+    "buzzwords": [
+      "Supremacy Clause",
+      "federal law",
+      "supreme law of the land",
+      "conflicting state law"
+    ],
+    "application": "Because federal law conflicts with state law, federal law controls."
+  },
+
+  "Standing — General Rule": {
+    "rule": "To have standing, a plaintiff must show injury in fact, causation, and redressability.",
+    "buzzwords": [
+      "standing",
+      "injury in fact",
+      "causation",
+      "redressability"
+    ],
+    "application": "Because the plaintiff suffered a concrete injury, standing exists."
+  },
+
+  "Standing — Injury in Fact": {
+    "rule": "An injury in fact must be concrete, particularized, and actual or imminent.",
+    "buzzwords": [
+      "injury in fact",
+      "concrete",
+      "particularized",
+      "actual or imminent"
+    ],
+    "application": "Because the injury was actual and personal, the requirement is met."
+  },
+
+  "Standing — Causation": {
+    "rule": "Causation requires that the injury be fairly traceable to the challenged conduct.",
+    "buzzwords": [
+      "causation",
+      "fairly traceable",
+      "challenged conduct"
+    ],
+    "application": "Because the injury resulted from the statute, causation is satisfied."
+  },
+
+  "Standing — Redressability": {
+    "rule": "Redressability requires that a favorable court decision is likely to remedy the injury.",
+    "buzzwords": [
+      "redressability",
+      "favorable decision",
+      "remedy the injury"
+    ],
+    "application": "Because the court can provide relief, redressability exists."
+  },
+
+  "Ripeness": {
+    "rule": "A claim is ripe when it presents a real and immediate dispute appropriate for judicial resolution.",
+    "buzzwords": [
+      "ripeness",
+      "real dispute",
+      "immediate",
+      "judicial resolution"
+    ],
+    "application": "Because enforcement is imminent, the claim is ripe."
+  },
+
+  "Mootness": {
+    "rule": "A case is moot when intervening events eliminate the controversy between the parties.",
+    "buzzwords": [
+      "mootness",
+      "intervening events",
+      "no controversy"
+    ],
+    "application": "Because the dispute no longer exists, the case is moot."
+  },
+
+  "Mootness — Exceptions": {
+    "rule": "Mootness does not apply when the issue is capable of repetition yet evading review.",
+    "buzzwords": [
+      "capable of repetition",
+      "evading review"
+    ],
+    "application": "Because the issue is likely to recur, the exception applies."
+  },
+
+  "Political Question Doctrine": {
+    "rule": "Courts will not decide political questions that are constitutionally committed to another branch of government.",
+    "buzzwords": [
+      "political question",
+      "constitutionally committed",
+      "another branch"
+    ],
+    "application": "Because the issue is committed to Congress, the court will not decide it."
+  },
+  
+  "Federal Powers — Enumerated Powers": {
+    "rule": "Congress may act only pursuant to powers enumerated in the Constitution.",
+    "buzzwords": [
+      "enumerated powers",
+      "Congress",
+      "Constitution"
+    ],
+    "application": "Because Congress acted under an enumerated power, the law is valid."
+  },
+
+  "Necessary and Proper Clause": {
+    "rule": "Congress may enact laws that are necessary and proper to carry out its enumerated powers.",
+    "buzzwords": [
+      "Necessary and Proper Clause",
+      "carry out",
+      "enumerated powers"
+    ],
+    "application": "Because the law is a means to execute an enumerated power, it is constitutional."
+  },
+
+  "Commerce Clause — General Rule": {
+    "rule": "Congress may regulate channels of interstate commerce, instrumentalities of interstate commerce, and activities that substantially affect interstate commerce.",
+    "buzzwords": [
+      "Commerce Clause",
+      "channels of interstate commerce",
+      "instrumentalities",
+      "substantially affect"
+    ],
+    "application": "Because the activity substantially affects interstate commerce, Congress may regulate it."
+  },
+
+  "Commerce Clause — Economic Activity": {
+    "rule": "Congress may regulate intrastate economic activity that in the aggregate substantially affects interstate commerce.",
+    "buzzwords": [
+      "intrastate",
+      "economic activity",
+      "aggregate",
+      "substantially affects"
+    ],
+    "application": "Because the activity is economic and cumulative effects are substantial, regulation is valid."
+  },
+
+  "Commerce Clause — Noneconomic Activity": {
+    "rule": "Congress may not regulate noneconomic activity based solely on its cumulative effect on interstate commerce.",
+    "buzzwords": [
+      "noneconomic activity",
+      "cumulative effect",
+      "may not regulate"
+    ],
+    "application": "Because the activity is noneconomic, Congress lacks authority."
+  },
+
+  "Taxing Power": {
+    "rule": "Congress may tax and spend for the general welfare.",
+    "buzzwords": [
+      "taxing power",
+      "spend",
+      "general welfare"
+    ],
+    "application": "Because the tax promotes the general welfare, it is valid."
+  },
+
+  "Spending Power — Conditions": {
+    "rule": "Congress may attach conditions to federal funding if the conditions are related to the purpose of the spending and are not unduly coercive.",
+    "buzzwords": [
+      "conditions",
+      "federal funding",
+      "related to the purpose",
+      "not unduly coercive"
+    ],
+    "application": "Because the condition was related and non-coercive, it is constitutional."
+  },
+
+  "Tenth Amendment": {
+    "rule": "The Tenth Amendment reserves to the states powers not delegated to the federal government.",
+    "buzzwords": [
+      "Tenth Amendment",
+      "reserved to the states",
+      "not delegated"
+    ],
+    "application": "Because the power is not delegated, it belongs to the states."
+  },
+
+  "Anti-Commandeering Doctrine": {
+    "rule": "Congress may not compel states to enact or administer federal regulatory programs.",
+    "buzzwords": [
+      "anti-commandeering",
+      "compel states",
+      "federal regulatory programs"
+    ],
+    "application": "Because the law commandeers state officials, it is unconstitutional."
+  },
+
+  "State Police Power": {
+    "rule": "States possess police power to regulate for the health, safety, welfare, and morals of their citizens.",
+    "buzzwords": [
+      "police power",
+      "health",
+      "safety",
+      "welfare",
+      "morals"
+    ],
+    "application": "Because the law promotes public safety, it is a valid exercise of police power."
+  },
+
+  "Dormant Commerce Clause — General Rule": {
+    "rule": "State laws may not discriminate against or unduly burden interstate commerce.",
+    "buzzwords": [
+      "Dormant Commerce Clause",
+      "discriminate",
+      "unduly burden",
+      "interstate commerce"
+    ],
+    "application": "Because the law burdens interstate commerce, it may be invalid."
+  },
+
+  "Dormant Commerce Clause — Discrimination": {
+    "rule": "State laws that discriminate against out-of-state commerce are presumptively invalid unless narrowly tailored to serve an important state interest.",
+    "buzzwords": [
+      "discriminate",
+      "out-of-state commerce",
+      "presumptively invalid",
+      "important state interest"
+    ],
+    "application": "Because the law discriminates against out-of-state businesses, it is invalid."
+  },
+
+  "Dormant Commerce Clause — Market Participant": {
+    "rule": "When a state acts as a market participant, it may favor its own citizens over others.",
+    "buzzwords": [
+      "market participant",
+      "favor its own citizens"
+    ],
+    "application": "Because the state acted as a participant, favoritism is permitted."
+  },
+
+  "Privileges and Immunities Clause — Article IV": {
+    "rule": "States may not discriminate against citizens of other states with respect to fundamental rights or important economic activities.",
+    "buzzwords": [
+      "Privileges and Immunities Clause",
+      "discriminate",
+      "citizens of other states",
+      "fundamental rights",
+      "economic activities"
+    ],
+    "application": "Because the law discriminates against nonresidents, it violates the clause."
+  },
+
+  "Preemption — Supremacy Clause": {
+    "rule": "Federal law preempts state law when Congress expressly preempts, occupies the field, or when state law conflicts with federal law.",
+    "buzzwords": [
+      "preemption",
+      "express preemption",
+      "field preemption",
+      "conflict preemption"
+    ],
+    "application": "Because federal law conflicts with state law, the state law is preempted."
+  },
+  
+  "Separation of Powers — General Principle": {
+    "rule": "The Constitution divides federal power among the legislative, executive, and judicial branches to prevent the concentration of power.",
+    "buzzwords": [
+      "separation of powers",
+      "legislative branch",
+      "executive branch",
+      "judicial branch",
+      "prevent concentration of power"
+    ],
+    "application": "Because power is divided among branches, no single branch may dominate."
+  },
+
+  "Congressional Power — Legislation": {
+    "rule": "Congress has the exclusive power to enact legislation subject to constitutional limitations.",
+    "buzzwords": [
+      "Congressional power",
+      "enact legislation",
+      "constitutional limitations"
+    ],
+    "application": "Because Congress passed the statute through bicameralism and presentment, it is valid."
+  },
+
+  "Bicameralism and Presentment": {
+    "rule": "A law must be passed by both houses of Congress and presented to the President for approval or veto.",
+    "buzzwords": [
+      "bicameralism",
+      "presentment",
+      "both houses",
+      "President"
+    ],
+    "application": "Because the statute was not presented to the President, it is invalid."
+  },
+
+  "Legislative Veto": {
+    "rule": "Congress may not invalidate executive action through a legislative veto without bicameralism and presentment.",
+    "buzzwords": [
+      "legislative veto",
+      "invalidate executive action",
+      "bicameralism",
+      "presentment"
+    ],
+    "application": "Because Congress used a legislative veto, the action is unconstitutional."
+  },
+
+  "Delegation of Legislative Power": {
+    "rule": "Congress may delegate legislative authority if it provides an intelligible principle to guide the exercise of the delegated power.",
+    "buzzwords": [
+      "delegation",
+      "legislative authority",
+      "intelligible principle"
+    ],
+    "application": "Because Congress provided standards, the delegation is valid."
+  },
+
+  "Executive Power — General": {
+    "rule": "The President has the power to execute the laws and conduct foreign affairs.",
+    "buzzwords": [
+      "executive power",
+      "execute the laws",
+      "foreign affairs"
+    ],
+    "application": "Because the President acted to enforce federal law, the action is valid."
+  },
+
+  "Executive Orders": {
+    "rule": "The President may issue executive orders pursuant to constitutional or statutory authority.",
+    "buzzwords": [
+      "executive orders",
+      "constitutional authority",
+      "statutory authority"
+    ],
+    "application": "Because the order was authorized by statute, it is valid."
+  },
+
+  "Presidential Power — Youngstown Framework": {
+    "rule": "Presidential power is strongest when acting with congressional authorization, weaker when Congress is silent, and weakest when acting against congressional will.",
+    "buzzwords": [
+      "Youngstown framework",
+      "congressional authorization",
+      "Congress is silent",
+      "against congressional will"
+    ],
+    "application": "Because the President acted against Congress, authority is weakest."
+  },
+
+  "Appointment Power": {
+    "rule": "Principal officers must be appointed by the President with Senate confirmation, while inferior officers may be appointed without Senate confirmation.",
+    "buzzwords": [
+      "appointment power",
+      "principal officers",
+      "Senate confirmation",
+      "inferior officers"
+    ],
+    "application": "Because the officer was a principal officer, Senate confirmation was required."
+  },
+
+  "Removal Power": {
+    "rule": "The President generally has the power to remove executive officers, subject to limited congressional restrictions.",
+    "buzzwords": [
+      "removal power",
+      "executive officers",
+      "congressional restrictions"
+    ],
+    "application": "Because removal restrictions interfered with executive power, they are invalid."
+  },
+
+  "Impeachment": {
+    "rule": "Federal officials may be impeached by the House of Representatives and convicted by the Senate for treason, bribery, or other high crimes and misdemeanors.",
+    "buzzwords": [
+      "impeachment",
+      "House of Representatives",
+      "Senate",
+      "high crimes and misdemeanors"
+    ],
+    "application": "Because the House impeached and the Senate convicted, removal was proper."
+  },
+
+  "Judicial Power — Federal Courts": {
+    "rule": "The judicial power of the United States is vested in the Supreme Court and inferior federal courts established by Congress.",
+    "buzzwords": [
+      "judicial power",
+      "Supreme Court",
+      "inferior federal courts"
+    ],
+    "application": "Because Congress created the lower courts, judicial power is properly exercised."
+  },
+
+  "Judicial Review of Executive Action": {
+    "rule": "Federal courts may review executive actions for constitutionality and compliance with federal law.",
+    "buzzwords": [
+      "judicial review",
+      "executive actions",
+      "constitutionality"
+    ],
+    "application": "Because the executive action exceeded authority, the court may invalidate it."
+  },
+
+  "Limits on Judicial Power": {
+    "rule": "Congress may limit the jurisdiction of federal courts, but may not dictate the outcome of particular cases.",
+    "buzzwords": [
+      "limit jurisdiction",
+      "federal courts",
+      "dictate outcome"
+    ],
+    "application": "Because Congress attempted to control case outcomes, the statute is unconstitutional."
+  },
+
+  "Equal Protection Clause — General Rule": {
+    "rule": "The Equal Protection Clause requires that similarly situated persons be treated alike by the government.",
+    "buzzwords": [
+      "Equal Protection Clause",
+      "similarly situated",
+      "treated alike",
+      "government"
+    ],
+    "application": "Because the law treats similarly situated persons differently, equal protection analysis applies."
+  },
+
+  "State Action Requirement": {
+    "rule": "The Equal Protection Clause applies only to government action and not to purely private conduct.",
+    "buzzwords": [
+      "state action",
+      "government action",
+      "private conduct"
+    ],
+    "application": "Because the discrimination was caused by the government, the clause applies."
+  },
+
+  "Levels of Scrutiny — Overview": {
+    "rule": "Equal protection challenges are analyzed under strict scrutiny, intermediate scrutiny, or rational basis review depending on the classification.",
+    "buzzwords": [
+      "levels of scrutiny",
+      "strict scrutiny",
+      "intermediate scrutiny",
+      "rational basis"
+    ],
+    "application": "Because the classification is suspect, heightened scrutiny applies."
+  },
+
+  "Strict Scrutiny — Standard": {
+    "rule": "Under strict scrutiny, the government must show the law is narrowly tailored to achieve a compelling government interest.",
+    "buzzwords": [
+      "strict scrutiny",
+      "narrowly tailored",
+      "compelling government interest"
+    ],
+    "application": "Because the law is not narrowly tailored, it fails strict scrutiny."
+  },
+
+  "Strict Scrutiny — Suspect Classifications": {
+    "rule": "Strict scrutiny applies to classifications based on race, national origin, and alienage.",
+    "buzzwords": [
+      "race",
+      "national origin",
+      "alienage",
+      "suspect classification"
+    ],
+    "application": "Because the classification is race-based, strict scrutiny applies."
+  },
+
+  "Strict Scrutiny — Fundamental Rights": {
+    "rule": "Strict scrutiny applies when a law burdens a fundamental right such as voting, interstate travel, or access to the courts.",
+    "buzzwords": [
+      "fundamental right",
+      "voting",
+      "interstate travel",
+      "access to the courts"
+    ],
+    "application": "Because the law burdens voting, strict scrutiny applies."
+  },
+
+  "Intermediate Scrutiny — Standard": {
+    "rule": "Under intermediate scrutiny, the government must show the law is substantially related to an important government interest.",
+    "buzzwords": [
+      "intermediate scrutiny",
+      "substantially related",
+      "important government interest"
+    ],
+    "application": "Because the law is not substantially related, it fails intermediate scrutiny."
+  },
+
+  "Intermediate Scrutiny — Gender": {
+    "rule": "Classifications based on gender are subject to intermediate scrutiny.",
+    "buzzwords": [
+      "gender",
+      "intermediate scrutiny"
+    ],
+    "application": "Because the classification is gender-based, intermediate scrutiny applies."
+  },
+
+  "Intermediate Scrutiny — Illegitimacy": {
+    "rule": "Classifications based on illegitimacy are subject to intermediate scrutiny.",
+    "buzzwords": [
+      "illegitimacy",
+      "intermediate scrutiny"
+    ],
+    "application": "Because the law discriminates based on illegitimacy, intermediate scrutiny applies."
+  },
+
+  "Rational Basis Review — Standard": {
+    "rule": "Under rational basis review, a law is upheld if it is rationally related to a legitimate government interest.",
+    "buzzwords": [
+      "rational basis",
+      "rationally related",
+      "legitimate government interest"
+    ],
+    "application": "Because the law is rationally related to a legitimate interest, it is constitutional."
+  },
+
+  "Rational Basis — Default Rule": {
+    "rule": "Rational basis review applies to all classifications not subject to strict or intermediate scrutiny.",
+    "buzzwords": [
+      "default rule",
+      "rational basis review"
+    ],
+    "application": "Because no suspect or quasi-suspect class is involved, rational basis applies."
+  },
+
+  "Facial Discrimination": {
+    "rule": "A law that discriminates on its face is subject to the level of scrutiny appropriate for the classification used.",
+    "buzzwords": [
+      "facial discrimination",
+      "on its face",
+      "level of scrutiny"
+    ],
+    "application": "Because the law explicitly classifies by race, strict scrutiny applies."
+  },
+
+  "Discriminatory Intent": {
+    "rule": "A facially neutral law violates equal protection only if it has a discriminatory impact and discriminatory intent.",
+    "buzzwords": [
+      "discriminatory impact",
+      "discriminatory intent",
+      "facially neutral"
+    ],
+    "application": "Because discriminatory intent was shown, the law violates equal protection."
+  },
+
+  "Affirmative Action — Race": {
+    "rule": "Government affirmative action programs using race are subject to strict scrutiny.",
+    "buzzwords": [
+      "affirmative action",
+      "race",
+      "strict scrutiny"
+    ],
+    "application": "Because the program uses race, strict scrutiny applies."
+  },
+
+  "Affirmative Action — Education": {
+    "rule": "Diversity in higher education may be a compelling interest if race is used in a narrowly tailored manner.",
+    "buzzwords": [
+      "diversity",
+      "higher education",
+      "compelling interest",
+      "narrowly tailored"
+    ],
+    "application": "Because race was one factor among many, the program may be constitutional."
+  },
+
+  "One Person, One Vote": {
+    "rule": "The Equal Protection Clause requires electoral districts to be substantially equal in population.",
+    "buzzwords": [
+      "one person, one vote",
+      "electoral districts",
+      "equal population"
+    ],
+    "application": "Because districts were malapportioned, equal protection was violated."
+  },
+  
+  "Due Process Clause — General Rule": {
+    "rule": "The Due Process Clause prohibits the government from depriving any person of life, liberty, or property without due process of law.",
+    "buzzwords": [
+      "Due Process Clause",
+      "life",
+      "liberty",
+      "property",
+      "due process of law"
+    ],
+    "application": "Because the government deprived a protected interest, due process applies."
+  },
+
+  "Procedural Due Process — Requirement": {
+    "rule": "Procedural due process requires fair procedures when the government deprives a person of life, liberty, or property.",
+    "buzzwords": [
+      "procedural due process",
+      "fair procedures",
+      "deprives"
+    ],
+    "application": "Because a protected interest was taken, procedural safeguards are required."
+  },
+
+  "Protected Interests — Liberty": {
+    "rule": "Liberty interests include freedom from bodily restraint and significant restrictions on personal freedom.",
+    "buzzwords": [
+      "liberty interest",
+      "bodily restraint",
+      "personal freedom"
+    ],
+    "application": "Because physical freedom was restricted, a liberty interest is implicated."
+  },
+
+  "Protected Interests — Property": {
+    "rule": "Property interests include legitimate claims of entitlement created by existing rules or understandings.",
+    "buzzwords": [
+      "property interest",
+      "legitimate claim of entitlement",
+      "existing rules"
+    ],
+    "application": "Because the benefit was guaranteed by law, a property interest exists."
+  },
+
+  "Procedural Due Process — What Process Is Due": {
+    "rule": "The amount of process due depends on the private interest affected, the risk of erroneous deprivation, and the government’s interest.",
+    "buzzwords": [
+      "private interest",
+      "risk of erroneous deprivation",
+      "government interest"
+    ],
+    "application": "Because the risk of error was high, greater procedural protection was required."
+  },
+
+  "Notice and Hearing": {
+    "rule": "Procedural due process generally requires notice and an opportunity to be heard before deprivation.",
+    "buzzwords": [
+      "notice",
+      "opportunity to be heard",
+      "before deprivation"
+    ],
+    "application": "Because no hearing was provided, due process was violated."
+  },
+
+  "Timing of Hearing": {
+    "rule": "A hearing may be held after deprivation if prompt post-deprivation review is provided and pre-deprivation process is impracticable.",
+    "buzzwords": [
+      "post-deprivation hearing",
+      "prompt review",
+      "impracticable"
+    ],
+    "application": "Because immediate action was necessary, a post-deprivation hearing was sufficient."
+  },
+
+  "Substantive Due Process — General Rule": {
+    "rule": "Substantive due process limits the government’s ability to infringe on fundamental rights regardless of the procedures used.",
+    "buzzwords": [
+      "substantive due process",
+      "fundamental rights",
+      "regardless of procedures"
+    ],
+    "application": "Because a fundamental right was burdened, substantive due process applies."
+  },
+
+  "Fundamental Rights": {
+    "rule": "Fundamental rights include marriage, privacy, contraception, family relationships, child rearing, and interstate travel.",
+    "buzzwords": [
+      "fundamental rights",
+      "marriage",
+      "privacy",
+      "contraception",
+      "family relationships",
+      "interstate travel"
+    ],
+    "application": "Because the law interferes with marriage, a fundamental right is implicated."
+  },
+
+  "Substantive Due Process — Standard of Review": {
+    "rule": "Laws infringing fundamental rights are subject to strict scrutiny.",
+    "buzzwords": [
+      "strict scrutiny",
+      "fundamental rights"
+    ],
+    "application": "Because strict scrutiny applies, the law must be narrowly tailored."
+  },
+
+  "Substantive Due Process — Non-Fundamental Rights": {
+    "rule": "Laws affecting non-fundamental rights are upheld if they are rationally related to a legitimate government interest.",
+    "buzzwords": [
+      "non-fundamental rights",
+      "rationally related",
+      "legitimate government interest"
+    ],
+    "application": "Because the law is rational, it is constitutional."
+  },
+
+  "Economic Substantive Due Process": {
+    "rule": "Economic regulations are reviewed under rational basis scrutiny.",
+    "buzzwords": [
+      "economic regulation",
+      "rational basis scrutiny"
+    ],
+    "application": "Because the regulation is rationally related to economic policy, it is valid."
+  },
+
+  "Vagueness Doctrine": {
+    "rule": "A law is unconstitutionally vague if it fails to give fair notice of prohibited conduct or encourages arbitrary enforcement.",
+    "buzzwords": [
+      "vagueness",
+      "fair notice",
+      "arbitrary enforcement"
+    ],
+    "application": "Because the statute lacks clear standards, it is void for vagueness."
+  },
+
+  "Overbreadth Doctrine": {
+    "rule": "A law is unconstitutionally overbroad if it prohibits a substantial amount of protected conduct.",
+    "buzzwords": [
+      "overbreadth",
+      "substantial amount",
+      "protected conduct"
+    ],
+    "application": "Because the law restricts protected activity, it is overbroad."
+  }, 
+  
+  "Freedom of Speech — General Rule": {
+    "rule": "The First Amendment prohibits the government from abridging freedom of speech.",
+    "buzzwords": [
+      "First Amendment",
+      "freedom of speech",
+      "abridging"
+    ],
+    "application": "Because the government restricted speech, First Amendment analysis applies."
+  },
+
+  "State Action Requirement — Speech": {
+    "rule": "The First Amendment applies only to government action and not to private conduct.",
+    "buzzwords": [
+      "state action",
+      "government action",
+      "private conduct"
+    ],
+    "application": "Because the restriction was imposed by the government, the First Amendment applies."
+  },
+
+  "Content-Based Regulation": {
+    "rule": "Content-based regulations of speech are subject to strict scrutiny.",
+    "buzzwords": [
+      "content-based regulation",
+      "strict scrutiny"
+    ],
+    "application": "Because the law targets speech based on content, strict scrutiny applies."
+  },
+
+  "Content-Neutral Regulation": {
+    "rule": "Content-neutral regulations of speech are subject to intermediate scrutiny.",
+    "buzzwords": [
+      "content-neutral regulation",
+      "intermediate scrutiny"
+    ],
+    "application": "Because the law regulates time, place, and manner, intermediate scrutiny applies."
+  },
+
+  "Prior Restraint": {
+    "rule": "Prior restraints on speech are presumptively unconstitutional.",
+    "buzzwords": [
+      "prior restraint",
+      "presumptively unconstitutional"
+    ],
+    "application": "Because the government required approval before speech, the restraint is invalid."
+  },
+
+  "Time, Place, and Manner Restrictions": {
+    "rule": "Time, place, and manner restrictions must be content-neutral, narrowly tailored, serve an important government interest, and leave open alternative channels of communication.",
+    "buzzwords": [
+      "time, place, and manner",
+      "content-neutral",
+      "narrowly tailored",
+      "important government interest",
+      "alternative channels"
+    ],
+    "application": "Because alternative channels remain open, the restriction may be valid."
+  },
+
+  "Public Forum — Traditional": {
+    "rule": "Traditional public forums include streets and parks, where content-based restrictions are subject to strict scrutiny.",
+    "buzzwords": [
+      "traditional public forum",
+      "streets",
+      "parks",
+      "strict scrutiny"
+    ],
+    "application": "Because the speech occurred in a park, strict scrutiny applies."
+  },
+
+  "Public Forum — Designated": {
+    "rule": "A designated public forum is government property opened for expressive activity and is subject to the same standards as a traditional public forum.",
+    "buzzwords": [
+      "designated public forum",
+      "government property",
+      "expressive activity"
+    ],
+    "application": "Because the government opened the forum, strict scrutiny applies."
+  },
+
+  "Public Forum — Limited or Nonpublic": {
+    "rule": "In limited or nonpublic forums, regulations must be reasonable and viewpoint neutral.",
+    "buzzwords": [
+      "limited public forum",
+      "nonpublic forum",
+      "reasonable",
+      "viewpoint neutral"
+    ],
+    "application": "Because the rule is reasonable and neutral, it is constitutional."
+  },
+
+  "Unprotected Speech — Categories": {
+    "rule": "Unprotected speech includes incitement, obscenity, fighting words, defamation, and true threats.",
+    "buzzwords": [
+      "unprotected speech",
+      "incitement",
+      "obscenity",
+      "fighting words",
+      "defamation",
+      "true threats"
+    ],
+    "application": "Because the speech falls into an unprotected category, it may be restricted."
+  },
+
+  "Incitement": {
+    "rule": "Incitement is speech directed to producing imminent lawless action and likely to produce such action.",
+    "buzzwords": [
+      "incitement",
+      "imminent lawless action",
+      "likely to produce"
+    ],
+    "application": "Because the speech urged immediate violence, it is unprotected."
+  },
+
+  "Obscenity — Miller Test": {
+    "rule": "Obscenity is defined by whether the average person would find the work appeals to prurient interest, depicts sexual conduct in a patently offensive way, and lacks serious value.",
+    "buzzwords": [
+      "obscenity",
+      "prurient interest",
+      "patently offensive",
+      "serious value"
+    ],
+    "application": "Because the material lacks serious value, it is obscene."
+  },
+
+  "Commercial Speech": {
+    "rule": "Commercial speech that is lawful and not misleading is protected but subject to intermediate scrutiny.",
+    "buzzwords": [
+      "commercial speech",
+      "lawful",
+      "not misleading",
+      "intermediate scrutiny"
+    ],
+    "application": "Because the advertisement was truthful, it receives protection."
+  },
+
+  "Symbolic Speech": {
+    "rule": "Symbolic conduct is protected as speech if the conduct is intended to convey a message and the message is likely to be understood.",
+    "buzzwords": [
+      "symbolic speech",
+      "conduct",
+      "intended to convey a message",
+      "understood"
+    ],
+    "application": "Because the conduct conveyed a message, it is protected speech."
+  },
+
+  "Hate Speech": {
+    "rule": "Hate speech is generally protected unless it falls into an unprotected category such as incitement or true threats.",
+    "buzzwords": [
+      "hate speech",
+      "protected",
+      "true threats"
+    ],
+    "application": "Because the speech did not threaten violence, it is protected."
+  },
+
+  "Religion Clauses — General Rule": {
+    "rule": "The First Amendment prohibits the government from establishing religion or prohibiting the free exercise of religion.",
+    "buzzwords": [
+      "First Amendment",
+      "Establishment Clause",
+      "Free Exercise Clause",
+      "establishing religion",
+      "free exercise"
+    ],
+    "application": "Because the government action involves religion, First Amendment analysis applies."
+  },
+
+  "Establishment Clause — General Rule": {
+    "rule": "The Establishment Clause prohibits government action that endorses, advances, or excessively entangles the government with religion.",
+    "buzzwords": [
+      "Establishment Clause",
+      "endorses",
+      "advances",
+      "excessive entanglement"
+    ],
+    "application": "Because the government endorsed religion, the Establishment Clause is implicated."
+  },
+
+  "Establishment Clause — Lemon Test": {
+    "rule": "Under the Lemon test, a law must have a secular purpose, a primary effect that neither advances nor inhibits religion, and must not foster excessive government entanglement with religion.",
+    "buzzwords": [
+      "Lemon test",
+      "secular purpose",
+      "primary effect",
+      "advances nor inhibits religion",
+      "excessive entanglement"
+    ],
+    "application": "Because the law lacks a secular purpose, it violates the Establishment Clause."
+  },
+
+  "Establishment Clause — Government Aid to Religion": {
+    "rule": "Government aid to religion is permitted if it is neutral, available to a broad class of recipients, and does not promote religion.",
+    "buzzwords": [
+      "government aid",
+      "neutral",
+      "broad class of recipients",
+      "does not promote religion"
+    ],
+    "application": "Because aid was neutrally distributed, it is constitutional."
+  },
+
+  "Establishment Clause — Religious Displays": {
+    "rule": "Religious displays are constitutional if a reasonable observer would not perceive the display as government endorsement of religion.",
+    "buzzwords": [
+      "religious displays",
+      "reasonable observer",
+      "government endorsement"
+    ],
+    "application": "Because the display conveyed a secular message, it is permissible."
+  },
+
+  "Free Exercise Clause — General Rule": {
+    "rule": "The Free Exercise Clause prohibits the government from substantially burdening religious exercise without sufficient justification.",
+    "buzzwords": [
+      "Free Exercise Clause",
+      "substantially burdening",
+      "religious exercise"
+    ],
+    "application": "Because the law burdens religious practice, free exercise analysis applies."
+  },
+
+  "Free Exercise — Neutral Laws of General Applicability": {
+    "rule": "Neutral laws of general applicability that incidentally burden religion are constitutional.",
+    "buzzwords": [
+      "neutral laws",
+      "general applicability",
+      "incidentally burden religion"
+    ],
+    "application": "Because the law is neutral and generally applicable, it is valid."
+  },
+
+  "Free Exercise — Targeting Religion": {
+    "rule": "Laws that target religious conduct are subject to strict scrutiny.",
+    "buzzwords": [
+      "target religious conduct",
+      "strict scrutiny"
+    ],
+    "application": "Because the law targets religion, strict scrutiny applies."
+  },
+
+  "Religious Exemptions": {
+    "rule": "The government is not required to grant religious exemptions from neutral laws of general applicability.",
+    "buzzwords": [
+      "religious exemptions",
+      "not required",
+      "neutral laws"
+    ],
+    "application": "Because the law applies equally to all, no exemption is required."
+  },
+
+  "Government Employment and Religion": {
+    "rule": "The government may not condition public employment on religious belief or practice.",
+    "buzzwords": [
+      "public employment",
+      "religious belief",
+      "religious practice"
+    ],
+    "application": "Because employment was conditioned on religion, the action is unconstitutional."
+  },
+
+  "Religious Speech in Public Schools": {
+    "rule": "Government-sponsored prayer in public schools violates the Establishment Clause.",
+    "buzzwords": [
+      "public schools",
+      "government-sponsored prayer",
+      "Establishment Clause"
+    ],
+    "application": "Because the school sponsored prayer, the Establishment Clause was violated."
+  }
+}

@@ -1,0 +1,1289 @@
+{
+  "Intent — Definition": {
+    "rule": "Intent exists when a person acts with the purpose to cause a result or with knowledge that the result is substantially certain to occur.",
+    "buzzwords": [
+      "intent",
+      "purpose",
+      "substantially certain"
+    ],
+    "application": "Because the actor knew the result was substantially certain to occur, intent is established."
+  },
+
+  "Transferred Intent": {
+    "rule": "Transferred intent applies when a defendant intends to commit an intentional tort against one person but causes a different intentional tort or harms a different person.",
+    "buzzwords": [
+      "transferred intent",
+      "intentional tort",
+      "different person"
+    ],
+    "application": "Because intent transfers between persons and torts, liability applies."
+  },
+
+  "Battery": {
+    "rule": "Battery is the intentional infliction of harmful or offensive contact with another person without consent.",
+    "buzzwords": [
+      "battery",
+      "intentional",
+      "harmful or offensive contact",
+      "without consent"
+    ],
+    "application": "Because harmful contact was intentional and without consent, battery occurred."
+  },
+
+  "Assault": {
+    "rule": "Assault occurs when a defendant intentionally causes reasonable apprehension of an imminent harmful or offensive contact.",
+    "buzzwords": [
+      "assault",
+      "reasonable apprehension",
+      "imminent",
+      "harmful or offensive contact"
+    ],
+    "application": "Because the plaintiff reasonably feared imminent contact, assault occurred."
+  },
+
+  "False Imprisonment": {
+    "rule": "False imprisonment occurs when a defendant intentionally confines another person without lawful privilege and without consent.",
+    "buzzwords": [
+      "false imprisonment",
+      "intentional",
+      "confines",
+      "without lawful privilege",
+      "without consent"
+    ],
+    "application": "Because the plaintiff was confined without lawful authority, false imprisonment occurred."
+  },
+
+  "Intentional Infliction of Emotional Distress": {
+    "rule": "Intentional infliction of emotional distress occurs when a defendant intentionally or recklessly engages in extreme and outrageous conduct causing severe emotional distress.",
+    "buzzwords": [
+      "intentional infliction of emotional distress",
+      "extreme and outrageous conduct",
+      "severe emotional distress"
+    ],
+    "application": "Because the conduct was extreme and caused severe distress, IIED occurred."
+  },
+
+  "Trespass to Land": {
+    "rule": "Trespass to land occurs when a defendant intentionally enters or causes a physical invasion of land possessed by another.",
+    "buzzwords": [
+      "trespass to land",
+      "intentional",
+      "physical invasion",
+      "land"
+    ],
+    "application": "Because the defendant intentionally entered the land, trespass occurred."
+  },
+
+  "Trespass to Chattels": {
+    "rule": "Trespass to chattels occurs when a defendant intentionally interferes with another’s personal property causing dispossession or actual harm.",
+    "buzzwords": [
+      "trespass to chattels",
+      "intentional",
+      "interferes",
+      "personal property",
+      "actual harm"
+    ],
+    "application": "Because the interference caused actual harm, trespass to chattels occurred."
+  },
+
+  "Conversion": {
+    "rule": "Conversion occurs when a defendant intentionally exercises dominion or control over another’s personal property causing serious interference.",
+    "buzzwords": [
+      "conversion",
+      "dominion or control",
+      "serious interference",
+      "personal property"
+    ],
+    "application": "Because the interference was serious, conversion occurred."
+  },
+
+  "Consent — General Rule": {
+    "rule": "Consent is a defense to an intentional tort when the plaintiff voluntarily and knowingly agrees to the defendant’s conduct.",
+    "buzzwords": [
+      "consent",
+      "voluntarily",
+      "knowingly",
+      "agrees"
+    ],
+    "application": "Because the plaintiff knowingly agreed to the conduct, consent bars liability."
+  },
+
+  "Consent — Express": {
+    "rule": "Express consent occurs when the plaintiff explicitly agrees to the defendant’s conduct through words or writing.",
+    "buzzwords": [
+      "express consent",
+      "explicitly agrees",
+      "words",
+      "writing"
+    ],
+    "application": "Because the plaintiff explicitly agreed, express consent applies."
+  },
+
+  "Consent — Implied": {
+    "rule": "Implied consent exists when the plaintiff’s conduct reasonably indicates consent to the defendant’s actions.",
+    "buzzwords": [
+      "implied consent",
+      "conduct",
+      "reasonably indicates"
+    ],
+    "application": "Because the plaintiff’s conduct indicated consent, implied consent applies."
+  },
+
+  "Consent — Invalid Consent": {
+    "rule": "Consent is invalid if obtained through fraud, duress, or if the plaintiff lacks capacity to consent.",
+    "buzzwords": [
+      "invalid consent",
+      "fraud",
+      "duress",
+      "lacks capacity"
+    ],
+    "application": "Because consent was obtained through fraud, it is invalid."
+  },
+
+  "Self-Defense — General Rule": {
+    "rule": "Self-defense is justified when a person reasonably believes force is necessary to prevent imminent unlawful harm.",
+    "buzzwords": [
+      "self-defense",
+      "reasonably believes",
+      "necessary",
+      "imminent",
+      "unlawful harm"
+    ],
+    "application": "Because the defendant reasonably believed harm was imminent, self-defense applies."
+  },
+
+  "Self-Defense — Proportional Force": {
+    "rule": "Self-defense permits only reasonable force and does not justify deadly force unless facing a threat of serious bodily harm.",
+    "buzzwords": [
+      "reasonable force",
+      "deadly force",
+      "serious bodily harm"
+    ],
+    "application": "Because the force used was proportional, self-defense is valid."
+  },
+
+  "Defense of Others": {
+    "rule": "Defense of others is justified when the defendant reasonably believes that the person defended would have the right to use self-defense.",
+    "buzzwords": [
+      "defense of others",
+      "reasonably believes",
+      "right to use self-defense"
+    ],
+    "application": "Because the third party had a right to self-defense, the defense applies."
+  },
+
+  "Defense of Property": {
+    "rule": "A person may use reasonable force to prevent or terminate an unlawful intrusion upon property but may not use deadly force.",
+    "buzzwords": [
+      "defense of property",
+      "reasonable force",
+      "unlawful intrusion",
+      "deadly force"
+    ],
+    "application": "Because only reasonable force was used, defense of property applies."
+  },
+
+  "Recapture of Chattels": {
+    "rule": "A person may use reasonable force to recapture chattels if in fresh pursuit of one who has wrongfully taken them.",
+    "buzzwords": [
+      "recapture of chattels",
+      "reasonable force",
+      "fresh pursuit",
+      "wrongfully taken"
+    ],
+    "application": "Because the defendant acted in fresh pursuit, recapture was justified."
+  },
+
+  "Necessity — Public": {
+    "rule": "Public necessity is a complete defense when the defendant acts to prevent a public disaster affecting the community.",
+    "buzzwords": [
+      "public necessity",
+      "complete defense",
+      "public disaster",
+      "community"
+    ],
+    "application": "Because the act prevented a public disaster, public necessity applies."
+  },
+
+  "Necessity — Private": {
+    "rule": "Private necessity is a qualified defense that allows entry onto another’s land to prevent serious harm but requires payment for actual damage caused.",
+    "buzzwords": [
+      "private necessity",
+      "qualified defense",
+      "prevent serious harm",
+      "actual damage"
+    ],
+    "application": "Because the defendant acted to prevent serious harm, private necessity applies but damages are owed."
+  },
+
+  "Authority to Arrest": {
+    "rule": "A law enforcement officer or private citizen may assert authority to arrest as a defense when the arrest is lawful.",
+    "buzzwords": [
+      "authority to arrest",
+      "law enforcement officer",
+      "private citizen",
+      "lawful"
+    ],
+    "application": "Because the arrest was lawful, authority to arrest is a valid defense."
+  },
+
+  "Negligence — Elements": {
+    "rule": "Negligence requires a duty of care, breach of that duty, causation, and damages.",
+    "buzzwords": [
+      "negligence",
+      "duty of care",
+      "breach",
+      "causation",
+      "damages"
+    ],
+    "application": "Because all four elements are present, negligence is established."
+  },
+
+  "Duty — General Rule": {
+    "rule": "A person owes a duty to exercise reasonable care to avoid foreseeable risks of harm to others.",
+    "buzzwords": [
+      "duty",
+      "reasonable care",
+      "foreseeable risks",
+      "harm"
+    ],
+    "application": "Because the risk of harm was foreseeable, a duty of care existed."
+  },
+
+  "Duty — To Whom (Foreseeable Plaintiffs)": {
+    "rule": "A duty of care is owed only to foreseeable plaintiffs who are foreseeably at risk from the defendant’s conduct.",
+    "buzzwords": [
+      "foreseeable plaintiffs",
+      "foreseeably at risk"
+    ],
+    "application": "Because the plaintiff was foreseeable, a duty was owed."
+  },
+
+  "Duty — No Duty to Act": {
+    "rule": "There is no general duty to act or rescue another person absent a special relationship.",
+    "buzzwords": [
+      "no duty to act",
+      "rescue",
+      "special relationship"
+    ],
+    "application": "Because no special relationship existed, no duty to act arose."
+  },
+
+  "Duty — Special Relationships": {
+    "rule": "A duty to act arises when a special relationship exists, such as common carrier–passenger, innkeeper–guest, employer–employee, or parent–child.",
+    "buzzwords": [
+      "special relationship",
+      "common carrier",
+      "innkeeper",
+      "employer",
+      "parent"
+    ],
+    "application": "Because a special relationship existed, a duty to act was imposed."
+  },
+
+  "Duty — Undertaking": {
+    "rule": "A person who voluntarily undertakes to render services has a duty to act with reasonable care.",
+    "buzzwords": [
+      "undertakes",
+      "render services",
+      "reasonable care"
+    ],
+    "application": "Because the defendant undertook to help, a duty of care arose."
+  },
+
+  "Duty — Landowner to Trespassers": {
+    "rule": "A landowner owes trespassers a duty to refrain from willful or wanton misconduct.",
+    "buzzwords": [
+      "landowner",
+      "trespassers",
+      "willful",
+      "wanton misconduct"
+    ],
+    "application": "Because the defendant acted willfully, the duty was breached."
+  },
+
+  "Duty — Landowner to Licensees": {
+    "rule": "A landowner owes licensees a duty to warn of known dangerous conditions not obvious to the licensee.",
+    "buzzwords": [
+      "licensees",
+      "warn",
+      "known dangerous conditions",
+      "not obvious"
+    ],
+    "application": "Because the danger was known and not obvious, a duty to warn existed."
+  },
+
+  "Duty — Landowner to Invitees": {
+    "rule": "A landowner owes invitees a duty to use reasonable care to inspect, discover, and remedy dangerous conditions.",
+    "buzzwords": [
+      "invitees",
+      "reasonable care",
+      "inspect",
+      "remedy"
+    ],
+    "application": "Because the landowner failed to inspect, the duty was breached."
+  },
+
+  "Duty — Children on Land": {
+    "rule": "A landowner owes a duty of reasonable care to child trespassers when an artificial condition poses an unreasonable risk of harm.",
+    "buzzwords": [
+      "child trespassers",
+      "artificial condition",
+      "unreasonable risk"
+    ],
+    "application": "Because the artificial condition posed an unreasonable risk, a duty was owed."
+  },
+
+  "Duty — Negligent Infliction of Emotional Distress": {
+    "rule": "A duty exists for negligent infliction of emotional distress when a defendant’s negligence causes foreseeable emotional harm.",
+    "buzzwords": [
+      "negligent infliction of emotional distress",
+      "foreseeable emotional harm"
+    ],
+    "application": "Because emotional harm was foreseeable, a duty existed."
+  },
+
+  "Standard of Care — Reasonable Person": {
+    "rule": "The standard of care is that of a reasonable person under the same or similar circumstances.",
+    "buzzwords": [
+      "standard of care",
+      "reasonable person",
+      "same or similar circumstances"
+    ],
+    "application": "Because the defendant failed to act as a reasonable person would, the standard was breached."
+  },
+
+  "Standard of Care — Children": {
+    "rule": "A child is held to the standard of a reasonable child of the same age, intelligence, and experience unless engaged in an adult activity.",
+    "buzzwords": [
+      "reasonable child",
+      "age",
+      "intelligence",
+      "experience",
+      "adult activity"
+    ],
+    "application": "Because the child was engaged in an adult activity, the adult standard applied."
+  },
+
+  "Standard of Care — Professionals": {
+    "rule": "A professional is held to the standard of care of a reasonably competent professional in the same field.",
+    "buzzwords": [
+      "professional",
+      "reasonably competent",
+      "same field"
+    ],
+    "application": "Because the professional failed to meet the professional standard, there was a breach."
+  },
+
+  "Breach — Definition": {
+    "rule": "A breach occurs when a defendant’s conduct falls below the applicable standard of care.",
+    "buzzwords": [
+      "breach",
+      "falls below",
+      "standard of care"
+    ],
+    "application": "Because the defendant’s conduct fell below the standard, a breach occurred."
+  },
+
+  "Breach — Negligence Per Se": {
+    "rule": "Negligence per se applies when a defendant violates a statute designed to protect against the type of harm suffered by the plaintiff.",
+    "buzzwords": [
+      "negligence per se",
+      "violates a statute",
+      "type of harm"
+    ],
+    "application": "Because the statute was violated and caused the harm, negligence per se applies."
+  },
+
+  "Res Ipsa Loquitur": {
+    "rule": "Res ipsa loquitur permits an inference of negligence when the accident ordinarily does not occur without negligence and the instrumentality was under the defendant’s control.",
+    "buzzwords": [
+      "res ipsa loquitur",
+      "ordinarily does not occur",
+      "without negligence",
+      "defendant’s control"
+    ],
+    "application": "Because the accident would not occur absent negligence, res ipsa applies."
+  },
+
+  "Causation — Actual Cause": {
+    "rule": "Actual cause requires that the defendant’s conduct be a cause in fact of the plaintiff’s injury.",
+    "buzzwords": [
+      "actual cause",
+      "cause in fact",
+      "plaintiff’s injury"
+    ],
+    "application": "Because the injury would not have occurred without the defendant’s conduct, actual cause is established."
+  },
+
+  "But-For Causation": {
+    "rule": "But-for causation is satisfied when the plaintiff’s injury would not have occurred but for the defendant’s conduct.",
+    "buzzwords": [
+      "but-for",
+      "would not have occurred"
+    ],
+    "application": "Because the harm would not have occurred but for the defendant’s act, causation exists."
+  },
+
+  "Multiple Sufficient Causes": {
+    "rule": "When multiple acts are each sufficient to cause the injury, each act is an actual cause of the harm.",
+    "buzzwords": [
+      "multiple sufficient causes",
+      "each sufficient",
+      "actual cause"
+    ],
+    "application": "Because each act alone could have caused the harm, each is an actual cause."
+  },
+
+  "Causation — Proximate Cause": {
+    "rule": "Proximate cause limits liability to harms that are a foreseeable result of the defendant’s conduct.",
+    "buzzwords": [
+      "proximate cause",
+      "foreseeable result"
+    ],
+    "application": "Because the harm was foreseeable, proximate cause is satisfied."
+  },
+
+  "Direct Cause Test": {
+    "rule": "Under the direct cause test, the defendant is liable if the harm results directly from the defendant’s conduct without an intervening cause.",
+    "buzzwords": [
+      "direct cause",
+      "without an intervening cause"
+    ],
+    "application": "Because the harm followed directly from the conduct, proximate cause exists."
+  },
+
+  "Foreseeability Test": {
+    "rule": "Under the foreseeability test, proximate cause exists if the type of harm suffered was foreseeable.",
+    "buzzwords": [
+      "foreseeability test",
+      "type of harm",
+      "foreseeable"
+    ],
+    "application": "Because the type of harm was foreseeable, proximate cause is established."
+  },
+
+  "Intervening Cause": {
+    "rule": "An intervening cause is an event that occurs after the defendant’s conduct and contributes to the plaintiff’s injury.",
+    "buzzwords": [
+      "intervening cause",
+      "occurs after",
+      "contributes"
+    ],
+    "application": "Because the later event contributed to the harm, it is an intervening cause."
+  },
+
+  "Superseding Cause": {
+    "rule": "A superseding cause breaks the chain of causation when the intervening act is unforeseeable and relieves the defendant of liability.",
+    "buzzwords": [
+      "superseding cause",
+      "breaks the chain",
+      "unforeseeable"
+    ],
+    "application": "Because the intervening act was unforeseeable, it was a superseding cause."
+  },
+
+  "Eggshell Plaintiff Rule": {
+    "rule": "Under the eggshell plaintiff rule, a defendant is liable for all injuries caused, even if the plaintiff is unusually vulnerable.",
+    "buzzwords": [
+      "eggshell plaintiff",
+      "unusually vulnerable",
+      "all injuries"
+    ],
+    "application": "Because the defendant takes the plaintiff as found, liability extends to all injuries."
+  },
+
+  "Damages — Requirement": {
+    "rule": "Negligence requires proof of actual damages to be actionable.",
+    "buzzwords": [
+      "actual damages",
+      "actionable"
+    ],
+    "application": "Because no actual damages were proven, negligence is not established."
+  },
+
+  "Compensatory Damages": {
+    "rule": "Compensatory damages compensate the plaintiff for actual losses caused by the defendant’s negligence.",
+    "buzzwords": [
+      "compensatory damages",
+      "actual losses"
+    ],
+    "application": "Because the plaintiff suffered actual loss, compensatory damages apply."
+  },
+
+  "Economic Damages": {
+    "rule": "Economic damages compensate for monetary losses such as medical expenses and lost wages.",
+    "buzzwords": [
+      "economic damages",
+      "monetary losses",
+      "medical expenses",
+      "lost wages"
+    ],
+    "application": "Because the plaintiff incurred medical expenses, economic damages are recoverable."
+  },
+
+  "Non-Economic Damages": {
+    "rule": "Non-economic damages compensate for pain and suffering, emotional distress, and loss of enjoyment of life.",
+    "buzzwords": [
+      "non-economic damages",
+      "pain and suffering",
+      "emotional distress",
+      "loss of enjoyment of life"
+    ],
+    "application": "Because the plaintiff experienced pain and suffering, non-economic damages are appropriate."
+  },
+
+  "Punitive Damages": {
+    "rule": "Punitive damages may be awarded when the defendant’s conduct is willful, wanton, or reckless.",
+    "buzzwords": [
+      "punitive damages",
+      "willful",
+      "wanton",
+      "reckless"
+    ],
+    "application": "Because the conduct was reckless, punitive damages may be awarded."
+  },
+
+  "Wrongful Death": {
+    "rule": "Wrongful death allows recovery by statutory beneficiaries for damages resulting from a decedent’s death caused by negligence.",
+    "buzzwords": [
+      "wrongful death",
+      "statutory beneficiaries",
+      "decedent’s death"
+    ],
+    "application": "Because negligence caused the death, wrongful death damages apply."
+  },
+
+  "Survival Actions": {
+    "rule": "A survival action allows the decedent’s estate to recover damages the decedent could have recovered if alive.",
+    "buzzwords": [
+      "survival action",
+      "estate",
+      "could have recovered"
+    ],
+    "application": "Because the decedent could have sued while alive, the estate may recover."
+  },
+
+  "Negligence Per Se — Definition": {
+    "rule": "Negligence per se applies when a defendant violates a statute that establishes a standard of care.",
+    "buzzwords": [
+      "negligence per se",
+      "violates a statute",
+      "standard of care"
+    ],
+    "application": "Because the defendant violated a statute establishing the standard of care, negligence per se applies."
+  },
+
+  "Negligence Per Se — Protected Class": {
+    "rule": "Negligence per se applies only if the plaintiff is within the class of persons the statute was designed to protect.",
+    "buzzwords": [
+      "protected class",
+      "designed to protect"
+    ],
+    "application": "Because the plaintiff was within the protected class, the statute applies."
+  },
+
+  "Negligence Per Se — Type of Harm": {
+    "rule": "Negligence per se applies only if the harm suffered is the type of harm the statute was intended to prevent.",
+    "buzzwords": [
+      "type of harm",
+      "intended to prevent"
+    ],
+    "application": "Because the injury was the type the statute sought to prevent, negligence per se is established."
+  },
+
+  "Negligence Per Se — Excused Violation": {
+    "rule": "A statutory violation may be excused when compliance is impossible, more dangerous, or due to an emergency not caused by the defendant.",
+    "buzzwords": [
+      "excused",
+      "impossible",
+      "more dangerous",
+      "emergency"
+    ],
+    "application": "Because compliance would have been more dangerous, the violation is excused."
+  },
+
+  "Duty — Common Carrier": {
+    "rule": "A common carrier owes passengers a duty of reasonable care under the circumstances.",
+    "buzzwords": [
+      "common carrier",
+      "passengers",
+      "reasonable care"
+    ],
+    "application": "Because the plaintiff was a passenger, the carrier owed a duty of care."
+  },
+
+  "Duty — Innkeeper": {
+    "rule": "An innkeeper owes guests a duty of reasonable care to protect against foreseeable harms.",
+    "buzzwords": [
+      "innkeeper",
+      "guests",
+      "foreseeable harms"
+    ],
+    "application": "Because the harm was foreseeable, the innkeeper owed a duty."
+  },
+
+  "Duty — Landlord": {
+    "rule": "A landlord owes a duty of reasonable care for common areas under the landlord’s control.",
+    "buzzwords": [
+      "landlord",
+      "reasonable care",
+      "common areas",
+      "control"
+    ],
+    "application": "Because the injury occurred in a common area, the landlord owed a duty."
+  },
+
+  "Duty — Employer": {
+    "rule": "An employer owes employees a duty to provide a reasonably safe workplace.",
+    "buzzwords": [
+      "employer",
+      "employees",
+      "reasonably safe workplace"
+    ],
+    "application": "Because the workplace was unsafe, the employer breached the duty."
+  },
+
+  "Duty — Parent to Child": {
+    "rule": "A parent owes a duty to exercise reasonable care to control a child to prevent foreseeable harm.",
+    "buzzwords": [
+      "parent",
+      "reasonable care",
+      "control a child",
+      "foreseeable harm"
+    ],
+    "application": "Because the harm was foreseeable, the parent owed a duty."
+  },
+
+  "Duty — Negligent Infliction of Emotional Distress (Bystander)": {
+    "rule": "A bystander may recover for negligent infliction of emotional distress when the bystander closely relates to the victim and contemporaneously perceives the injury.",
+    "buzzwords": [
+      "bystander",
+      "negligent infliction of emotional distress",
+      "closely relates",
+      "contemporaneously perceives"
+    ],
+    "application": "Because the plaintiff perceived the injury and was closely related, recovery is permitted."
+  },
+
+  "Duty — Negligent Infliction of Emotional Distress (Zone of Danger)": {
+    "rule": "A plaintiff may recover for negligent infliction of emotional distress when the plaintiff is within the zone of danger and suffers emotional distress.",
+    "buzzwords": [
+      "zone of danger",
+      "emotional distress"
+    ],
+    "application": "Because the plaintiff was within the zone of danger, a duty exists."
+  },
+
+  "Dram Shop Liability": {
+    "rule": "A commercial vendor may be liable for serving alcohol to an intoxicated person who later causes injury to a third party.",
+    "buzzwords": [
+      "dram shop",
+      "commercial vendor",
+      "intoxicated person",
+      "third party"
+    ],
+    "application": "Because alcohol was served to an intoxicated person, dram shop liability may apply."
+  },
+
+  "Social Host Liability": {
+    "rule": "A social host generally is not liable for serving alcohol to adult guests, absent a statute imposing liability.",
+    "buzzwords": [
+      "social host",
+      "not liable",
+      "absent a statute"
+    ],
+    "application": "Because no statute imposed liability, the social host is not liable."
+  },
+
+  "Strict Liability — General Rule": {
+    "rule": "Strict liability applies when a defendant engages in certain activities and is liable for resulting harm regardless of the level of care exercised.",
+    "buzzwords": [
+      "strict liability",
+      "liable",
+      "regardless of the level of care"
+    ],
+    "application": "Because strict liability applies, lack of negligence is not a defense."
+  },
+
+  "Abnormally Dangerous Activities": {
+    "rule": "Strict liability applies to abnormally dangerous activities that create a foreseeable and highly significant risk of harm even when reasonable care is exercised.",
+    "buzzwords": [
+      "abnormally dangerous activities",
+      "foreseeable",
+      "highly significant risk",
+      "reasonable care"
+    ],
+    "application": "Because the activity created a highly significant risk, strict liability applies."
+  },
+
+  "Factors for Abnormally Dangerous Activities": {
+    "rule": "An activity is abnormally dangerous based on factors including high risk of harm, likelihood of great harm, inability to eliminate risk with reasonable care, uncommon usage, and inappropriateness of location.",
+    "buzzwords": [
+      "high risk of harm",
+      "likelihood of great harm",
+      "inability to eliminate risk",
+      "uncommon usage",
+      "inappropriateness of location"
+    ],
+    "application": "Because multiple factors indicate abnormal danger, strict liability applies."
+  },
+
+  "Scope of Risk": {
+    "rule": "Strict liability applies only to harm that results from the type of risk that makes the activity abnormally dangerous.",
+    "buzzwords": [
+      "scope of risk",
+      "type of risk",
+      "abnormally dangerous"
+    ],
+    "application": "Because the harm resulted from the dangerous risk, liability applies."
+  },
+
+  "Animals — Wild Animals": {
+    "rule": "An owner of a wild animal is strictly liable for harm caused by the animal’s dangerous propensities.",
+    "buzzwords": [
+      "wild animal",
+      "strictly liable",
+      "dangerous propensities"
+    ],
+    "application": "Because the animal was wild, the owner is strictly liable."
+  },
+
+  "Animals — Domestic Animals": {
+    "rule": "An owner of a domestic animal is strictly liable if the owner knew or should have known of the animal’s dangerous propensities.",
+    "buzzwords": [
+      "domestic animal",
+      "knew or should have known",
+      "dangerous propensities"
+    ],
+    "application": "Because the owner knew of the animal’s danger, strict liability applies."
+  },
+
+  "Defenses to Strict Liability": {
+    "rule": "Comparative negligence is not a defense to strict liability, but assumption of risk is a defense.",
+    "buzzwords": [
+      "comparative negligence",
+      "not a defense",
+      "assumption of risk",
+      "defense"
+    ],
+    "application": "Because the plaintiff assumed the risk, recovery is barred."
+  },
+
+  "Trespassing Animals": {
+    "rule": "The owner of livestock is strictly liable for damage caused by trespassing animals.",
+    "buzzwords": [
+      "trespassing animals",
+      "livestock",
+      "strictly liable"
+    ],
+    "application": "Because livestock trespassed and caused damage, strict liability applies."
+  },
+
+  "Products Liability — General Rule": {
+    "rule": "Products liability imposes liability on manufacturers and sellers for injuries caused by defective products placed into the stream of commerce.",
+    "buzzwords": [
+      "products liability",
+      "manufacturers",
+      "sellers",
+      "defective products",
+      "stream of commerce"
+    ],
+    "application": "Because the product was defective and caused injury, products liability applies."
+  },
+
+  "Products Liability — Theories of Recovery": {
+    "rule": "Products liability claims may be based on strict liability, negligence, or breach of warranty.",
+    "buzzwords": [
+      "strict liability",
+      "negligence",
+      "breach of warranty"
+    ],
+    "application": "Because strict liability applies, proof of negligence is unnecessary."
+  },
+
+  "Strict Products Liability — Elements": {
+    "rule": "Strict products liability requires that the product was defective, the defect existed when the product left the defendant’s control, and the defect caused injury.",
+    "buzzwords": [
+      "strict products liability",
+      "defective",
+      "left the defendant’s control",
+      "caused injury"
+    ],
+    "application": "Because the defect existed at sale and caused injury, strict liability applies."
+  },
+
+  "Manufacturing Defect": {
+    "rule": "A manufacturing defect exists when a product departs from its intended design even though all possible care was exercised.",
+    "buzzwords": [
+      "manufacturing defect",
+      "departs from its intended design",
+      "all possible care"
+    ],
+    "application": "Because the product deviated from its design, a manufacturing defect exists."
+  },
+
+  "Design Defect — Risk-Utility Test": {
+    "rule": "A design defect exists when the foreseeable risks of harm could have been reduced or avoided by a reasonable alternative design.",
+    "buzzwords": [
+      "design defect",
+      "foreseeable risks",
+      "reasonable alternative design"
+    ],
+    "application": "Because a safer alternative design was available, the design was defective."
+  },
+
+  "Design Defect — Consumer Expectation Test": {
+    "rule": "A design defect exists when a product is more dangerous than an ordinary consumer would expect.",
+    "buzzwords": [
+      "consumer expectation",
+      "ordinary consumer",
+      "more dangerous"
+    ],
+    "application": "Because the product was more dangerous than expected, a design defect exists."
+  },
+
+  "Failure to Warn — Defect": {
+    "rule": "A product is defective due to failure to warn when foreseeable risks of harm could have been reduced or avoided by adequate warnings.",
+    "buzzwords": [
+      "failure to warn",
+      "foreseeable risks",
+      "adequate warnings"
+    ],
+    "application": "Because no adequate warning was given, the product was defective."
+  },
+
+  "Failure to Warn — Obvious Dangers": {
+    "rule": "There is no duty to warn of risks that are open and obvious to a reasonable user.",
+    "buzzwords": [
+      "no duty to warn",
+      "open and obvious",
+      "reasonable user"
+    ],
+    "application": "Because the danger was obvious, no warning was required."
+  },
+
+  "Causation in Products Liability": {
+    "rule": "The plaintiff must prove that the product defect was a cause in fact and proximate cause of the injury.",
+    "buzzwords": [
+      "cause in fact",
+      "proximate cause",
+      "product defect"
+    ],
+    "application": "Because the defect directly caused the injury, causation is satisfied."
+  },
+
+  "Plaintiffs in Products Liability": {
+    "rule": "Any foreseeable user, consumer, or bystander injured by a defective product may recover.",
+    "buzzwords": [
+      "foreseeable user",
+      "consumer",
+      "bystander"
+    ],
+    "application": "Because the plaintiff was a foreseeable user, recovery is permitted."
+  },
+
+  "Defendants in Products Liability": {
+    "rule": "Manufacturers, wholesalers, retailers, and commercial sellers may be held liable for defective products.",
+    "buzzwords": [
+      "manufacturers",
+      "wholesalers",
+      "retailers",
+      "commercial sellers"
+    ],
+    "application": "Because the seller placed the product in commerce, liability applies."
+  },
+
+  "Defenses — Assumption of Risk": {
+    "rule": "Assumption of risk is a defense to products liability when the plaintiff knowingly and voluntarily encounters the risk.",
+    "buzzwords": [
+      "assumption of risk",
+      "knowingly",
+      "voluntarily"
+    ],
+    "application": "Because the plaintiff knowingly assumed the risk, recovery is barred."
+  },
+
+  "Defenses — Comparative Fault": {
+    "rule": "Comparative fault may reduce recovery in products liability when the plaintiff’s misuse or negligence contributes to the injury.",
+    "buzzwords": [
+      "comparative fault",
+      "misuse",
+      "contributes"
+    ],
+    "application": "Because the plaintiff misused the product, damages are reduced."
+  },
+
+  "Unforeseeable Misuse": {
+    "rule": "A defendant is not liable for injuries caused by an unforeseeable misuse of a product.",
+    "buzzwords": [
+      "unforeseeable misuse",
+      "not liable"
+    ],
+    "application": "Because the misuse was unforeseeable, liability does not attach."
+  },
+
+  "Breach of Warranty — Express": {
+    "rule": "An express warranty is created by an affirmation of fact or promise relating to the product that becomes part of the basis of the bargain.",
+    "buzzwords": [
+      "express warranty",
+      "affirmation of fact",
+      "basis of the bargain"
+    ],
+    "application": "Because the seller made a factual promise, an express warranty exists."
+  },
+
+  "Breach of Warranty — Implied Warranty of Merchantability": {
+    "rule": "The implied warranty of merchantability requires that goods be fit for the ordinary purposes for which such goods are used.",
+    "buzzwords": [
+      "implied warranty",
+      "merchantability",
+      "fit for ordinary purposes"
+    ],
+    "application": "Because the product was unfit for ordinary use, the warranty was breached."
+  },
+
+  "Breach of Warranty — Implied Warranty of Fitness": {
+    "rule": "An implied warranty of fitness for a particular purpose arises when the seller knows the buyer’s purpose and reliance.",
+    "buzzwords": [
+      "implied warranty of fitness",
+      "particular purpose",
+      "knows",
+      "reliance"
+    ],
+    "application": "Because the buyer relied on the seller’s judgment, the warranty applies."
+  },
+
+  "Defamation — Definition": {
+    "rule": "Defamation is a false statement of fact concerning the plaintiff that is published to a third party and harms the plaintiff’s reputation.",
+    "buzzwords": [
+      "defamation",
+      "false statement of fact",
+      "published",
+      "third party",
+      "harms reputation"
+    ],
+    "application": "Because a false statement was published and harmed reputation, defamation is established."
+  },
+
+  "Defamation — Libel and Slander": {
+    "rule": "Libel is defamation in written or recorded form, while slander is defamation in spoken form.",
+    "buzzwords": [
+      "libel",
+      "written",
+      "recorded",
+      "slander",
+      "spoken"
+    ],
+    "application": "Because the statement was written, it constitutes libel."
+  },
+
+  "Defamation — Publication": {
+    "rule": "Publication occurs when the defamatory statement is communicated to any third person who understands it.",
+    "buzzwords": [
+      "publication",
+      "communicated",
+      "third person"
+    ],
+    "application": "Because a third party heard the statement, publication occurred."
+  },
+
+  "Defamation — Identification": {
+    "rule": "The defamatory statement must be of and concerning the plaintiff.",
+    "buzzwords": [
+      "of and concerning",
+      "plaintiff"
+    ],
+    "application": "Because the statement referred to the plaintiff, identification is satisfied."
+  },
+
+  "Defamation — Public Figure or Public Official": {
+    "rule": "A public figure or public official must prove actual malice, meaning knowledge of falsity or reckless disregard for the truth.",
+    "buzzwords": [
+      "public figure",
+      "public official",
+      "actual malice",
+      "knowledge of falsity",
+      "reckless disregard"
+    ],
+    "application": "Because actual malice was proven, the public figure may recover."
+  },
+
+  "Defamation — Private Figure": {
+    "rule": "A private figure must prove negligence regarding the truth or falsity of the statement to recover for defamation.",
+    "buzzwords": [
+      "private figure",
+      "negligence",
+      "truth or falsity"
+    ],
+    "application": "Because the defendant was negligent, the private figure may recover."
+  },
+
+  "Defamation — Defamation Per Se": {
+    "rule": "Defamation per se involves statements concerning crime, loathsome disease, professional incompetence, or sexual misconduct.",
+    "buzzwords": [
+      "defamation per se",
+      "crime",
+      "loathsome disease",
+      "professional incompetence",
+      "sexual misconduct"
+    ],
+    "application": "Because the statement alleged criminal conduct, defamation per se applies."
+  },
+
+  "Defamation — Damages": {
+    "rule": "In defamation per se cases, damages are presumed, while in other cases the plaintiff must prove actual damages.",
+    "buzzwords": [
+      "damages",
+      "presumed",
+      "actual damages"
+    ],
+    "application": "Because the statement was defamation per se, damages are presumed."
+  },
+
+  "Defamation — Truth as a Defense": {
+    "rule": "Truth is an absolute defense to defamation.",
+    "buzzwords": [
+      "truth",
+      "absolute defense"
+    ],
+    "application": "Because the statement was true, defamation liability is barred."
+  },
+
+  "Defamation — Privileges": {
+    "rule": "Absolute or qualified privileges may protect a defendant from defamation liability.",
+    "buzzwords": [
+      "absolute privilege",
+      "qualified privilege",
+      "protect"
+    ],
+    "application": "Because the statement was privileged, liability is barred."
+  },
+
+  "Invasion of Privacy — Overview": {
+    "rule": "Invasion of privacy consists of four distinct torts: intrusion upon seclusion, appropriation, false light, and public disclosure of private facts.",
+    "buzzwords": [
+      "invasion of privacy",
+      "intrusion upon seclusion",
+      "appropriation",
+      "false light",
+      "public disclosure of private facts"
+    ],
+    "application": "Because the conduct fits one of the four categories, invasion of privacy applies."
+  },
+
+  "Intrusion Upon Seclusion": {
+    "rule": "Intrusion upon seclusion occurs when a defendant intentionally intrudes upon a plaintiff’s private affairs in a highly offensive manner.",
+    "buzzwords": [
+      "intrusion upon seclusion",
+      "intentionally intrudes",
+      "private affairs",
+      "highly offensive"
+    ],
+    "application": "Because the intrusion was highly offensive, liability applies."
+  },
+
+  "Appropriation of Name or Likeness": {
+    "rule": "Appropriation occurs when a defendant uses a plaintiff’s name or likeness for commercial advantage without consent.",
+    "buzzwords": [
+      "appropriation",
+      "name or likeness",
+      "commercial advantage",
+      "without consent"
+    ],
+    "application": "Because the name was used commercially without consent, appropriation occurred."
+  },
+
+  "False Light": {
+    "rule": "False light occurs when a defendant publicly attributes false information to the plaintiff that would be highly offensive to a reasonable person.",
+    "buzzwords": [
+      "false light",
+      "false information",
+      "highly offensive",
+      "reasonable person"
+    ],
+    "application": "Because false information was publicized, false light applies."
+  },
+
+  "Public Disclosure of Private Facts": {
+    "rule": "Public disclosure of private facts occurs when a defendant publicly discloses private information that would be highly offensive and is not of legitimate public concern.",
+    "buzzwords": [
+      "public disclosure",
+      "private facts",
+      "highly offensive",
+      "not of legitimate public concern"
+    ],
+    "application": "Because private facts were publicly disclosed, liability applies."
+  },
+
+  "Intentional Misrepresentation (Fraud)": {
+    "rule": "Intentional misrepresentation occurs when a defendant knowingly makes a false statement of material fact with intent to induce reliance and the plaintiff justifiably relies and suffers damages.",
+    "buzzwords": [
+      "intentional misrepresentation",
+      "false statement",
+      "material fact",
+      "intent to induce reliance",
+      "justifiable reliance",
+      "damages"
+    ],
+    "application": "Because the defendant knowingly made a false statement that induced reliance, fraud is established."
+  },
+
+  "Negligent Misrepresentation": {
+    "rule": "Negligent misrepresentation occurs when a defendant makes a false statement of material fact without reasonable care and the plaintiff justifiably relies and suffers damages.",
+    "buzzwords": [
+      "negligent misrepresentation",
+      "false statement",
+      "material fact",
+      "without reasonable care",
+      "justifiable reliance"
+    ],
+    "application": "Because the defendant failed to exercise reasonable care, negligent misrepresentation applies."
+  },
+
+  "Intentional Interference with Contract": {
+    "rule": "Intentional interference with contract occurs when a defendant intentionally induces a third party to breach an existing contract causing damages.",
+    "buzzwords": [
+      "intentional interference",
+      "existing contract",
+      "induces",
+      "breach",
+      "damages"
+    ],
+    "application": "Because the defendant induced a breach of contract, liability applies."
+  },
+
+  "Intentional Interference with Prospective Economic Advantage": {
+    "rule": "Intentional interference with prospective economic advantage occurs when a defendant intentionally interferes with an expected economic relationship through wrongful conduct.",
+    "buzzwords": [
+      "prospective economic advantage",
+      "expected economic relationship",
+      "wrongful conduct"
+    ],
+    "application": "Because wrongful conduct disrupted the expected relationship, liability applies."
+  },
+
+  "Elements — Interference Torts": {
+    "rule": "Interference torts require intentional conduct, knowledge of the relationship, causation, and damages.",
+    "buzzwords": [
+      "intentional conduct",
+      "knowledge",
+      "causation",
+      "damages"
+    ],
+    "application": "Because all elements are present, the interference tort is established."
+  },
+
+  "Defenses — Justification or Privilege": {
+    "rule": "Justification or privilege is a defense when the defendant acts to protect a legitimate economic interest using lawful means.",
+    "buzzwords": [
+      "justification",
+      "privilege",
+      "legitimate economic interest",
+      "lawful means"
+    ],
+    "application": "Because the defendant acted to protect a legitimate interest, the conduct is privileged."
+  },
+
+  "Nuisance — Definition": {
+    "rule": "Nuisance is an unreasonable interference with the use and enjoyment of land.",
+    "buzzwords": [
+      "nuisance",
+      "unreasonable interference",
+      "use and enjoyment of land"
+    ],
+    "application": "Because the interference was unreasonable, a nuisance exists."
+  },
+
+  "Private Nuisance": {
+    "rule": "Private nuisance occurs when a defendant substantially and unreasonably interferes with a private individual’s use or enjoyment of land.",
+    "buzzwords": [
+      "private nuisance",
+      "substantially",
+      "unreasonably",
+      "use or enjoyment of land"
+    ],
+    "application": "Because the interference substantially affected the plaintiff’s land use, private nuisance applies."
+  },
+
+  "Public Nuisance": {
+    "rule": "Public nuisance is an unreasonable interference with a right common to the general public.",
+    "buzzwords": [
+      "public nuisance",
+      "unreasonable interference",
+      "right common to the general public"
+    ],
+    "application": "Because the conduct affected public rights, public nuisance applies."
+  },
+
+  "Standing — Public Nuisance": {
+    "rule": "A private individual may recover for public nuisance only if the individual suffers a special injury different in kind from the general public.",
+    "buzzwords": [
+      "standing",
+      "special injury",
+      "different in kind",
+      "general public"
+    ],
+    "application": "Because the plaintiff suffered a special injury, standing exists."
+  },
+
+  "Intentional Nuisance": {
+    "rule": "Intentional nuisance occurs when the defendant knows or is substantially certain that the conduct will result in interference with land use.",
+    "buzzwords": [
+      "intentional nuisance",
+      "knows",
+      "substantially certain",
+      "interference"
+    ],
+    "application": "Because the defendant knew interference would occur, the nuisance was intentional."
+  },
+
+  "Negligent Nuisance": {
+    "rule": "Negligent nuisance occurs when the defendant’s unreasonable interference results from negligent conduct.",
+    "buzzwords": [
+      "negligent nuisance",
+      "unreasonable interference",
+      "negligent conduct"
+    ],
+    "application": "Because the interference resulted from negligence, negligent nuisance applies."
+  },
+
+  "Strict Liability Nuisance": {
+    "rule": "Strict liability nuisance occurs when interference results from abnormally dangerous activities.",
+    "buzzwords": [
+      "strict liability nuisance",
+      "abnormally dangerous activities"
+    ],
+    "application": "Because the activity was abnormally dangerous, strict liability applies."
+  },
+
+  "Unreasonableness — Balancing Test": {
+    "rule": "Unreasonableness in nuisance is determined by balancing the gravity of the harm against the utility of the defendant’s conduct.",
+    "buzzwords": [
+      "balancing",
+      "gravity of the harm",
+      "utility of the conduct"
+    ],
+    "application": "Because the harm outweighed the utility, the interference was unreasonable."
+  },
+
+  "Coming to the Nuisance": {
+    "rule": "Coming to the nuisance is not a complete defense but may be considered in determining the reasonableness of the interference.",
+    "buzzwords": [
+      "coming to the nuisance",
+      "not a complete defense",
+      "reasonableness"
+    ],
+    "application": "Because the plaintiff came to the nuisance, it is considered but does not bar recovery."
+  },
+
+  "Remedies — Nuisance": {
+    "rule": "Remedies for nuisance include damages, injunctions, or abatement depending on the circumstances.",
+    "buzzwords": [
+      "damages",
+      "injunctions",
+      "abatement"
+    ],
+    "application": "Because ongoing interference existed, an injunction was appropriate."
+  }
+}
