@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 type Props = {
   ruleText: string
@@ -8,397 +8,442 @@ type Props = {
   onNextRule: () => void
 }
 
-const colors = [
-  { bg: "#DBEAFE", border: "#93C5FD", text: "#1D4ED8" },
-  { bg: "#EDE9FE", border: "#C4B5FD", text: "#7C3AED" },
-  { bg: "#DCFCE7", border: "#A7F3D0", text: "#059669" },
-  { bg: "#FEF3C7", border: "#FCD34D", text: "#D97706" },
-]
+function normalizeText(text: unknown) {
+  if (typeof text !== "string") return ""
+
+  return text
+    .toLowerCase()
+    .replace(/[.,;:!?()[\]{}"']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function buildSafeKeywords(keywords: unknown): string[] {
+  if (!Array.isArray(keywords)) return []
+  return keywords.filter(
+    (kw): kw is string => typeof kw === "string" && kw.trim().length > 0
+  )
+}
+
+function shuffleArray<T>(arr: T[]) {
+  const copy = [...arr]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
 
 export default function BuzzwordsMode({
   ruleText,
   keywords,
   onNextRule,
 }: Props) {
-  const [revealed, setRevealed] = useState<boolean[]>([])
-  const [reviewed, setReviewed] = useState(false)
-  const [reportOpen, setReportOpen] = useState(false)
-  const [reportText, setReportText] = useState("")
-  const [reportSent, setReportSent] = useState(false)
+  const safeRuleText = typeof ruleText === "string" ? ruleText : ""
+  const safeKeywords = useMemo(() => buildSafeKeywords(keywords), [keywords])
+
+  const [options, setOptions] = useState<string[]>([])
+  const [selected, setSelected] = useState<string[]>([])
+  const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    setRevealed(new Array(keywords.length).fill(false))
-    setReviewed(false)
-    setReportOpen(false)
-    setReportText("")
-    setReportSent(false)
-  }, [ruleText, keywords])
+    const distractors = [
+      "jurisdiction",
+      "venue",
+      "due process",
+      "standing",
+      "res judicata",
+      "consideration",
+      "hearsay",
+      "strict scrutiny",
+      "mens rea",
+      "discovery cutoff",
+      "case management",
+      "minimum contacts",
+      "forum selection",
+      "substantial performance",
+    ]
 
-  function reveal(index: number) {
-    if (reviewed) return
-    const copy = [...revealed]
-    copy[index] = true
-    setRevealed(copy)
+    const filteredDistractors = distractors.filter(
+      (item) =>
+        !safeKeywords.some(
+          (kw) => normalizeText(kw) === normalizeText(item)
+        )
+    )
+
+    const mixed = shuffleArray([
+      ...safeKeywords,
+      ...filteredDistractors.slice(0, Math.max(3, 8 - safeKeywords.length)),
+    ])
+
+    setOptions(mixed)
+    setSelected([])
+    setChecked(false)
+  }, [safeKeywords, safeRuleText])
+
+  function toggleKeyword(keyword: string) {
+    if (checked) return
+
+    setSelected((prev) =>
+      prev.some((item) => normalizeText(item) === normalizeText(keyword))
+        ? prev.filter((item) => normalizeText(item) !== normalizeText(keyword))
+        : [...prev, keyword]
+    )
   }
 
-  function markReviewed() {
-    setReviewed(true)
-    setRevealed(new Array(keywords.length).fill(true))
+  function handleCheck() {
+    setChecked(true)
   }
 
-  function reviewAgain() {
-    setRevealed(new Array(keywords.length).fill(false))
-    setReviewed(false)
-    setReportOpen(false)
-    setReportText("")
-    setReportSent(false)
+  function handleSkip() {
+    setSelected([])
+    setChecked(false)
   }
 
-  async function sendReport() {
-    if (!reportText.trim()) return
+  function handleTryAgain() {
+    setSelected([])
+    setChecked(false)
+  }
 
-    try {
-      await fetch("/api/report-rule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          mode: "buzzwords",
-          ruleText,
-          keywords,
-          message: reportText.trim(),
-        }),
-      })
-      setReportSent(true)
-      setReportText("")
-    } catch (e) {
-      console.error(e)
+  function isCorrectKeyword(keyword: string) {
+    return safeKeywords.some(
+      (item) => normalizeText(item) === normalizeText(keyword)
+    )
+  }
+
+  function isSelected(keyword: string) {
+    return selected.some(
+      (item) => normalizeText(item) === normalizeText(keyword)
+    )
+  }
+
+  function getChipStyle(keyword: string): React.CSSProperties {
+    const selectedNow = isSelected(keyword)
+    const correct = isCorrectKeyword(keyword)
+
+    if (!checked) {
+      if (selectedNow) {
+        return {
+          border: "1px solid #A78BFA",
+          background: "#F5F3FF",
+          color: "#7C3AED",
+        }
+      }
+
+      return {
+        border: "1px solid #D9D9D9",
+        background: "#FFFFFF",
+        color: "#3F3F46",
+      }
+    }
+
+    if (selectedNow && correct) {
+      return {
+        border: "1px solid #93C5FD",
+        background: "#EFF6FF",
+        color: "#2563EB",
+      }
+    }
+
+    if (selectedNow && !correct) {
+      return {
+        border: "1px solid #FECACA",
+        background: "#FEF2F2",
+        color: "#DC2626",
+      }
+    }
+
+    if (!selectedNow && correct) {
+      return {
+        border: "1px solid #BFDBFE",
+        background: "#F8FBFF",
+        color: "#2563EB",
+      }
+    }
+
+    return {
+      border: "1px solid #E5E7EB",
+      background: "#FFFFFF",
+      color: "#A1A1AA",
     }
   }
 
-  function buildSentence() {
-    let text = ruleText
-
-    keywords.forEach((kw, i) => {
-      text = text.replace(kw, `__KW_${i}__`)
-    })
-
-    const parts = text.split(/(__KW_\d+__)/g)
-
-    return parts.map((part, i) => {
-      const match = part.match(/__KW_(\d+)__/)
-
-      if (!match) return <span key={i}>{part}</span>
-
-      const index = Number(match[1])
-      const style = colors[index % colors.length]
-      const isRevealed = revealed[index]
-
-      return (
-        <span
-          key={i}
-          onClick={() => reveal(index)}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: 40,
-            padding: "4px 12px",
-            margin: "0 4px",
-            borderRadius: 10,
-            border: `2px solid ${style.border}`,
-            background: style.bg,
-            color: isRevealed ? style.text : "transparent",
-            fontWeight: 700,
-            fontSize: 15,
-            cursor: reviewed ? "default" : "pointer",
-            userSelect: "none",
-            transition: "all 0.15s ease",
-            verticalAlign: "baseline",
-          }}
-        >
-          {isRevealed ? keywords[index] : "_ _ _ _ _ _ _ _"}
-        </span>
-      )
-    })
-  }
+  const correctSelections = selected.filter((item) => isCorrectKeyword(item))
+  const missedKeywords = safeKeywords.filter((item) => !isSelected(item))
+  const allCorrect =
+    checked &&
+    missedKeywords.length === 0 &&
+    selected.length === safeKeywords.length
 
   return (
-    <div style={{ marginTop: 18 }}>
+    <div style={{ marginTop: 0 }}>
       <div
         style={{
-          border: "1px solid #CBD5E1",
-          borderRadius: 16,
-          padding: 26,
-          background: "#FFFFFF",
-          marginBottom: 22,
+          fontSize: 17,
+          lineHeight: 1.72,
+          color: "#334155",
+          fontWeight: 400,
+          marginBottom: 20,
+        }}
+      >
+        {safeRuleText}
+      </div>
+
+      <div
+        style={{
+          borderTop: "1px solid #ECECEC",
+          paddingTop: 18,
         }}
       >
         <div
           style={{
-            fontSize: 12,
-            letterSpacing: "0.1em",
-            color: "#94A3B8",
-            fontWeight: 700,
+            fontSize: 13,
+            color: "#666672",
             marginBottom: 16,
+            fontWeight: 400,
           }}
         >
-          LEGAL KEYWORDS HIGHLIGHTED
+          Select all keywords that belong to this rule.
         </div>
 
         <div
           style={{
-            fontSize: 18,
-            lineHeight: 2,
-            color: "#1E293B",
-            fontWeight: 500,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
+            marginBottom: 26,
           }}
         >
-          {buildSentence()}
+          {options.map((keyword) => (
+            <button
+              key={keyword}
+              type="button"
+              onClick={() => toggleKeyword(keyword)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 999,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: checked ? "default" : "pointer",
+                transition: "all 0.15s ease",
+                ...getChipStyle(keyword),
+              }}
+            >
+              {keyword}
+            </button>
+          ))}
         </div>
-      </div>
 
-      {!reviewed && (
-        <button
-          onClick={markReviewed}
+        <div
           style={{
-            background: "#3451D1",
-            color: "white",
-            padding: "10px 18px",
-            borderRadius: 10,
-            border: "none",
-            fontWeight: 700,
-            fontSize: 14,
-            cursor: "pointer",
+            borderTop: "1px solid #ECECEC",
+            paddingTop: 18,
+            marginBottom: 18,
           }}
         >
-          Mark as Reviewed
-        </button>
-      )}
-
-      {reviewed && (
-        <>
           <div
             style={{
-              marginTop: 22,
-              border: "1px solid #A7F3D0",
-              background: "#F0FDF4",
-              borderRadius: 18,
-              padding: 20,
+              fontSize: 10,
+              letterSpacing: "0.08em",
+              color: "#A1A1AA",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              marginBottom: 10,
             }}
           >
-            <div
-              style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: "#059669",
-                marginBottom: 14,
-              }}
-            >
-              Excellent recall!! ✓
-            </div>
+            Selected
+          </div>
 
-            <div
-              style={{
-                border: "1px solid #CBD5E1",
-                background: "#F8FAFC",
-                borderRadius: 16,
-                padding: 18,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  letterSpacing: "0.1em",
-                  color: "#94A3B8",
-                  marginBottom: 14,
-                }}
-              >
-                CORRECT RULE
-              </div>
-
-              <div
-                style={{
-                  border: "1px solid #CBD5E1",
-                  borderRadius: 14,
-                  padding: 18,
-                  background: "#FFFFFF",
-                }}
-              >
-                <div
+          {selected.length > 0 ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {selected.map((keyword) => (
+                <span
+                  key={keyword}
                   style={{
+                    padding: "7px 14px",
+                    borderRadius: 999,
+                    border: "1px solid #C4B5FD",
+                    background: "#F5F3FF",
+                    color: "#7C3AED",
                     fontSize: 12,
-                    letterSpacing: "0.1em",
-                    color: "#94A3B8",
-                    fontWeight: 700,
-                    marginBottom: 14,
-                  }}
-                >
-                  LEGAL KEYWORDS HIGHLIGHTED
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 18,
-                    lineHeight: 2,
-                    color: "#1E293B",
                     fontWeight: 500,
                   }}
                 >
-                  {keywords.map((_, i) => null) && buildSentence()}
-                </div>
-              </div>
+                  {keyword}
+                </span>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div
+              style={{
+                fontSize: 12,
+                color: "#A1A1AA",
+              }}
+            >
+              None yet
+            </div>
+          )}
+        </div>
 
+        <div
+          style={{
+            borderTop: "1px solid #ECECEC",
+            paddingTop: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
           <div
             style={{
-              marginTop: 16,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: 16,
-              flexWrap: "wrap",
+              fontSize: 12,
+              color: "#A1A1AA",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                flexWrap: "wrap",
-              }}
-            >
-              <button
-                onClick={reviewAgain}
-                style={{
-                  padding: "10px 16px",
-                  borderRadius: 10,
-                  border: "1px solid #CBD5E1",
-                  background: "#FFFFFF",
-                  color: "#334155",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  cursor: "pointer",
-                }}
-              >
-                ↺ Review Again
-              </button>
-
-              <button
-                onClick={onNextRule}
-                style={{
-                  padding: "10px 18px",
-                  borderRadius: 10,
-                  border: "none",
-                  background: "#3451D1",
-                  color: "white",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  cursor: "pointer",
-                }}
-              >
-                Next Rule →
-              </button>
-            </div>
-
-            <button
-              onClick={() => setReportOpen((v) => !v)}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #CBD5E1",
-                background: "#FFFFFF",
-                color: "#475569",
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              ⚑ Report
-            </button>
+            {selected.length} selected
           </div>
 
-          {reportOpen && (
-            <div
-              style={{
-                marginTop: 14,
-                border: "1px solid #E2E8F0",
-                background: "#FFFFFF",
-                borderRadius: 14,
-                padding: 16,
-                maxWidth: 620,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "#334155",
-                  marginBottom: 10,
-                }}
-              >
-                Report an issue with this question
-              </div>
-
-              <textarea
-                value={reportText}
-                onChange={(e) => setReportText(e.target.value)}
-                placeholder="Tell the admin what is wrong with this question..."
-                style={{
-                  width: "100%",
-                  minHeight: 110,
-                  border: "1px solid #CBD5E1",
-                  borderRadius: 12,
-                  padding: 12,
-                  fontSize: 14,
-                  resize: "vertical",
-                  outline: "none",
-                  color: "#1E293B",
-                }}
-              />
-
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
+          <div style={{ display: "flex", gap: 12 }}>
+            {!checked ? (
+              <>
                 <button
-                  onClick={sendReport}
+                  type="button"
+                  onClick={handleSkip}
                   style={{
-                    padding: "10px 14px",
-                    borderRadius: 10,
-                    border: "none",
-                    background: "#3451D1",
-                    color: "white",
-                    fontWeight: 700,
-                    fontSize: 14,
+                    padding: "10px 18px",
+                    borderRadius: 12,
+                    border: "1px solid #D9D9D9",
+                    background: "#FFFFFF",
+                    color: "#8A8A8A",
+                    fontWeight: 600,
+                    fontSize: 13,
                     cursor: "pointer",
                   }}
                 >
-                  Send report
+                  Skip
                 </button>
 
-                {reportSent && (
-                  <div
+                <button
+                  type="button"
+                  onClick={handleCheck}
+                  style={{
+                    padding: "10px 22px",
+                    borderRadius: 12,
+                    border: "none",
+                    background: "#3157D6",
+                    color: "#FFFFFF",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  Check Selection
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleTryAgain}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: 12,
+                    border: "1px solid #D9D9D9",
+                    background: "#FFFFFF",
+                    color: "#6B7280",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  Try Again
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onNextRule}
+                  style={{
+                    padding: "10px 22px",
+                    borderRadius: 12,
+                    border: "none",
+                    background: "#3157D6",
+                    color: "#FFFFFF",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  Next Rule
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {checked && (
+          <div
+            style={{
+              marginTop: 14,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            {allCorrect ? (
+              <span
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  border: "1px solid #BFDBFE",
+                  background: "#EFF6FF",
+                  color: "#2563EB",
+                  fontSize: 11,
+                  fontWeight: 600,
+                }}
+              >
+                Correct selection
+              </span>
+            ) : (
+              <>
+                {correctSelections.length > 0 && (
+                  <span
                     style={{
-                      fontSize: 13,
-                      color: "#059669",
+                      padding: "6px 12px",
+                      borderRadius: 999,
+                      border: "1px solid #BFDBFE",
+                      background: "#EFF6FF",
+                      color: "#2563EB",
+                      fontSize: 11,
                       fontWeight: 600,
                     }}
                   >
-                    Report sent.
-                  </div>
+                    {correctSelections.length} correct
+                  </span>
                 )}
-              </div>
-            </div>
-          )}
-        </>
-      )}
+
+                {missedKeywords.map((keyword) => (
+                  <span
+                    key={keyword}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: 999,
+                      border: "1px solid #FECACA",
+                      background: "#FEF2F2",
+                      color: "#B91C1C",
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Missed: {keyword}
+                  </span>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

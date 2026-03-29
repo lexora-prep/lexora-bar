@@ -5,29 +5,22 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url)
 
-  const currentRuleId = Number(searchParams.get("currentRuleId") || 0)
+  const mode = searchParams.get("mode") || "random"
+  const userId = searchParams.get("userId")
 
-  const rule = await prisma.rule.findFirst({
-    where: {
-      id: {
-        gt: currentRuleId
-      }
-    },
-    orderBy: {
-      id: "asc"
-    },
-    include: {
-      keywords: true,
-      topic: true,
-      subject: true
-    }
-  })
+  let rule
 
-  if (!rule) {
+  if (mode === "weak" && userId) {
 
-    const firstRule = await prisma.rule.findFirst({
-      orderBy: {
-        id: "asc"
+    rule = await prisma.rule.findFirst({
+      where: {
+        userStats: {
+          some: {
+            userId,
+            attemptsTotal: { gt: 3 },
+            attemptsCorrect: { lt: 2 }
+          }
+        }
       },
       include: {
         keywords: true,
@@ -36,7 +29,45 @@ export async function GET(req: Request) {
       }
     })
 
-    return NextResponse.json(firstRule)
+  }
+
+  else if (mode === "review" && userId) {
+
+    rule = await prisma.rule.findFirst({
+      where: {
+        userStats: {
+          some: {
+            userId,
+            nextReviewAt: {
+              lte: new Date()
+            }
+          }
+        }
+      },
+      include: {
+        keywords: true,
+        topic: true,
+        subject: true
+      }
+    })
+
+  }
+
+  else {
+
+    const count = await prisma.rule.count()
+
+    const skip = Math.floor(Math.random() * count)
+
+    rule = await prisma.rule.findFirst({
+      skip,
+      include: {
+        keywords: true,
+        topic: true,
+        subject: true
+      }
+    })
+
   }
 
   return NextResponse.json(rule)

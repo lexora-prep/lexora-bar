@@ -32,6 +32,23 @@ export async function GET(req: Request) {
       )
     }
 
+    const topicIds = [...new Set((data ?? []).map((rule: any) => rule.topic_id).filter(Boolean))]
+
+    let topicMap: Record<string, string> = {}
+
+    if (topicIds.length > 0) {
+      const { data: topicsData, error: topicsError } = await supabase
+        .from("topics")
+        .select("id, name")
+        .in("id", topicIds)
+
+      if (topicsError) {
+        console.error("Topics lookup error:", topicsError)
+      } else {
+        topicMap = Object.fromEntries((topicsData ?? []).map((t: any) => [t.id, t.name]))
+      }
+    }
+
     const normalized = (data ?? []).map((rule: any) => ({
       id: rule.id,
       title: rule.title,
@@ -39,9 +56,11 @@ export async function GET(req: Request) {
       keywords: Array.isArray(rule.buzzwords)
         ? rule.buzzwords
         : typeof rule.buzzwords === "string"
-        ? [rule.buzzwords]
-        : [],
-      topic: "Formation",
+          ? [rule.buzzwords]
+          : [],
+      topic: topicMap[rule.topic_id] ?? "",
+      topic_id: rule.topic_id,
+      subtopic_id: rule.subtopic_id,
     }))
 
     return NextResponse.json(normalized)

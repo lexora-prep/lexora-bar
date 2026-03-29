@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Lexora Prep — Master Every Black Letter Rule</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#06070D;color:#fff;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 60px;height:68px;border-bottom:1px solid rgba(255,255,255,0.07);position:sticky;top:0;background:rgba(6,7,13,0.92);backdrop-filter:blur(12px);z-index:100}
+.nav-logo{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.nav-logo span{color:#4F8EF7}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{font-size:13px;color:rgba(255,255,255,0.55);transition:.2s}
+.nav-links a:hover{color:#fff}
+.nav-cta{display:flex;gap:10px;align-items:center}
+.btn-ghost{height:36px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:transparent;color:rgba(255,255,255,0.75);font-size:13px;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.4);color:#fff;background:rgba(255,255,255,0.05)}
+.btn-primary{height:36px;padding:0 20px;border-radius:8px;border:none;background:#2563EB;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-primary:hover{background:#1D4ED8}
+.hero{text-align:center;padding:100px 60px 80px;max-width:900px;margin:0 auto}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(37,99,235,0.12);border:1px solid rgba(37,99,235,0.3);border-radius:100px;padding:6px 16px;font-size:12px;color:#93C5FD;margin-bottom:32px;font-weight:500}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:#4F8EF7}
+.hero h1{font-size:64px;font-weight:800;line-height:1.08;letter-spacing:-2px;color:#fff;margin-bottom:24px}
+.hero h1 .accent{color:#4F8EF7}
+.hero p{font-size:18px;color:rgba(255,255,255,0.5);line-height:1.7;max-width:580px;margin:0 auto 40px}
+.hero-btns{display:flex;gap:14px;justify-content:center;align-items:center;margin-bottom:20px}
+.hero-btn-main{height:52px;padding:0 36px;border-radius:12px;border:none;background:#2563EB;color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit}
+.hero-btn-main:hover{background:#1D4ED8;transform:translateY(-1px)}
+.hero-btn-sec{height:52px;padding:0 30px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.75);font-size:15px;cursor:pointer;transition:.2s;font-family:inherit}
+.hero-btn-sec:hover{border-color:rgba(255,255,255,0.35);color:#fff}
+.hero-note{font-size:12px;color:rgba(255,255,255,0.3)}
+.marquee-wrap{overflow:hidden;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);padding:16px 0;background:rgba(255,255,255,0.01)}
+.marquee-inner{display:flex;white-space:nowrap;animation:marquee 22s linear infinite}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.marquee-item{display:inline-flex;align-items:center;gap:10px;padding:0 32px;font-size:12px;color:rgba(255,255,255,0.3);font-weight:500}
+.marquee-dot{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.2)}
+.rule-showcase{padding:80px 60px;background:rgba(255,255,255,0.01)}
+.section-label{font-size:11px;font-weight:700;color:#4F8EF7;letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;text-align:center}
+.section-title{font-size:42px;font-weight:800;color:#fff;text-align:center;letter-spacing:-1px;line-height:1.15;margin-bottom:12px}
+.section-sub{font-size:16px;color:rgba(255,255,255,0.45);text-align:center;margin-bottom:56px;max-width:500px;margin-left:auto;margin-right:auto}
+.rule-card{max-width:720px;margin:0 auto;background:#0D1117;border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden}
+.rule-card-header{background:#161B22;padding:14px 20px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.wdot{width:12px;height:12px;border-radius:50%}
+.rule-card-title{font-size:12px;color:rgba(255,255,255,0.4);margin-left:8px;font-family:monospace}
+.rule-body{padding:28px 32px;min-height:220px}
+.rule-subject{font-size:11px;font-weight:700;color:#4F8EF7;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.rule-text{font-size:16px;color:rgba(255,255,255,0.88);line-height:1.7;min-height:136px;height:136px;font-family:Georgia,serif;overflow:hidden;word-break:break-word}
+.rule-cursor{display:inline-block;width:2px;height:18px;background:#4F8EF7;vertical-align:middle;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.rule-footer{padding:16px 32px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:10px;flex-wrap:wrap;min-height:58px}
+.rule-tag{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(37,99,235,0.12);color:#93C5FD;border:1px solid rgba(37,99,235,0.2)}
+.features{padding:90px 60px;max-width:1100px;margin:0 auto}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:56px}
+.feat-card{background:#0D1117;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;transition:.25s}
+.feat-card:hover{border-color:rgba(79,142,247,0.4);background:#0F1520}
+.feat-icon{width:44px;height:44px;border-radius:10px;background:rgba(37,99,235,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.feat-card h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:10px}
+.feat-card p{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7}
+.pricing{padding:90px 60px;max-width:1100px;margin:0 auto}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.price-card{background:#0D1117;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px}
+.price-card.featured{border:2px solid #2563EB;background:#070E1C;position:relative}
+.popular-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#2563EB;color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:100px;white-space:nowrap}
+.price-tier{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.price-tier.blue{color:#4F8EF7}
+.price-tier.purple{color:#A78BFA}
+.price-tier.gray{color:rgba(255,255,255,0.4)}
+.price-amount{font-size:40px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:6px}
+.price-amount .mo{font-size:15px;font-weight:400;color:rgba(255,255,255,0.4)}
+.price-desc{font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:24px;line-height:1.6}
+.price-divider{height:1px;background:rgba(255,255,255,0.07);margin-bottom:20px}
+.price-feat{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+.chk{width:16px;height:16px;border-radius:50%;background:rgba(37,99,235,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.chk svg{width:9px;height:9px}
+.price-feat span{font-size:13px;color:rgba(255,255,255,0.65);line-height:1.5}
+.price-btn{width:100%;height:44px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:24px;transition:.2s;font-family:inherit}
+.price-btn.solid{background:#2563EB;color:#fff;border:none}
+.price-btn.solid:hover{background:#1D4ED8}
+.price-btn.outline{background:transparent;color:rgba(255,255,255,0.65);border:1px solid rgba(255,255,255,0.15)}
+.price-btn.outline:hover{border-color:rgba(255,255,255,0.35);color:#fff}
+.faq-section{padding:90px 60px;max-width:760px;margin:0 auto}
+.faq-item{border-bottom:1px solid rgba(255,255,255,0.07);padding:20px 0;cursor:pointer}
+.faq-q{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:600;color:rgba(255,255,255,0.85);gap:16px}
+.faq-a{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;margin-top:14px;display:none}
+.faq-a.open{display:block}
+.faq-arrow{font-size:20px;color:rgba(255,255,255,0.3);transition:.2s;flex-shrink:0;line-height:1}
+.faq-arrow.open{transform:rotate(45deg);color:#4F8EF7}
+.cta-band{margin:0 60px 80px;background:#0F1A2E;border:1px solid rgba(37,99,235,0.25);border-radius:20px;padding:60px;text-align:center}
+.cta-band h2{font-size:40px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:14px}
+.cta-band p{font-size:16px;color:rgba(255,255,255,0.45);margin-bottom:34px}
+footer{background:#06070D;border-top:1px solid rgba(255,255,255,0.07);padding:60px 60px 32px}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+.footer-brand .fname{font-size:18px;font-weight:700;color:#fff;margin-bottom:10px}
+.footer-brand .fname span{color:#4F8EF7}
+.footer-brand p{font-size:13px;color:rgba(255,255,255,0.35);line-height:1.7;max-width:260px}
+.footer-col h4{font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+.footer-col a{display:block;font-size:13px;color:rgba(255,255,255,0.38);margin-bottom:10px;transition:.15s}
+.footer-col a:hover{color:rgba(255,255,255,0.75)}
+.footer-bottom{border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.footer-legal{font-size:11px;color:rgba(255,255,255,0.25);line-height:1.8}
+.footer-links{display:flex;gap:20px;flex-shrink:0}
+.footer-links a{font-size:11px;color:rgba(255,255,255,0.3);transition:.15s}
+.footer-links a:hover{color:rgba(255,255,255,0.6)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;animation:fadeUp .7s ease forwards}
+.d1{animation-delay:.1s}
+.d2{animation-delay:.25s}
+.d3{animation-delay:.4s}
+.d4{animation-delay:.55s}
+@media(max-width:768px){
+  nav{padding:0 20px}
+  .nav-links{display:none}
+  .hero{padding:60px 20px 40px}
+  .hero h1{font-size:36px}
+  .feat-grid,.pricing-grid,.footer-top{grid-template-columns:1fr}
+  .features,.pricing,.faq-section{padding:60px 20px}
+  .rule-showcase{padding:60px 20px}
+  .cta-band{margin:0 20px 60px;padding:40px 24px}
+  footer{padding:40px 20px 24px}
+  .footer-bottom{flex-direction:column;gap:16px}
+  .rule-body{padding:24px 20px;min-height:240px}
+  .rule-text{min-height:156px;height:156px}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo">Lexora<span>.</span>Prep</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#howitworks">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#about">About us</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <div class="nav-cta">
+    <a href="/login" target="_top" class="btn-ghost" style="display:inline-flex;align-items:center;justify-content:center;">Log in</a>
+    <a href="/register" target="_top" class="btn-primary" style="display:inline-flex;align-items:center;justify-content:center;">Start free &rarr;</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge fade-up d1"><span class="hero-badge-dot"></span>Now covering all 12 UBE subjects — 1,200+ rules</div>
+  <h1 class="fade-up d2">Master every<br><span class="accent">black letter rule</span><br>before exam day.</h1>
+  <p class="fade-up d3">The only bar prep platform built specifically for black letter law memorization — with spaced repetition, smart daily plans, and subject-by-subject analytics.</p>
+  <div class="hero-btns fade-up d4">
+    <a href="/register" target="_top" class="hero-btn-main" style="display:inline-flex;align-items:center;justify-content:center;">Get started free &rarr;</a>
+    <a href="#howitworks" class="hero-btn-sec" style="display:inline-flex;align-items:center;justify-content:center;">See how it works</a>
+  </div>
+  <div class="hero-note fade-up d4">No credit card required · Free demo plan available</div>
+</div>
+
+<div class="marquee-wrap">
+  <div class="marquee-inner">
+    <span class="marquee-item">Contracts<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Torts<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Evidence<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Civil Procedure<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Criminal Law<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Property<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Constitutional Law<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Business Associations<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Family Law<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Trusts &amp; Wills<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Secured Transactions<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Conflict of Laws<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Contracts<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Torts<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Evidence<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Civil Procedure<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Criminal Law<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Property<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Constitutional Law<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Business Associations<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Family Law<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Trusts &amp; Wills<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Secured Transactions<span class="marquee-dot"></span></span>
+    <span class="marquee-item">Conflict of Laws<span class="marquee-dot"></span></span>
+  </div>
+</div>
+
+<div class="rule-showcase" id="howitworks">
+  <div class="section-label">Live rule training</div>
+  <div class="section-title">See it in action</div>
+  <div class="section-sub">Rules animate character by character — just like how memory actually forms.</div>
+  <div class="rule-card">
+    <div class="rule-card-header">
+      <div class="wdot" style="background:#FF5F56"></div>
+      <div class="wdot" style="background:#FFBD2E"></div>
+      <div class="wdot" style="background:#27C93F"></div>
+      <span class="rule-card-title">lexora-prep — rule-trainer.js</span>
+    </div>
+    <div class="rule-body">
+      <div class="rule-subject" id="rc-subject">Contracts</div>
+      <div class="rule-text" id="rc-text"><span class="rule-cursor"></span></div>
+    </div>
+    <div class="rule-footer" id="rc-tags"></div>
+  </div>
+</div>
+
+<div class="features" id="features">
+  <div class="section-label">Platform features</div>
+  <div class="section-title">Everything you need.<br>Nothing you don’t.</div>
+  <div class="section-sub">Built for one purpose — to get you passing the bar.</div>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><path d="M11 3L13.5 8H19L14.5 11.5L16.5 17L11 13.5L5.5 17L7.5 11.5L3 8H8.5L11 3Z"/></svg></div>
+      <h3>Spaced repetition engine</h3>
+      <p>Rules resurface at scientifically optimized intervals so you retain them through exam day — not just until tomorrow.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><rect x="3" y="3" width="16" height="16" rx="3"/><path d="M7 11h8M7 15h5"/></svg></div>
+      <h3>Smart daily study plan</h3>
+      <p>Set your exam date and available hours. Lexora auto-distributes your MBE questions, BLL rules, and reviews across every study day.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><path d="M3 17V11l5-5 5 5 5-7v13"/></svg></div>
+      <h3>Subject-level analytics</h3>
+      <p>Track your accuracy, completion, and BLL score per subject. Instantly know where you’re strong and where you need more reps.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M11 7v4l3 3"/></svg></div>
+      <h3>Weak area targeting</h3>
+      <p>The system flags your weak subjects automatically and routes extra reps where your score needs the most lift before the exam.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><rect x="2" y="5" width="18" height="13" rx="2"/><path d="M2 9h18"/></svg></div>
+      <h3>Flashcard trainer</h3>
+      <p>1,200+ rules formatted as high-retention flashcards. Flip through on any device — during commutes, breaks, anywhere.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><path d="M19 11A8 8 0 112.93 7.5"/><path d="M19 3v8h-8"/></svg></div>
+      <h3>Streak &amp; consistency tracker</h3>
+      <p>Stay motivated with a streak system that freezes, not resets, when you miss a day.</p>
+    </div>
+  </div>
+</div>
+
+<div class="pricing" id="pricing">
+  <div class="section-label" style="text-align:center">Pricing</div>
+  <div class="section-title" style="text-align:center">Simple, transparent plans.</div>
+  <div class="section-sub" style="text-align:center;max-width:480px;margin-left:auto;margin-right:auto;margin-bottom:0">Choose the plan that fits your timeline. Cancel anytime.</div>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-tier gray">Demo</div>
+      <div class="price-amount">Free</div>
+      <div class="price-desc">Try the platform with a limited sample of rules and features.</div>
+      <div class="price-divider"></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>5 sample rules per subject</span></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Basic progress preview</span></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>No MBE access</span></div>
+      <a href="/register" target="_top" class="price-btn outline" style="display:inline-flex;align-items:center;justify-content:center;">Start for free</a>
+    </div>
+    <div class="price-card featured">
+      <div class="popular-badge">Most popular</div>
+      <div class="price-tier blue">BLL Monthly</div>
+      <div class="price-amount">$19<span class="mo">.99/mo</span></div>
+      <div class="price-desc">Full black letter law memorization tools and study planning.</div>
+      <div class="price-divider"></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Full BLL rule access — all 12 subjects</span></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Smart study plan &amp; calendar</span></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Spaced repetition &amp; flashcards</span></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Weak area training</span></div>
+      <a href="/register" target="_top" class="price-btn solid" style="display:inline-flex;align-items:center;justify-content:center;">Get started &rarr;</a>
+    </div>
+    <div class="price-card">
+      <div class="price-tier purple">Premium</div>
+      <div class="price-amount">$29<span class="mo">.99/mo</span></div>
+      <div class="price-desc">Full platform access including AI generated MBE practice and advanced analytics.</div>
+      <div class="price-divider"></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Everything in BLL Monthly</span></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Full MBE question bank</span></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Premium analytics &amp; state comparison</span></div>
+      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Priority support</span></div>
+      <a href="/register" target="_top" class="price-btn outline" style="display:inline-flex;align-items:center;justify-content:center;">Get Premium &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<div class="faq-section">
+  <div class="section-label" style="text-align:center">FAQ</div>
+  <div class="section-title" style="text-align:center;margin-bottom:40px">Common questions</div>
+  <div class="faq-item">
+    <div class="faq-q">What is black letter law and why does it matter for the bar exam? <span class="faq-arrow">+</span></div>
+    <div class="faq-a">Black letter law refers to the core, well-established legal principles and rules that are universally tested on the bar exam. Mastering these rules, not just recognizing them, is one of the highest-leverage things you can do to improve your MBE and MEE scores.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">How is Lexora Prep different from Barbri or Themis? <span class="faq-arrow">+</span></div>
+    <div class="faq-a">Barbri and Themis are full-service courses. Lexora Prep is a specialized memorization engine focused on black letter law retention, with spaced repetition, daily smart plans, and subject analytics. It works as a standalone product or as a supplement to any course you are already using.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Can I use Lexora Prep alongside my existing bar prep course? <span class="faq-arrow">+</span></div>
+    <div class="faq-a">Absolutely. Many students use Lexora Prep as a daily memorization layer on top of their main course. The smart plan integrates with your exam date and adjusts automatically around your schedule.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Do you offer refunds? <span class="faq-arrow">+</span></div>
+    <div class="faq-a">Yes. We offer a 7-day money-back guarantee on all paid plans. If it is not the right fit, contact support within 7 days of purchase.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Which bar exam does Lexora Prep cover? <span class="faq-arrow">+</span></div>
+    <div class="faq-a">Lexora Prep currently covers all 12 UBE subjects including the 7 MBE subjects. State-specific content for select jurisdictions is on the roadmap for late 2026.</div>
+  </div>
+</div>
+
+<div class="cta-band">
+  <h2>Your exam date is closer<br>than it feels.</h2>
+  <p>Start building your rule library today — free, no credit card required.</p>
+  <a href="/register" target="_top" class="hero-btn-main" style="display:inline-flex;align-items:center;justify-content:center;">Start free — no card needed &rarr;</a>
+</div>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="fname">Lexora<span>.</span>Prep</div>
+      <p>The black letter law memorization platform built for bar exam candidates who want to know every rule before exam day.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#howitworks">How it works</a>
+      <a href="#">Rule bank</a>
+      <a href="#">Changelog</a>
+    </div>
+    <div class="footer-col" id="about">
+      <h4>Company</h4>
+      <a href="#">About us</a>
+      <a href="#" id="contact">Contact us</a>
+      <a href="#">Blog</a>
+      <a href="#">Careers</a>
+      <a href="#">Press</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Terms &amp; Conditions</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Cookie Policy</a>
+      <a href="#">Refund Policy</a>
+      <a href="#">Accessibility</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-legal">
+      Copyright &copy; 2026 Lexora Prep LLC. All Rights Reserved.<br>
+      Test names and other trademarks are the property of their respective trademark holders. None of the trademark holders are affiliated with Lexora Prep LLC or this website.<br>
+      Lexora Prep LLC is not affiliated with the National Conference of Bar Examiners (NCBE®) or any state board of bar examiners.
+    </div>
+    <div class="footer-links">
+      <a href="#">Terms</a>
+      <a href="#">Privacy</a>
+      <a href="#">Contact</a>
+      <a href="#">Support</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var rules=[
+    {subject:'Contracts',text:'An offer is a manifestation of willingness to enter into a bargain, so made as to justify another person in understanding that his assent to that bargain is invited and will conclude it.',tags:['Offer & Acceptance','Restatement 2nd §24']},
+    {subject:'Torts',text:'To establish negligence, a plaintiff must prove: (1) duty, (2) breach, (3) causation, both actual and proximate, and (4) damages. The standard of care is that of a reasonably prudent person under the same or similar circumstances.',tags:['Negligence','Prima Facie Case']},
+    {subject:'Evidence',text:'Hearsay is an out-of-court statement offered to prove the truth of the matter asserted. Under FRE 801(d)(2), an admission by a party-opponent is not hearsay and is admissible against that party.',tags:['FRE 801','Hearsay']},
+    {subject:'Property',text:'Adverse possession requires actual, open and notorious, exclusive, hostile, and continuous possession under a claim of right for the statutory period. All elements must be satisfied concurrently.',tags:['Adverse Possession','Real Property']},
+    {subject:'Constitutional Law',text:'Under strict scrutiny, the government must show that the law is necessary to serve a compelling governmental interest and is narrowly tailored to achieve that interest. This standard applies to fundamental rights and suspect classifications.',tags:['Equal Protection','Strict Scrutiny']}
+  ];
+  var ri=0,ci=0,t;
+  function type(){
+    var r=rules[ri];
+    var el=document.getElementById('rc-text');
+    var sub=document.getElementById('rc-subject');
+    var tags=document.getElementById('rc-tags');
+    if(!el||!sub||!tags) return;
+    if(ci===0){
+      sub.textContent=r.subject;
+      el.innerHTML='<span class="rule-cursor"></span>';
+      tags.innerHTML='';
+    }
+    if(ci<r.text.length){
+      el.innerHTML=r.text.substring(0,ci+1)+'<span class="rule-cursor"></span>';
+      ci++;
+      t=setTimeout(type,ci<20?60:28);
+    } else {
+      r.tags.forEach(function(tag){
+        var s=document.createElement('span');
+        s.className='rule-tag';
+        s.textContent=tag;
+        tags.appendChild(s);
+      });
+      t=setTimeout(function(){
+        ci=0;
+        ri=(ri+1)%rules.length;
+        el.innerHTML='<span class="rule-cursor"></span>';
+        tags.innerHTML='';
+        setTimeout(type,400);
+      },3800);
+    }
+  }
+  setTimeout(type,800);
+
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    item.addEventListener('click',function(){
+      var a=item.querySelector('.faq-a');
+      var arrow=item.querySelector('.faq-arrow');
+      var open=a.classList.contains('open');
+      document.querySelectorAll('.faq-a').forEach(function(x){x.classList.remove('open');});
+      document.querySelectorAll('.faq-arrow').forEach(function(x){x.classList.remove('open');});
+      if(!open){
+        a.classList.add('open');
+        arrow.classList.add('open');
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

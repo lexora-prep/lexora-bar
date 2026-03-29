@@ -1,23 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
-
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors
-} from "@dnd-kit/core"
-
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  verticalListSortingStrategy
-} from "@dnd-kit/sortable"
-
-import { CSS } from "@dnd-kit/utilities"
+import { useEffect, useMemo, useState } from "react"
 
 type Props = {
   ruleText: string
@@ -25,417 +8,382 @@ type Props = {
   onNextRule: () => void
 }
 
-const MAX_ATTEMPTS = 3
+function normalizeText(text: unknown) {
+  if (typeof text !== "string") return ""
 
-function SortableItem({
-  id,
-  index,
-  submitted,
-  correct
-}:{
-  id:string
-  index:number
-  submitted:boolean
-  correct:boolean
-}){
-
-  const {attributes,listeners,setNodeRef,transform,transition} = useSortable({id})
-
-  const style={
-    transform:CSS.Transform.toString(transform),
-    transition
-  }
-
-  let border="#CBD5E1"
-  let bg="#FFFFFF"
-  let color="#334155"
-
-  if(submitted){
-
-    if(correct){
-      border="#10B981"
-      bg="#ECFDF5"
-      color="#065F46"
-    }else{
-      border="#EF4444"
-      bg="#FEF2F2"
-      color="#991B1B"
-    }
-
-  }
-
-  return(
-
-  <div
-  ref={setNodeRef}
-  style={{
-  ...style,
-  padding:"12px 18px",
-  borderRadius:12,
-  border:`2px solid ${border}`,
-  background:bg,
-  color:color,
-  fontWeight:700,
-  fontSize:15,
-  cursor:"grab",
-  userSelect:"none"
-  }}
-  {...attributes}
-  {...listeners}
-  >
-  {index+1}. {id}
-  </div>
-
-  )
-
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
-export default function OrderingMode({keywords,onNextRule}:Props){
+function splitRuleIntoFragments(ruleText: string) {
+  const cleaned = (ruleText || "").replace(/\s+/g, " ").trim()
+  if (!cleaned) return []
 
-  const [items,setItems]=useState<string[]>([])
-  const [submitted,setSubmitted]=useState(false)
-  const [attempts,setAttempts]=useState(0)
+  const commaParts = cleaned
+    .split(/,\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean)
 
-  const [reportOpen,setReportOpen]=useState(false)
-  const [reportText,setReportText]=useState("")
+  let fragments: string[] = []
 
-  const sensors = useSensors(useSensor(PointerSensor))
+  if (commaParts.length >= 4) {
+    fragments = commaParts
+  } else {
+    const words = cleaned.split(" ").filter(Boolean)
+    const targetParts = Math.min(5, Math.max(4, Math.ceil(words.length / 5)))
+    const chunkSize = Math.ceil(words.length / targetParts)
 
-  useEffect(()=>{
+    for (let i = 0; i < words.length; i += chunkSize) {
+      fragments.push(words.slice(i, i + chunkSize).join(" "))
+    }
+  }
 
-    const shuffled=[...keywords].sort(()=>Math.random()-0.5)
+  fragments = fragments.map((part) => part.trim()).filter(Boolean)
 
-    setItems(shuffled)
-    setSubmitted(false)
-    setAttempts(0)
+  if (fragments.length > 5) {
+    const merged = [...fragments]
+    while (merged.length > 5) {
+      const last = merged.pop() ?? ""
+      merged[merged.length - 1] = `${merged[merged.length - 1]} ${last}`.trim()
+    }
+    fragments = merged
+  }
 
-  },[keywords])
+  return fragments
+}
 
-  function handleDragEnd(event:any){
+function shuffleArray<T>(arr: T[]) {
+  const copy = [...arr]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
 
-    if(submitted) return
+const RULE_TEXT_STYLE: React.CSSProperties = {
+  fontSize: 17,
+  lineHeight: 1.72,
+  fontWeight: 400,
+  color: "#334155",
+}
 
-    const {active,over}=event
+export default function OrderingMode({ ruleText, onNextRule }: Props) {
+  const correctFragments = useMemo(() => splitRuleIntoFragments(ruleText), [ruleText])
 
-    if(active.id!==over?.id){
+  const [items, setItems] = useState<string[]>([])
+  const [checked, setChecked] = useState(false)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
-      const oldIndex=items.indexOf(active.id)
-      const newIndex=items.indexOf(over.id)
-
-      setItems(arrayMove(items,oldIndex,newIndex))
-
+  useEffect(() => {
+    if (correctFragments.length <= 1) {
+      setItems(correctFragments)
+      setChecked(false)
+      setDragIndex(null)
+      setDragOverIndex(null)
+      return
     }
 
+    const shuffled = shuffleArray(correctFragments)
+    const sameOrder =
+      shuffled.length === correctFragments.length &&
+      shuffled.every((item, index) => item === correctFragments[index])
+
+    setItems(sameOrder ? [...shuffled].reverse() : shuffled)
+    setChecked(false)
+    setDragIndex(null)
+    setDragOverIndex(null)
+  }, [correctFragments])
+
+  function handleCheck() {
+    setChecked(true)
   }
 
-  function submit(){
-
-    const correctCount=items.filter((k,i)=>k===keywords[i]).length
-    const percent=Math.round((correctCount/keywords.length)*100)
-
-    if(percent !== 100){
-      setAttempts(prev=>prev+1)
+  function handleTryAgain() {
+    if (correctFragments.length <= 1) {
+      setItems(correctFragments)
+      setChecked(false)
+      return
     }
 
-    setSubmitted(true)
+    const reshuffled = shuffleArray(correctFragments)
+    const sameOrder =
+      reshuffled.length === correctFragments.length &&
+      reshuffled.every((item, index) => item === correctFragments[index])
 
+    setItems(sameOrder ? [...reshuffled].reverse() : reshuffled)
+    setChecked(false)
+    setDragIndex(null)
+    setDragOverIndex(null)
   }
 
-  function tryAgain(){
+  function moveItem(from: number, to: number) {
+    if (checked) return
+    if (from === to) return
 
-    if(attempts >= MAX_ATTEMPTS) return
-
-    const shuffled=[...keywords].sort(()=>Math.random()-0.5)
-    setItems(shuffled)
-    setSubmitted(false)
-
+    const next = [...items]
+    const draggedItem = next[from]
+    next.splice(from, 1)
+    next.splice(to, 0, draggedItem)
+    setItems(next)
   }
 
-  function correct(i:number){
-    return items[i]===keywords[i]
+  function handleDragStart(index: number) {
+    if (checked) return
+    setDragIndex(index)
   }
 
-  const correctCount=items.filter((k,i)=>k===keywords[i]).length
-  const percent=Math.round((correctCount/keywords.length)*100)
+  function handleDragEnter(index: number) {
+    if (checked) return
+    setDragOverIndex(index)
+  }
 
-  const failedAllAttempts = attempts >= MAX_ATTEMPTS && percent !== 100
+  function handleDrop(index: number) {
+    if (checked) return
+    if (dragIndex === null) {
+      setDragIndex(null)
+      setDragOverIndex(null)
+      return
+    }
 
-  return(
+    moveItem(dragIndex, index)
+    setDragIndex(null)
+    setDragOverIndex(null)
+  }
 
-  <div>
+  function handleDragEnd() {
+    setDragIndex(null)
+    setDragOverIndex(null)
+  }
 
-  <div
-  style={{
-  border:"1px solid #CBD5E1",
-  borderRadius:16,
-  padding:24,
-  background:"#F8FAFC",
-  marginBottom:20
-  }}
-  >
+  function itemState(item: string, index: number) {
+    if (!checked) return "default"
+    return normalizeText(item) === normalizeText(correctFragments[index])
+      ? "correct"
+      : "wrong"
+  }
 
-  <div
-  style={{
-  fontSize:12,
-  letterSpacing:"0.1em",
-  fontWeight:700,
-  color:"#94A3B8",
-  marginBottom:6
-  }}
-  >
-  DRAG KEYWORDS INTO THE CORRECT RULE ORDER
-  </div>
+  const allCorrect =
+    checked &&
+    items.length === correctFragments.length &&
+    items.every(
+      (item, index) => normalizeText(item) === normalizeText(correctFragments[index])
+    )
 
-  {/* Correct order reference */}
+  return (
+    <div style={{ marginTop: 0 }}>
+      <div
+        style={{
+          fontSize: 13,
+          color: "#666672",
+          marginBottom: 16,
+          fontWeight: 400,
+        }}
+      >
+        Drag the fragments into the correct order to reconstruct the rule.
+      </div>
 
-  {submitted && (
+      <div style={{ display: "grid", gap: 8 }}>
+        {items.map((item, index) => {
+          const state = itemState(item, index)
+          const isDragging = dragIndex === index
+          const isDragOver = dragOverIndex === index && dragIndex !== index
 
-  <div
-  style={{
-  fontSize:14,
-  color:"#64748B",
-  marginBottom:18
-  }}
-  >
-  Correct: {keywords.join(" → ")}
-  </div>
+          let border = "1px solid #D9D9D9"
+          let background = "#FFFFFF"
+          let numberBorder = "1px solid #D4D4D8"
+          let numberColor = "#A1A1AA"
 
-  )}
+          if (state === "correct") {
+            border = "1px solid #93C5FD"
+            background = "#EFF6FF"
+            numberBorder = "1px solid #3B82F6"
+            numberColor = "#2563EB"
+          } else if (state === "wrong") {
+            border = "1px solid #FECACA"
+            background = "#FEF2F2"
+            numberBorder = "1px solid #EF4444"
+            numberColor = "#DC2626"
+          } else if (isDragOver) {
+            border = "1px solid #A78BFA"
+            background = "#F5F3FF"
+          }
 
-  <DndContext
-  sensors={sensors}
-  collisionDetection={closestCenter}
-  onDragEnd={handleDragEnd}
-  >
+          return (
+            <div
+              key={`${item}-${index}`}
+              draggable={!checked}
+              onDragStart={() => handleDragStart(index)}
+              onDragEnter={() => handleDragEnter(index)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(index)}
+              onDragEnd={handleDragEnd}
+              style={{
+                borderRadius: 12,
+                padding: "9px 14px",
+                display: "grid",
+                gridTemplateColumns: "18px 34px minmax(0,1fr)",
+                alignItems: "center",
+                gap: 12,
+                border,
+                background,
+                cursor: checked ? "default" : "grab",
+                opacity: isDragging ? 0.88 : 1,
+                boxShadow: isDragOver
+                  ? "0 8px 20px rgba(139,92,246,0.10)"
+                  : "none",
+                transition: "all 0.15s ease",
+                userSelect: "none",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 16,
+                  color: "#B3B3B3",
+                  lineHeight: 1,
+                  userSelect: "none",
+                }}
+              >
+                ☰
+              </div>
 
-  <SortableContext
-  items={items}
-  strategy={verticalListSortingStrategy}
-  >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 999,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  background: "#FFFFFF",
+                  border: numberBorder,
+                  color: numberColor,
+                }}
+              >
+                {index + 1}
+              </div>
 
-  <div
-  style={{
-  display:"grid",
-  gap:14
-  }}
-  >
+              <div
+                style={{
+                  ...RULE_TEXT_STYLE,
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  color: "#20253A",
+                }}
+              >
+                {item}
+              </div>
+            </div>
+          )
+        })}
+      </div>
 
-  {items.map((word,i)=>(
-  <SortableItem
-  key={word}
-  id={word}
-  index={i}
-  submitted={submitted}
-  correct={correct(i)}
-  />
-  ))}
+      <div
+        style={{
+          borderTop: "1px solid #ECECEC",
+          paddingTop: 16,
+          marginTop: 18,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            color: "#A1A1AA",
+          }}
+        >
+          {checked
+            ? allCorrect
+              ? "Correct order"
+              : "Review the wrong positions"
+            : "Drag to reorder"}
+        </div>
 
-  </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          {!checked ? (
+            <>
+              <button
+                type="button"
+                onClick={handleTryAgain}
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: 12,
+                  border: "1px solid #D9D9D9",
+                  background: "#FFFFFF",
+                  color: "#8A8A8A",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Skip
+              </button>
 
-  </SortableContext>
+              <button
+                type="button"
+                onClick={handleCheck}
+                style={{
+                  padding: "10px 22px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#3157D6",
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Check Order
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleTryAgain}
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: 12,
+                  border: "1px solid #D9D9D9",
+                  background: "#FFFFFF",
+                  color: "#6B7280",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Try Again
+              </button>
 
-  </DndContext>
-
-  </div>
-
-  {!submitted && (
-
-  <button
-  onClick={submit}
-  style={{
-  background:"#3451D1",
-  color:"white",
-  padding:"10px 18px",
-  borderRadius:10,
-  border:"none",
-  fontWeight:700,
-  fontSize:14,
-  cursor:"pointer"
-  }}
-  >
-  Submit Rule
-  </button>
-
-  )}
-
-  {submitted && (
-
-  <>
-
-  <div
-  style={{
-  marginTop:20,
-  border: percent===100?"1px solid #A7F3D0":"1px solid #FCA5A5",
-  background: percent===100?"#F0FDF4":"#FEF2F2",
-  borderRadius:16,
-  padding:18,
-  marginBottom:16
-  }}
-  >
-
-  <div
-  style={{
-  fontSize:26,
-  fontWeight:700,
-  color:percent===100?"#059669":"#DC2626"
-  }}
-  >
-  {percent}%
-  </div>
-
-  <div
-  style={{
-  fontSize:18,
-  fontWeight:700
-  }}
-  >
-  {percent===100?"Excellent recall!! ✓":"Needs review"}
-  </div>
-
-  <div
-  style={{
-  marginTop:4,
-  fontSize:14,
-  color:"#64748B"
-  }}
-  >
-  Attempt {Math.min(attempts+1,MAX_ATTEMPTS)} of {MAX_ATTEMPTS}
-  </div>
-
-  </div>
-
-  {failedAllAttempts && (
-
-  <div
-  style={{
-  border:"1px solid #FCA5A5",
-  background:"#FEF2F2",
-  borderRadius:14,
-  padding:16,
-  marginBottom:16
-  }}
-  >
-
-  <div style={{fontWeight:700,marginBottom:8}}>
-  Correct order
-  </div>
-
-  {keywords.map((k,i)=>(
-  <div key={i}>{i+1}. {k}</div>
-  ))}
-
-  </div>
-
-  )}
-
-  <div
-  style={{
-  display:"flex",
-  gap:10,
-  alignItems:"center"
-  }}
-  >
-
-  {!failedAllAttempts && percent!==100 && (
-
-  <button
-  onClick={tryAgain}
-  style={{
-  padding:"10px 16px",
-  borderRadius:10,
-  border:"1px solid #CBD5E1",
-  background:"#FFFFFF",
-  fontWeight:600,
-  fontSize:14
-  }}
-  >
-  ↺ Try Again
-  </button>
-
-  )}
-
-  <button
-  onClick={onNextRule}
-  style={{
-  padding:"10px 18px",
-  borderRadius:10,
-  border:"none",
-  background:"#3451D1",
-  color:"white",
-  fontWeight:700,
-  fontSize:14
-  }}
-  >
-  Next Rule →
-  </button>
-
-  <button
-  onClick={()=>setReportOpen(!reportOpen)}
-  style={{
-  marginLeft:"auto",
-  padding:"10px 14px",
-  borderRadius:10,
-  border:"1px solid #CBD5E1",
-  background:"#FFFFFF",
-  fontWeight:600,
-  fontSize:13
-  }}
-  >
-  ⚑ Report
-  </button>
-
-  </div>
-
-  {reportOpen && (
-
-  <div
-  style={{
-  marginTop:14,
-  border:"1px solid #E2E8F0",
-  borderRadius:12,
-  padding:14,
-  background:"#FFFFFF",
-  maxWidth:600
-  }}
-  >
-
-  <textarea
-  value={reportText}
-  onChange={(e)=>setReportText(e.target.value)}
-  placeholder="Tell the admin what is wrong..."
-  style={{
-  width:"100%",
-  minHeight:100,
-  border:"1px solid #CBD5E1",
-  borderRadius:10,
-  padding:10
-  }}
-  />
-
-  <button
-  style={{
-  marginTop:10,
-  padding:"10px 16px",
-  borderRadius:10,
-  border:"none",
-  background:"#3451D1",
-  color:"white",
-  fontWeight:700
-  }}
-  >
-  Send report
-  </button>
-
-  </div>
-
-  )}
-
-  </>
-
-  )}
-
-  </div>
-
+              <button
+                type="button"
+                onClick={onNextRule}
+                style={{
+                  padding: "10px 22px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#3157D6",
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Next Rule
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   )
-
 }

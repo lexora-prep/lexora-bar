@@ -3,207 +3,275 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public"]
 }
 
-model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String
-  name         String?
-  jurisdiction String?
-  barExamDate  DateTime?
-  createdAt    DateTime  @default(now())
-  lastLogin    DateTime?
+model rules {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topic_id                String?                   @db.Uuid
+  subtopic_id             String?                   @db.Uuid
+  title                   String
+  rule_text               String
+  explanation             String?
+  buzzwords               Json?
+  cloze_template          String?
+  is_active               Boolean                   @default(true)
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  subject_uuid            String?                   @db.Uuid
+  subject_id              String?                   @db.Uuid
+  rule_type               String?
+  flashcard_session_cards flashcard_session_cards[]
+  subjects                subjects?                 @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rules_subject")
+  subtopics               subtopics?                @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  topics                  topics?                   @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_rule_progress      user_rule_progress[]
+  user_rules              user_rules[]
 
-  studyGoalMBE   Int? @default(60)
-  studyGoalRules Int? @default(20)
-
-  ruleStats     UserRuleStat[]
-  mbeAttempts   UserMBEAttempt[]
-  studySessions StudySession[]
-  weakAreas     WeakArea[]
-  subjectStats  UserSubjectStat[]
-
-  ruleAttempts RuleAttempt[]
+  @@index([subtopic_id])
+  @@index([topic_id])
+  @@schema("public")
 }
 
-model Subject {
-  id   Int    @id @default(autoincrement())
-  name String
+model subjects {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  order_index Int      @default(0)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  rules       rules[]
+  topics      topics[]
 
-  topics    Topic[]
-  rules     Rule[]
-  questions MBEQuestion[]
-
-  subjectStats UserSubjectStat[]
+  @@schema("public")
 }
 
-model Topic {
-  id   Int    @id @default(autoincrement())
-  name String
+model subtopics {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topic_id    String       @db.Uuid
+  name        String
+  order_index Int          @default(0)
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  rules       rules[]
+  topics      topics       @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_rules  user_rules[]
 
-  subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId Int
-
-  rules Rule[]
-
-  questions MBEQuestion[]
+  @@index([topic_id])
+  @@schema("public")
 }
 
-model Rule {
-  id       Int     @id @default(autoincrement())
-  title    String
-  ruleText String
-  subtopic String?
+model topics {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subject_id  String       @db.Uuid
+  name        String
+  order_index Int          @default(0)
+  created_at  DateTime     @default(now()) @db.Timestamptz(6)
+  rules       rules[]
+  subtopics   subtopics[]
+  subjects    subjects     @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "topics_subject_fk")
+  user_rules  user_rules[]
 
-  subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId Int
-
-  topic   Topic? @relation(fields: [topicId], references: [id])
-  topicId Int?
-
-  keywords RuleKeyword[]
-
-  createdAt DateTime @default(now())
-
-  userStats UserRuleStat[]
-
-  ruleAttempts RuleAttempt[]
-  weakAreas    WeakArea[]
+  @@index([subject_id])
+  @@schema("public")
 }
 
-model RuleKeyword {
-  id       Int    @id @default(autoincrement())
-  keyword  String
-  position Int
+model user_buzzword_stats {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String    @db.Uuid
+  rule_id       String    @db.Uuid
+  buzzword      String
+  times_correct Int?      @default(0)
+  times_missed  Int?      @default(0)
+  weak_flag     Boolean?  @default(false)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
 
-  rule   Rule @relation(fields: [ruleId], references: [id])
-  ruleId Int
+  @@schema("public")
 }
 
-model UserRuleStat {
-  id Int @id @default(autoincrement())
+model user_rule_attempts {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String    @db.Uuid
+  rule_id          String    @db.Uuid
+  score            Int
+  missed_buzzwords Json?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  rule   Rule @relation(fields: [ruleId], references: [id])
-  ruleId Int
-
-  attemptsTotal   Int @default(0)
-  attemptsCorrect Int @default(0)
-
-  typingAccuracy    Float @default(0)
-  fillBlankAccuracy Float @default(0)
-  orderingAccuracy  Float @default(0)
-  buzzwordAccuracy  Float @default(0)
-  flashcardAccuracy Float @default(0)
-
-  memoryLevel  Int       @default(0)
-  nextReviewAt DateTime?
-
-  lastSeenAt DateTime?
+  @@schema("public")
 }
 
-model RuleAttempt {
-  id Int @id @default(autoincrement())
+model user_rule_progress {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String    @db.Uuid
+  rule_id          String    @db.Uuid
+  attempts         Int       @default(0)
+  correct_count    Int       @default(0)
+  incorrect_count  Int       @default(0)
+  saved_for_review Boolean   @default(false)
+  needs_practice   Boolean   @default(false)
+  mastery_level    Int       @default(0)
+  last_reviewed    DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  last_score       Int?
+  rolling_average  Decimal?  @db.Decimal
+  next_review_at   DateTime? @db.Timestamptz(6)
+  interval_days    Int?      @default(1)
+  rules            rules     @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  rule   Rule @relation(fields: [ruleId], references: [id])
-  ruleId Int
-
-  mode         String
-  scorePercent Float
-  timeSpentSec Int
-
-  createdAt DateTime @default(now())
+  @@unique([user_id, rule_id], map: "user_rule_progress_user_rule_unique")
+  @@index([rule_id])
+  @@index([user_id])
+  @@schema("public")
 }
 
-model WeakArea {
-  id Int @id @default(autoincrement())
+model user_rules {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String    @db.Uuid
+  original_rule_id String    @db.Uuid
+  topic_id         String    @db.Uuid
+  subtopic_id      String    @db.Uuid
+  title            String
+  rule_text        String
+  explanation      String?
+  buzzwords        Json?
+  cloze_template   String?
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  subject_id       String?   @db.Uuid
+  rules            rules     @relation(fields: [original_rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subtopics        subtopics @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  topics           topics    @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  rule   Rule @relation(fields: [ruleId], references: [id])
-  ruleId Int
-
-  accuracy Float
-  attempts Int
-
-  flaggedAt DateTime @default(now())
+  @@index([original_rule_id])
+  @@index([subtopic_id])
+  @@index([topic_id])
+  @@index([user_id])
+  @@schema("public")
 }
 
-model MBEQuestion {
-  id Int @id @default(autoincrement())
+model flashcard_sessions {
+  id            String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String                    @db.Uuid
+  mode          String
+  timed         Boolean                   @default(false)
+  time_per_card Int?
+  card_count    Int
+  started_at    DateTime                  @default(now()) @db.Timestamptz(6)
+  completed_at  DateTime?                 @db.Timestamptz(6)
+  cards         flashcard_session_cards[]
 
-  subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId Int
-
-  topic   Topic? @relation(fields: [topicId], references: [id])
-  topicId Int?
-
-  questionText String
-
-  answerA String
-  answerB String
-  answerC String
-  answerD String
-
-  correctAnswer String
-  explanation   String
-
-  difficulty Int?
-
-  attempts UserMBEAttempt[]
+  @@index([user_id])
+  @@schema("public")
 }
 
-model UserMBEAttempt {
-  id Int @id @default(autoincrement())
+model flashcard_session_cards {
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id     String             @db.Uuid
+  rule_id        String?            @db.Uuid
+  custom_rule_id String?            @db.Uuid
+  position       Int
+  result         String?
+  time_spent     Int?
+  created_at     DateTime           @default(now()) @db.Timestamptz(6)
+  rules          rules?             @relation(fields: [rule_id], references: [id])
+  session        flashcard_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  question   MBEQuestion @relation(fields: [questionId], references: [id])
-  questionId Int
-
-  selectedAnswer String
-  isCorrect      Boolean
-
-  timeSpentSec Int
-
-  createdAt DateTime @default(now())
-}
-
-model UserSubjectStat {
-  id Int @id @default(autoincrement())
-
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId Int
-
-  questionsDone    Int @default(0)
-  questionsCorrect Int @default(0)
-
-  accuracy Float @default(0)
+  @@index([session_id])
+  @@index([rule_id])
+  @@schema("public")
 }
 
 model StudySession {
-  id Int @id @default(autoincrement())
+  id              String    @id @default(cuid())
+  userId          String
+  mode            String
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationSeconds Int?
+  mbeQuestions    Int       @default(0)
+  ruleAttempts    Int       @default(0)
+  flashcards      Int       @default(0)
+  correctAnswers  Int       @default(0)
+  createdAt       DateTime  @default(now())
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
+  @@index([userId])
+  @@index([startedAt])
+  @@schema("public")
+}
 
-  date DateTime
+model user {
+  id           String   @id @default(cuid())
+  jurisdiction String?
+  createdAt    DateTime @default(now())
 
-  mbeQuestionsDone Int @default(0)
-  rulesTrained     Int @default(0)
-  reviewsCompleted Int @default(0)
+  @@schema("public")
+}
 
-  studyTimeMinutes Int @default(0)
+model userRuleStat {
+  id            String   @id @default(cuid())
+  userId        String
+  ruleId        String
+  attemptsTotal Int      @default(0)
+  correct       Int      @default(0)
+  incorrect     Int      @default(0)
+  accuracy      Float?
+
+  @@index([userId])
+  @@index([ruleId])
+  @@schema("public")
+}
+model user_mbe_attempts {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  question_id String? @db.Uuid
+  is_correct Boolean
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id])
+  @@schema("public")
+}
+
+model StudyPlan {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+
+  startDate     DateTime
+  examDate      DateTime
+
+  studyWeekends Boolean
+
+  dailyMBE      Int
+  dailyRules    Int
+
+  totalDays     Int
+  offDates String[] @default([])
+  createdAt     DateTime @default(now())
+
+  @@schema("public")
+}
+
+model beta_invites {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  law_school String?
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  @@schema("public")
+}
+
+model profiles {
+  id                String   @id @db.Uuid
+  email             String   @unique
+  full_name         String?
+  law_school        String?
+  jurisdiction      String?
+  exam_month        Int?
+  exam_year         Int?
+  mbe_access        Boolean  @default(false)
+  subscription_tier String?  @default("free")
+  created_at        DateTime @default(now())
+
+  @@schema("public")
 }

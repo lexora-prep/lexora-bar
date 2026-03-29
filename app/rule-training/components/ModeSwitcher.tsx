@@ -1,58 +1,43 @@
-export default function ModeSwitcher({ mode, setMode }: any) {
+"use client"
 
-  const modes = [
-    { id: "typing", label: "Typing", icon: "⌨️" },
-    { id: "fillblank", label: "Fill Blank", icon: "✏️" },
-    { id: "buzzwords", label: "Buzzwords", icon: "☀️" },
-    { id: "ordering", label: "Ordering", icon: "↕️" },
-    { id: "flashcard", label: "Flashcard", icon: "🃏" },
-  ]
+type ModeId = "typing" | "fillblank" | "buzzwords" | "ordering" | "flashcard"
 
+type Props = {
+  mode: ModeId
+  setMode: (mode: ModeId) => void
+}
+
+const modes: { id: ModeId; label: string }[] = [
+  { id: "typing", label: "Typing" },
+  { id: "fillblank", label: "Fill Blank" },
+  { id: "buzzwords", label: "Buzzwords" },
+  { id: "ordering", label: "Ordering" },
+  { id: "flashcard", label: "Flashcard" },
+]
+
+export default function ModeSwitcher({ mode, setMode }: Props) {
   return (
-
-    <div
-      style={{
-        display: "flex",
-        gap: 10,
-        marginBottom: 22,
-      }}
-    >
-
-      {modes.map((m) => {
-
-        const active = mode === m.id
+    <div className="flex flex-wrap items-center gap-2">
+      {modes.map((item) => {
+        const active = mode === item.id
 
         return (
-
           <button
-            key={m.id}
-            onClick={() => setMode(m.id)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "7px 14px",
-              borderRadius: 20,
-              border: active ? "1px solid #2563EB" : "1px solid #E2E8F0",
-              background: active ? "#EEF2FF" : "#F8FAFC",
-              color: active ? "#2563EB" : "#334155",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
+            key={item.id}
+            type="button"
+            onClick={() => setMode(item.id)}
+            className={[
+              "inline-flex items-center rounded-full px-4 py-2 text-[12px] font-medium transition-all duration-200",
+              "border backdrop-blur-md",
+              active
+                ? "border-violet-300 bg-violet-50 text-violet-700 shadow-[0_6px_16px_rgba(139,92,246,0.16)]"
+                : "border-blue-200/90 bg-white/75 text-blue-700 hover:border-violet-200 hover:bg-violet-50/40",
+            ].join(" ")}
           >
-
-            <span style={{ fontSize: 13 }}>{m.icon}</span>
-            {m.label}
-
+            {item.label}
           </button>
-
         )
-
       })}
-
     </div>
-
   )
-
 }

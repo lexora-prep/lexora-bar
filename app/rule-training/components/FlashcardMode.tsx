@@ -27,17 +27,17 @@ export default function FlashcardMode({
   onNextRule,
   onSaveRule,
 }: Props) {
-  const [flipped, setFlipped] = useState(false)
+  const [revealed, setRevealed] = useState(false)
   const [reviewResult, setReviewResult] = useState<ReviewResult>(null)
 
   useEffect(() => {
-    setFlipped(false)
+    setRevealed(false)
     setReviewResult(null)
   }, [ruleId])
 
-  function handleFlip() {
+  function handleReveal() {
     if (reviewResult !== null) return
-    setFlipped(true)
+    setRevealed(true)
   }
 
   async function record(result: "knew" | "missed") {
@@ -61,12 +61,12 @@ export default function FlashcardMode({
   }
 
   function handleTryAgain() {
-    setFlipped(false)
+    setRevealed(false)
     setReviewResult(null)
   }
 
   function handleNext() {
-    setFlipped(false)
+    setRevealed(false)
     setReviewResult(null)
     onNextRule?.()
   }
@@ -75,98 +75,113 @@ export default function FlashcardMode({
   const pathText = pathParts.join(" · ")
 
   return (
-    <div style={{ marginTop: 24 }}>
-      <div style={{ perspective: "1400px" }}>
+    <div style={{ marginTop: 10 }}>
+      <div
+        style={{
+          fontSize: 13,
+          color: "#A1A1AA",
+          textAlign: "center",
+          marginBottom: 14,
+        }}
+      >
+        Click the card to reveal the rule
+      </div>
+
+      <div style={{ position: "relative", minHeight: 320 }}>
         <div
-          onClick={handleFlip}
+          onClick={handleReveal}
           style={{
             position: "relative",
             width: "100%",
-            height: 270,
-            transformStyle: "preserve-3d",
-            transition: "transform 0.65s cubic-bezier(.4,.2,.2,1)",
-            transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            minHeight: 320,
             cursor: reviewResult === null ? "pointer" : "default",
           }}
         >
-          {/* FRONT */}
           <div
             style={{
-              position: "absolute",
-              inset: 0,
-              backfaceVisibility: "hidden",
-              borderRadius: 28,
-              background: "linear-gradient(180deg, #0A1535 0%, #0B1738 100%)",
-              color: "#FFFFFF",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
-              padding: "36px 40px",
-              boxSizing: "border-box",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12,
-                letterSpacing: "0.14em",
-                color: "#9CA3AF",
-                fontWeight: 700,
-                marginBottom: 16,
-              }}
-            >
-              CLICK TO REVEAL
-            </div>
-
-            <div
-              style={{
-                fontSize: 16,
-                color: "#60A5FA",
-                fontWeight: 500,
-                marginBottom: 18,
-              }}
-            >
-              {pathText}
-            </div>
-
-            <div
-              style={{
-                fontSize: 31,
-                lineHeight: 1.22,
-                fontWeight: 700,
-                fontFamily: "Georgia, serif",
-              }}
-            >
-              {title}
-            </div>
-          </div>
-
-          {/* BACK */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              backfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
-              borderRadius: 28,
-              background: "#ECFDF5",
-              border: "2px solid #A7F3D0",
-              padding: "28px 32px",
-              boxSizing: "border-box",
+              position: revealed ? "absolute" : "relative",
+              inset: revealed ? 0 : undefined,
+              opacity: revealed ? 0 : 1,
+              transform: revealed ? "translateY(10px) scale(0.985)" : "translateY(0) scale(1)",
+              pointerEvents: revealed ? "none" : "auto",
+              transition: "opacity 0.32s ease, transform 0.32s ease",
+              borderRadius: 24,
+              border: "1px solid #E2E8F0",
+              background: "rgba(255,255,255,0.75)",
+              boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
+              padding: "38px 48px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
+              minHeight: 320,
             }}
           >
             <div>
               <div
                 style={{
                   fontSize: 12,
-                  letterSpacing: "0.14em",
+                  letterSpacing: "0.1em",
+                  color: "#A1A1AA",
                   fontWeight: 700,
-                  color: "#047857",
-                  marginBottom: 14,
+                  marginBottom: 18,
+                }}
+              >
+                QUESTION
+              </div>
+
+              <div
+                style={{
+                  fontSize: 17,
+                  lineHeight: 1.72,
+                  fontWeight: 400,
+                  color: "#334155",
+                }}
+              >
+                What rule applies here for {title}?
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                color: "#A1A1AA",
+                fontSize: 12,
+              }}
+            >
+              <span>{pathText}</span>
+              <span>• Click to reveal</span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              position: revealed ? "relative" : "absolute",
+              inset: revealed ? undefined : 0,
+              opacity: revealed ? 1 : 0,
+              transform: revealed ? "translateY(0) scale(1)" : "translateY(12px) scale(0.985)",
+              pointerEvents: revealed ? "auto" : "none",
+              transition: "opacity 0.32s ease, transform 0.32s ease",
+              borderRadius: 24,
+              border: "1px solid #BFDBFE",
+              background:
+                "linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.96) 100%)",
+              boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
+              padding: "28px 32px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              minHeight: 320,
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 12,
+                  letterSpacing: "0.1em",
+                  fontWeight: 700,
+                  color: "#94A3B8",
+                  marginBottom: 12,
                 }}
               >
                 RULE
@@ -175,8 +190,9 @@ export default function FlashcardMode({
               <div
                 style={{
                   fontSize: 17,
-                  lineHeight: 1.75,
-                  color: "#1E293B",
+                  lineHeight: 1.72,
+                  fontWeight: 400,
+                  color: "#334155",
                   marginBottom: 18,
                 }}
               >
@@ -196,10 +212,10 @@ export default function FlashcardMode({
                     style={{
                       padding: "6px 12px",
                       borderRadius: 999,
-                      background: "#D1FAE5",
-                      border: "1px solid #A7F3D0",
-                      color: "#065F46",
-                      fontSize: 13,
+                      background: "#EFF6FF",
+                      border: "1px solid #BFDBFE",
+                      color: "#2563EB",
+                      fontSize: 12,
                       fontWeight: 600,
                     }}
                   >
@@ -212,7 +228,7 @@ export default function FlashcardMode({
         </div>
       </div>
 
-      {flipped && reviewResult === null && (
+      {revealed && reviewResult === null && (
         <div
           style={{
             marginTop: 18,
@@ -224,8 +240,8 @@ export default function FlashcardMode({
           <button
             onClick={() => record("missed")}
             style={{
-              height: 42,
-              borderRadius: 12,
+              height: 44,
+              borderRadius: 14,
               border: "1.5px solid #FCA5A5",
               background: "#FEF2F2",
               color: "#DC2626",
@@ -240,11 +256,11 @@ export default function FlashcardMode({
           <button
             onClick={() => record("knew")}
             style={{
-              height: 42,
-              borderRadius: 12,
-              border: "1.5px solid #86EFAC",
-              background: "#ECFDF5",
-              color: "#15803D",
+              height: 44,
+              borderRadius: 14,
+              border: "1.5px solid #93C5FD",
+              background: "#EFF6FF",
+              color: "#1D4ED8",
               fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
@@ -269,7 +285,7 @@ export default function FlashcardMode({
             style={{
               height: 40,
               padding: "0 18px",
-              borderRadius: 12,
+              borderRadius: 14,
               border: "1px solid #CBD5E1",
               background: "#FFFFFF",
               color: "#334155",
@@ -278,7 +294,7 @@ export default function FlashcardMode({
               cursor: "pointer",
             }}
           >
-            ↺ Try Again
+            Try Again
           </button>
 
           <button
@@ -286,7 +302,7 @@ export default function FlashcardMode({
             style={{
               height: 40,
               padding: "0 18px",
-              borderRadius: 12,
+              borderRadius: 14,
               border: "1px solid #CBD5E1",
               background: "#FFFFFF",
               color: "#334155",
@@ -295,7 +311,7 @@ export default function FlashcardMode({
               cursor: "pointer",
             }}
           >
-            ☆ Save
+            Save
           </button>
 
           <button
@@ -303,7 +319,7 @@ export default function FlashcardMode({
             style={{
               height: 40,
               padding: "0 20px",
-              borderRadius: 12,
+              borderRadius: 14,
               border: "none",
               background: "#3157D6",
               color: "white",
@@ -312,7 +328,7 @@ export default function FlashcardMode({
               cursor: "pointer",
             }}
           >
-            Next Rule →
+            Next Rule
           </button>
         </div>
       )}
