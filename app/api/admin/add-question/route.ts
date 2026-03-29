@@ -21,7 +21,7 @@ export async function POST(req:Request){
 
   try{
 
-    const subjectRow = await prisma.subject.findFirst({
+    const subjectRow = await prisma.subjects.findFirst({
       where:{name:subject}
     })
 
