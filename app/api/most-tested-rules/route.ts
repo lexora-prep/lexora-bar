@@ -3,11 +3,7 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
   try {
-
     const rules = await prisma.rules.findMany({
-      where: {
-        is_most_tested: true
-      },
       select: {
         id: true,
         title: true,
@@ -22,9 +18,7 @@ export async function GET() {
     })
 
     return NextResponse.json(rules)
-
   } catch (err) {
-
     console.error("Most tested rules error:", err)
 
     return NextResponse.json([])

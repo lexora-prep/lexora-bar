@@ -2,27 +2,34 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(req: Request) {
-
   const body = await req.json()
-
   const { userId, ruleId } = body
 
-  await prisma.userRuleProgress.upsert({
-
+  await prisma.user_rule_progress.upsert({
     where: {
-      userId_ruleId: {
-        userId,
-        ruleId
+      user_id_rule_id: {
+        user_id: userId,
+        rule_id: ruleId
       }
     },
 
-    update: {},
+    update: {
+      saved_for_review: true,
+      last_reviewed: new Date()
+    },
 
     create: {
-      userId,
-      ruleId
+      user_id: userId,
+      rule_id: ruleId,
+      attempts: 0,
+      correct_count: 0,
+      incorrect_count: 0,
+      saved_for_review: true,
+      needs_practice: false,
+      mastery_level: 0,
+      interval_days: 1,
+      last_reviewed: new Date()
     }
-
   })
 
   return NextResponse.json({

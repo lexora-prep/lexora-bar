@@ -2,15 +2,15 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export async function GET() {
-
-  const rules = await prisma.rule.findMany({
+  const subjects = await prisma.subjects.findMany({
     include: {
-      keywords: true,
-      topic: true,
-      subject: true
+      topics: {
+        include: {
+          rules: true
+        }
+      }
     }
   })
 
-  return NextResponse.json(rules)
-
+  return NextResponse.json({ subjects })
 }

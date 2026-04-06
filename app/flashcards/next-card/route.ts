@@ -2,16 +2,12 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(req: Request) {
-
   const body = await req.json()
   const { userId } = body
 
-  const rule = await prisma.rule.findFirst({
+  const rule = await prisma.rules.findFirst({
     orderBy: {
-      createdAt: "asc"
-    },
-    include: {
-      keywords: true
+      created_at: "asc"
     }
   })
 

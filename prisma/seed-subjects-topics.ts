@@ -11,9 +11,7 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-
   const subjects = [
-
     {
       name: "Contracts",
       topics: [
@@ -121,41 +119,39 @@ async function main() {
         "Privileges and Immunities"
       ]
     }
-
   ]
 
   for (const subjectData of subjects) {
-
-    const subject = await prisma.subject.upsert({
-      where: { name: subjectData.name },
-      update: {},
-      create: { name: subjectData.name }
+    let subject = await prisma.subjects.findFirst({
+      where: { name: subjectData.name }
     })
 
-    for (const topicName of subjectData.topics) {
+    if (!subject) {
+      subject = await prisma.subjects.create({
+        data: { name: subjectData.name }
+      })
+    }
 
-      const existingTopic = await prisma.topic.findFirst({
+    for (const topicName of subjectData.topics) {
+      const existingTopic = await prisma.topics.findFirst({
         where: {
           name: topicName,
-          subjectId: subject.id
+          subject_id: subject.id
         }
       })
 
       if (!existingTopic) {
-        await prisma.topic.create({
+        await prisma.topics.create({
           data: {
             name: topicName,
-            subjectId: subject.id
+            subject_id: subject.id
           }
         })
       }
-
     }
-
   }
 
   console.log("Subjects and topics seeded")
-
 }
 
 main()

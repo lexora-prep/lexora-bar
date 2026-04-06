@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
-
   const body = await req.json()
 
   const { userId, ruleId } = body
@@ -11,10 +10,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing data" }, { status: 400 })
   }
 
-  const existing = await prisma.weakArea.findFirst({
+  const existing = await prisma.user_rule_progress.findUnique({
     where: {
-      userId,
-      ruleId
+      user_id_rule_id: {
+        user_id: userId,
+        rule_id: ruleId
+      }
     }
   })
 
@@ -25,12 +26,16 @@ export async function POST(req: Request) {
     })
   }
 
-  const flagged = await prisma.weakArea.create({
+  const flagged = await prisma.user_rule_progress.create({
     data: {
-      userId,
-      ruleId,
-      accuracy: 0,
-      attempts: 0
+      user_id: userId,
+      rule_id: ruleId,
+      attempts: 0,
+      correct_count: 0,
+      incorrect_count: 0,
+      saved_for_review: true,
+      needs_practice: true,
+      mastery_level: 0
     }
   })
 
@@ -38,5 +43,4 @@ export async function POST(req: Request) {
     success: true,
     flagged
   })
-
 }

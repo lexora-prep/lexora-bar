@@ -2,40 +2,37 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
-
   const body = await req.json()
 
   const {
     userId,
     title,
     ruleText,
-    subject,
-    topic,
-    applicationExample,
-    keywords = []
+    topicId,
+    subtopicId,
+    originalRuleId,
+    explanation,
+    buzzwords,
+    clozeTemplate,
+    subjectId
   } = body
 
-  if (!userId || !title || !ruleText) {
+  if (!userId || !title || !ruleText || !topicId || !subtopicId || !originalRuleId) {
     return NextResponse.json({ error: "Missing data" }, { status: 400 })
   }
 
-  const rule = await prisma.userCustomRule.create({
+  const rule = await prisma.user_rules.create({
     data: {
-      userId,
+      user_id: userId,
+      original_rule_id: originalRuleId,
+      topic_id: topicId,
+      subtopic_id: subtopicId,
+      subject_id: subjectId ?? null,
       title,
-      ruleText,
-      subject,
-      topic,
-      applicationExample,
-      keywords: {
-        create: keywords.map((k: string, i: number) => ({
-          keyword: k,
-          position: i
-        }))
-      }
-    },
-    include: {
-      keywords: true
+      rule_text: ruleText,
+      explanation: explanation ?? null,
+      buzzwords: buzzwords ?? null,
+      cloze_template: clozeTemplate ?? null
     }
   })
 
@@ -43,5 +40,4 @@ export async function POST(req: Request) {
     success: true,
     rule
   })
-
 }

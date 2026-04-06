@@ -2,74 +2,65 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
-
   const { searchParams } = new URL(req.url)
 
   const mode = searchParams.get("mode") || "random"
   const userId = searchParams.get("userId")
 
-  let rule
+  let rule = null
 
   if (mode === "weak" && userId) {
-
-    rule = await prisma.rule.findFirst({
+    const weakProgress = await prisma.user_rule_progress.findFirst({
       where: {
-        userStats: {
-          some: {
-            userId,
-            attemptsTotal: { gt: 3 },
-            attemptsCorrect: { lt: 2 }
+        user_id: userId,
+        attempts: { gt: 3 },
+        correct_count: { lt: 2 }
+      },
+      include: {
+        rules: {
+          include: {
+            topics: true,
+            subjects: true
           }
+        }
+      }
+    })
+
+    rule = weakProgress?.rules ?? null
+  } else if (mode === "review" && userId) {
+    const reviewProgress = await prisma.user_rule_progress.findFirst({
+      where: {
+        user_id: userId,
+        next_review_at: {
+          lte: new Date()
         }
       },
       include: {
-        keywords: true,
-        topic: true,
-        subject: true
-      }
-    })
-
-  }
-
-  else if (mode === "review" && userId) {
-
-    rule = await prisma.rule.findFirst({
-      where: {
-        userStats: {
-          some: {
-            userId,
-            nextReviewAt: {
-              lte: new Date()
-            }
+        rules: {
+          include: {
+            topics: true,
+            subjects: true
           }
         }
-      },
-      include: {
-        keywords: true,
-        topic: true,
-        subject: true
       }
     })
 
-  }
+    rule = reviewProgress?.rules ?? null
+  } else {
+    const count = await prisma.rules.count()
 
-  else {
+    if (count > 0) {
+      const skip = Math.floor(Math.random() * count)
 
-    const count = await prisma.rule.count()
-
-    const skip = Math.floor(Math.random() * count)
-
-    rule = await prisma.rule.findFirst({
-      skip,
-      include: {
-        keywords: true,
-        topic: true,
-        subject: true
-      }
-    })
-
+      rule = await prisma.rules.findFirst({
+        skip,
+        include: {
+          topics: true,
+          subjects: true
+        }
+      })
+    }
   }
 
   return NextResponse.json(rule)
-
 }

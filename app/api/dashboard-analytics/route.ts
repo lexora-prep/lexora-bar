@@ -2,9 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
-
   try {
-
     const url = new URL(request.url)
     const userId = url.searchParams.get("userId")
     const state = url.searchParams.get("state")
@@ -35,17 +33,16 @@ export async function GET(request: Request) {
     let todayMBE = 0
 
     try {
-      todayMBE = await prisma.userMBEAttempt.count({
+      todayMBE = await prisma.user_mbe_attempts.count({
         where: {
-          userId,
-          createdAt: {
+          user_id: userId,
+          created_at: {
             gte: today,
           },
         },
       })
     } catch {}
 
-    // ✅ FIXED → use user_rule_attempts
     const todayBLL = await prisma.user_rule_attempts.count({
       where: {
         user_id: userId,
@@ -55,24 +52,23 @@ export async function GET(request: Request) {
       },
     })
 
-    let mbeAttempts: any[] = []
+    let mbeAttempts: Array<{ is_correct: boolean }> = []
 
     try {
-      mbeAttempts = await prisma.userMBEAttempt.findMany({
-        where: { userId },
-        select: { isCorrect: true },
+      mbeAttempts = await prisma.user_mbe_attempts.findMany({
+        where: { user_id: userId },
+        select: { is_correct: true },
       })
     } catch {
       mbeAttempts = []
     }
 
-    const mbeCorrect = mbeAttempts.filter((a) => a.isCorrect).length
+    const mbeCorrect = mbeAttempts.filter((a) => a.is_correct).length
     const mbeTotal = mbeAttempts.length
 
     const overallMBE =
       mbeTotal === 0 ? 0 : Math.round((mbeCorrect / mbeTotal) * 100)
 
-    // ✅ FIXED → use user_rule_progress
     const ruleStats = await prisma.user_rule_progress.findMany({
       where: { user_id: userId },
       select: {
@@ -94,7 +90,7 @@ export async function GET(request: Request) {
     const overallBLL =
       ruleTotal === 0 ? 0 : Math.round((ruleCorrect / ruleTotal) * 100)
 
-    let stateUsers: any[] = []
+    let stateUsers: Array<{ id: string }> = []
 
     try {
       stateUsers = await prisma.user.findMany({
@@ -107,30 +103,29 @@ export async function GET(request: Request) {
       stateUsers = []
     }
 
-    const stateUserIds = stateUsers.map(u => u.id)
+    const stateUserIds = stateUsers.map((u) => u.id)
 
-    let stateAttempts: any[] = []
+    let stateAttempts: Array<{ is_correct: boolean }> = []
 
     try {
-      stateAttempts = await prisma.userMBEAttempt.findMany({
+      stateAttempts = await prisma.user_mbe_attempts.findMany({
         where: {
-          userId: { in: stateUserIds },
+          user_id: { in: stateUserIds },
         },
         select: {
-          isCorrect: true,
+          is_correct: true,
         },
       })
     } catch {
       stateAttempts = []
     }
 
-    const stateCorrect = stateAttempts.filter(a => a.isCorrect).length
+    const stateCorrect = stateAttempts.filter((a) => a.is_correct).length
     const stateTotal = stateAttempts.length
 
     const stateMBEAvg =
       stateTotal === 0 ? 0 : Math.round((stateCorrect / stateTotal) * 100)
 
-    // ✅ FIXED → state BLL
     const stateRuleStats = await prisma.user_rule_progress.findMany({
       where: {
         user_id: { in: stateUserIds }
@@ -158,10 +153,6 @@ export async function GET(request: Request) {
     const prevMBE = overallMBE
     const prevBLL = overallBLL
 
-    /* =========================
-       🔥 STREAK LOGIC
-    ========================= */
-
     const days: Date[] = []
 
     for (let i = 6; i >= 0; i--) {
@@ -171,12 +162,11 @@ export async function GET(request: Request) {
       days.push(d)
     }
 
-    const streakDays: any[] = []
+    const streakDays: Array<{ status: "fire" | "ice" | "empty" }> = []
 
     let currentStreak = 0
 
     for (let i = 0; i < days.length; i++) {
-
       const start = days[i]
       const end = new Date(start)
       end.setHours(23, 59, 59, 999)
@@ -184,10 +174,10 @@ export async function GET(request: Request) {
       let dayMBE = 0
 
       try {
-        dayMBE = await prisma.userMBEAttempt.count({
+        dayMBE = await prisma.user_mbe_attempts.count({
           where: {
-            userId,
-            createdAt: {
+            user_id: userId,
+            created_at: {
               gte: start,
               lte: end,
             },
@@ -195,7 +185,6 @@ export async function GET(request: Request) {
         })
       } catch {}
 
-      // ✅ FIXED → rule attempts
       const dayBLL = await prisma.user_rule_attempts.count({
         where: {
           user_id: userId,
@@ -254,9 +243,7 @@ export async function GET(request: Request) {
       bestStreak,
       streakDays,
     })
-
   } catch (error) {
-
     console.error("Dashboard analytics error:", error)
 
     return NextResponse.json({
@@ -280,7 +267,5 @@ export async function GET(request: Request) {
       bestStreak: 0,
       streakDays: [],
     })
-
   }
-
 }

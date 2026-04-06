@@ -1,24 +1,28 @@
+import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
-import prisma from "@/lib/prisma"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
-
   const { sessionId } = await params
 
-  const rules = await prisma.rule.findMany({
+  const rules = await prisma.rules.findMany({
     take: 20,
     select: {
       id: true,
       title: true,
-      ruleText: true
-    }
+      rule_text: true,
+      explanation: true,
+      buzzwords: true,
+      cloze_template: true,
+      created_at: true,
+    },
   })
 
   return NextResponse.json({
+    success: true,
     sessionId,
-    rules
+    rules,
   })
 }

@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {
-
   const { data: subjectsData, error: subjectError } = await supabase
     .from("subjects")
     .select("id, name, order_index")
@@ -23,7 +22,6 @@ export async function GET() {
     return NextResponse.json({ success: false, subjects: [] })
   }
 
-  // Load rules from Supabase
   const { data: rulesData, error: ruleError } = await supabase
     .from("rules")
     .select("id, subject_id, topic_id")
@@ -37,13 +35,12 @@ export async function GET() {
 
   let rules = rulesData ?? []
 
-  // FALLBACK: if Supabase rules are empty, read from Prisma
   if (rules.length === 0) {
-    const prismaRules = await prisma.rule.findMany({
+    const prismaRules = await prisma.rules.findMany({
       select: {
         id: true,
-        subjectId: true,
-        topicId: true
+        subject_id: true,
+        topic_id: true
       }
     })
 
@@ -51,7 +48,6 @@ export async function GET() {
   }
 
   const result = subjects.map((subject) => {
-
     const subjectRules = rules.filter((r: any) =>
       (r.subject_id ?? r.subjectId) === subject.id
     )
@@ -70,7 +66,6 @@ export async function GET() {
           ).length
         }))
     }
-
   })
 
   return NextResponse.json({

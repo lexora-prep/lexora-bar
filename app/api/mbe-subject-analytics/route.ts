@@ -2,9 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
-
   try {
-
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get("userId")
 
@@ -12,7 +10,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ subjects: [] })
     }
 
-    const subjects = await prisma.subject.findMany({
+    const subjects = await prisma.subjects.findMany({
       select: {
         id: true,
         name: true
@@ -22,13 +20,12 @@ export async function GET(req: Request) {
     const results: any[] = []
 
     for (const subject of subjects) {
-
       let questions: any[] = []
 
       try {
         questions = await prisma.mBEQuestion.findMany({
           where: {
-            subjectId: subject.id
+            subject_id: subject.id
           },
           select: {
             id: true
@@ -41,7 +38,6 @@ export async function GET(req: Request) {
       const questionIds = questions.map(q => q.id)
 
       if (questionIds.length === 0) {
-
         results.push({
           subject: subject.name,
           accuracy: 0,
@@ -54,15 +50,15 @@ export async function GET(req: Request) {
       let attempts: any[] = []
 
       try {
-        attempts = await prisma.userMBEAttempt.findMany({
+        attempts = await prisma.user_mbe_attempts.findMany({
           where: {
-            userId: userId,
-            questionId: {
+            user_id: userId,
+            question_id: {
               in: questionIds
             }
           },
           select: {
-            isCorrect: true
+            is_correct: true
           }
         })
       } catch {
@@ -70,7 +66,7 @@ export async function GET(req: Request) {
       }
 
       const total = attempts.length
-      const correct = attempts.filter(a => a.isCorrect).length
+      const correct = attempts.filter(a => a.is_correct).length
 
       const accuracy =
         total === 0
@@ -79,24 +75,19 @@ export async function GET(req: Request) {
 
       results.push({
         subject: subject.name,
-        accuracy: accuracy,
+        accuracy,
         answered: total
       })
-
     }
 
     return NextResponse.json({
       subjects: results
     })
-
   } catch (error) {
-
     console.error(error)
 
     return NextResponse.json({
       subjects: []
     })
-
   }
-
 }

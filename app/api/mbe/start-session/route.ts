@@ -2,9 +2,9 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 type IncomingSubject = {
-  subjectId?: number
+  subjectId?: string
   name?: string
-  topicIds?: number[]
+  topicIds?: string[]
 }
 
 export async function POST(req: Request) {
@@ -28,7 +28,16 @@ export async function POST(req: Request) {
         ? Math.floor(requestedCount)
         : 10
 
-    const mode = typeof body.mode === "string" ? body.mode : "study"
+    const rawMode = typeof body.mode === "string" ? body.mode : "study"
+    const mode =
+      rawMode === "quiz"
+        ? "QUIZ"
+        : rawMode === "review"
+        ? "REVIEW"
+        : "STUDY"
+
+    const rawTrack = typeof body.track === "string" ? body.track : "CLASSIC"
+    const track = rawTrack === "NEXTGEN" ? "NEXTGEN" : "CLASSIC"
 
     const reviewSource =
       typeof body.reviewSource === "string" ? body.reviewSource : null
@@ -55,7 +64,7 @@ export async function POST(req: Request) {
 
     let questionPool: any[] = []
 
-    if ((mode === "quiz" || mode === "review") && secondsPerQuestion === null) {
+    if ((mode === "QUIZ" || mode === "REVIEW") && secondsPerQuestion === null) {
       return NextResponse.json(
         {
           success: false,
@@ -75,7 +84,7 @@ export async function POST(req: Request) {
       )
     }
 
-    if (mode === "review") {
+    if (mode === "REVIEW") {
       if (rawReviewSelection.length === 0) {
         return NextResponse.json(
           {
@@ -93,13 +102,13 @@ export async function POST(req: Request) {
 
           if (topicIds.length > 0) {
             return {
-              subjectId: s.subjectId,
-              topicId: { in: topicIds },
+              subject_id: s.subjectId,
+              topic_id: { in: topicIds },
             }
           }
 
           return {
-            subjectId: s.subjectId,
+            subject_id: s.subjectId,
           }
         })
 
@@ -116,6 +125,8 @@ export async function POST(req: Request) {
       questionPool = await prisma.mBEQuestion.findMany({
         where: {
           OR: reviewFilters,
+          track,
+          is_active: true,
         },
       })
 
@@ -146,13 +157,13 @@ export async function POST(req: Request) {
 
           if (topicIds.length > 0) {
             return {
-              subjectId: s.subjectId,
-              topicId: { in: topicIds },
+              subject_id: s.subjectId,
+              topic_id: { in: topicIds },
             }
           }
 
           return {
-            subjectId: s.subjectId,
+            subject_id: s.subjectId,
           }
         })
 
@@ -169,6 +180,8 @@ export async function POST(req: Request) {
       questionPool = await prisma.mBEQuestion.findMany({
         where: {
           OR: subjectFilters,
+          track,
+          is_active: true,
         },
       })
 
@@ -192,35 +205,46 @@ export async function POST(req: Request) {
 
     let timeLimitSeconds: number | null = null
 
-    if (mode !== "study" && secondsPerQuestion !== null) {
-      timeLimitSeconds = selectedQuestions.length * secondsPerQuestion
-    }
-
-    if (mode === "study" && secondsPerQuestion !== null) {
+    if (secondsPerQuestion !== null) {
       timeLimitSeconds = selectedQuestions.length * secondsPerQuestion
     }
 
     const session = await prisma.examSession.create({
       data: {
-        userId,
+        user_id: userId,
+        track,
         mode,
-        totalQuestions: selectedQuestions.length,
-        timeLimitSeconds,
+        review_source: reviewSource,
+        total_questions: selectedQuestions.length,
+        time_limit_seconds: timeLimitSeconds,
       },
     })
 
     await prisma.examSessionQuestion.createMany({
       data: selectedQuestions.map((q, index) => ({
-        sessionId: session.id,
-        questionId: q.id,
-        orderIndex: index,
+        session_id: session.id,
+        question_id: q.id,
+        order_index: index,
       })),
     })
 
     return NextResponse.json({
       success: true,
       sessionId: session.id,
-      questions: selectedQuestions,
+      questions: selectedQuestions.map((q) => ({
+        id: q.id,
+        title: q.title,
+        questionText: q.question_text,
+        answerA: q.answer_a,
+        answerB: q.answer_b,
+        answerC: q.answer_c,
+        answerD: q.answer_d,
+        correctAnswer: q.correct_answer,
+        explanation: q.explanation,
+        ruleText: q.rule_text,
+        subjectId: q.subject_id,
+        topicId: q.topic_id,
+      })),
     })
   } catch (err) {
     console.error("START SESSION ERROR:", err)

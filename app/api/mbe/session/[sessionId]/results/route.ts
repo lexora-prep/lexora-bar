@@ -6,11 +6,9 @@ export async function GET(
   context: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-
     const { sessionId } = await context.params
-    const numericSessionId = Number(sessionId)
 
-    if (!numericSessionId) {
+    if (!sessionId) {
       return NextResponse.json(
         { error: "Invalid session id" },
         { status: 400 }
@@ -18,12 +16,17 @@ export async function GET(
     }
 
     const session = await prisma.examSession.findUnique({
-      where: { id: numericSessionId },
+      where: { id: sessionId },
       include: {
         questions: {
-          orderBy: { orderIndex: "asc" },
+          orderBy: { order_index: "asc" },
           include: {
-            question: true
+            mbe_question: {
+              include: {
+                subjects: true,
+                topics: true
+              }
+            }
           }
         }
       }
@@ -36,54 +39,35 @@ export async function GET(
       )
     }
 
-    const questionIds = session.questions.map(q => q.questionId)
-
-    const attempts = await prisma.userMBEAttempt.findMany({
-      where: {
-        questionId: { in: questionIds }
-      }
-    })
-
-    const answers: Record<number,string> = {}
-
-    attempts.forEach((attempt) => {
-      answers[attempt.questionId] = attempt.selectedAnswer
-    })
-
     const questions = session.questions.map((q) => ({
-
-      id: q.question.id,
-
-      questionText: q.question.questionText,
-
-      answerA: q.question.answerA,
-      answerB: q.question.answerB,
-      answerC: q.question.answerC,
-      answerD: q.question.answerD,
-
-      correctAnswer: q.question.correctAnswer,
-
-      explanation: q.question.explanation ?? "",
-
-      subject: q.question.subjectId ?? null,
-      topic: q.question.topicId ?? null
-
+      id: q.mbe_question.id,
+      questionText: q.mbe_question.question_text,
+      answerA: q.mbe_question.answer_a,
+      answerB: q.mbe_question.answer_b,
+      answerC: q.mbe_question.answer_c,
+      answerD: q.mbe_question.answer_d,
+      correctAnswer: q.mbe_question.correct_answer,
+      explanation: q.mbe_question.explanation,
+      ruleText: q.mbe_question.rule_text,
+      subjectId: q.mbe_question.subject_id,
+      topicId: q.mbe_question.topic_id,
+      subject: q.mbe_question.subjects?.name ?? null,
+      topic: q.mbe_question.topics?.name ?? null
     }))
 
     return NextResponse.json({
       sessionId: session.id,
-      questions,
-      answers
+      startedAt: session.started_at,
+      mode: session.mode,
+      timeLimitSeconds: session.time_limit_seconds ?? 0,
+      questions
     })
-
   } catch (error) {
-
-    console.error("RESULTS API ERROR:", error)
+    console.error("Session API error:", error)
 
     return NextResponse.json(
       { error: "Server error" },
       { status: 500 }
     )
-
   }
 }

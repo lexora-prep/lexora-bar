@@ -2,9 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
-
   try {
-
     const url = new URL(req.url)
     const searchParams = url.searchParams
 
@@ -21,74 +19,65 @@ export async function GET(req: Request) {
 
     if (range === "today") {
       startDate.setHours(0, 0, 0, 0)
-    }
-
-    else if (range === "7d") {
+    } else if (range === "7d") {
       startDate.setDate(now.getDate() - 7)
-    }
-
-    else if (range === "30d") {
+    } else if (range === "30d") {
       startDate.setDate(now.getDate() - 30)
-    }
-
-    else if (range === "90d") {
+    } else if (range === "90d") {
       startDate.setDate(now.getDate() - 90)
-    }
-
-    else {
+    } else {
       startDate = new Date(0)
     }
 
-    const mbeAttempts = await prisma.userMBEAttempt.findMany({
+    const mbeAttempts = await prisma.user_mbe_attempts.findMany({
       where: {
-        userId,
-        createdAt: {
+        user_id: userId,
+        created_at: {
           gte: startDate
         }
       },
       select: {
-        createdAt: true,
-        isCorrect: true
+        created_at: true,
+        is_correct: true
       }
     })
 
-    const ruleAttempts = await prisma.ruleAttempt.findMany({
+    const ruleAttempts = await prisma.user_rule_attempts.findMany({
       where: {
-        userId,
-        createdAt: {
+        user_id: userId,
+        created_at: {
           gte: startDate
         }
       },
       select: {
-        createdAt: true,
-        scorePercent: true
+        created_at: true,
+        score: true
       }
     })
 
     const days: Record<string, { mbe: number[]; bll: number[] }> = {}
 
     for (const a of mbeAttempts) {
+      if (!a.created_at) continue
 
-      const d = a.createdAt.toISOString().slice(0, 10)
+      const d = a.created_at.toISOString().slice(0, 10)
 
       if (!days[d]) days[d] = { mbe: [], bll: [] }
 
-      days[d].mbe.push(a.isCorrect ? 1 : 0)
-
+      days[d].mbe.push(a.is_correct ? 1 : 0)
     }
 
     for (const a of ruleAttempts) {
+      if (!a.created_at) continue
 
-      const d = a.createdAt.toISOString().slice(0, 10)
+      const d = a.created_at.toISOString().slice(0, 10)
 
       if (!days[d]) days[d] = { mbe: [], bll: [] }
 
-      days[d].bll.push(a.scorePercent)
-
+      days[d].bll.push(a.score)
     }
 
     const trend = Object.entries(days).map(([date, data]) => {
-
       const mbe =
         data.mbe.length === 0
           ? 0
@@ -104,19 +93,14 @@ export async function GET(req: Request) {
             )
 
       return { date, mbe, bll }
-
     })
 
     trend.sort((a, b) => a.date.localeCompare(b.date))
 
     return NextResponse.json({ trend })
-
   } catch (error) {
-
     console.error("Trend analytics error:", error)
 
     return NextResponse.json({ trend: [] })
-
   }
-
 }

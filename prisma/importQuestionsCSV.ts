@@ -3,104 +3,57 @@ import csv from "csv-parser"
 import { prisma } from "../lib/prisma"
 
 async function getTopic(subjectName: string, topicName: string) {
-
-  const subject = await prisma.subject.findUnique({
+  const subject = await prisma.subjects.findFirst({
     where: { name: subjectName }
   })
 
-  if (!subject) {
-    console.error(`Subject not found: ${subjectName}`)
-    return null
-  }
+  if (!subject) throw new Error(`Subject not found: ${subjectName}`)
 
-  const topic = await prisma.topic.findFirst({
+  const topic = await prisma.topics.findFirst({
     where: {
       name: topicName,
-      subjectId: subject.id
+      subject_id: subject.id
     }
   })
 
-  if (!topic) {
-    console.error(`Topic not found: ${topicName}`)
-    return null
-  }
+  if (!topic) throw new Error(`Topic not found: ${topicName}`)
 
   return topic
 }
 
-async function questionExists(questionText: string) {
-
-  const existing = await prisma.mBEQuestion.findFirst({
-    where: { questionText }
-  })
-
-  return !!existing
-}
-
 async function main() {
+  const rows: any[] = []
 
-  let created = 0
-  let skipped = 0
-
-  const stream = fs
-    .createReadStream("questions.csv")
+  fs.createReadStream("questions.csv")
     .pipe(csv())
+    .on("data", (data) => rows.push(data))
+    .on("end", async () => {
+      try {
+        for (const row of rows) {
+          const topic = await getTopic(row.subject, row.topic)
 
-  for await (const row of stream) {
-
-    try {
-
-      const topic = await getTopic(row.subject, row.topic)
-
-      if (!topic) {
-        skipped++
-        continue
-      }
-
-      const exists = await questionExists(row.question)
-
-      if (exists) {
-        console.log(`Duplicate skipped: ${row.question.slice(0,60)}...`)
-        skipped++
-        continue
-      }
-
-      await prisma.mBEQuestion.create({
-        data: {
-          subjectId: topic.subjectId,
-          topicId: topic.id,
-
-          questionText: row.question,
-
-          answerA: row.A,
-          answerB: row.B,
-          answerC: row.C,
-          answerD: row.D,
-
-          correctAnswer: row.correct,
-          explanation: row.explanation
+          await prisma.mBEQuestion.create({
+            data: {
+              subject_id: topic.subject_id,
+              topic_id: topic.id,
+              question_text: row.question,
+              answer_a: row.A,
+              answer_b: row.B,
+              answer_c: row.C,
+              answer_d: row.D,
+              correct_answer: row.correct,
+              explanation: row.explanation
+            }
+          })
         }
-      })
 
-      created++
-
-    } catch (err) {
-
-      console.error("Error importing row:", row.question)
-
-      skipped++
-
-    }
-
-  }
-
-  console.log("")
-  console.log("Import finished")
-  console.log(`Created: ${created}`)
-  console.log(`Skipped: ${skipped}`)
-
-  await prisma.$disconnect()
-
+        console.log("Questions imported successfully")
+      } catch (error) {
+        console.error("Import failed:", error)
+      } finally {
+        await prisma.$disconnect()
+      }
+    })
 }
 
 main()

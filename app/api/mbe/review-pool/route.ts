@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    const subjects = await prisma.subject.findMany({
+    const subjects = await prisma.subjects.findMany({
       include: {
         topics: true
       }
@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
       success: true,
       subjects
     })
-
   } catch (error) {
     console.error("REVIEW POOL ERROR:", error)
 

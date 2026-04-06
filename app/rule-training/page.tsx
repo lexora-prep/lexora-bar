@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import {
   Sparkles,
@@ -181,7 +181,7 @@ function getAccentClasses(accent: "blue" | "violet" | "green" | "neutral") {
   }
 }
 
-export default function Page() {
+function RuleTrainingPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -2192,7 +2192,7 @@ function ActionButton({
   children,
   onClick,
 }: {
-  children: ReactNode
+  children: React.ReactNode
   onClick: () => void
 }) {
   return (
@@ -2203,5 +2203,12 @@ function ActionButton({
     >
       {children}
     </button>
+  )
+}
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-10">Loading...</div>}>
+      <RuleTrainingPageContent />
+    </Suspense>
   )
 }

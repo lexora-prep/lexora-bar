@@ -2,9 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {
-
   try {
-
     const subjects = await prisma.subjects.findMany({
       include: {
         topics: true
@@ -17,12 +15,11 @@ export async function GET() {
     const result = []
 
     for (const subject of subjects) {
-
       let subjectQuestionCount = 0
 
       try {
-        subjectQuestionCount = await prisma.mbeQuestion.count({
-          where: { subjectId: subject.id }
+        subjectQuestionCount = await prisma.mBEQuestion.count({
+          where: { subject_id: subject.id }
         })
       } catch {
         subjectQuestionCount = 0
@@ -31,12 +28,11 @@ export async function GET() {
       const topics = []
 
       for (const topic of subject.topics) {
-
         let total = 0
 
         try {
-          total = await prisma.mbeQuestion.count({
-            where: { topicId: topic.id }
+          total = await prisma.mBEQuestion.count({
+            where: { topic_id: topic.id }
           })
         } catch {
           total = 0
@@ -51,7 +47,6 @@ export async function GET() {
           remainingQuestions: total,
           accuracy: 0
         })
-
       }
 
       result.push({
@@ -60,23 +55,18 @@ export async function GET() {
         questionCount: subjectQuestionCount,
         topics
       })
-
     }
 
     return NextResponse.json({
       success: true,
       subjects: result
     })
-
   } catch (error) {
-
     console.error("SUBJECT TOPIC API ERROR:", error)
 
     return NextResponse.json({
       success: false,
       error: "Server error"
     })
-
   }
-
 }

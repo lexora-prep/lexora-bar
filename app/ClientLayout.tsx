@@ -20,6 +20,7 @@ export default function ClientLayout({
   const supabase = useMemo(() => createClient(), [])
 
   const publicRoutes = ["/", "/login", "/register"]
+  const isAdminRoute = pathname.startsWith("/admin")
   const isPublicRoute = publicRoutes.includes(pathname)
 
   useEffect(() => {
@@ -66,8 +67,8 @@ export default function ClientLayout({
 
           setStudyStreak(
             dashboard?.streak ??
-            dashboard?.streakDays?.filter((d: any) => d?.status === "fire")?.length ??
-            0
+              dashboard?.streakDays?.filter((d: any) => d?.status === "fire")?.length ??
+              0
           )
         } else {
           setStudyStreak(0)
@@ -80,12 +81,12 @@ export default function ClientLayout({
       }
     }
 
-    if (!isPublicRoute) {
+    if (!isPublicRoute && !isAdminRoute) {
       loadSidebarData()
     }
-  }, [isPublicRoute, supabase])
+  }, [isPublicRoute, isAdminRoute, supabase])
 
-  if (isPublicRoute) {
+  if (isPublicRoute || isAdminRoute) {
     return <>{children}</>
   }
 
@@ -108,9 +109,7 @@ export default function ClientLayout({
       <div className="flex flex-col flex-1 min-w-0 bg-[#f5f4f2]">
         <TopNavbar collapsed={collapsed} />
 
-        <main className="flex-1 overflow-y-auto p-4">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4">{children}</main>
       </div>
     </div>
   )

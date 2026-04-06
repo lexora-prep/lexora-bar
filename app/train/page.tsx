@@ -1,33 +1,28 @@
 "use client"
 
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
 
-export default function TrainPage() {
-
+function TrainPageContent() {
   const params = useSearchParams()
   const ruleId = params.get("ruleId")
 
-  const [rule,setRule] = useState<any>(null)
+  const [rule, setRule] = useState<any>(null)
 
-  useEffect(()=>{
-
-    if(!ruleId) return
+  useEffect(() => {
+    if (!ruleId) return
 
     fetch(`/api/rule?ruleId=${ruleId}`)
-      .then(res=>res.json())
+      .then((res) => res.json())
       .then(setRule)
+  }, [ruleId])
 
-  },[ruleId])
-
-  if(!rule){
+  if (!rule) {
     return <div className="p-6">Loading...</div>
   }
 
-  return(
-
+  return (
     <div className="p-6 space-y-6">
-
       <div className="text-xl font-semibold">
         {rule.title}
       </div>
@@ -44,9 +39,14 @@ export default function TrainPage() {
       <button className="bg-blue-600 text-white px-4 py-2 rounded-lg">
         Submit
       </button>
-
     </div>
-
   )
+}
 
+export default function TrainPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <TrainPageContent />
+    </Suspense>
+  )
 }

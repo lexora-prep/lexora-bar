@@ -1,22 +1,33 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Bell, Sparkles } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Bell, Sparkles, X } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 type TopNavbarProps = {
   collapsed?: boolean
 }
 
+type AnnouncementItem = {
+  id: string
+  title: string
+  body: string
+  created_at?: string
+}
+
 export default function TopNavbar({ collapsed }: TopNavbarProps) {
-  const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const [userName, setUserName] = useState("there")
   const [daysLeft, setDaysLeft] = useState<number | null>(null)
   const [hasStudyPlan, setHasStudyPlan] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  const [announcementOpen, setAnnouncementOpen] = useState(false)
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([])
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false)
+
+  const announcementRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     async function loadTopbarData() {
@@ -78,24 +89,74 @@ export default function TopNavbar({ collapsed }: TopNavbarProps) {
     loadTopbarData()
   }, [supabase])
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        announcementRef.current &&
+        !announcementRef.current.contains(event.target as Node)
+      ) {
+        setAnnouncementOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  async function loadAnnouncements() {
+    setAnnouncementsLoading(true)
+
+    try {
+      const res = await fetch("/api/announcements/active", {
+        cache: "no-store",
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        setAnnouncements([])
+        return
+      }
+
+      setAnnouncements(Array.isArray(data?.announcements) ? data.announcements : [])
+    } catch (error) {
+      console.error("ANNOUNCEMENTS LOAD ERROR:", error)
+      setAnnouncements([])
+    } finally {
+      setAnnouncementsLoading(false)
+    }
+  }
+
+  async function handleBellClick() {
+    const nextOpen = !announcementOpen
+    setAnnouncementOpen(nextOpen)
+
+    if (nextOpen) {
+      await loadAnnouncements()
+    }
+  }
+
   const greeting = getGreeting()
+  const hasAnnouncements = announcements.length > 0
 
   return (
-    <div className="bg-white border-b border-slate-200 px-6 md:px-8 py-5">
+    <div className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
       <div className="flex items-start justify-between gap-6">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-blue-600 mb-2">
-            <Sparkles size={16} />
-            <span className="text-sm font-semibold">
+          <div className="mb-1 flex items-center gap-2 text-blue-600">
+            <Sparkles size={14} />
+            <span className="text-xs font-semibold uppercase tracking-[0.08em]">
               Lexora Prep
             </span>
           </div>
 
-          <div className="text-2xl md:text-3xl font-semibold text-slate-900 tracking-tight">
+          <div className="text-lg font-semibold tracking-tight text-slate-900 md:text-xl">
             {loading ? "Loading..." : `${greeting}, ${userName}`}
           </div>
 
-          <div className="text-sm md:text-base text-slate-500 mt-2 leading-7">
+          <div className="mt-1 text-xs leading-6 text-slate-500 md:text-sm">
             {loading ? (
               "Loading your progress..."
             ) : hasStudyPlan && daysLeft !== null ? (
@@ -107,22 +168,81 @@ export default function TopNavbar({ collapsed }: TopNavbarProps) {
                 . Stay consistent and keep building your score.
               </>
             ) : (
-              <>
-                Set your study plan to see your exam countdown and daily targets.
-              </>
+              <>Set your study plan to see your exam countdown and daily targets.</>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="relative flex shrink-0 items-center gap-3" ref={announcementRef}>
           <button
             type="button"
-            onClick={() => router.push("/settings")}
-            className="relative h-11 w-11 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200"
+            onClick={handleBellClick}
+            className="relative h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
+            aria-label="Open announcements"
           >
-            <Bell className="mx-auto" size={20} />
-            <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-red-500" />
+            <Bell className="mx-auto" size={18} />
+            <span
+              className={`absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full ${
+                hasAnnouncements ? "bg-red-500" : "bg-slate-300"
+              }`}
+            />
           </button>
+
+          {announcementOpen && (
+            <div className="absolute right-0 top-12 z-50 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    Announcements
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Updates from Lexora
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAnnouncementOpen(false)}
+                  className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Close announcements"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="max-h-[360px] overflow-y-auto">
+                {announcementsLoading ? (
+                  <div className="px-4 py-4 text-sm text-slate-500">
+                    Loading announcements...
+                  </div>
+                ) : announcements.length > 0 ? (
+                  <div className="divide-y divide-slate-100">
+                    {announcements.map((item) => (
+                      <div key={item.id} className="px-4 py-4">
+                        <div className="text-sm font-semibold text-slate-900">
+                          {item.title}
+                        </div>
+
+                        <div className="mt-1 text-sm leading-6 text-slate-600">
+                          {item.body}
+                        </div>
+
+                        {item.created_at && (
+                          <div className="mt-2 text-xs text-slate-400">
+                            {new Date(item.created_at).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-4 text-sm text-slate-500">
+                    No announcements right now.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
