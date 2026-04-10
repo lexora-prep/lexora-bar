@@ -40,27 +40,27 @@ export function StateComparison({
 }: StateComparisonProps) {
   return (
     <DashboardCard className="h-fit xl:sticky xl:top-4">
-      <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Globe size={15} />
+          <div className="flex items-center gap-2 text-base font-bold text-slate-900">
+            <Globe size={16} className="text-slate-600" />
             {state}
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">
+          <div className="mt-1 text-sm text-slate-500">
             You vs State Average
           </div>
         </div>
 
         <button
           onClick={onChangeState}
-          className="inline-flex items-center gap-1 text-xs text-emerald-400 transition-colors hover:text-emerald-300"
+          className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700"
         >
           Change State
-          <ChevronDown size={12} />
+          <ChevronDown size={14} />
         </button>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-6">
         <CompactCompareRow
           label="MBE Accuracy"
           value={isPremium ? userMBE : 0}
@@ -84,8 +84,8 @@ export function StateComparison({
           accent="emerald"
         />
 
-        <div className="space-y-2 border-t border-border pt-4">
-          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="space-y-3 border-t border-slate-200 pt-5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
             Quick Start
           </div>
 

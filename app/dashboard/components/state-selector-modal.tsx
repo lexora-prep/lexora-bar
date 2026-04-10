@@ -81,39 +81,39 @@ export function StateSelectorModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-xl border border-border bg-card p-5 shadow-2xl"
+        className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-bold text-slate-900">
               Select Your Bar Exam State
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-slate-500">
               Choose the state used for your comparison data.
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
         <input
           placeholder="Search states..."
-          className="mb-4 w-full rounded-lg border border-border bg-secondary px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-emerald-500"
+          className="mb-4 w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
 
-        <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
+        <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
           {filteredStates.map((s) => (
             <button
               key={s.code}
@@ -121,18 +121,18 @@ export function StateSelectorModal({
                 onSelectState(s.name)
                 onClose()
               }}
-              className={`flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors ${
+              className={`flex w-full items-center justify-between rounded-lg border p-3.5 text-left transition-colors ${
                 currentState === s.name
-                  ? "border-emerald-500/50 bg-emerald-500/10"
-                  : "border-border hover:bg-secondary"
+                  ? "border-emerald-400 bg-emerald-50"
+                  : "border-slate-200 hover:bg-slate-50"
               }`}
             >
-              <span className="font-medium text-foreground">{s.name}</span>
+              <span className="font-medium text-slate-800">{s.name}</span>
 
               {currentState === s.name ? (
-                <Check size={16} className="text-emerald-400" />
+                <Check size={18} className="text-emerald-600" />
               ) : (
-                <span className="text-xs text-muted-foreground">Select</span>
+                <span className="text-xs text-slate-400">Select</span>
               )}
             </button>
           ))}

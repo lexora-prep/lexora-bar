@@ -17,10 +17,10 @@ export function QuickActionCard({
 }: QuickActionCardProps) {
   const hoverBorder =
     accent === "emerald"
-      ? "hover:border-emerald-500/50"
+      ? "hover:border-emerald-400"
       : accent === "blue"
-        ? "hover:border-blue-500/50"
-        : "hover:border-amber-500/50"
+        ? "hover:border-blue-400"
+        : "hover:border-amber-400"
 
   const iconClass =
     accent === "emerald"
@@ -32,13 +32,13 @@ export function QuickActionCard({
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center justify-between rounded-lg border border-border bg-card p-3 text-left transition-all hover:bg-secondary/50 ${hoverBorder}`}
+      className={`flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-left transition-all hover:bg-slate-50 hover:shadow-sm ${hoverBorder}`}
     >
       <div>
-        <div className="text-sm font-medium text-foreground">{title}</div>
-        <div className="text-xs text-muted-foreground">{subtitle}</div>
+        <div className="text-sm font-semibold text-slate-800">{title}</div>
+        <div className="text-xs text-slate-500">{subtitle}</div>
       </div>
-      <ChevronRight size={16} className={iconClass} />
+      <ChevronRight size={18} className={iconClass} />
     </button>
   )
 }

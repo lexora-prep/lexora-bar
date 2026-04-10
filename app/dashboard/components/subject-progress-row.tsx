@@ -21,8 +21,8 @@ export function SubjectProgressRow({
 }: SubjectProgressRowProps) {
   const badgeClass =
     accent === "emerald"
-      ? "bg-emerald-500/15 text-emerald-400"
-      : "bg-blue-500/15 text-blue-400"
+      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+      : "bg-blue-50 text-blue-700 border border-blue-200"
 
   const barClass =
     accent === "emerald"
@@ -30,26 +30,26 @@ export function SubjectProgressRow({
       : "bg-gradient-to-r from-blue-500 to-blue-400"
 
   return (
-    <div className="rounded-lg bg-secondary/50 p-3 transition-colors hover:bg-secondary/70">
+    <div className="rounded-lg bg-slate-50 p-4 transition-colors hover:bg-slate-100">
       <div className="flex items-center justify-between gap-2 text-sm">
-        <span className="font-medium text-foreground">{name}</span>
+        <span className="font-semibold text-slate-800">{name}</span>
 
         <div className="flex items-center gap-2">
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass}`}
           >
             {leftBadge}
           </span>
 
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}
+            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass}`}
           >
             {rightBadge}
           </span>
         </div>
       </div>
 
-      <div className="relative mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+      <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
         <div
           className={`absolute h-full rounded-full ${barClass} transition-all duration-300`}
           style={{ width: `${Math.min(value, 100)}%` }}
@@ -57,14 +57,14 @@ export function SubjectProgressRow({
 
         {typeof avg === "number" && (
           <div
-            className="absolute top-0 h-full w-0.5 bg-foreground/50"
+            className="absolute top-0 h-full w-0.5 bg-slate-600"
             style={{ left: `${Math.min(avg, 100)}%` }}
           />
         )}
       </div>
 
       {footer && (
-        <div className="mt-1.5 text-[10px] text-muted-foreground">{footer}</div>
+        <div className="mt-2 text-xs text-slate-500">{footer}</div>
       )}
     </div>
   )

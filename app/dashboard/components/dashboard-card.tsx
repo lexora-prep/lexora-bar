@@ -10,7 +10,7 @@ interface DashboardCardProps {
 export function DashboardCard({ children, className = "" }: DashboardCardProps) {
   return (
     <div
-      className={`rounded-xl border border-border bg-card p-4 ${className}`}
+      className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}
     >
       {children}
     </div>

@@ -35,19 +35,19 @@ export function PerformanceAnalytics({
 
   return (
     <DashboardCard className="xl:self-start">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-foreground">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-base font-bold text-slate-900">
           Performance Analytics
         </h2>
 
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg bg-secondary p-1">
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-lg bg-slate-100 p-1">
             <button
               onClick={() => setTab("BLL")}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
                 tab === "BLL"
-                  ? "bg-card text-emerald-400 shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-white text-emerald-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               BLL
@@ -55,10 +55,10 @@ export function PerformanceAnalytics({
 
             <button
               onClick={() => isPremium && setTab("MBE")}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
                 tab === "MBE"
-                  ? "bg-card text-blue-400 shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
               } ${!isPremium ? "cursor-not-allowed opacity-50" : ""}`}
             >
               MBE {!isPremium && "🔒"}
@@ -67,7 +67,7 @@ export function PerformanceAnalytics({
 
           <button
             onClick={() => setShowAll(!showAll)}
-            className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-800"
           >
             {showAll ? "Show less" : "Show all"}
           </button>
@@ -75,7 +75,7 @@ export function PerformanceAnalytics({
       </div>
 
       <div
-        className={`space-y-2 ${showAll ? "max-h-[470px] overflow-y-auto pr-1" : ""}`}
+        className={`space-y-3 ${showAll ? "max-h-[500px] overflow-y-auto pr-1" : ""}`}
       >
         {tab === "BLL" &&
           visibleBllRows.map((s) => (

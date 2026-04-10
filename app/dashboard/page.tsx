@@ -736,16 +736,15 @@ export default function Dashboard() {
 
   if (!authReady) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-background text-muted-foreground">
+      <div className="flex min-h-screen w-full items-center justify-center bg-slate-50 text-slate-500">
         Loading...
       </div>
     )
   }
 
   return (
-    <div className="dark">
-      <div className="min-h-screen w-full bg-background px-4 py-4 xl:px-6">
-        <div className="mx-auto w-full max-w-[1400px] space-y-4">
+    <div className="min-h-screen w-full bg-slate-50 px-4 py-6 xl:px-8">
+      <div className="mx-auto w-full max-w-[1400px] space-y-5">
           {/* Welcome Banner */}
           {isNewUser && (
             <WelcomeBanner
@@ -755,7 +754,7 @@ export default function Dashboard() {
           )}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               title="MBE QUESTIONS"
               value={isPremium ? `${todayMbe} / ${goalMbe}` : "Locked"}
@@ -822,7 +821,7 @@ export default function Dashboard() {
           />
 
           {/* Analytics and State Comparison */}
-          <div className="grid items-start grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid items-start grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
             <PerformanceAnalytics
               tab={tab}
               setTab={setTab}
