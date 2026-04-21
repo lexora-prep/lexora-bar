@@ -6,16 +6,6 @@ type FeatureFlagRow = {
   value: unknown
 }
 
-type AttemptGroupRow = {
-  question_id: string | null
-  _count: {
-    id: number
-  }
-  _sum: {
-    is_correct: number | null
-  }
-}
-
 function readBoolean(value: unknown, fallback = false) {
   if (typeof value === "boolean") return value
 
@@ -72,7 +62,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ subjects: [] })
     }
 
-    const [subjects, questions, attemptGroups] = await Promise.all([
+    const [subjects, questions, attempts] = await Promise.all([
       prisma.subjects.findMany({
         select: {
           id: true,
@@ -91,18 +81,15 @@ export async function GET(req: Request) {
           subject_id: true,
         },
       }),
-      prisma.user_mbe_attempts.groupBy({
-        by: ["question_id"],
+      prisma.user_mbe_attempts.findMany({
         where: {
           user_id: userId,
           question_id: {
             not: null,
           },
         },
-        _count: {
-          id: true,
-        },
-        _sum: {
+        select: {
+          question_id: true,
           is_correct: true,
         },
       }),
@@ -125,10 +112,10 @@ export async function GET(req: Request) {
       })
     }
 
-    for (const row of attemptGroups as AttemptGroupRow[]) {
-      if (!row.question_id) continue
+    for (const attempt of attempts) {
+      if (!attempt.question_id) continue
 
-      const subjectId = questionToSubject.get(row.question_id)
+      const subjectId = questionToSubject.get(attempt.question_id)
       if (!subjectId) continue
 
       const current = statsBySubject.get(subjectId) ?? {
@@ -136,8 +123,10 @@ export async function GET(req: Request) {
         correct: 0,
       }
 
-      current.answered += row._count.id ?? 0
-      current.correct += Number(row._sum.is_correct ?? 0)
+      current.answered += 1
+      if (attempt.is_correct) {
+        current.correct += 1
+      }
 
       statsBySubject.set(subjectId, current)
     }

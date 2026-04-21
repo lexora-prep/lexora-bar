@@ -6,6 +6,18 @@ function toPercent(correct: number, total: number) {
   return Math.round((correct / total) * 100)
 }
 
+function toSubjectKey(value: unknown): string | null {
+  if (typeof value === "string" && value.trim() !== "") {
+    return value
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value)
+  }
+
+  return null
+}
+
 export async function GET(req: Request) {
   try {
     const startedAt = Date.now()
@@ -81,23 +93,27 @@ export async function GET(req: Request) {
       }),
     ])
 
-    const rulesTotalMap = new Map<number, number>()
+    const rulesTotalMap = new Map<string, number>()
     for (const row of rulesCountBySubject) {
-      rulesTotalMap.set(row.subject_id, row._count._all)
+      const subjectId = toSubjectKey(row.subject_id)
+      if (!subjectId) continue
+      rulesTotalMap.set(subjectId, row._count._all)
     }
 
-    const mbeQuestionTotalMap = new Map<number, number>()
+    const mbeQuestionTotalMap = new Map<string, number>()
     for (const row of mbeQuestionCountBySubject) {
-      mbeQuestionTotalMap.set(row.subject_id, row._count._all)
+      const subjectId = toSubjectKey(row.subject_id)
+      if (!subjectId) continue
+      mbeQuestionTotalMap.set(subjectId, row._count._all)
     }
 
     const bllAggMap = new Map<
-      number,
+      string,
       { correct: number; attempts: number; completed: number }
     >()
 
     for (const row of userRuleProgress) {
-      const subjectId = row.rules?.subject_id
+      const subjectId = toSubjectKey(row.rules?.subject_id)
       if (!subjectId) continue
 
       const existing = bllAggMap.get(subjectId) ?? {
@@ -113,10 +129,10 @@ export async function GET(req: Request) {
       bllAggMap.set(subjectId, existing)
     }
 
-    const mbeAggMap = new Map<number, { correct: number; attempts: number }>()
+    const mbeAggMap = new Map<string, { correct: number; attempts: number }>()
 
     for (const row of userMbeAttempts) {
-      const subjectId = row.mbe_question?.subject_id
+      const subjectId = toSubjectKey(row.mbe_question?.subject_id)
       if (!subjectId) continue
 
       const existing = mbeAggMap.get(subjectId) ?? {
@@ -148,13 +164,16 @@ export async function GET(req: Request) {
     }> = []
 
     for (const subject of subjects) {
-      const bllAgg = bllAggMap.get(subject.id) ?? {
+      const subjectKey = toSubjectKey(subject.id)
+      if (!subjectKey) continue
+
+      const bllAgg = bllAggMap.get(subjectKey) ?? {
         correct: 0,
         attempts: 0,
         completed: 0,
       }
 
-      const rulesTotal = rulesTotalMap.get(subject.id) ?? 0
+      const rulesTotal = rulesTotalMap.get(subjectKey) ?? 0
 
       bllResults.push({
         name: subject.name,
@@ -163,12 +182,12 @@ export async function GET(req: Request) {
         total: rulesTotal,
       })
 
-      const mbeAgg = mbeAggMap.get(subject.id) ?? {
+      const mbeAgg = mbeAggMap.get(subjectKey) ?? {
         correct: 0,
         attempts: 0,
       }
 
-      const mbeQuestionTotal = mbeQuestionTotalMap.get(subject.id) ?? 0
+      const mbeQuestionTotal = mbeQuestionTotalMap.get(subjectKey) ?? 0
       const mbeAccuracy = toPercent(mbeAgg.correct, mbeAgg.attempts)
 
       mbeResults.push({

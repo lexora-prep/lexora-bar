@@ -1,17 +1,19 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getWorkspaceActor } from "../../../_lib"
 
 export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ messageId: string }> }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await getWorkspaceActor()
+
   if (!auth.ok) {
     return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status })
   }
 
-  const { messageId } = await params
+  const { id } = await params
+  const messageId = id
 
   try {
     const body = await req.json().catch(() => null)
@@ -66,6 +68,9 @@ export async function POST(
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error("POST WORKSPACE MESSAGE REACTION ERROR:", error)
-    return NextResponse.json({ ok: false, error: "Failed to update reaction." }, { status: 500 })
+    return NextResponse.json(
+      { ok: false, error: "Failed to update reaction." },
+      { status: 500 }
+    )
   }
 }

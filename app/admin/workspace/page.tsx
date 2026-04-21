@@ -802,13 +802,15 @@ export default function AdminWorkspacePage() {
       const data: NoteDetailResponse | null = await res.json().catch(() => null)
       if (!res.ok || !data?.ok || !data.note) return
 
+      const noteData = data.note
+
       setNotes((prev) =>
         prev.map((note) =>
           note.id === noteId
             ? {
                 ...note,
-                ...data.note,
-                my_emojis: data.note.my_emojis || [],
+                ...noteData,
+                my_emojis: noteData.my_emojis || [],
               }
             : note
         )

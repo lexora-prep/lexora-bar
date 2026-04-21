@@ -105,10 +105,13 @@ export async function PATCH(
       body?.sharedScope === "workspace" || body?.sharedScope === "specific_users"
         ? body.sharedScope
         : undefined
-    const recipientIds = Array.isArray(body?.recipientIds)
+
+    const recipientIds: string[] | undefined = Array.isArray(body?.recipientIds)
       ? Array.from(
           new Set(
-            body.recipientIds.filter((v: unknown): v is string => typeof v === "string" && v.trim().length > 0)
+            body.recipientIds.filter(
+              (v: unknown): v is string => typeof v === "string" && v.trim().length > 0
+            )
           )
         )
       : undefined
@@ -166,23 +169,43 @@ export async function PATCH(
       )
     }
 
+    const updateData: {
+      title?: string
+      body?: string
+      visibility?: string
+      shared_scope?: string
+      recipient_ids?: string[]
+      updated_at: Date
+    } = {
+      updated_at: new Date(),
+    }
+
+    if (title !== undefined) {
+      updateData.title = title
+    }
+
+    if (noteBody !== undefined) {
+      updateData.body = noteBody
+    }
+
+    if (nextVisibility !== undefined) {
+      updateData.visibility = nextVisibility
+    }
+
+    if (nextSharedScope !== undefined) {
+      updateData.shared_scope = nextSharedScope
+    }
+
+    if (recipientIds !== undefined) {
+      updateData.recipient_ids =
+        note.note_type === "shared" && (nextSharedScope ?? "workspace") === "specific_users"
+          ? recipientIds
+          : []
+    }
+
     await prisma.workspace_notes.update({
       where: { id },
-      data: {
-        ...(title !== undefined ? { title } : {}),
-        ...(noteBody !== undefined ? { body: noteBody } : {}),
-        ...(nextVisibility !== undefined ? { visibility: nextVisibility } : {}),
-        ...(nextSharedScope !== undefined ? { shared_scope: nextSharedScope } : {}),
-        ...(recipientIds !== undefined
-          ? {
-              recipient_ids:
-                note.note_type === "shared" && (nextSharedScope ?? "workspace") === "specific_users"
-                  ? recipientIds
-                  : [],
-            }
-          : {}),
-        updated_at: new Date(),
-      },
+      data: updateData,
     })
 
     return NextResponse.json({ ok: true })

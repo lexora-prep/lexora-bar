@@ -33,10 +33,12 @@ export async function POST(req: Request) {
           ? "workspace"
           : "private"
 
-    const recipientIds = Array.isArray(body?.recipientIds)
+    const recipientIds: string[] = Array.isArray(body?.recipientIds)
       ? Array.from(
           new Set(
-            body.recipientIds.filter((v: unknown): v is string => typeof v === "string" && v.trim().length > 0)
+            body.recipientIds.filter(
+              (v: unknown): v is string => typeof v === "string" && v.trim().length > 0
+            )
           )
         )
       : []
