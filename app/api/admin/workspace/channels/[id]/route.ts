@@ -36,10 +36,11 @@ export async function PATCH(
         is_private: true,
         created_by: true,
         deleted_at: true,
+        is_archived: true,
       },
     })
 
-    if (!channel || channel.deleted_at) {
+    if (!channel || channel.deleted_at || channel.is_archived) {
       return NextResponse.json({ ok: false, error: "Channel not found." }, { status: 404 })
     }
 
@@ -65,7 +66,11 @@ export async function PATCH(
       const nextIsHidden =
         typeof body?.isHidden === "boolean" ? body.isHidden : undefined
       const visibleUserIds = Array.isArray(body?.visibleUserIds)
-        ? body.visibleUserIds.filter((v: unknown): v is string => typeof v === "string")
+        ? Array.from(
+            new Set(
+              body.visibleUserIds.filter((v: unknown): v is string => typeof v === "string" && v.trim().length > 0)
+            )
+          )
         : []
 
       if (!nextName) {
@@ -100,6 +105,7 @@ export async function PATCH(
           team_id: channel.team_id,
           slug: nextSlug,
           deleted_at: null,
+          is_archived: false,
           NOT: { id: channel.id },
         },
         select: { id: true },
@@ -129,17 +135,17 @@ export async function PATCH(
         },
       })
 
-      const desiredMemberIds: string[] = Array.from(
-        new Set(
-          [
-            actor.id,
-            channel.created_by || actor.id,
-            ...(resolvedIsHidden || resolvedIsPrivate ? visibleUserIds : []),
-          ].filter((userId): userId is string => typeof userId === "string" && userId.trim().length > 0)
-        )
-      )
-
       if (resolvedIsHidden || resolvedIsPrivate) {
+        const desiredMemberIds = Array.from(
+          new Set(
+            [
+              actor.id,
+              channel.created_by || actor.id,
+              ...visibleUserIds,
+            ].filter((userId): userId is string => typeof userId === "string" && userId.trim().length > 0)
+          )
+        )
+
         await prisma.workspace_channel_members.deleteMany({
           where: {
             channel_id: id,
@@ -158,7 +164,7 @@ export async function PATCH(
         })
       }
 
-      return NextResponse.json({ ok: true })
+      return NextResponse.json({ ok: true, slug: nextSlug })
     }
 
     if (action === "archive") {
@@ -248,7 +254,6 @@ export async function PATCH(
       }
 
       const userId = typeof body?.userId === "string" ? body.userId : ""
-
       if (!userId) {
         return NextResponse.json({ ok: false, error: "User is required." }, { status: 400 })
       }

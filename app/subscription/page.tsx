@@ -10,6 +10,11 @@ type ProfileData = {
   mbe_access: boolean
 }
 
+type PublicFlags = {
+  mbePremiumEnabled: boolean
+  mbePublicVisible: boolean
+}
+
 export default function SubscriptionPage() {
   const supabase = useMemo(() => createClient(), [])
 
@@ -18,6 +23,10 @@ export default function SubscriptionPage() {
   const [email, setEmail] = useState("")
   const [plan, setPlan] = useState("free")
   const [mbeAccess, setMbeAccess] = useState(false)
+  const [flags, setFlags] = useState<PublicFlags>({
+    mbePremiumEnabled: false,
+    mbePublicVisible: false,
+  })
 
   useEffect(() => {
     async function loadSubscription() {
@@ -35,21 +44,33 @@ export default function SubscriptionPage() {
           return
         }
 
-        const res = await fetch(`/api/profile?userId=${user.id}`, {
-          cache: "no-store",
-        })
+        const [profileRes, flagsRes] = await Promise.all([
+          fetch(`/api/profile?userId=${user.id}`, {
+            cache: "no-store",
+          }),
+          fetch(`/api/public-feature-flags`, {
+            cache: "no-store",
+          }),
+        ])
 
-        if (!res.ok) {
-          const data = await res.json().catch(() => null)
+        if (!profileRes.ok) {
+          const data = await profileRes.json().catch(() => null)
           setError(data?.error || "Failed to load subscription data.")
           return
         }
 
-        const profile: ProfileData = await res.json()
+        const profile: ProfileData = await profileRes.json()
+        const publicFlags: PublicFlags = flagsRes.ok
+          ? await flagsRes.json()
+          : {
+              mbePremiumEnabled: false,
+              mbePublicVisible: false,
+            }
 
         setEmail(profile.email || "")
         setPlan(profile.subscription_tier || "free")
         setMbeAccess(!!profile.mbe_access)
+        setFlags(publicFlags)
       } catch (err) {
         console.error("SUBSCRIPTION PAGE LOAD ERROR:", err)
         setError("Something went wrong while loading subscription.")
@@ -60,6 +81,14 @@ export default function SubscriptionPage() {
 
     loadSubscription()
   }, [supabase])
+
+  const mbeStatusText = !flags.mbePublicVisible
+    ? "Coming soon"
+    : flags.mbePremiumEnabled
+      ? mbeAccess
+        ? "Enabled"
+        : "Available but not active on this account"
+      : "Temporarily disabled"
 
   return (
     <div className="mx-auto max-w-4xl p-6">
@@ -95,7 +124,7 @@ export default function SubscriptionPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="text-sm text-slate-500">MBE access</div>
             <div className="mt-2 text-base font-medium text-slate-900">
-              {mbeAccess ? "Enabled" : "Not enabled"}
+              {mbeStatusText}
             </div>
           </div>
 
@@ -105,7 +134,9 @@ export default function SubscriptionPage() {
               {plan === "free" ? "No paid subscription yet" : "Active"}
             </div>
             <div className="mt-3 text-sm text-slate-500">
-              Billing management will appear here once payment integration is added.
+              {flags.mbePublicVisible
+                ? "Billing management will appear here once payment integration is added."
+                : "MBE Premium is currently marked as coming soon."}
             </div>
           </div>
         </div>

@@ -44,9 +44,13 @@ export async function GET(req: Request) {
       },
     })
 
-    const relatedMessageIds = rows
-      .map((row) => row.reply_to_message_id)
-      .filter((value): value is string => Boolean(value))
+    const relatedMessageIds = Array.from(
+      new Set(
+        rows
+          .map((row) => row.reply_to_message_id)
+          .filter((value): value is string => Boolean(value))
+      )
+    )
 
     const replyMessages = relatedMessageIds.length
       ? await prisma.workspace_messages.findMany({
@@ -57,6 +61,7 @@ export async function GET(req: Request) {
             id: true,
             content: true,
             author_id: true,
+            is_deleted: true,
           },
         })
       : []
@@ -101,7 +106,7 @@ export async function GET(req: Request) {
         message.id,
         {
           id: message.id,
-          content: message.content,
+          content: message.is_deleted ? "This message was deleted." : message.content,
           author: profileMap.get(message.author_id)?.name || "Unknown",
           role: profileMap.get(message.author_id)?.role || "admin",
         },
@@ -140,6 +145,7 @@ export async function GET(req: Request) {
       return {
         id: row.id,
         author: author?.name || "Unknown",
+        author_id: row.author_id,
         role: author?.role || "admin",
         content: row.is_deleted ? "This message was deleted." : row.content,
         message_type: row.message_type,
@@ -158,7 +164,9 @@ export async function GET(req: Request) {
         attachment_type: row.attachment_type,
         is_deleted: row.is_deleted,
         reply_to_message_id: row.reply_to_message_id,
-        reply_preview: row.reply_to_message_id ? replyMap.get(row.reply_to_message_id) || null : null,
+        reply_preview: row.reply_to_message_id
+          ? replyMap.get(row.reply_to_message_id) || null
+          : null,
         forwarded_from_message_id: row.forwarded_from_message_id,
         forwarded_from_note_id: row.forwarded_from_note_id,
         forwarded_original_author_name: row.forwarded_original_author_name,
@@ -182,15 +190,20 @@ export async function POST(req: Request) {
     await ensureWorkspaceSeedData()
 
     const body = await req.json().catch(() => null)
+
     const channelSlug = typeof body?.channel === "string" ? body.channel.trim() : ""
     const content = typeof body?.content === "string" ? body.content.trim() : ""
     const messageType = body?.messageType === "note" ? "note" : "message"
+
     const replyToMessageId =
       typeof body?.replyToMessageId === "string" ? body.replyToMessageId : null
+
     const forwardedFromMessageId =
       typeof body?.forwardedFromMessageId === "string" ? body.forwardedFromMessageId : null
+
     const forwardedFromNoteId =
       typeof body?.forwardedFromNoteId === "string" ? body.forwardedFromNoteId : null
+
     const forwardedOriginalAuthorName =
       typeof body?.forwardedOriginalAuthorName === "string"
         ? body.forwardedOriginalAuthorName.trim()
@@ -216,10 +229,14 @@ export async function POST(req: Request) {
     if (replyToMessageId) {
       const replyTarget = await prisma.workspace_messages.findUnique({
         where: { id: replyToMessageId },
-        select: { id: true, channel_id: true },
+        select: {
+          id: true,
+          channel_id: true,
+          is_deleted: true,
+        },
       })
 
-      if (!replyTarget || replyTarget.channel_id !== channel.id) {
+      if (!replyTarget || replyTarget.channel_id !== channel.id || replyTarget.is_deleted) {
         return NextResponse.json(
           { ok: false, error: "Reply target message not found in this channel." },
           { status: 400 }
@@ -227,21 +244,139 @@ export async function POST(req: Request) {
       }
     }
 
-    await prisma.workspace_messages.create({
+    const shouldPin = messageType === "note"
+
+    if (shouldPin) {
+      const pinnedCount = await prisma.workspace_messages.count({
+        where: {
+          channel_id: channel.id,
+          is_deleted: false,
+          is_pinned: true,
+        },
+      })
+
+      if (pinnedCount >= 10) {
+        return NextResponse.json(
+          { ok: false, error: "You can pin up to 10 messages per channel." },
+          { status: 400 }
+        )
+      }
+    }
+
+    const created = await prisma.workspace_messages.create({
       data: {
         channel_id: channel.id,
         author_id: auth.actor.id,
         content,
-        is_pinned: messageType === "note",
+        is_pinned: shouldPin,
         message_type: messageType,
         reply_to_message_id: replyToMessageId,
         forwarded_from_message_id: forwardedFromMessageId,
         forwarded_from_note_id: forwardedFromNoteId,
         forwarded_original_author_name: forwardedOriginalAuthorName,
       },
+      select: {
+        id: true,
+        channel_id: true,
+        author_id: true,
+        content: true,
+        message_type: true,
+        is_pinned: true,
+        is_urgent: true,
+        wake_alert_sent_at: true,
+        created_at: true,
+        updated_at: true,
+        edited_at: true,
+        attachment_name: true,
+        attachment_size: true,
+        attachment_type: true,
+        is_deleted: true,
+        reply_to_message_id: true,
+        forwarded_from_message_id: true,
+        forwarded_from_note_id: true,
+        forwarded_original_author_name: true,
+      },
     })
 
-    return NextResponse.json({ ok: true })
+    const author = await prisma.profiles.findUnique({
+      where: { id: created.author_id },
+      select: {
+        full_name: true,
+        email: true,
+        admin_role: true,
+        role: true,
+      },
+    })
+
+    let replyPreview: {
+      id: string
+      content: string
+      author: string
+      role: string
+    } | null = null
+
+    if (created.reply_to_message_id) {
+      const replyMessage = await prisma.workspace_messages.findUnique({
+        where: { id: created.reply_to_message_id },
+        select: {
+          id: true,
+          content: true,
+          author_id: true,
+          is_deleted: true,
+        },
+      })
+
+      if (replyMessage) {
+        const replyAuthor = await prisma.profiles.findUnique({
+          where: { id: replyMessage.author_id },
+          select: {
+            full_name: true,
+            email: true,
+            admin_role: true,
+            role: true,
+          },
+        })
+
+        replyPreview = {
+          id: replyMessage.id,
+          content: replyMessage.is_deleted ? "This message was deleted." : replyMessage.content,
+          author:
+            replyAuthor?.full_name?.trim() ||
+            replyAuthor?.email?.split("@")[0] ||
+            "Unknown",
+          role: replyAuthor?.admin_role || replyAuthor?.role || "admin",
+        }
+      }
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: {
+        id: created.id,
+        author: author?.full_name?.trim() || author?.email?.split("@")[0] || "Unknown",
+        author_id: created.author_id,
+        role: author?.admin_role || author?.role || "admin",
+        content: created.content,
+        message_type: created.message_type,
+        is_pinned: created.is_pinned,
+        is_urgent: created.is_urgent,
+        wake_alert_sent_at: created.wake_alert_sent_at,
+        created_at: created.created_at,
+        updated_at: created.updated_at,
+        edited_at: created.edited_at,
+        my_emojis: [],
+        reactions: [],
+        attachment_name: created.attachment_name,
+        attachment_size: created.attachment_size,
+        attachment_type: created.attachment_type,
+        is_deleted: created.is_deleted,
+        reply_to_message_id: created.reply_to_message_id,
+        reply_preview: replyPreview,
+        forwarded_from_message_id: created.forwarded_from_message_id,
+        forwarded_from_note_id: created.forwarded_from_note_id,
+        forwarded_original_author_name: created.forwarded_original_author_name,
+      },
+    })
   } catch (error) {
     console.error("POST WORKSPACE MESSAGE ERROR:", error)
     return NextResponse.json({ ok: false, error: "Failed to send message." }, { status: 500 })

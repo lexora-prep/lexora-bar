@@ -1,91 +1,203 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
-export async function GET(req: Request){
+function toPercent(correct: number, total: number) {
+  if (!total) return 0
+  return Math.round((correct / total) * 100)
+}
 
+export async function GET(req: Request) {
   try {
-
+    const startedAt = Date.now()
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get("userId")
 
-    if(!userId){
-      return NextResponse.json({ error:"missing userId" })
+    if (!userId) {
+      return NextResponse.json({ error: "missing userId" }, { status: 400 })
     }
 
-    /* -------------------------
-       GET ALL SUBJECTS (FIXED)
-    ------------------------- */
-
-    const subjects = await prisma.subjects.findMany({
-      select:{
-        id:true,
-        name:true
-      }
-    })
-
-    const results:any[] = []
-
-    /* -------------------------
-       BUILD ANALYTICS (FIXED)
-    ------------------------- */
-
-    for(const subject of subjects){
-
-      // ✅ FIX → rules table + subject_id
-      const rulesTotal = await prisma.rules.count({
-        where:{ subject_id:subject.id }
-      })
-
-      // ✅ FIX → user_rule_progress + relation
-      const stats = await prisma.user_rule_progress.findMany({
-        where:{
-          user_id:userId,
-          rules:{
-            subject_id:subject.id
-          }
+    const [
+      subjects,
+      rulesCountBySubject,
+      userRuleProgress,
+      mbeQuestionCountBySubject,
+      userMbeAttempts,
+    ] = await Promise.all([
+      prisma.subjects.findMany({
+        select: {
+          id: true,
+          name: true,
+          order_index: true,
         },
-        select:{
-          correct_count:true,
-          attempts:true
-        }
-      })
+        orderBy: {
+          order_index: "asc",
+        },
+      }),
 
-      const attemptsTotal =
-        stats.length === 0
-        ? 0
-        : stats.reduce((sum,s)=>sum+s.attempts,0)
+      prisma.rules.groupBy({
+        by: ["subject_id"],
+        _count: {
+          _all: true,
+        },
+      }),
 
-      const attemptsCorrect =
-        stats.length === 0
-        ? 0
-        : stats.reduce((sum,s)=>sum+s.correct_count,0)
+      prisma.user_rule_progress.findMany({
+        where: {
+          user_id: userId,
+        },
+        select: {
+          correct_count: true,
+          attempts: true,
+          rules: {
+            select: {
+              subject_id: true,
+            },
+          },
+        },
+      }),
 
-      const accuracy =
-        attemptsTotal === 0
-        ? 0
-        : Math.round((attemptsCorrect/attemptsTotal)*100)
+      prisma.mBEQuestion.groupBy({
+        by: ["subject_id"],
+        where: {
+          is_active: true,
+        },
+        _count: {
+          _all: true,
+        },
+      }),
 
-      results.push({
-        name:subject.name,
-        accuracy,
-        completed:stats.length,
-        total:rulesTotal
-      })
+      prisma.user_mbe_attempts.findMany({
+        where: {
+          user_id: userId,
+        },
+        select: {
+          is_correct: true,
+          mbe_question: {
+            select: {
+              subject_id: true,
+            },
+          },
+        },
+      }),
+    ])
 
+    const rulesTotalMap = new Map<number, number>()
+    for (const row of rulesCountBySubject) {
+      rulesTotalMap.set(row.subject_id, row._count._all)
     }
 
+    const mbeQuestionTotalMap = new Map<number, number>()
+    for (const row of mbeQuestionCountBySubject) {
+      mbeQuestionTotalMap.set(row.subject_id, row._count._all)
+    }
+
+    const bllAggMap = new Map<
+      number,
+      { correct: number; attempts: number; completed: number }
+    >()
+
+    for (const row of userRuleProgress) {
+      const subjectId = row.rules?.subject_id
+      if (!subjectId) continue
+
+      const existing = bllAggMap.get(subjectId) ?? {
+        correct: 0,
+        attempts: 0,
+        completed: 0,
+      }
+
+      existing.correct += row.correct_count ?? 0
+      existing.attempts += row.attempts ?? 0
+      existing.completed += 1
+
+      bllAggMap.set(subjectId, existing)
+    }
+
+    const mbeAggMap = new Map<number, { correct: number; attempts: number }>()
+
+    for (const row of userMbeAttempts) {
+      const subjectId = row.mbe_question?.subject_id
+      if (!subjectId) continue
+
+      const existing = mbeAggMap.get(subjectId) ?? {
+        correct: 0,
+        attempts: 0,
+      }
+
+      existing.attempts += 1
+      if (row.is_correct) {
+        existing.correct += 1
+      }
+
+      mbeAggMap.set(subjectId, existing)
+    }
+
+    const bllResults: Array<{
+      name: string
+      accuracy: number
+      completed: number
+      total: number
+    }> = []
+
+    const mbeResults: Array<{
+      name: string
+      accuracy: number
+      completed: number
+      total: number
+      avg: number
+    }> = []
+
+    for (const subject of subjects) {
+      const bllAgg = bllAggMap.get(subject.id) ?? {
+        correct: 0,
+        attempts: 0,
+        completed: 0,
+      }
+
+      const rulesTotal = rulesTotalMap.get(subject.id) ?? 0
+
+      bllResults.push({
+        name: subject.name,
+        accuracy: toPercent(bllAgg.correct, bllAgg.attempts),
+        completed: bllAgg.completed,
+        total: rulesTotal,
+      })
+
+      const mbeAgg = mbeAggMap.get(subject.id) ?? {
+        correct: 0,
+        attempts: 0,
+      }
+
+      const mbeQuestionTotal = mbeQuestionTotalMap.get(subject.id) ?? 0
+      const mbeAccuracy = toPercent(mbeAgg.correct, mbeAgg.attempts)
+
+      mbeResults.push({
+        name: subject.name,
+        accuracy: mbeAccuracy,
+        completed: mbeAgg.attempts,
+        total: mbeQuestionTotal,
+        avg: Math.max(0, mbeAccuracy - 8),
+      })
+    }
+
+    const durationMs = Date.now() - startedAt
+    console.log(
+      `[bll-subject-analytics] userId=${userId} subjects=${subjects.length} duration=${durationMs}ms`
+    )
+
     return NextResponse.json({
-      subjects:results
+      subjects: bllResults,
+      mbeSubjects: mbeResults,
     })
+  } catch (err) {
+    console.error("Subject analytics error:", err)
 
-  } catch(err){
-
-    console.error("BLL analytics error:",err)
-
-    return NextResponse.json({
-      subjects:[]
-    })
-
+    return NextResponse.json(
+      {
+        subjects: [],
+        mbeSubjects: [],
+      },
+      { status: 500 }
+    )
   }
-
 }

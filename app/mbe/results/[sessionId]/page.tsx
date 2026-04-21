@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Flag, Star, AlertTriangle } from "lucide-react"
+import { useUnsavedChanges } from "@/app/_providers/UnsavedChangesProvider"
 
 type PageProps = {
   params: {
@@ -13,6 +14,7 @@ type PageProps = {
 export default function MBESessionPage({ params }: PageProps) {
   const sessionId = params.sessionId
   const router = useRouter()
+  const { setDirty, clearDirty } = useUnsavedChanges()
 
   const [questions, setQuestions] = useState<any[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -30,20 +32,11 @@ export default function MBESessionPage({ params }: PageProps) {
   const [examStarted, setExamStarted] = useState(false)
   const [sessionMode, setSessionMode] = useState<string>("study")
 
-  const [selectedTimer, setSelectedTimer] = useState(60)
-  const [customMinutes, setCustomMinutes] = useState(1)
-  const [customSeconds, setCustomSeconds] = useState(0)
-
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({})
   const [savedQuestions, setSavedQuestions] = useState<Record<string, boolean>>({})
   const [reportedQuestions, setReportedQuestions] = useState<Record<string, boolean>>({})
 
-  const [reportOpen, setReportOpen] = useState(false)
-  const [reportText, setReportText] = useState("")
-
-  const [eliminatedChoices, setEliminatedChoices] = useState<Record<string, string[]>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
-
   const [fontScale, setFontScale] = useState(1)
 
   useEffect(() => {
@@ -57,11 +50,9 @@ export default function MBESessionPage({ params }: PageProps) {
 
         const serverTimeLimit = Number(data?.timeLimitSeconds ?? 0)
         setTotalTimeLimit(serverTimeLimit)
-        setSelectedTimer(serverTimeLimit > 0 ? serverTimeLimit : 60)
 
         const startedAt = data?.startedAt ? new Date(data.startedAt).getTime() : Date.now()
         const now = Date.now()
-
         const elapsedSeconds = Math.floor((now - startedAt) / 1000)
 
         const remaining =
@@ -87,6 +78,24 @@ export default function MBESessionPage({ params }: PageProps) {
     }
   }, [sessionId])
 
+  useEffect(() => {
+    const hasActiveSession = examStarted && !examSubmitted && questions.length > 0
+
+    if (hasActiveSession) {
+      setDirty(true, {
+        reason: "mbe_session",
+        message:
+          "You have an active MBE session. Leave this page only if you want to discard the current session progress.",
+      })
+    } else {
+      clearDirty()
+    }
+
+    return () => {
+      clearDirty()
+    }
+  }, [examStarted, examSubmitted, questions.length, setDirty, clearDirty])
+
   function commitCurrentAnswer() {
     if (!question) return
 
@@ -95,7 +104,7 @@ export default function MBESessionPage({ params }: PageProps) {
     if (selected) {
       setSubmittedAnswers((prev) => ({
         ...prev,
-        [question.id]: selected
+        [question.id]: selected,
       }))
     }
   }
@@ -180,30 +189,12 @@ export default function MBESessionPage({ params }: PageProps) {
   function selectAnswer(choice: string) {
     setSelectedAnswers((prev) => ({
       ...prev,
-      [question.id]: choice
+      [question.id]: choice,
     }))
   }
 
   function confirmAnswer() {
     commitCurrentAnswer()
-  }
-
-  function eliminateChoice(letter: string) {
-    setEliminatedChoices((prev) => {
-      const existing = prev[question.id] || []
-
-      if (existing.includes(letter)) {
-        return {
-          ...prev,
-          [question.id]: existing.filter((l) => l !== letter)
-        }
-      }
-
-      return {
-        ...prev,
-        [question.id]: [...existing, letter]
-      }
-    })
   }
 
   function nextQuestion() {
@@ -224,24 +215,22 @@ export default function MBESessionPage({ params }: PageProps) {
   function toggleFlagQuestion() {
     setFlaggedQuestions((prev) => ({
       ...prev,
-      [question.id]: !prev[question.id]
+      [question.id]: !prev[question.id],
     }))
   }
 
   function toggleSaveQuestion() {
     setSavedQuestions((prev) => ({
       ...prev,
-      [question.id]: !prev[question.id]
+      [question.id]: !prev[question.id],
     }))
   }
 
   function reportQuestion() {
     setReportedQuestions((prev) => ({
       ...prev,
-      [question.id]: true
+      [question.id]: true,
     }))
-
-    setReportOpen(true)
   }
 
   function submitExam(skipConfirm: boolean = false) {
@@ -251,25 +240,22 @@ export default function MBESessionPage({ params }: PageProps) {
       (q) => submittedAnswers[q.id] === undefined
     )
 
-    if (!skipConfirm) {
-      if (unanswered.length > 0) {
-        const unansweredNumbers = unanswered.map((q) => {
-          const originalIndex = questions.findIndex((item) => item.id === q.id)
-          return originalIndex + 1
-        })
+    if (!skipConfirm && unanswered.length > 0) {
+      const unansweredNumbers = unanswered.map((q) => {
+        const originalIndex = questions.findIndex((item) => item.id === q.id)
+        return originalIndex + 1
+      })
 
-        const confirmed = window.confirm(
-          `You still have unanswered question(s): ${unansweredNumbers.join(", ")}. Submit anyway?`
-        )
+      const confirmed = window.confirm(
+        `You still have unanswered question(s): ${unansweredNumbers.join(", ")}. Submit anyway?`
+      )
 
-        if (!confirmed) return
-      }
+      if (!confirmed) return
     }
 
     commitCurrentAnswer()
-
     setExamSubmitted(true)
-
+    clearDirty()
     router.push(`/mbe/results/${sessionId}`)
   }
 
@@ -417,6 +403,7 @@ export default function MBESessionPage({ params }: PageProps) {
               <button
                 onClick={() => {
                   if (sessionMode === "study" && currentIndex === questions.length - 1) {
+                    clearDirty()
                     router.push("/mbe")
                   } else {
                     submitExam()
@@ -450,7 +437,6 @@ export default function MBESessionPage({ params }: PageProps) {
 
               <div className="text-4xl font-bold">
                 <span>{Math.floor(timeRemaining / 60)}:</span>
-
                 <span className={timeRemaining <= 10 && !paused ? "text-red-600" : ""}>
                   {formatSeconds(timeRemaining)}
                 </span>

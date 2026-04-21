@@ -1,159 +1,175 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
-export async function GET(req: Request){
+function toPercent(correct: number, total: number) {
+  if (!total) return 0
+  return Math.round((correct / total) * 100)
+}
 
-  const { searchParams } = new URL(req.url)
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
 
-  const state = searchParams.get("state")
-  const userId = searchParams.get("userId")
+    const requestedState = searchParams.get("state")
+    const userId = searchParams.get("userId")
 
-  if(!userId){
-    return NextResponse.json({error:"Missing userId"})
-  }
-
-  // 🔥 NO users table → derive users from activity
-  const users = await prisma.user_rule_progress.findMany({
-    select:{ user_id:true },
-    distinct:["user_id"]
-  })
-
-  const userIds = users.map(u=>u.user_id)
-
-  // ❗ MBE table DOES NOT EXIST → set placeholder (until you add it later)
-  const userMBE = 0
-
-  // ✅ FIXED → use user_rule_progress
-  const userRules = await prisma.user_rule_progress.findMany({
-    where:{ user_id:userId },
-    select:{
-      correct_count:true,
-      attempts:true
-    }
-  })
-
-  const userRuleCorrect =
-    userRules.reduce((sum,r)=>sum+r.correct_count,0)
-
-  const userRuleTotal =
-    userRules.reduce((sum,r)=>sum+r.attempts,0)
-
-  const userBLL =
-    userRuleTotal === 0 ? 0 :
-    Math.round((userRuleCorrect/userRuleTotal)*100)
-
-  // ❗ MBE STATE DATA → placeholder
-  const stateMBEAvg = 0
-
-  // ✅ FIXED → state BLL using user_rule_progress
-  const stateRules = await prisma.user_rule_progress.findMany({
-    where:{
-      user_id:{ in:userIds }
-    },
-    select:{
-      correct_count:true,
-      attempts:true,
-      user_id:true
-    }
-  })
-
-  const stateRuleCorrect =
-    stateRules.reduce((sum,r)=>sum+r.correct_count,0)
-
-  const stateRuleTotal =
-    stateRules.reduce((sum,r)=>sum+r.attempts,0)
-
-  const stateBLLAvg =
-    stateRuleTotal === 0 ? 0 :
-    Math.round((stateRuleCorrect/stateRuleTotal)*100)
-
-  // 🔥 TOP SCORE CALCULATION (REUSED LOGIC)
-  const scoreMap:Record<string,{correct:number,total:number}> = {}
-
-  stateRules.forEach(a=>{
-
-    if(!scoreMap[a.user_id]){
-      scoreMap[a.user_id] = {correct:0,total:0}
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 })
     }
 
-    scoreMap[a.user_id].total += a.attempts
-    scoreMap[a.user_id].correct += a.correct_count
-
-  })
-
-  let topMBE = 0
-
-  Object.values(scoreMap).forEach(score=>{
-
-    const pct =
-      score.total === 0 ? 0 :
-      Math.round((score.correct/score.total)*100)
-
-    if(pct > topMBE){
-      topMBE = pct
-    }
-
-  })
-
-  // ❗ MBE attempts removed → only use rule attempts for streak
-  const ruleDates = await prisma.user_rule_attempts.findMany({
-    where:{ user_id:userId },
-    select:{ created_at:true }
-  })
-
-  const allDates = ruleDates
-    .map(d=>{
-      const date = new Date(d.created_at!)
-      date.setHours(0,0,0,0)
-      return date.getTime()
+    const profile = await prisma.profiles.findUnique({
+      where: { id: userId },
+      select: {
+        jurisdiction: true,
+      },
     })
 
-  const uniqueDates = Array.from(new Set(allDates)).sort((a,b)=>b-a)
+    const jurisdiction =
+      requestedState?.trim() || profile?.jurisdiction?.trim() || null
 
-  let streak = 0
+    const [userMbeTotal, userMbeCorrect, userRuleProgressAgg] =
+      await Promise.all([
+        prisma.user_mbe_attempts.count({
+          where: { user_id: userId },
+        }),
+        prisma.user_mbe_attempts.count({
+          where: {
+            user_id: userId,
+            is_correct: true,
+          },
+        }),
+        prisma.user_rule_progress.aggregate({
+          where: { user_id: userId },
+          _sum: {
+            correct_count: true,
+            attempts: true,
+          },
+        }),
+      ])
 
-  if(uniqueDates.length > 0){
+    const userMBE = toPercent(userMbeCorrect, userMbeTotal)
 
-    let current = new Date()
-    current.setHours(0,0,0,0)
+    const userRuleCorrect = userRuleProgressAgg._sum.correct_count ?? 0
+    const userRuleTotal = userRuleProgressAgg._sum.attempts ?? 0
+    const userBLL = toPercent(userRuleCorrect, userRuleTotal)
 
-    let index = 0
-    let allowedMiss = 2
+    let stateMBEAvg = 0
+    let stateBLLAvg = 0
+    let topMBE = 0
+    let topBLL = 0
+    let stateUsers = 0
 
-    while(index < uniqueDates.length){
+    if (jurisdiction) {
+      const stateProfiles = await prisma.profiles.findMany({
+        where: {
+          jurisdiction,
+          id: { not: userId },
+        },
+        select: {
+          id: true,
+        },
+      })
 
-      const diff =
-        (current.getTime() - uniqueDates[index]) / (1000*60*60*24)
+      const stateUserIds = stateProfiles.map((p) => p.id)
+      stateUsers = stateUserIds.length
 
-      if(diff === 0){
-        streak++
-        current.setDate(current.getDate()-1)
-        index++
+      if (stateUserIds.length > 0) {
+        const [stateMbeAttempts, stateRuleProgress] = await Promise.all([
+          prisma.user_mbe_attempts.findMany({
+            where: {
+              user_id: { in: stateUserIds },
+            },
+            select: {
+              user_id: true,
+              is_correct: true,
+            },
+          }),
+          prisma.user_rule_progress.findMany({
+            where: {
+              user_id: { in: stateUserIds },
+            },
+            select: {
+              user_id: true,
+              correct_count: true,
+              attempts: true,
+            },
+          }),
+        ])
+
+        const stateMbeCorrect = stateMbeAttempts.reduce(
+          (sum, attempt) => sum + (attempt.is_correct ? 1 : 0),
+          0
+        )
+        const stateMbeTotal = stateMbeAttempts.length
+        stateMBEAvg = toPercent(stateMbeCorrect, stateMbeTotal)
+
+        const stateRuleCorrect = stateRuleProgress.reduce(
+          (sum, row) => sum + row.correct_count,
+          0
+        )
+        const stateRuleTotal = stateRuleProgress.reduce(
+          (sum, row) => sum + row.attempts,
+          0
+        )
+        stateBLLAvg = toPercent(stateRuleCorrect, stateRuleTotal)
+
+        const mbeByUser: Record<string, { correct: number; total: number }> = {}
+        for (const attempt of stateMbeAttempts) {
+          if (!mbeByUser[attempt.user_id]) {
+            mbeByUser[attempt.user_id] = { correct: 0, total: 0 }
+          }
+          mbeByUser[attempt.user_id].total += 1
+          if (attempt.is_correct) {
+            mbeByUser[attempt.user_id].correct += 1
+          }
+        }
+
+        for (const score of Object.values(mbeByUser)) {
+          const pct = toPercent(score.correct, score.total)
+          if (pct > topMBE) topMBE = pct
+        }
+
+        const bllByUser: Record<string, { correct: number; total: number }> = {}
+        for (const row of stateRuleProgress) {
+          if (!bllByUser[row.user_id]) {
+            bllByUser[row.user_id] = { correct: 0, total: 0 }
+          }
+          bllByUser[row.user_id].correct += row.correct_count
+          bllByUser[row.user_id].total += row.attempts
+        }
+
+        for (const score of Object.values(bllByUser)) {
+          const pct = toPercent(score.correct, score.total)
+          if (pct > topBLL) topBLL = pct
+        }
       }
-      else if(diff === 1 && allowedMiss > 0){
-        allowedMiss--
-        current.setDate(current.getDate()-1)
-      }
-      else if(diff === 1){
-        streak++
-        current.setDate(current.getDate()-1)
-        index++
-      }
-      else{
-        break
-      }
-
     }
 
-  }
+    return NextResponse.json({
+      userMBE,
+      userBLL,
+      stateMBEAvg,
+      stateBLLAvg,
+      topMBE,
+      topBLL,
+      stateUsers,
+      passRate: 66,
+    })
+  } catch (error) {
+    console.error("State comparison error:", error)
 
-  return NextResponse.json({
-    userMBE,        // ⚠️ placeholder (no table yet)
-    userBLL,
-    stateMBEAvg,    // ⚠️ placeholder
-    stateBLLAvg,
-    topMBE,
-    passRate:66,
-    streak
-  })
+    return NextResponse.json(
+      {
+        userMBE: 0,
+        userBLL: 0,
+        stateMBEAvg: 0,
+        stateBLLAvg: 0,
+        topMBE: 0,
+        topBLL: 0,
+        stateUsers: 0,
+        passRate: 66,
+      },
+      { status: 500 }
+    )
+  }
 }

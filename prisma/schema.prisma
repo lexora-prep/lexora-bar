@@ -129,6 +129,8 @@ model user_rule_attempts {
   missed_buzzwords Json?
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
 
+  @@index([user_id])
+  @@index([user_id, created_at])
   @@schema("public")
 }
 
@@ -154,6 +156,7 @@ model user_rule_progress {
   @@unique([user_id, rule_id], map: "user_rule_progress_user_rule_unique")
   @@index([rule_id])
   @@index([user_id])
+  @@index([user_id, next_review_at])
   @@schema("public")
 }
 
@@ -229,6 +232,7 @@ model StudySession {
 
   @@index([userId])
   @@index([startedAt])
+  @@index([userId, startedAt])
   @@schema("public")
 }
 
@@ -268,6 +272,7 @@ model user_mbe_attempts {
   mbe_question MBEQuestion? @relation(fields: [question_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([user_id])
+  @@index([user_id, created_at])
   @@index([session_id])
   @@index([question_id])
   @@schema("public")
@@ -348,6 +353,7 @@ model profiles {
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
 
+  @@index([jurisdiction])
   @@index([role])
   @@index([is_admin])
   @@index([is_blocked])
@@ -748,10 +754,11 @@ model workspace_channels {
 }
 
 model workspace_channel_members {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  channel_id String   @db.Uuid
-  user_id    String   @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz(6)
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channel_id   String   @db.Uuid
+  user_id      String   @db.Uuid
+  channel_role String?  @default("member")
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
 
   channel workspace_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
 
@@ -977,5 +984,16 @@ model workspace_poll_votes {
   @@index([poll_id])
   @@index([option_id])
   @@index([voter_id])
+  @@schema("public")
+}
+
+model feature_flags {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String   @unique
+  value      String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([key])
   @@schema("public")
 }

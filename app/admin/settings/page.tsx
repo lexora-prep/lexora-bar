@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
 
@@ -24,6 +26,14 @@ type TeamMemberRow = {
   can_view_audit_log: boolean
 }
 
+type FeatureFlagRow = {
+  key: string
+  value: unknown
+  description: string | null
+  created_at: Date | string | null
+  updated_at: Date | string | null
+}
+
 function permissionCount(member: TeamMemberRow) {
   return [
     member.can_manage_questions,
@@ -46,7 +56,139 @@ function roleTone(role: string) {
   return "bg-[#F3F4F6] text-[#6B7280]"
 }
 
+function parseBooleanFlag(value: unknown) {
+  if (typeof value === "boolean") return value
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    return normalized === "true"
+  }
+
+  if (value && typeof value === "object") {
+    const maybeRecord = value as Record<string, unknown>
+
+    if (typeof maybeRecord.value === "boolean") {
+      return maybeRecord.value
+    }
+
+    if (typeof maybeRecord.enabled === "boolean") {
+      return maybeRecord.enabled
+    }
+  }
+
+  return false
+}
+
+const FEATURE_DEFINITIONS = {
+  mbe_public_visible: {
+    title: "MBE Premium Visibility",
+    description:
+      "Controls whether the Premium MBE offer is publicly visible on the landing page and subscription page.",
+  },
+  mbe_premium_enabled: {
+    title: "MBE Premium Access",
+    description:
+      "Controls whether MBE premium features are actually enabled inside the platform.",
+  },
+} as const
+
+type FeatureKey = keyof typeof FEATURE_DEFINITIONS
+
+async function requireSettingsAccess() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/login")
+  }
+
+  const profile = await prisma.profiles.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      is_admin: true,
+      role: true,
+      admin_role: true,
+      is_blocked: true,
+      can_manage_settings: true,
+    },
+  })
+
+  const isSuperAdmin = profile?.admin_role === "super_admin"
+  const canManageSettings = isSuperAdmin || !!profile?.can_manage_settings
+
+  if (
+    !profile ||
+    profile.is_blocked ||
+    (!profile.is_admin && profile.role !== "admin") ||
+    !canManageSettings
+  ) {
+    redirect("/admin")
+  }
+
+  return {
+    user,
+    profile,
+    isSuperAdmin,
+    canManageSettings,
+  }
+}
+
+async function upsertBooleanFeatureFlag(
+  key: FeatureKey,
+  value: boolean,
+  description: string
+) {
+  const jsonValue = JSON.stringify(value)
+
+  await prisma.$executeRaw(
+    Prisma.sql`
+      insert into public.feature_flags ("key", "value", "description", "created_at", "updated_at")
+      values (${key}, CAST(${jsonValue} AS jsonb), ${description}, now(), now())
+      on conflict ("key")
+      do update set
+        "value" = CAST(${jsonValue} AS jsonb),
+        "description" = excluded."description",
+        "updated_at" = now()
+    `
+  )
+}
+
 export default async function AdminSettingsPage() {
+  await requireSettingsAccess()
+
+  async function updateFeatureFlag(formData: FormData) {
+    "use server"
+
+    await requireSettingsAccess()
+
+    const key = String(formData.get("key") || "") as FeatureKey
+    const nextValueRaw = String(formData.get("nextValue") || "").trim().toLowerCase()
+
+    if (!(key in FEATURE_DEFINITIONS)) {
+      throw new Error("Invalid feature flag key.")
+    }
+
+    if (nextValueRaw !== "true" && nextValueRaw !== "false") {
+      throw new Error("Invalid feature flag value.")
+    }
+
+    const nextValue = nextValueRaw === "true"
+
+    await upsertBooleanFeatureFlag(
+      key,
+      nextValue,
+      FEATURE_DEFINITIONS[key].description
+    )
+
+    revalidatePath("/admin/settings")
+    revalidatePath("/")
+    revalidatePath("/subscription")
+    revalidatePath("/dashboard")
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -79,44 +221,81 @@ export default async function AdminSettingsPage() {
     redirect("/admin")
   }
 
-  const teamMembers = await prisma.profiles.findMany({
-    where: {
-      deleted_at: null,
-      OR: [
-        { is_admin: true },
-        { role: "admin" },
-        { admin_role: { not: null } },
-      ],
-    },
-    orderBy: [
-      { admin_role: "asc" },
-      { created_at: "desc" },
-    ],
-    take: 50,
-    select: {
-      id: true,
-      full_name: true,
-      email: true,
-      admin_role: true,
-      role: true,
-      is_blocked: true,
-      can_manage_questions: true,
-      can_manage_rules: true,
-      can_manage_users: true,
-      can_manage_announcements: true,
-      can_view_billing: true,
-      can_manage_coupons: true,
-      can_manage_settings: true,
-      can_view_audit_log: true,
-    },
-  })
+  const [teamMembers, rawFeatureFlags] = await Promise.all([
+    prisma.profiles.findMany({
+      where: {
+        deleted_at: null,
+        OR: [
+          { is_admin: true },
+          { role: "admin" },
+          { admin_role: { not: null } },
+        ],
+      },
+      orderBy: [{ admin_role: "asc" }, { created_at: "desc" }],
+      take: 50,
+      select: {
+        id: true,
+        full_name: true,
+        email: true,
+        admin_role: true,
+        role: true,
+        is_blocked: true,
+        can_manage_questions: true,
+        can_manage_rules: true,
+        can_manage_users: true,
+        can_manage_announcements: true,
+        can_view_billing: true,
+        can_manage_coupons: true,
+        can_manage_settings: true,
+        can_view_audit_log: true,
+      },
+    }),
+
+    prisma.$queryRaw<FeatureFlagRow[]>(
+      Prisma.sql`
+        select "key", "value", "description", "created_at", "updated_at"
+        from public.feature_flags
+        where "key" in ('mbe_public_visible', 'mbe_premium_enabled')
+        order by "key" asc
+      `
+    ),
+  ])
+
+  const flagMap = new Map(rawFeatureFlags.map((row) => [row.key, row]))
+
+  const mbePublicVisible = parseBooleanFlag(
+    flagMap.get("mbe_public_visible")?.value ?? false
+  )
+
+  const mbePremiumEnabled = parseBooleanFlag(
+    flagMap.get("mbe_premium_enabled")?.value ?? false
+  )
 
   const totalTeamMembers = teamMembers.length
   const blockedTeamMembers = teamMembers.filter((m) => m.is_blocked).length
-  const editors = teamMembers.filter((m) => (m.admin_role || "").toLowerCase() === "editor").length
+  const editors = teamMembers.filter(
+    (m) => (m.admin_role || "").toLowerCase() === "editor"
+  ).length
   const admins = teamMembers.filter((m) =>
     ["admin", "super_admin"].includes((m.admin_role || "").toLowerCase())
   ).length
+
+  const featureCards = [
+    {
+      key: "mbe_public_visible" as const,
+      title: FEATURE_DEFINITIONS.mbe_public_visible.title,
+      description: FEATURE_DEFINITIONS.mbe_public_visible.description,
+      enabled: mbePublicVisible,
+      liveEffect: "Landing page and subscription page",
+    },
+    {
+      key: "mbe_premium_enabled" as const,
+      title: FEATURE_DEFINITIONS.mbe_premium_enabled.title,
+      description: FEATURE_DEFINITIONS.mbe_premium_enabled.description,
+      enabled: mbePremiumEnabled,
+      liveEffect: "Dashboard and in-app MBE premium access",
+    },
+  ]
 
   return (
     <div className="min-w-0">
@@ -125,7 +304,7 @@ export default async function AdminSettingsPage() {
           <div>
             <h1 className="text-[22px] font-semibold text-[#111827]">Settings</h1>
             <p className="mt-1 text-[14px] text-[#6B7280]">
-              Admin access, team controls, and platform configuration.
+              Admin access, feature controls, and platform configuration.
             </p>
           </div>
 
@@ -154,6 +333,24 @@ export default async function AdminSettingsPage() {
           <span className="rounded bg-[#FDECEC] px-2.5 py-1 text-[11px] text-[#B44C4C]">
             Blocked {blockedTeamMembers}
           </span>
+          <span
+            className={`rounded px-2.5 py-1 text-[11px] ${
+              mbePublicVisible
+                ? "bg-[#EDF7EE] text-[#2A6041]"
+                : "bg-[#FFF4D6] text-[#9A6A00]"
+            }`}
+          >
+            Public MBE {mbePublicVisible ? "On" : "Off"}
+          </span>
+          <span
+            className={`rounded px-2.5 py-1 text-[11px] ${
+              mbePremiumEnabled
+                ? "bg-[#EDF7EE] text-[#2A6041]"
+                : "bg-[#FFF4D6] text-[#9A6A00]"
+            }`}
+          >
+            Premium MBE {mbePremiumEnabled ? "On" : "Off"}
+          </span>
         </div>
       </section>
 
@@ -161,52 +358,65 @@ export default async function AdminSettingsPage() {
         <div className="border-b border-[#E6E0D4] px-6 py-4">
           <div className="text-[16px] font-medium text-[#111827]">Platform Controls</div>
           <div className="mt-1 text-[12px] text-[#6B6B6B]">
-            Real controls can be wired here without changing the page structure later.
+            These controls are live and write directly to the database.
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-0 lg:grid-cols-2">
-          <div className="border-b border-r border-[#EEE8DD] px-6 py-5 lg:border-b-0">
-            <div className="text-[14px] font-medium text-[#111827]">Team Access Management</div>
-            <div className="mt-2 text-[13px] leading-6 text-[#6B7280]">
-              Move members between teams, assign multi-team access, and define which internal groups they can view.
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="border border-[#DDD7CC] bg-white px-3 py-2 text-[12px] text-[#3A3A3A] hover:bg-[#F7F3EC]"
-              >
-                Manage Teams
-              </button>
-              <button
-                type="button"
-                className="border border-[#DDD7CC] bg-white px-3 py-2 text-[12px] text-[#3A3A3A] hover:bg-[#F7F3EC]"
-              >
-                Assign Access
-              </button>
-            </div>
-          </div>
+          {featureCards.map((card) => (
+            <div
+              key={card.key}
+              className="border-b border-[#EEE8DD] px-6 py-5 lg:border-r last:border-r-0"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-[14px] font-medium text-[#111827]">
+                    {card.title}
+                  </div>
+                  <div className="mt-2 text-[13px] leading-6 text-[#6B7280]">
+                    {card.description}
+                  </div>
+                  <div className="mt-2 text-[12px] text-[#9B9B9B]">
+                    Affects: {card.liveEffect}
+                  </div>
+                </div>
 
-          <div className="border-b border-[#EEE8DD] px-6 py-5 lg:border-b-0">
-            <div className="text-[14px] font-medium text-[#111827]">Feature and Platform Controls</div>
-            <div className="mt-2 text-[13px] leading-6 text-[#6B7280]">
-              Turn on billing views, announcements visibility, audit tools, and future system-level controls.
+                <span
+                  className={`inline-flex rounded px-2 py-1 text-[12px] ${
+                    card.enabled
+                      ? "bg-[#EDF7EE] text-[#2A6041]"
+                      : "bg-[#FFF4D6] text-[#9A6A00]"
+                  }`}
+                >
+                  {card.enabled ? "Enabled" : "Disabled"}
+                </span>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <form action={updateFeatureFlag}>
+                  <input type="hidden" name="key" value={card.key} />
+                  <input type="hidden" name="nextValue" value="true" />
+                  <button
+                    type="submit"
+                    className="rounded border border-[#D6EAD8] bg-[#EDF7EE] px-3 py-2 text-[12px] font-medium text-[#2A6041] hover:bg-[#E4F3E6]"
+                  >
+                    Turn On
+                  </button>
+                </form>
+
+                <form action={updateFeatureFlag}>
+                  <input type="hidden" name="key" value={card.key} />
+                  <input type="hidden" name="nextValue" value="false" />
+                  <button
+                    type="submit"
+                    className="rounded border border-[#E5D7B2] bg-[#FFF4D6] px-3 py-2 text-[12px] font-medium text-[#9A6A00] hover:bg-[#FCECC2]"
+                  >
+                    Turn Off
+                  </button>
+                </form>
+              </div>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="border border-[#DDD7CC] bg-white px-3 py-2 text-[12px] text-[#3A3A3A] hover:bg-[#F7F3EC]"
-              >
-                Billing Access
-              </button>
-              <button
-                type="button"
-                className="border border-[#DDD7CC] bg-white px-3 py-2 text-[12px] text-[#3A3A3A] hover:bg-[#F7F3EC]"
-              >
-                Audit Controls
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
@@ -302,7 +512,9 @@ export default async function AdminSettingsPage() {
                     </td>
 
                     <td className="px-6 py-4">
-                      <span className={`inline-flex rounded px-2 py-1 text-[12px] ${roleTone(role)}`}>
+                      <span
+                        className={`inline-flex rounded px-2 py-1 text-[12px] ${roleTone(role)}`}
+                      >
                         {role}
                       </span>
                     </td>
@@ -349,7 +561,7 @@ export default async function AdminSettingsPage() {
 
       <section className="border-t border-[#E6E0D4] bg-[#FCFBF8] px-6 py-3">
         <div className="text-[12px] text-[#6B7280]">
-          Settings is now a real super-admin control surface. Next step is wiring these buttons to actual role, team, and platform control actions.
+          Settings now includes live feature controls for MBE visibility and MBE premium access.
         </div>
       </section>
     </div>

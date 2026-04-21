@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
 
 function startOfToday() {
   const now = new Date()
@@ -21,6 +22,57 @@ function safeName(fullName: string | null, email: string) {
   return email.split("@")[0]
 }
 
+type FeatureFlagRow = {
+  key: string
+  value: boolean
+  description: string | null
+}
+
+async function ensureAdminAccess(userId: string) {
+  const profile = await prisma.profiles.findUnique({
+    where: { id: userId },
+    select: {
+      is_admin: true,
+      role: true,
+      admin_role: true,
+      is_blocked: true,
+      can_manage_settings: true,
+      can_view_billing: true,
+    },
+  })
+
+  if (
+    !profile ||
+    profile.is_blocked ||
+    (!profile.is_admin && profile.role !== "admin")
+  ) {
+    redirect("/dashboard")
+  }
+
+  return {
+    profile,
+    isSuperAdmin: profile.admin_role === "super_admin",
+    canManageSettings:
+      profile.admin_role === "super_admin" || !!profile.can_manage_settings,
+  }
+}
+
+async function getFeatureFlags() {
+  const rows = await prisma.$queryRaw<FeatureFlagRow[]>`
+    SELECT key, value, description
+    FROM public.feature_flags
+    WHERE key IN ('mbe_premium_enabled', 'mbe_public_visible')
+    ORDER BY key
+  `
+
+  const map = new Map(rows.map((row) => [row.key, row]))
+
+  return {
+    mbePremiumEnabled: map.get("mbe_premium_enabled")?.value ?? false,
+    mbePublicVisible: map.get("mbe_public_visible")?.value ?? false,
+  }
+}
+
 export default async function AdminDashboardPage() {
   const supabase = await createClient()
   const {
@@ -31,10 +83,60 @@ export default async function AdminDashboardPage() {
     redirect("/login")
   }
 
+  const updateFeatureFlag = async (formData: FormData) => {
+    "use server"
+
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      redirect("/login")
+    }
+
+    const { canManageSettings } = await ensureAdminAccess(user.id)
+
+    if (!canManageSettings) {
+      redirect("/admin")
+    }
+
+    const key = String(formData.get("key") || "")
+    const nextValue = String(formData.get("value") || "") === "true"
+
+    const allowedKeys = ["mbe_premium_enabled", "mbe_public_visible"] as const
+
+    if (!allowedKeys.includes(key as (typeof allowedKeys)[number])) {
+      redirect("/admin")
+    }
+
+    const descriptions: Record<string, string> = {
+      mbe_premium_enabled:
+        "Controls whether MBE premium features are enabled",
+      mbe_public_visible:
+        "Controls whether MBE premium offering is publicly visible",
+    }
+
+    await prisma.$executeRaw`
+      INSERT INTO public.feature_flags ("key", "value", "description", "created_at", "updated_at")
+      VALUES (${key}, ${nextValue}, ${descriptions[key]}, NOW(), NOW())
+      ON CONFLICT ("key")
+      DO UPDATE SET
+        "value" = EXCLUDED."value",
+        "description" = EXCLUDED."description",
+        "updated_at" = NOW()
+    `
+
+    revalidatePath("/admin")
+    revalidatePath("/subscription")
+    revalidatePath("/")
+  }
+
   const todayStart = startOfToday()
 
   const [
-    currentProfile,
+    access,
+    flags,
     totalUsers,
     paidSubscribers,
     trialUsers,
@@ -44,16 +146,8 @@ export default async function AdminDashboardPage() {
     ruleAttemptsToday,
     activeTodayRows,
   ] = await Promise.all([
-    prisma.profiles.findUnique({
-      where: { id: user.id },
-      select: {
-        is_admin: true,
-        role: true,
-        admin_role: true,
-        is_blocked: true,
-        can_view_billing: true,
-      },
-    }),
+    ensureAdminAccess(user.id),
+    getFeatureFlags(),
 
     prisma.profiles.count({
       where: {
@@ -138,15 +232,7 @@ export default async function AdminDashboardPage() {
     `,
   ])
 
-  if (
-    !currentProfile ||
-    currentProfile.is_blocked ||
-    (!currentProfile.is_admin && currentProfile.role !== "admin")
-  ) {
-    redirect("/dashboard")
-  }
-
-  const isSuperAdmin = currentProfile.admin_role === "super_admin"
+  const { isSuperAdmin, canManageSettings } = access
 
   const attemptsToday = mbeAttemptsToday + ruleAttemptsToday
   const activeToday = Number(activeTodayRows?.[0]?.count ?? 0)
@@ -208,12 +294,17 @@ export default async function AdminDashboardPage() {
     {
       label: "MBE attempts today",
       value: mbeAttemptsToday.toLocaleString(),
-      status: "Live",
+      status: flags.mbePremiumEnabled ? "Enabled" : "Disabled",
     },
     {
       label: "BLL attempts today",
       value: ruleAttemptsToday.toLocaleString(),
       status: "Live",
+    },
+    {
+      label: "MBE public visibility",
+      value: flags.mbePublicVisible ? "Visible" : "Hidden",
+      status: "Feature flag",
     },
     ...(isSuperAdmin
       ? [
@@ -248,6 +339,109 @@ export default async function AdminDashboardPage() {
           </div>
         ))}
       </div>
+
+      {canManageSettings ? (
+        <section className="overflow-hidden rounded-md border border-[#E4E0D8] bg-white">
+          <div className="flex items-center justify-between border-b border-[#EDE9E1] px-4 py-3">
+            <div className="text-[11px] font-medium text-[#0F0F0F]">
+              Feature Flags
+            </div>
+            <div className="font-mono text-[10px] text-[#9B9B9B]">
+              Admin control
+            </div>
+          </div>
+
+          <div className="grid gap-3 p-4 md:grid-cols-2">
+            <div className="rounded-md border border-[#EDE9E1] bg-[#FCFBF8] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[14px] font-medium text-[#111827]">
+                    MBE Premium Enabled
+                  </div>
+                  <div className="mt-1 text-[12px] text-[#6B7280]">
+                    Controls MBE access inside the platform.
+                  </div>
+                </div>
+
+                <span
+                  className={`rounded px-2 py-1 text-[11px] ${
+                    flags.mbePremiumEnabled
+                      ? "bg-[#EDF7EE] text-[#2A6041]"
+                      : "bg-[#FDECEC] text-[#B44C4C]"
+                  }`}
+                >
+                  {flags.mbePremiumEnabled ? "ON" : "OFF"}
+                </span>
+              </div>
+
+              <div className="mt-4">
+                <form action={updateFeatureFlag}>
+                  <input type="hidden" name="key" value="mbe_premium_enabled" />
+                  <input
+                    type="hidden"
+                    name="value"
+                    value={String(!flags.mbePremiumEnabled)}
+                  />
+                  <button
+                    type="submit"
+                    className={`rounded px-3 py-2 text-[12px] font-medium ${
+                      flags.mbePremiumEnabled
+                        ? "bg-[#111827] text-white"
+                        : "bg-[#2563EB] text-white"
+                    }`}
+                  >
+                    {flags.mbePremiumEnabled ? "Turn OFF" : "Turn ON"}
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div className="rounded-md border border-[#EDE9E1] bg-[#FCFBF8] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[14px] font-medium text-[#111827]">
+                    MBE Public Visibility
+                  </div>
+                  <div className="mt-1 text-[12px] text-[#6B7280]">
+                    Controls whether Premium MBE is shown publicly or as Coming Soon.
+                  </div>
+                </div>
+
+                <span
+                  className={`rounded px-2 py-1 text-[11px] ${
+                    flags.mbePublicVisible
+                      ? "bg-[#EDF7EE] text-[#2A6041]"
+                      : "bg-[#FFF4D6] text-[#9A6A00]"
+                  }`}
+                >
+                  {flags.mbePublicVisible ? "VISIBLE" : "COMING SOON"}
+                </span>
+              </div>
+
+              <div className="mt-4">
+                <form action={updateFeatureFlag}>
+                  <input type="hidden" name="key" value="mbe_public_visible" />
+                  <input
+                    type="hidden"
+                    name="value"
+                    value={String(!flags.mbePublicVisible)}
+                  />
+                  <button
+                    type="submit"
+                    className={`rounded px-3 py-2 text-[12px] font-medium ${
+                      flags.mbePublicVisible
+                        ? "bg-[#111827] text-white"
+                        : "bg-[#2563EB] text-white"
+                    }`}
+                  >
+                    {flags.mbePublicVisible ? "Hide Premium" : "Show Premium"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <div className="grid gap-3 xl:grid-cols-[2fr_1fr]">
         <section className="overflow-hidden rounded-md border border-[#E4E0D8] bg-white">

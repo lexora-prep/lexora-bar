@@ -12,10 +12,25 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null)
     const recipientId = typeof body?.recipientId === "string" ? body.recipientId : ""
     const message = typeof body?.message === "string" ? body.message.trim() : ""
+    const bootstrapOnly = body?.bootstrapOnly === true
 
-    if (!recipientId || !message) {
+    if (!recipientId) {
       return NextResponse.json(
-        { ok: false, error: "Recipient and message are required." },
+        { ok: false, error: "Recipient is required." },
+        { status: 400 }
+      )
+    }
+
+    if (!bootstrapOnly && !message) {
+      return NextResponse.json(
+        { ok: false, error: "Message is required." },
+        { status: 400 }
+      )
+    }
+
+    if (recipientId === auth.actor.id) {
+      return NextResponse.json(
+        { ok: false, error: "You cannot create a direct message with yourself." },
         { status: 400 }
       )
     }
@@ -43,7 +58,11 @@ export async function POST(req: Request) {
 
     for (const [candidateThreadId, users] of grouped.entries()) {
       const unique = Array.from(new Set(users))
-      if (unique.length === 2 && unique.includes(auth.actor.id) && unique.includes(recipientId)) {
+      if (
+        unique.length === 2 &&
+        unique.includes(auth.actor.id) &&
+        unique.includes(recipientId)
+      ) {
         threadId = candidateThreadId
         break
       }
@@ -68,14 +87,23 @@ export async function POST(req: Request) {
       })
     }
 
-    await prisma.workspace_direct_messages.create({
-      data: {
-        thread_id: threadId,
-        author_id: auth.actor.id,
-        content: message,
-        read_by: [auth.actor.id],
-      },
-    })
+    if (!bootstrapOnly) {
+      await prisma.workspace_direct_messages.create({
+        data: {
+          thread_id: threadId,
+          author_id: auth.actor.id,
+          content: message,
+          read_by: [auth.actor.id],
+        },
+      })
+
+      await prisma.workspace_direct_threads.update({
+        where: { id: threadId },
+        data: {
+          updated_at: new Date(),
+        },
+      })
+    }
 
     return NextResponse.json({ ok: true, threadId })
   } catch (error) {

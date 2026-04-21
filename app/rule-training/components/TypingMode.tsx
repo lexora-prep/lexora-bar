@@ -10,17 +10,24 @@ type Result = {
   similarity?: number
 }
 
+type ReportPayload = {
+  reason: string
+  details: string
+}
+
 type Props = {
   ruleText?: string
   keywords?: string[]
   title?: string
+  promptText?: string
+  defaultShowRule?: boolean
   answer?: string
   setAnswer: (v: string) => void
   onSubmit: () => void
   onTryAgain?: () => void
   onNextRule?: () => void
   onSaveRule?: () => void
-  onReportRule?: () => void
+  onReportRule?: (payload: ReportPayload) => void | Promise<void>
   result?: Result | null
   trainingMode?: string
   isSubmitting?: boolean
@@ -54,23 +61,100 @@ function highlightInRule(text: string, keywords: string[] = []) {
   if (!text) return ""
 
   let html = text
-  const safeKeywords = keywords.filter((kw) => typeof kw === "string" && kw.trim().length > 0)
+  const safeKeywords = keywords.filter(
+    (kw) => typeof kw === "string" && kw.trim().length > 0
+  )
   const sortedKeywords = [...safeKeywords].sort((a, b) => b.length - a.length)
 
   sortedKeywords.forEach((kw) => {
     const regex = new RegExp(`(${escapeRegex(kw)})`, "gi")
     html = html.replace(
       regex,
-      `<span style="text-decoration:underline; text-underline-offset:4px;">$1</span>`
+      `<span style="color:#4F46E5;font-weight:600;text-decoration:underline;text-underline-offset:4px;">$1</span>`
     )
   })
 
   return html
 }
 
+function buildQuestion(title?: string) {
+  const cleanTitle = typeof title === "string" ? title.trim() : ""
+
+  if (!cleanTitle) return "What is the rule for this doctrine?"
+
+  return `What is the rule for ${cleanTitle}?`
+}
+
+function MiniTextButton({
+  children,
+  onClick,
+  disabled = false,
+}: {
+  children: React.ReactNode
+  onClick?: () => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        border: "none",
+        background: "transparent",
+        padding: 0,
+        fontSize: 12,
+        fontWeight: 700,
+        color: disabled ? "#94A3B8" : "#475569",
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function MiniButton({
+  children,
+  onClick,
+  primary = false,
+  disabled = false,
+}: {
+  children: React.ReactNode
+  onClick?: () => void
+  primary?: boolean
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        height: 36,
+        minWidth: primary ? 98 : 82,
+        padding: primary ? "0 16px" : "0 14px",
+        borderRadius: 12,
+        border: primary ? "none" : "1px solid #CBD5E1",
+        background: primary ? (disabled ? "#A5B4FC" : "#3157D6") : "#FFFFFF",
+        color: primary ? "#FFFFFF" : "#334155",
+        fontWeight: 700,
+        fontSize: 12,
+        cursor: disabled ? "not-allowed" : "pointer",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
 export default function TypingMode({
   ruleText,
   keywords = [],
+  title,
+  promptText,
+  defaultShowRule = true,
   answer,
   setAnswer,
   onSubmit,
@@ -81,33 +165,62 @@ export default function TypingMode({
   result,
   isSubmitting,
 }: Props) {
-  const [showModal, setShowModal] = useState(true)
-  const [showRule, setShowRule] = useState(true)
-
   const safeAnswer = typeof answer === "string" ? answer : ""
   const safeKeywords = Array.isArray(keywords)
     ? keywords.filter((kw): kw is string => typeof kw === "string")
     : []
 
+  const [showModal, setShowModal] = useState(true)
+  const [showRule, setShowRule] = useState(defaultShowRule)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState("incorrect_rule")
+  const [reportDetails, setReportDetails] = useState("")
+  const [reportSubmitting, setReportSubmitting] = useState(false)
+
   useEffect(() => {
     setShowModal(true)
   }, [result?.score, ruleText])
 
+  useEffect(() => {
+    setShowRule(defaultShowRule)
+    setReportOpen(false)
+    setReportReason("incorrect_rule")
+    setReportDetails("")
+    setReportSubmitting(false)
+  }, [title, ruleText, defaultShowRule])
+
   const score = result?.score ?? null
   const similarityPercent = result?.similarity ?? 0
+  const questionText = promptText?.trim() || buildQuestion(title)
 
   const liveMatchedKeywords = useMemo(() => {
     return safeKeywords.filter((kw) => answerContainsKeyword(safeAnswer, kw))
   }, [safeAnswer, safeKeywords])
 
-  const missingKeywords = useMemo(() => {
-    return safeKeywords.filter((kw) => !answerContainsKeyword(safeAnswer, kw))
-  }, [safeAnswer, safeKeywords])
+  const resultMatchedKeywords = useMemo(() => {
+    if (Array.isArray(result?.matched_keywords)) {
+      return result.matched_keywords.filter(
+        (kw): kw is string => typeof kw === "string" && kw.trim().length > 0
+      )
+    }
+    return []
+  }, [result])
+
+  const resultMissedKeywords = useMemo(() => {
+    if (Array.isArray(result?.missed_keywords)) {
+      return result.missed_keywords.filter(
+        (kw): kw is string => typeof kw === "string" && kw.trim().length > 0
+      )
+    }
+    return []
+  }, [result])
 
   const keywordPercent =
-    safeKeywords.length > 0
-      ? Math.round((liveMatchedKeywords.length / safeKeywords.length) * 100)
-      : 0
+    typeof result?.keywordScore === "number"
+      ? result.keywordScore
+      : safeKeywords.length > 0
+        ? Math.round((liveMatchedKeywords.length / safeKeywords.length) * 100)
+        : 0
 
   const headlineText =
     score === null
@@ -122,7 +235,7 @@ export default function TypingMode({
     score === null
       ? "#334155"
       : score >= 70
-        ? "#2F855A"
+        ? "#166534"
         : "#B91C1C"
 
   const resultBg =
@@ -139,45 +252,107 @@ export default function TypingMode({
         ? "#BBF7D0"
         : "#FECACA"
 
+  async function submitReport() {
+    if (!onReportRule) return
+
+    setReportSubmitting(true)
+
+    try {
+      await onReportRule({
+        reason: reportReason,
+        details: reportDetails.trim(),
+      })
+
+      setReportOpen(false)
+      setReportReason("incorrect_rule")
+      setReportDetails("")
+    } finally {
+      setReportSubmitting(false)
+    }
+  }
+
   return (
-    <div className="mt-1">
-      <div style={{ marginBottom: 12, display: "flex", justifyContent: "flex-end" }}>
-        <button
-          type="button"
-          onClick={() => setShowRule((prev) => !prev)}
+    <div className="mt-0">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 14,
+          flexWrap: "wrap",
+        }}
+      >
+        <div />
+
+        <div
           style={{
-            padding: "8px 14px",
-            borderRadius: 999,
-            border: "1px solid #CBD5E1",
-            background: "#FFFFFF",
-            color: "#475569",
-            fontWeight: 600,
-            cursor: "pointer",
-            fontSize: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 18,
           }}
         >
-          {showRule ? "Hide Rule" : "Show Rule"}
-        </button>
+          <MiniTextButton onClick={onNextRule}>Skip</MiniTextButton>
+          <MiniTextButton onClick={() => setShowRule((prev) => !prev)}>
+            {showRule ? "Hide Rule" : "Show Rule"}
+          </MiniTextButton>
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginBottom: 18,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: "0.08em",
+            color: "#94A3B8",
+            marginBottom: 10,
+            textTransform: "uppercase",
+          }}
+        >
+          Question
+        </div>
+
+        <div
+          style={{
+            display: "inline-block",
+            fontSize: 17,
+            lineHeight: 1.55,
+            fontWeight: 700,
+            color: "#0F172A",
+            background: "linear-gradient(180deg, transparent 58%, #EFF6FF 58%)",
+            paddingRight: 4,
+          }}
+        >
+          {questionText}
+        </div>
       </div>
 
       {showRule && ruleText && (
         <div
           style={{
-            marginBottom: 14,
-            paddingBottom: 14,
-            borderBottom: "1px solid #E2E8F0",
+            marginBottom: 16,
+            borderRadius: 14,
+            border: "1.5px solid #DBEAFE",
+            background: "#F8FAFF",
+            padding: 22,
           }}
         >
           <div
             style={{
               fontSize: 11,
-              fontWeight: 700,
+              fontWeight: 800,
               letterSpacing: "0.08em",
               color: "#94A3B8",
-              marginBottom: 8,
+              marginBottom: 10,
+              textTransform: "uppercase",
             }}
           >
-            RULE TO MEMORIZE
+            Rule to Memorize
           </div>
 
           <div
@@ -196,41 +371,33 @@ export default function TypingMode({
 
       <div
         style={{
-          paddingTop: 4,
+          border: "1.5px solid #E2E8F0",
+          borderRadius: 14,
+          overflow: "hidden",
+          background: "#FFFFFF",
         }}
       >
-        <textarea
-          value={safeAnswer}
-          onChange={(e) => setAnswer(e.target.value)}
-          disabled={!!isSubmitting}
-          placeholder="Type the rule from memory..."
-          style={{
-            width: "100%",
-            minHeight: 210,
-            border: "1.5px solid #BFDBFE",
-            borderRadius: 24,
-            padding: 22,
-            fontSize: 15,
-            lineHeight: 1.7,
-            resize: "none",
-            outline: "none",
-            background: "rgba(255,255,255,0.75)",
-            color: "#0F172A",
-            opacity: isSubmitting ? 0.75 : 1,
-            boxShadow: "0 8px 24px rgba(148,163,184,0.08)",
-          }}
-        />
-
         <div
           style={{
-            marginTop: 12,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
+            padding: "12px 18px 10px",
+            borderBottom: "1px solid #F1F5F9",
           }}
         >
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              color: "#94A3B8",
+              textTransform: "uppercase",
+            }}
+          >
+            Your Answer
+          </div>
+
           <div
             style={{
               fontSize: 12,
@@ -239,41 +406,64 @@ export default function TypingMode({
           >
             {safeAnswer.length} characters
           </div>
+        </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              type="button"
-              onClick={() => setAnswer("")}
-              style={{
-                padding: "10px 18px",
-                borderRadius: 16,
-                border: "1px solid #CBD5E1",
-                background: "#FFFFFF",
-                color: "#64748B",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Skip
-            </button>
+        <textarea
+          value={safeAnswer}
+          onChange={(e) => setAnswer(e.target.value)}
+          disabled={!!isSubmitting}
+          placeholder="Type the rule from memory..."
+          style={{
+            width: "100%",
+            minHeight: 170,
+            border: "none",
+            padding: 18,
+            fontSize: 15,
+            lineHeight: 1.7,
+            resize: "none",
+            outline: "none",
+            background: "transparent",
+            color: "#0F172A",
+            opacity: isSubmitting ? 0.75 : 1,
+          }}
+        />
 
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={!!isSubmitting}
-              style={{
-                padding: "10px 22px",
-                borderRadius: 16,
-                border: "none",
-                background: isSubmitting ? "#A78BFA" : "#3157D6",
-                color: "white",
-                fontWeight: 700,
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-                boxShadow: "0 10px 24px rgba(49,87,214,0.22)",
-              }}
-            >
-              {isSubmitting ? "Submitting..." : "Submit Rule"}
-            </button>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+            borderTop: "1px solid #F1F5F9",
+            padding: 12,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <MiniButton onClick={onSaveRule}>Save</MiniButton>
+            <MiniButton onClick={() => setReportOpen(true)}>Report</MiniButton>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexWrap: "wrap",
+              marginLeft: "auto",
+            }}
+          >
+            <MiniButton primary onClick={onSubmit} disabled={!!isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit"}
+            </MiniButton>
+            <MiniButton onClick={onNextRule}>Next</MiniButton>
           </div>
         </div>
       </div>
@@ -281,7 +471,7 @@ export default function TypingMode({
       {safeAnswer.trim().length > 0 && liveMatchedKeywords.length > 0 && (
         <div
           style={{
-            marginTop: 14,
+            marginTop: 12,
             display: "flex",
             flexWrap: "wrap",
             gap: 8,
@@ -297,12 +487,139 @@ export default function TypingMode({
                 color: "#2563EB",
                 padding: "4px 10px",
                 fontSize: 11,
-                fontWeight: 500,
+                fontWeight: 600,
               }}
             >
               {keyword}
             </span>
           ))}
+        </div>
+      )}
+
+      {reportOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15,23,42,0.28)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1250,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              width: "min(560px, calc(100vw - 24px))",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: 22,
+              boxShadow: "0 24px 60px rgba(15,23,42,0.18)",
+              padding: 18,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: "#0F172A",
+                marginBottom: 12,
+              }}
+            >
+              Report rule
+            </div>
+
+            <div
+              style={{
+                fontSize: 12,
+                color: "#64748B",
+                marginBottom: 8,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Problem category
+            </div>
+
+            <select
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              style={{
+                width: "100%",
+                height: 42,
+                borderRadius: 14,
+                border: "1px solid #CBD5E1",
+                padding: "0 12px",
+                fontSize: 14,
+                color: "#0F172A",
+                outline: "none",
+                marginBottom: 14,
+                background: "#FFFFFF",
+              }}
+            >
+              <option value="incorrect_rule">Incorrect rule</option>
+              <option value="wrong_keywords">Wrong keywords</option>
+              <option value="typo_formatting">Typo or formatting</option>
+              <option value="duplicate_content">Duplicate content</option>
+              <option value="other_issue">Other issue</option>
+            </select>
+
+            <div
+              style={{
+                fontSize: 12,
+                color: "#64748B",
+                marginBottom: 8,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Details
+            </div>
+
+            <textarea
+              value={reportDetails}
+              onChange={(e) => setReportDetails(e.target.value)}
+              placeholder="Explain what is wrong with the rule..."
+              style={{
+                width: "100%",
+                minHeight: 130,
+                borderRadius: 16,
+                border: "1px solid #CBD5E1",
+                padding: 14,
+                fontSize: 14,
+                lineHeight: 1.6,
+                resize: "vertical",
+                outline: "none",
+                background: "#FFFFFF",
+                color: "#0F172A",
+              }}
+            />
+
+            <div
+              style={{
+                marginTop: 16,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <MiniButton onClick={() => setReportOpen(false)}>
+                Cancel
+              </MiniButton>
+
+              <MiniButton
+                primary
+                onClick={submitReport}
+                disabled={reportSubmitting}
+              >
+                {reportSubmitting ? "Submitting..." : "Send report"}
+              </MiniButton>
+            </div>
+          </div>
         </div>
       )}
 
@@ -389,7 +706,7 @@ export default function TypingMode({
                     fontWeight: 700,
                   }}
                 >
-                  {liveMatchedKeywords.length} / {safeKeywords.length} keywords
+                  {resultMatchedKeywords.length} / {safeKeywords.length} keywords
                 </div>
               </div>
 
@@ -397,20 +714,28 @@ export default function TypingMode({
                 <div
                   style={{
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     letterSpacing: "0.08em",
                     color: "#94A3B8",
                     marginBottom: 8,
+                    textTransform: "uppercase",
                   }}
                 >
-                  KEYWORDS FOUND
+                  Keywords Found
                 </div>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-                  {liveMatchedKeywords.length > 0 ? (
-                    liveMatchedKeywords.map((kw, i) => (
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 6,
+                    marginBottom: 14,
+                  }}
+                >
+                  {resultMatchedKeywords.length > 0 ? (
+                    resultMatchedKeywords.map((kw, i) => (
                       <span
-                        key={i}
+                        key={`${kw}-${i}`}
                         style={{
                           padding: "4px 10px",
                           borderRadius: 999,
@@ -429,24 +754,32 @@ export default function TypingMode({
                   )}
                 </div>
 
-                {missingKeywords.length > 0 && (
+                {resultMissedKeywords.length > 0 && (
                   <>
                     <div
                       style={{
                         fontSize: 11,
-                        fontWeight: 700,
+                        fontWeight: 800,
                         letterSpacing: "0.08em",
                         color: "#94A3B8",
                         marginBottom: 8,
+                        textTransform: "uppercase",
                       }}
                     >
-                      MISSING KEYWORDS
+                      Missing Keywords
                     </div>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-                      {missingKeywords.map((kw, i) => (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        marginBottom: 14,
+                      }}
+                    >
+                      {resultMissedKeywords.map((kw, i) => (
                         <span
-                          key={i}
+                          key={`${kw}-${i}`}
                           style={{
                             padding: "4px 10px",
                             borderRadius: 999,
@@ -474,13 +807,14 @@ export default function TypingMode({
                     <div
                       style={{
                         fontSize: 11,
-                        fontWeight: 700,
+                        fontWeight: 800,
                         letterSpacing: "0.08em",
                         color: "#94A3B8",
                         marginBottom: 8,
+                        textTransform: "uppercase",
                       }}
                     >
-                      CORRECT RULE
+                      Correct Rule
                     </div>
 
                     <div
@@ -503,88 +837,21 @@ export default function TypingMode({
                 display: "flex",
                 justifyContent: "space-between",
                 gap: 10,
-                padding: 14,
+                padding: 12,
                 borderTop: "1px solid #E2E8F0",
                 background: "#FFFFFF",
+                flexWrap: "wrap",
               }}
             >
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button
-                  onClick={onTryAgain}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    border: "1px solid #CBD5E1",
-                    background: "#FFFFFF",
-                    color: "#334155",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Try Again
-                </button>
-
-                <button
-                  onClick={onSaveRule}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    border: "1px solid #CBD5E1",
-                    background: "#FFFFFF",
-                    color: "#334155",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Save
-                </button>
-
-                <button
-                  onClick={onReportRule}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    border: "1px solid #CBD5E1",
-                    background: "#FFFFFF",
-                    color: "#334155",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Report
-                </button>
+                <MiniButton onClick={onTryAgain}>Try Again</MiniButton>
+                <MiniButton onClick={onSaveRule}>Save</MiniButton>
+                <MiniButton onClick={() => setReportOpen(true)}>Report</MiniButton>
               </div>
 
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => setShowModal(false)}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    border: "1px solid #CBD5E1",
-                    background: "#FFFFFF",
-                    color: "#64748B",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Close
-                </button>
-
-                <button
-                  onClick={onNextRule}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: 999,
-                    border: "none",
-                    background: "#6D28D9",
-                    color: "white",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Next Rule
-                </button>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <MiniButton onClick={() => setShowModal(false)}>Close</MiniButton>
+                <MiniButton primary onClick={onNextRule}>Next</MiniButton>
               </div>
             </div>
           </div>

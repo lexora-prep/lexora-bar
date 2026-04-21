@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Bell, Sparkles, X } from "lucide-react"
+import { Bell, X } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 type TopNavbarProps = {
@@ -142,21 +142,14 @@ export default function TopNavbar({ collapsed }: TopNavbarProps) {
   const hasAnnouncements = announcements.length > 0
 
   return (
-    <div className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
+    <div className="border-b border-slate-200 bg-white px-6 py-5 md:px-8">
       <div className="flex items-start justify-between gap-6">
         <div className="min-w-0">
-          <div className="mb-1 flex items-center gap-2 text-blue-600">
-            <Sparkles size={14} />
-            <span className="text-xs font-semibold uppercase tracking-[0.08em]">
-              Lexora Prep
-            </span>
-          </div>
-
-          <div className="text-lg font-semibold tracking-tight text-slate-900 md:text-xl">
+          <div className="text-[15px] font-medium tracking-[-0.02em] text-slate-900 md:text-[17px]">
             {loading ? "Loading..." : `${greeting}, ${userName}`}
           </div>
 
-          <div className="mt-1 text-xs leading-6 text-slate-500 md:text-sm">
+          <div className="mt-2 text-[13px] font-normal leading-6 text-slate-500 md:text-[14px]">
             {loading ? (
               "Loading your progress..."
             ) : hasStudyPlan && daysLeft !== null ? (
@@ -177,10 +170,10 @@ export default function TopNavbar({ collapsed }: TopNavbarProps) {
           <button
             type="button"
             onClick={handleBellClick}
-            className="relative h-10 w-10 rounded-xl border border-slate-200 bg-white text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
+            className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
             aria-label="Open announcements"
           >
-            <Bell className="mx-auto" size={18} />
+            <Bell size={18} />
             <span
               className={`absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full ${
                 hasAnnouncements ? "bg-red-500" : "bg-slate-300"

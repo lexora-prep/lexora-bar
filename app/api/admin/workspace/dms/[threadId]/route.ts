@@ -35,16 +35,28 @@ export async function GET(
       (row) => !row.read_by.includes(auth.actor.id) && row.author_id !== auth.actor.id
     )
 
-    for (const row of unreadForActor) {
-      await prisma.workspace_direct_messages.update({
-        where: { id: row.id },
-        data: {
-          read_by: [...row.read_by, auth.actor.id],
-        },
-      })
+    if (unreadForActor.length > 0) {
+      await Promise.all(
+        unreadForActor.map((row) =>
+          prisma.workspace_direct_messages.update({
+            where: { id: row.id },
+            data: {
+              read_by: [...row.read_by, auth.actor.id],
+            },
+          })
+        )
+      )
     }
 
-    const userIds = Array.from(new Set(rows.map((r) => r.author_id)))
+    const refreshedRows =
+      unreadForActor.length > 0
+        ? await prisma.workspace_direct_messages.findMany({
+            where: { thread_id: threadId },
+            orderBy: { created_at: "asc" },
+          })
+        : rows
+
+    const userIds = Array.from(new Set(refreshedRows.map((r) => r.author_id)))
     const profiles = userIds.length
       ? await prisma.profiles.findMany({
           where: { id: { in: userIds } },
@@ -68,7 +80,7 @@ export async function GET(
       ])
     )
 
-    const messages = rows.map((row) => {
+    const messages = refreshedRows.map((row) => {
       const profile = profileMap.get(row.author_id)
       return {
         id: row.id,
@@ -79,13 +91,17 @@ export async function GET(
         edited_at: row.edited_at,
         read_by: row.read_by,
         is_deleted: row.is_deleted,
+        author_id: row.author_id,
       }
     })
 
     return NextResponse.json({ ok: true, messages })
   } catch (error) {
     console.error("GET DM THREAD ERROR:", error)
-    return NextResponse.json({ ok: false, error: "Failed to load direct messages." }, { status: 500 })
+    return NextResponse.json(
+      { ok: false, error: "Failed to load direct messages." },
+      { status: 500 }
+    )
   }
 }
 
@@ -101,12 +117,31 @@ export async function PATCH(
   const { threadId } = await params
 
   try {
+    const membership = await prisma.workspace_direct_thread_members.findFirst({
+      where: {
+        thread_id: threadId,
+        user_id: auth.actor.id,
+      },
+      select: { id: true },
+    })
+
+    if (!membership && !auth.actor.isSuperAdmin) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
+    }
+
     const body = await req.json().catch(() => null)
     const action = typeof body?.action === "string" ? body.action : ""
 
     if (action === "edit_message") {
       const messageId = typeof body?.messageId === "string" ? body.messageId : ""
       const content = typeof body?.content === "string" ? body.content.trim() : ""
+
+      if (!messageId || !content) {
+        return NextResponse.json(
+          { ok: false, error: "Message and content are required." },
+          { status: 400 }
+        )
+      }
 
       const message = await prisma.workspace_direct_messages.findUnique({
         where: { id: messageId },
@@ -138,38 +173,56 @@ export async function PATCH(
         )
       }
 
-      await prisma.workspace_direct_messages.update({
+      const updated = await prisma.workspace_direct_messages.update({
         where: { id: messageId },
         data: {
           content,
           edited_at: new Date(),
           updated_at: new Date(),
         },
+        select: {
+          id: true,
+          content: true,
+          edited_at: true,
+          updated_at: true,
+        },
       })
 
-      return NextResponse.json({ ok: true })
+      return NextResponse.json({ ok: true, message: updated })
     }
 
     if (action === "mark_read") {
       const ids = Array.isArray(body?.messageIds)
-        ? body.messageIds.filter((v: unknown) => typeof v === "string")
+        ? body.messageIds.filter((v: unknown): v is string => typeof v === "string")
         : []
 
-      for (const id of ids) {
-        const row = await prisma.workspace_direct_messages.findUnique({
-          where: { id },
-          select: { id: true, read_by: true, thread_id: true },
-        })
-
-        if (row && row.thread_id === threadId && !row.read_by.includes(auth.actor.id)) {
-          await prisma.workspace_direct_messages.update({
-            where: { id },
-            data: {
-              read_by: [...row.read_by, auth.actor.id],
-            },
-          })
-        }
+      if (ids.length === 0) {
+        return NextResponse.json({ ok: true })
       }
+
+      const rows = await prisma.workspace_direct_messages.findMany({
+        where: {
+          id: { in: ids },
+          thread_id: threadId,
+        },
+        select: {
+          id: true,
+          read_by: true,
+        },
+      })
+
+      await Promise.all(
+        rows
+          .filter((row) => !row.read_by.includes(auth.actor.id))
+          .map((row) =>
+            prisma.workspace_direct_messages.update({
+              where: { id: row.id },
+              data: {
+                read_by: [...row.read_by, auth.actor.id],
+              },
+            })
+          )
+      )
 
       return NextResponse.json({ ok: true })
     }
@@ -193,8 +246,24 @@ export async function DELETE(
   const { threadId } = await params
 
   try {
+    const membership = await prisma.workspace_direct_thread_members.findFirst({
+      where: {
+        thread_id: threadId,
+        user_id: auth.actor.id,
+      },
+      select: { id: true },
+    })
+
+    if (!membership && !auth.actor.isSuperAdmin) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
+    }
+
     const body = await req.json().catch(() => null)
     const messageId = typeof body?.messageId === "string" ? body.messageId : ""
+
+    if (!messageId) {
+      return NextResponse.json({ ok: false, error: "Message is required." }, { status: 400 })
+    }
 
     const message = await prisma.workspace_direct_messages.findUnique({
       where: { id: messageId },
@@ -210,6 +279,10 @@ export async function DELETE(
       return NextResponse.json({ ok: false, error: "Message not found." }, { status: 404 })
     }
 
+    if (message.is_deleted) {
+      return NextResponse.json({ ok: true })
+    }
+
     const canDelete = auth.actor.isSuperAdmin || message.author_id === auth.actor.id
     if (!canDelete) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
@@ -221,7 +294,7 @@ export async function DELETE(
         is_deleted: true,
         deleted_at: new Date(),
         deleted_by: auth.actor.id,
-        content: "",
+        content: "This message was deleted.",
         updated_at: new Date(),
       },
     })

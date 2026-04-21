@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, ChevronDown, ChevronUp, BookOpen, Target, Brain } from "lucide-react"
+import { Search, ChevronDown, ChevronUp, BookOpen, Target, Brain, Lock } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 type Topic = {
@@ -34,6 +34,11 @@ type ReviewSubject = {
 }
 
 type SelectedTopicsMap = Record<number, number[]>
+
+type PublicFlags = {
+  mbePremiumEnabled: boolean
+  mbePublicVisible: boolean
+}
 
 const SUBJECT_STYLES: Record<
   string,
@@ -176,6 +181,13 @@ export default function MBEPage() {
   const [loadingReviewSubjects, setLoadingReviewSubjects] = useState(false)
 
   const [subjectSearch, setSubjectSearch] = useState("")
+  const [flagsLoading, setFlagsLoading] = useState(true)
+  const [flags, setFlags] = useState<PublicFlags>({
+    mbePremiumEnabled: false,
+    mbePublicVisible: false,
+  })
+
+  const mbeLocked = !flags.mbePublicVisible || !flags.mbePremiumEnabled
 
   useEffect(() => {
     async function loadUser() {
@@ -208,11 +220,53 @@ export default function MBEPage() {
   }, [router, supabase])
 
   useEffect(() => {
+    async function loadFlags() {
+      try {
+        const res = await fetch("/api/public-feature-flags", {
+          cache: "no-store",
+        })
+
+        if (!res.ok) {
+          setFlags({
+            mbePremiumEnabled: false,
+            mbePublicVisible: false,
+          })
+          return
+        }
+
+        const data = (await res.json()) as PublicFlags
+        setFlags({
+          mbePremiumEnabled: !!data.mbePremiumEnabled,
+          mbePublicVisible: !!data.mbePublicVisible,
+        })
+      } catch (err) {
+        console.error("LOAD PUBLIC FLAGS ERROR:", err)
+        setFlags({
+          mbePremiumEnabled: false,
+          mbePublicVisible: false,
+        })
+      } finally {
+        setFlagsLoading(false)
+      }
+    }
+
+    loadFlags()
+  }, [])
+
+  useEffect(() => {
     async function loadSubjects() {
+      if (mbeLocked) {
+        setSubjects([])
+        setLoadingSubjects(false)
+        return
+      }
+
       try {
         setLoadingSubjects(true)
 
-        const res = await fetch("/api/mbe/subjects-topics")
+        const res = await fetch("/api/mbe/subjects-topics", {
+          cache: "no-store",
+        })
         const data = await res.json()
 
         if (data.success) {
@@ -228,17 +282,27 @@ export default function MBEPage() {
       }
     }
 
-    loadSubjects()
-  }, [])
+    if (!flagsLoading) {
+      loadSubjects()
+    }
+  }, [flagsLoading, mbeLocked])
 
   useEffect(() => {
     async function loadReviewPool() {
       if (mode !== "review") return
 
+      if (mbeLocked) {
+        setReviewSubjects([])
+        setLoadingReviewSubjects(false)
+        return
+      }
+
       try {
         setLoadingReviewSubjects(true)
 
-        const res = await fetch(`/api/mbe/review-pool?source=${reviewSource}`)
+        const res = await fetch(`/api/mbe/review-pool?source=${reviewSource}`, {
+          cache: "no-store",
+        })
         const data = await res.json()
 
         if (data.success) {
@@ -249,8 +313,8 @@ export default function MBEPage() {
               typeof subject.questionCount === "number"
                 ? subject.questionCount
                 : Array.isArray(subject.topics)
-                ? subject.topics.length
-                : 0,
+                  ? subject.topics.length
+                  : 0,
             topics: Array.isArray(subject.topics)
               ? subject.topics.map((topic: any) => ({
                   id: topic.id,
@@ -274,8 +338,10 @@ export default function MBEPage() {
       }
     }
 
-    loadReviewPool()
-  }, [mode, reviewSource])
+    if (!flagsLoading) {
+      loadReviewPool()
+    }
+  }, [mode, reviewSource, flagsLoading, mbeLocked])
 
   function toggleExpand(subjectId: number) {
     setExpandedSubjects((prev) =>
@@ -421,8 +487,8 @@ export default function MBEPage() {
       mode === "study"
         ? "Study"
         : mode === "quiz"
-        ? "Quiz"
-        : "Review"
+          ? "Quiz"
+          : "Review"
 
     if (!questionCount) {
       return `Start ${label} Session`
@@ -445,6 +511,11 @@ export default function MBEPage() {
   }, [subjects, subjectSearch])
 
   async function startSession() {
+    if (mbeLocked) {
+      router.push("/subscription")
+      return
+    }
+
     if (!userId) {
       alert("Please log in again.")
       router.push("/login")
@@ -534,8 +605,40 @@ export default function MBEPage() {
     }
   }
 
-  if (authLoading) {
+  if (authLoading || flagsLoading) {
     return <div className="p-10">Loading MBE...</div>
+  }
+
+  if (mbeLocked) {
+    return (
+      <div className="p-8 md:p-10 max-w-[1100px] mx-auto">
+        <div className="border border-amber-200 bg-amber-50 rounded-3xl p-10 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white border border-amber-200 text-amber-700">
+            <Lock size={24} />
+          </div>
+
+          <h1 className="text-3xl font-semibold text-slate-900">
+            MBE Premium is coming soon
+          </h1>
+
+          <p className="mt-3 text-slate-600 max-w-2xl mx-auto leading-7">
+            This section is currently disabled. Right now Lexora only allows Black
+            Letter Law training. MBE practice will be enabled later when you turn
+            the feature on.
+          </p>
+
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={() => router.push("/subscription")}
+              className="rounded-2xl bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 transition"
+            >
+              Go to Subscription
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

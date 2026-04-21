@@ -1,17 +1,42 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { createClient } from "@/utils/supabase/server"
 
-/* =========================
-   POST — CREATE / UPDATE PLAN
-========================= */
+async function getAuthorizedUser() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    return {
+      user: null,
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    }
+  }
+
+  return { user, error: null }
+}
+
+function normalizeDateOnly(value: string) {
+  const date = new Date(value)
+  if (isNaN(date.getTime())) return null
+  return date
+}
 
 export async function POST(req: Request) {
   try {
+    const auth = await getAuthorizedUser()
+    if (auth.error || !auth.user) return auth.error
+
+    const { user } = auth
     const body = await req.json()
 
     const userId = body.userId
-    const startDate = new Date(body.startDate)
-    const examDate = new Date(body.examDate)
+    const startDate = normalizeDateOnly(body.startDate)
+    const examDate = normalizeDateOnly(body.examDate)
     const studyWeekends = body.studyWeekends ?? true
     const offDates: string[] = Array.isArray(body.offDates) ? body.offDates : []
 
@@ -19,12 +44,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 })
     }
 
-    if (
-      !body.startDate ||
-      !body.examDate ||
-      isNaN(startDate.getTime()) ||
-      isNaN(examDate.getTime())
-    ) {
+    if (userId !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    if (!startDate || !examDate) {
       return NextResponse.json({ error: "Missing or invalid dates" }, { status: 400 })
     }
 
@@ -36,7 +60,7 @@ export async function POST(req: Request) {
     }
 
     let totalDays = 0
-    let current = new Date(startDate)
+    const current = new Date(startDate)
 
     while (current <= examDate) {
       const currentDateString = current.toISOString().slice(0, 10)
@@ -57,7 +81,6 @@ export async function POST(req: Request) {
     }
 
     const totalRules = await prisma.rules.count()
-
     const dailyRules = Math.max(1, Math.ceil(totalRules / totalDays))
     const dailyMBE = 50
 
@@ -91,17 +114,21 @@ export async function POST(req: Request) {
   }
 }
 
-/* =========================
-   GET — LOAD PLAN
-========================= */
-
 export async function GET(req: Request) {
   try {
+    const auth = await getAuthorizedUser()
+    if (auth.error || !auth.user) return auth.error
+
+    const { user } = auth
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get("userId")
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 })
+    }
+
+    if (userId !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const plan = await prisma.studyPlan.findFirst({
@@ -117,5 +144,33 @@ export async function GET(req: Request) {
   } catch (err) {
     console.error("GET STUDY PLAN ERROR:", err)
     return NextResponse.json(null, { status: 500 })
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const auth = await getAuthorizedUser()
+    if (auth.error || !auth.user) return auth.error
+
+    const { user } = auth
+    const { searchParams } = new URL(req.url)
+    const userId = searchParams.get("userId")
+
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 })
+    }
+
+    if (userId !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    await prisma.studyPlan.deleteMany({
+      where: { userId },
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error("DELETE STUDY PLAN ERROR:", err)
+    return NextResponse.json({ error: "failed" }, { status: 500 })
   }
 }

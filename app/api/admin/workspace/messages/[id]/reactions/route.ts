@@ -4,14 +4,14 @@ import { getWorkspaceActor } from "../../../_lib"
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ messageId: string }> }
 ) {
   const auth = await getWorkspaceActor()
   if (!auth.ok) {
     return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status })
   }
 
-  const { id } = await params
+  const { messageId } = await params
 
   try {
     const body = await req.json().catch(() => null)
@@ -22,7 +22,7 @@ export async function POST(
     }
 
     const message = await prisma.workspace_messages.findUnique({
-      where: { id },
+      where: { id: messageId },
       select: {
         id: true,
         is_deleted: true,
@@ -42,7 +42,7 @@ export async function POST(
 
     const existing = await prisma.workspace_message_reactions.findFirst({
       where: {
-        message_id: id,
+        message_id: messageId,
         user_id: auth.actor.id,
         emoji,
       },
@@ -56,7 +56,7 @@ export async function POST(
     } else {
       await prisma.workspace_message_reactions.create({
         data: {
-          message_id: id,
+          message_id: messageId,
           user_id: auth.actor.id,
           emoji,
         },

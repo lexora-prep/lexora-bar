@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Flag, Star, AlertTriangle } from "lucide-react"
+import { Flag, Star, AlertTriangle, Lock } from "lucide-react"
 
 type PageProps = {
   params: {
     sessionId: string
   }
+}
+
+type PublicFlags = {
+  mbePremiumEnabled: boolean
+  mbePublicVisible: boolean
 }
 
 export default function MBESessionPage({ params }: PageProps) {
@@ -37,10 +42,59 @@ export default function MBESessionPage({ params }: PageProps) {
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [fontScale, setFontScale] = useState(1)
 
+  const [flagsLoading, setFlagsLoading] = useState(true)
+  const [flags, setFlags] = useState<PublicFlags>({
+    mbePremiumEnabled: false,
+    mbePublicVisible: false,
+  })
+
+  const mbeLocked = !flags.mbePublicVisible || !flags.mbePremiumEnabled
+
+  useEffect(() => {
+    async function loadFlags() {
+      try {
+        const res = await fetch("/api/public-feature-flags", {
+          cache: "no-store",
+        })
+
+        if (!res.ok) {
+          setFlags({
+            mbePremiumEnabled: false,
+            mbePublicVisible: false,
+          })
+          return
+        }
+
+        const data = (await res.json()) as PublicFlags
+        setFlags({
+          mbePremiumEnabled: !!data.mbePremiumEnabled,
+          mbePublicVisible: !!data.mbePublicVisible,
+        })
+      } catch (err) {
+        console.error("LOAD PUBLIC FLAGS ERROR:", err)
+        setFlags({
+          mbePremiumEnabled: false,
+          mbePublicVisible: false,
+        })
+      } finally {
+        setFlagsLoading(false)
+      }
+    }
+
+    loadFlags()
+  }, [])
+
   useEffect(() => {
     async function loadSession() {
+      if (mbeLocked) {
+        setLoading(false)
+        return
+      }
+
       try {
-        const res = await fetch(`/api/mbe/session/${sessionId}`)
+        const res = await fetch(`/api/mbe/session/${sessionId}`, {
+          cache: "no-store",
+        })
         const data = await res.json()
 
         setQuestions(data?.questions ?? [])
@@ -71,10 +125,10 @@ export default function MBESessionPage({ params }: PageProps) {
       }
     }
 
-    if (sessionId) {
+    if (sessionId && !flagsLoading) {
       loadSession()
     }
-  }, [sessionId])
+  }, [sessionId, flagsLoading, mbeLocked])
 
   function commitCurrentAnswer() {
     if (!question) return
@@ -84,7 +138,7 @@ export default function MBESessionPage({ params }: PageProps) {
     if (selected) {
       setSubmittedAnswers((prev) => ({
         ...prev,
-        [question.id]: selected
+        [question.id]: selected,
       }))
     }
   }
@@ -128,7 +182,35 @@ export default function MBESessionPage({ params }: PageProps) {
     return (seconds % 60).toString().padStart(2, "0")
   }
 
-  if (loading) return <div style={{ padding: 40 }}>Loading session...</div>
+  if (loading || flagsLoading) return <div style={{ padding: 40 }}>Loading session...</div>
+
+  if (mbeLocked) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="bg-white border rounded-2xl shadow p-10 space-y-6 text-center max-w-xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-700">
+            <Lock size={22} />
+          </div>
+
+          <h2 className="text-2xl font-semibold">
+            MBE Premium is coming soon
+          </h2>
+
+          <p className="text-gray-500">
+            This MBE session is not available right now. Only Black Letter Law training is currently enabled.
+          </p>
+
+          <button
+            onClick={() => router.push("/subscription")}
+            className="bg-blue-600 text-white px-8 py-3 rounded-xl text-lg"
+          >
+            Go to Subscription
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (!questions.length) return <div style={{ padding: 40 }}>No questions found.</div>
 
   if (!examStarted && sessionMode !== "study") {
@@ -169,7 +251,7 @@ export default function MBESessionPage({ params }: PageProps) {
   function selectAnswer(choice: string) {
     setSelectedAnswers((prev) => ({
       ...prev,
-      [question.id]: choice
+      [question.id]: choice,
     }))
   }
 
@@ -195,21 +277,21 @@ export default function MBESessionPage({ params }: PageProps) {
   function toggleFlagQuestion() {
     setFlaggedQuestions((prev) => ({
       ...prev,
-      [question.id]: !prev[question.id]
+      [question.id]: !prev[question.id],
     }))
   }
 
   function toggleSaveQuestion() {
     setSavedQuestions((prev) => ({
       ...prev,
-      [question.id]: !prev[question.id]
+      [question.id]: !prev[question.id],
     }))
   }
 
   function reportQuestion() {
     setReportedQuestions((prev) => ({
       ...prev,
-      [question.id]: true
+      [question.id]: true,
     }))
   }
 

@@ -17,27 +17,28 @@ const modes: { id: ModeId; label: string }[] = [
 
 export default function ModeSwitcher({ mode, setMode }: Props) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {modes.map((item) => {
-        const active = mode === item.id
+    <div className="w-full">
+      <div className="grid w-full grid-cols-5 overflow-hidden rounded-[16px] border border-slate-200 bg-slate-50 p-[3px]">
+        {modes.map((item) => {
+          const active = mode === item.id
 
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setMode(item.id)}
-            className={[
-              "inline-flex items-center rounded-full px-4 py-2 text-[12px] font-medium transition-all duration-200",
-              "border backdrop-blur-md",
-              active
-                ? "border-violet-300 bg-violet-50 text-violet-700 shadow-[0_6px_16px_rgba(139,92,246,0.16)]"
-                : "border-blue-200/90 bg-white/75 text-blue-700 hover:border-violet-200 hover:bg-violet-50/40",
-            ].join(" ")}
-          >
-            {item.label}
-          </button>
-        )
-      })}
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setMode(item.id)}
+              className={[
+                "h-[34px] rounded-[12px] text-[12px] font-semibold transition-all duration-200",
+                active
+                  ? "bg-white text-blue-700 shadow-[0_1px_3px_rgba(15,23,42,0.08)]"
+                  : "text-slate-500 hover:text-slate-700",
+              ].join(" ")}
+            >
+              {item.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

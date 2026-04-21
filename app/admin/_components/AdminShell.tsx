@@ -15,7 +15,6 @@ import {
   LayoutDashboard,
   LogOut,
   Megaphone,
-  Percent,
   Settings,
   Shield,
   TicketPercent,
@@ -108,6 +107,7 @@ function Section({
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 px-4 py-2.5 text-[14px] transition ${
                 active
@@ -265,7 +265,7 @@ export default function AdminShell({
         },
       ] satisfies NavItem[],
     }
-  }, [currentUser, counts, pathname])
+  }, [currentUser, counts])
 
   async function handleLogout() {
     try {
@@ -374,6 +374,7 @@ export default function AdminShell({
                     <div className="py-1">
                       <Link
                         href="/admin/workspace"
+                        prefetch={false}
                         onClick={() => setProfileOpen(false)}
                         className="block px-3 py-2 text-[13px] text-[#374151] hover:bg-[#F9F7F2]"
                       >
@@ -383,6 +384,7 @@ export default function AdminShell({
                       {(currentUser.permissions.canManageUsers || currentUser.isSuperAdmin) && (
                         <Link
                           href="/admin/team"
+                          prefetch={false}
                           onClick={() => setProfileOpen(false)}
                           className="block px-3 py-2 text-[13px] text-[#374151] hover:bg-[#F9F7F2]"
                         >
@@ -393,6 +395,7 @@ export default function AdminShell({
                       {(currentUser.permissions.canManageSettings || currentUser.isSuperAdmin) && (
                         <Link
                           href="/admin/settings"
+                          prefetch={false}
                           onClick={() => setProfileOpen(false)}
                           className="block px-3 py-2 text-[13px] text-[#374151] hover:bg-[#F9F7F2]"
                         >

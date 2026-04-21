@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { canEditWithin, findAccessibleNoteById, getWorkspaceActor } from "../../_lib"
+import { canEditWithin, findAccessibleNoteById, getWorkspaceActor, getWorkspaceSettings } from "../../_lib"
 
 export async function GET(
   _req: Request,
@@ -79,10 +79,11 @@ export async function PATCH(
         owner_id: true,
         created_at: true,
         status: true,
+        note_type: true,
       },
     })
 
-    if (!note) {
+    if (!note || note.status !== "active") {
       return NextResponse.json({ ok: false, error: "Note not found." }, { status: 404 })
     }
 
@@ -91,7 +92,9 @@ export async function PATCH(
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
     }
 
+    const settings = await getWorkspaceSettings()
     const body = await req.json().catch(() => null)
+
     const title = typeof body?.title === "string" ? body.title.trim() : undefined
     const noteBody = typeof body?.body === "string" ? body.body.trim() : undefined
     const visibility =
@@ -103,17 +106,81 @@ export async function PATCH(
         ? body.sharedScope
         : undefined
     const recipientIds = Array.isArray(body?.recipientIds)
-      ? body.recipientIds.filter((v: unknown): v is string => typeof v === "string")
+      ? Array.from(
+          new Set(
+            body.recipientIds.filter((v: unknown): v is string => typeof v === "string" && v.trim().length > 0)
+          )
+        )
       : undefined
+
+    const nextVisibility = visibility ?? undefined
+    const nextSharedScope = sharedScope ?? undefined
+
+    if (title !== undefined && !title) {
+      return NextResponse.json({ ok: false, error: "Title is required." }, { status: 400 })
+    }
+
+    if (noteBody !== undefined && !noteBody) {
+      return NextResponse.json({ ok: false, error: "Body is required." }, { status: 400 })
+    }
+
+    if (
+      note.note_type === "shared" &&
+      !auth.actor.isSuperAdmin &&
+      !auth.actor.can_create_shared_notes &&
+      !auth.actor.can_manage_workspace_notes
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "You do not have permission to update shared notes." },
+        { status: 403 }
+      )
+    }
+
+    if (
+      note.note_type === "shared" &&
+      !settings.allow_shared_note_creation &&
+      !auth.actor.isSuperAdmin
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "Shared note creation is disabled in workspace settings." },
+        { status: 403 }
+      )
+    }
+
+    if (note.note_type === "personal" && recipientIds && recipientIds.length > 0) {
+      return NextResponse.json(
+        { ok: false, error: "Personal notes cannot have recipients." },
+        { status: 400 }
+      )
+    }
+
+    if (
+      note.note_type === "shared" &&
+      nextSharedScope === "specific_users" &&
+      recipientIds !== undefined &&
+      recipientIds.length === 0
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "Pick at least one user for a user-specific shared note." },
+        { status: 400 }
+      )
+    }
 
     await prisma.workspace_notes.update({
       where: { id },
       data: {
         ...(title !== undefined ? { title } : {}),
         ...(noteBody !== undefined ? { body: noteBody } : {}),
-        ...(visibility !== undefined ? { visibility } : {}),
-        ...(sharedScope !== undefined ? { shared_scope: sharedScope } : {}),
-        ...(recipientIds !== undefined ? { recipient_ids: recipientIds } : {}),
+        ...(nextVisibility !== undefined ? { visibility: nextVisibility } : {}),
+        ...(nextSharedScope !== undefined ? { shared_scope: nextSharedScope } : {}),
+        ...(recipientIds !== undefined
+          ? {
+              recipient_ids:
+                note.note_type === "shared" && (nextSharedScope ?? "workspace") === "specific_users"
+                  ? recipientIds
+                  : [],
+            }
+          : {}),
         updated_at: new Date(),
       },
     })
@@ -147,7 +214,7 @@ export async function DELETE(
       },
     })
 
-    if (!note) {
+    if (!note || note.status !== "active") {
       return NextResponse.json({ ok: false, error: "Note not found." }, { status: 404 })
     }
 

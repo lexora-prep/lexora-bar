@@ -34,7 +34,11 @@ export async function POST(req: Request) {
           : "private"
 
     const recipientIds = Array.isArray(body?.recipientIds)
-      ? body.recipientIds.filter((v: unknown): v is string => typeof v === "string")
+      ? Array.from(
+          new Set(
+            body.recipientIds.filter((v: unknown): v is string => typeof v === "string" && v.trim().length > 0)
+          )
+        )
       : []
 
     const forwardedFromNoteId =

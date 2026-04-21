@@ -7,8 +7,66 @@ type IncomingSubject = {
   topicIds?: string[]
 }
 
+type FeatureFlagRow = {
+  key: string
+  value: unknown
+}
+
+function readBoolean(value: unknown, fallback = false) {
+  if (typeof value === "boolean") return value
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === "true") return true
+    if (normalized === "false") return false
+    if (normalized === "1") return true
+    if (normalized === "0") return false
+    if (normalized === "yes") return true
+    if (normalized === "no") return false
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    "enabled" in value
+  ) {
+    const enabled = (value as { enabled?: unknown }).enabled
+    return readBoolean(enabled, fallback)
+  }
+
+  return fallback
+}
+
+async function getMBEFlags() {
+  const rows = await prisma.$queryRaw<FeatureFlagRow[]>`
+    select "key", "value"
+    from public.feature_flags
+    where "key" in ('mbe_premium_enabled', 'mbe_public_visible')
+  `
+
+  const byKey = new Map(rows.map((row) => [row.key, row.value]))
+
+  return {
+    mbePremiumEnabled: readBoolean(byKey.get("mbe_premium_enabled"), false),
+    mbePublicVisible: readBoolean(byKey.get("mbe_public_visible"), false),
+  }
+}
+
 export async function POST(req: Request) {
   try {
+    const flags = await getMBEFlags()
+
+    if (!flags.mbePublicVisible || !flags.mbePremiumEnabled) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MBE Premium is coming soon",
+        },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
 
     const rawSubjects: IncomingSubject[] = Array.isArray(body.subjects)
@@ -33,8 +91,8 @@ export async function POST(req: Request) {
       rawMode === "quiz"
         ? "QUIZ"
         : rawMode === "review"
-        ? "REVIEW"
-        : "STUDY"
+          ? "REVIEW"
+          : "STUDY"
 
     const rawTrack = typeof body.track === "string" ? body.track : "CLASSIC"
     const track = rawTrack === "NEXTGEN" ? "NEXTGEN" : "CLASSIC"
@@ -50,7 +108,7 @@ export async function POST(req: Request) {
         ? Math.floor(requestedSecondsPerQuestion)
         : null
 
-    const userId = body.userId
+    const userId = typeof body.userId === "string" ? body.userId : null
 
     if (!userId) {
       return NextResponse.json(
@@ -96,19 +154,21 @@ export async function POST(req: Request) {
       }
 
       const reviewFilters = rawReviewSelection
-        .filter((s) => typeof s === "object" && s.subjectId)
+        .filter((s) => typeof s === "object" && typeof s.subjectId === "string")
         .map((s) => {
-          const topicIds = Array.isArray(s.topicIds) ? s.topicIds : []
+          const topicIds = Array.isArray(s.topicIds)
+            ? s.topicIds.filter((id): id is string => typeof id === "string")
+            : []
 
           if (topicIds.length > 0) {
             return {
-              subject_id: s.subjectId,
+              subject_id: s.subjectId!,
               topic_id: { in: topicIds },
             }
           }
 
           return {
-            subject_id: s.subjectId,
+            subject_id: s.subjectId!,
           }
         })
 
@@ -151,19 +211,21 @@ export async function POST(req: Request) {
       }
 
       const subjectFilters = rawSubjects
-        .filter((s) => typeof s === "object" && s.subjectId)
+        .filter((s) => typeof s === "object" && typeof s.subjectId === "string")
         .map((s) => {
-          const topicIds = Array.isArray(s.topicIds) ? s.topicIds : []
+          const topicIds = Array.isArray(s.topicIds)
+            ? s.topicIds.filter((id): id is string => typeof id === "string")
+            : []
 
           if (topicIds.length > 0) {
             return {
-              subject_id: s.subjectId,
+              subject_id: s.subjectId!,
               topic_id: { in: topicIds },
             }
           }
 
           return {
-            subject_id: s.subjectId,
+            subject_id: s.subjectId!,
           }
         })
 

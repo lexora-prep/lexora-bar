@@ -81,6 +81,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 60px
 .price-btn.solid:hover{background:#1D4ED8}
 .price-btn.outline{background:transparent;color:rgba(255,255,255,0.65);border:1px solid rgba(255,255,255,0.15)}
 .price-btn.outline:hover{border-color:rgba(255,255,255,0.35);color:#fff}
+.price-btn.disabled,
+.price-btn.disabled:hover{border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);background:rgba(255,255,255,0.03);cursor:not-allowed}
 .faq-section{padding:90px 60px;max-width:760px;margin:0 auto}
 .faq-item{border-bottom:1px solid rgba(255,255,255,0.07);padding:20px 0;cursor:pointer}
 .faq-q{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:600;color:rgba(255,255,255,0.85);gap:16px}
@@ -254,6 +256,7 @@ footer{background:#06070D;border-top:1px solid rgba(255,255,255,0.07);padding:60
       <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>No MBE access</span></div>
       <a href="/register" target="_top" class="price-btn outline" style="display:inline-flex;align-items:center;justify-content:center;">Start for free</a>
     </div>
+
     <div class="price-card featured">
       <div class="popular-badge">Most popular</div>
       <div class="price-tier blue">BLL Monthly</div>
@@ -266,16 +269,23 @@ footer{background:#06070D;border-top:1px solid rgba(255,255,255,0.07);padding:60
       <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Weak area training</span></div>
       <a href="/register" target="_top" class="price-btn solid" style="display:inline-flex;align-items:center;justify-content:center;">Get started &rarr;</a>
     </div>
-    <div class="price-card">
-      <div class="price-tier purple">Premium</div>
-      <div class="price-amount">$29<span class="mo">.99/mo</span></div>
-      <div class="price-desc">Full platform access including AI generated MBE practice and advanced analytics.</div>
+
+    <div class="price-card" id="premium-plan-card">
+      <div class="price-tier purple" id="premium-plan-tier">Premium</div>
+      <div class="price-amount" id="premium-plan-price">Coming Soon</div>
+      <div class="price-desc" id="premium-plan-desc">MBE Premium is coming soon. You can currently subscribe only to Black Letter Law training.</div>
       <div class="price-divider"></div>
       <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Everything in BLL Monthly</span></div>
       <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Full MBE question bank</span></div>
       <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Premium analytics &amp; state comparison</span></div>
       <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Priority support</span></div>
-      <a href="/register" target="_top" class="price-btn outline" style="display:inline-flex;align-items:center;justify-content:center;">Get Premium &rarr;</a>
+      <a
+        class="price-btn outline disabled"
+        id="premium-plan-btn"
+        style="display:inline-flex;align-items:center;justify-content:center;pointer-events:none;opacity:0.6;"
+      >
+        Coming Soon
+      </a>
     </div>
   </div>
 </div>
@@ -359,60 +369,128 @@ footer{background:#06070D;border-top:1px solid rgba(255,255,255,0.07);padding:60
 
 <script>
 (function(){
-  var rules=[
+  var rules = [
     {subject:'Contracts',text:'An offer is a manifestation of willingness to enter into a bargain, so made as to justify another person in understanding that his assent to that bargain is invited and will conclude it.',tags:['Offer & Acceptance','Restatement 2nd §24']},
     {subject:'Torts',text:'To establish negligence, a plaintiff must prove: (1) duty, (2) breach, (3) causation, both actual and proximate, and (4) damages. The standard of care is that of a reasonably prudent person under the same or similar circumstances.',tags:['Negligence','Prima Facie Case']},
     {subject:'Evidence',text:'Hearsay is an out-of-court statement offered to prove the truth of the matter asserted. Under FRE 801(d)(2), an admission by a party-opponent is not hearsay and is admissible against that party.',tags:['FRE 801','Hearsay']},
     {subject:'Property',text:'Adverse possession requires actual, open and notorious, exclusive, hostile, and continuous possession under a claim of right for the statutory period. All elements must be satisfied concurrently.',tags:['Adverse Possession','Real Property']},
     {subject:'Constitutional Law',text:'Under strict scrutiny, the government must show that the law is necessary to serve a compelling governmental interest and is narrowly tailored to achieve that interest. This standard applies to fundamental rights and suspect classifications.',tags:['Equal Protection','Strict Scrutiny']}
   ];
-  var ri=0,ci=0,t;
+
+  var ri = 0;
+  var ci = 0;
+  var t;
+
   function type(){
-    var r=rules[ri];
-    var el=document.getElementById('rc-text');
-    var sub=document.getElementById('rc-subject');
-    var tags=document.getElementById('rc-tags');
-    if(!el||!sub||!tags) return;
-    if(ci===0){
-      sub.textContent=r.subject;
-      el.innerHTML='<span class="rule-cursor"></span>';
-      tags.innerHTML='';
+    var r = rules[ri];
+    var el = document.getElementById('rc-text');
+    var sub = document.getElementById('rc-subject');
+    var tags = document.getElementById('rc-tags');
+
+    if (!el || !sub || !tags) return;
+
+    if (ci === 0) {
+      sub.textContent = r.subject;
+      el.innerHTML = '<span class="rule-cursor"></span>';
+      tags.innerHTML = '';
     }
-    if(ci<r.text.length){
-      el.innerHTML=r.text.substring(0,ci+1)+'<span class="rule-cursor"></span>';
+
+    if (ci < r.text.length) {
+      el.innerHTML = r.text.substring(0, ci + 1) + '<span class="rule-cursor"></span>';
       ci++;
-      t=setTimeout(type,ci<20?60:28);
+      t = setTimeout(type, ci < 20 ? 60 : 28);
     } else {
       r.tags.forEach(function(tag){
-        var s=document.createElement('span');
-        s.className='rule-tag';
-        s.textContent=tag;
+        var s = document.createElement('span');
+        s.className = 'rule-tag';
+        s.textContent = tag;
         tags.appendChild(s);
       });
-      t=setTimeout(function(){
-        ci=0;
-        ri=(ri+1)%rules.length;
-        el.innerHTML='<span class="rule-cursor"></span>';
-        tags.innerHTML='';
-        setTimeout(type,400);
-      },3800);
+
+      t = setTimeout(function(){
+        ci = 0;
+        ri = (ri + 1) % rules.length;
+        el.innerHTML = '<span class="rule-cursor"></span>';
+        tags.innerHTML = '';
+        setTimeout(type, 400);
+      }, 3800);
     }
   }
-  setTimeout(type,800);
+
+  setTimeout(type, 800);
 
   document.querySelectorAll('.faq-item').forEach(function(item){
-    item.addEventListener('click',function(){
-      var a=item.querySelector('.faq-a');
-      var arrow=item.querySelector('.faq-arrow');
-      var open=a.classList.contains('open');
-      document.querySelectorAll('.faq-a').forEach(function(x){x.classList.remove('open');});
-      document.querySelectorAll('.faq-arrow').forEach(function(x){x.classList.remove('open');});
-      if(!open){
+    item.addEventListener('click', function(){
+      var a = item.querySelector('.faq-a');
+      var arrow = item.querySelector('.faq-arrow');
+      var open = a.classList.contains('open');
+
+      document.querySelectorAll('.faq-a').forEach(function(x){ x.classList.remove('open'); });
+      document.querySelectorAll('.faq-arrow').forEach(function(x){ x.classList.remove('open'); });
+
+      if (!open) {
         a.classList.add('open');
         arrow.classList.add('open');
       }
     });
   });
+
+  function applyPremiumOffState() {
+    var premiumTier = document.getElementById('premium-plan-tier');
+    var premiumPrice = document.getElementById('premium-plan-price');
+    var premiumDesc = document.getElementById('premium-plan-desc');
+    var premiumBtn = document.getElementById('premium-plan-btn');
+
+    if (!premiumTier || !premiumPrice || !premiumDesc || !premiumBtn) return;
+
+    premiumTier.textContent = 'Premium';
+    premiumPrice.innerHTML = 'Coming Soon';
+    premiumDesc.textContent = 'MBE Premium is coming soon. You can currently subscribe only to Black Letter Law training.';
+    premiumBtn.textContent = 'Coming Soon';
+    premiumBtn.removeAttribute('href');
+    premiumBtn.removeAttribute('target');
+    premiumBtn.classList.add('disabled');
+    premiumBtn.style.pointerEvents = 'none';
+    premiumBtn.style.opacity = '0.6';
+  }
+
+  function applyPremiumOnState() {
+    var premiumTier = document.getElementById('premium-plan-tier');
+    var premiumPrice = document.getElementById('premium-plan-price');
+    var premiumDesc = document.getElementById('premium-plan-desc');
+    var premiumBtn = document.getElementById('premium-plan-btn');
+
+    if (!premiumTier || !premiumPrice || !premiumDesc || !premiumBtn) return;
+
+    premiumTier.textContent = 'Premium';
+    premiumPrice.innerHTML = '$29<span class="mo">.99/mo</span>';
+    premiumDesc.textContent = 'Full platform access including AI generated MBE practice and advanced analytics.';
+    premiumBtn.textContent = 'Get Premium →';
+    premiumBtn.setAttribute('href', '/register');
+    premiumBtn.setAttribute('target', '_top');
+    premiumBtn.classList.remove('disabled');
+    premiumBtn.style.pointerEvents = 'auto';
+    premiumBtn.style.opacity = '1';
+  }
+
+  applyPremiumOffState();
+
+  fetch('/api/public-feature-flags', { cache: 'no-store' })
+    .then(function(res){
+      if (!res.ok) throw new Error('Failed to fetch feature flags');
+      return res.json();
+    })
+    .then(function(flags){
+      if (flags && flags.mbePublicVisible === true) {
+        applyPremiumOnState();
+      } else {
+        applyPremiumOffState();
+      }
+    })
+    .catch(function(err){
+      console.error('Failed to load public feature flags', err);
+      applyPremiumOffState();
+    });
 })();
 </script>
 </body>

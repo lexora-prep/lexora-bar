@@ -4,11 +4,15 @@ import {
   AtSign,
   ChevronDown,
   ChevronRight,
+  Clock3,
   CornerDownRight,
   Edit3,
+  EyeOff,
   FileText,
   Forward,
   Link2,
+  Lock,
+  Mail,
   MapPin,
   MessageCircle,
   Paperclip,
@@ -17,25 +21,14 @@ import {
   Plus,
   Search,
   Send,
+  Shield,
   Smile,
   Trash2,
   UserPlus,
   Users,
   X,
-  Mail,
-  Clock3,
-  Shield,
-  EyeOff,
-  Lock,
 } from "lucide-react"
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 type WorkspaceChannel = {
   id: string
@@ -119,6 +112,7 @@ type ReplyPreview = {
 type WorkspaceMessage = {
   id: string
   author: string
+  author_id?: string
   role: string
   content: string
   message_type?: string
@@ -139,17 +133,6 @@ type WorkspaceMessage = {
   forwarded_from_message_id?: string | null
   forwarded_from_note_id?: string | null
   forwarded_original_author_name?: string | null
-}
-
-type DMMessage = {
-  id: string
-  author: string
-  role: string
-  content: string
-  created_at: string
-  edited_at?: string | null
-  read_by?: string[]
-  is_deleted?: boolean
 }
 
 type WorkspaceSettings = {
@@ -210,16 +193,20 @@ type NoteCommentsResponse = {
   comments?: NoteComment[]
 }
 
-type WorkspaceMessagesResponse = {
-  ok: boolean
-  channel?: WorkspaceChannel
-  messages?: WorkspaceMessage[]
-  error?: string
+type DMMessage = {
+  id: string
+  author: string
+  role: string
+  content: string
+  created_at: string
+  edited_at?: string | null
+  read_by?: string[]
+  is_deleted?: boolean
+  author_id?: string
 }
 
-type DmThreadResponse = {
+type DMMessagesResponse = {
   ok: boolean
-  threadId?: string
   messages?: DMMessage[]
   error?: string
 }
@@ -228,6 +215,11 @@ type ActivePane =
   | { type: "channel"; slug: string }
   | { type: "note"; id: string }
   | { type: "dm"; id: string }
+
+type PendingForward =
+  | { kind: "message"; message: WorkspaceMessage }
+  | { kind: "note"; note: WorkspaceNote }
+  | null
 
 const EMOJI_SET = [
   "👍",
@@ -262,7 +254,7 @@ function getInitials(name: string) {
   )
 }
 
-function roleTagStyle(role: string): CSSProperties {
+function roleTagStyle(role: string): React.CSSProperties {
   const normalized = role.toUpperCase()
 
   if (normalized.includes("SUPER_ADMIN")) {
@@ -277,8 +269,8 @@ function roleTagStyle(role: string): CSSProperties {
   return { background: "rgba(148,163,184,0.14)", color: "#475569" }
 }
 
-function avatarStyle(initials: string): CSSProperties {
-  const map: Record<string, CSSProperties> = {
+function avatarStyle(initials: string): React.CSSProperties {
+  const map: Record<string, React.CSSProperties> = {
     VL: { background: "linear-gradient(135deg, #8b5cf6, #6366f1)", color: "#ffffff" },
     SK: { background: "linear-gradient(135deg, #6ee7b7, #60a5fa)", color: "#064e3b" },
     JP: { background: "linear-gradient(135deg, #f59e0b, #fb923c)", color: "#ffffff" },
@@ -288,7 +280,7 @@ function avatarStyle(initials: string): CSSProperties {
   return map[initials] || { background: "linear-gradient(135deg, #8b5cf6, #6366f1)", color: "#ffffff" }
 }
 
-function statusDot(status?: string): CSSProperties {
+function statusDot(status?: string): React.CSSProperties {
   switch (status) {
     case "online":
       return { background: "#22c55e" }
@@ -325,7 +317,7 @@ function normalizeColor(value?: string | null) {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#64748b"
 }
 
-function memberThemeStyles(theme?: string | null): CSSProperties {
+function memberThemeStyles(theme?: string | null): React.CSSProperties {
   switch (theme) {
     case "sunset":
       return {
@@ -354,6 +346,30 @@ function memberThemeStyles(theme?: string | null): CSSProperties {
         color: "#111827",
       }
   }
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-_]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+}
+
+const deletedMessageTextStyle: React.CSSProperties = {
+  color: "#9ca3af",
+  fontSize: 14,
+  lineHeight: 1.65,
+  whiteSpace: "pre-wrap",
+  fontStyle: "italic",
+}
+
+const normalMessageTextStyle: React.CSSProperties = {
+  color: "#111827",
+  fontSize: 14,
+  lineHeight: 1.65,
+  whiteSpace: "pre-wrap",
 }
 
 export default function AdminWorkspacePage() {
@@ -416,11 +432,27 @@ export default function AdminWorkspacePage() {
   const [memberProfileOpen, setMemberProfileOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<WorkspaceMember | null>(null)
 
-  const [activeDmThreadId, setActiveDmThreadId] = useState<string | null>(null)
+  const [dmThreadId, setDmThreadId] = useState<string | null>(null)
   const [dmMessages, setDmMessages] = useState<DMMessage[]>([])
   const [dmMessageText, setDmMessageText] = useState("")
   const [dmLoading, setDmLoading] = useState(false)
   const [dmPosting, setDmPosting] = useState(false)
+  const [dmDeletingId, setDmDeletingId] = useState<string | null>(null)
+
+  const [composerEmojiOpen, setComposerEmojiOpen] = useState(false)
+
+  const [editingChannelMessage, setEditingChannelMessage] = useState<WorkspaceMessage | null>(null)
+  const [editingDmMessage, setEditingDmMessage] = useState<DMMessage | null>(null)
+  const [editMessageText, setEditMessageText] = useState("")
+  const [savingMessageEdit, setSavingMessageEdit] = useState(false)
+
+  const [forwardPickerOpen, setForwardPickerOpen] = useState(false)
+  const [forwardSearch, setForwardSearch] = useState("")
+  const [pendingForward, setPendingForward] = useState<PendingForward>(null)
+  const [forwardSubmitting, setForwardSubmitting] = useState(false)
+
+  const channelComposerRef = useRef<HTMLTextAreaElement | null>(null)
+  const dmComposerRef = useRef<HTMLTextAreaElement | null>(null)
 
   const activeChannel = useMemo(() => {
     if (activePane.type !== "channel") return null
@@ -454,6 +486,31 @@ export default function AdminWorkspacePage() {
     })
   }, [noteRecipientSearch, teamMembers])
 
+  const filteredForwardChannels = useMemo(() => {
+    const q = forwardSearch.trim().toLowerCase()
+    if (!q) return channels
+    return channels.filter((channel) => {
+      return (
+        channel.name.toLowerCase().includes(q) ||
+        (channel.description || "").toLowerCase().includes(q) ||
+        channel.slug.toLowerCase().includes(q)
+      )
+    })
+  }, [forwardSearch, channels])
+
+  const filteredForwardMembers = useMemo(() => {
+    const q = forwardSearch.trim().toLowerCase()
+    if (!q) return directMembers
+    return directMembers.filter((member) => {
+      return (
+        member.name.toLowerCase().includes(q) ||
+        (member.email || "").toLowerCase().includes(q) ||
+        (member.title || "").toLowerCase().includes(q) ||
+        member.role.toLowerCase().includes(q)
+      )
+    })
+  }, [forwardSearch, directMembers])
+
   useEffect(() => {
     void bootstrap()
   }, [])
@@ -466,13 +523,10 @@ export default function AdminWorkspacePage() {
       void loadNoteDetail(activePane.id)
       void loadNoteComments(activePane.id)
     }
-  }, [activePane, channels.length])
-
-  useEffect(() => {
-    if (activePane.type === "dm" && activeDm?.id) {
-      void openDirectMessage(activeDm)
+    if (activePane.type === "dm" && activePane.id) {
+      void loadOrCreateDMThread(activePane.id)
     }
-  }, [activePane.type, activePane.type === "dm" ? activePane.id : null, activeDm?.id])
+  }, [activePane, channels.length])
 
   async function bootstrap() {
     try {
@@ -487,10 +541,10 @@ export default function AdminWorkspacePage() {
         return
       }
 
-      const loadedChannels: WorkspaceChannel[] = Array.isArray(data.channels) ? data.channels : []
-      const loadedNotes: WorkspaceNote[] = Array.isArray(data.notes) ? data.notes : []
-      const loadedTeamMembers: WorkspaceMember[] = Array.isArray(data.teamMembers) ? data.teamMembers : []
-      const loadedDirectMembers: WorkspaceMember[] = Array.isArray(data.directMembers) ? data.directMembers : []
+      const loadedChannels = Array.isArray(data.channels) ? data.channels : []
+      const loadedNotes = Array.isArray(data.notes) ? data.notes : []
+      const loadedTeamMembers = Array.isArray(data.teamMembers) ? data.teamMembers : []
+      const loadedDirectMembers = Array.isArray(data.directMembers) ? data.directMembers : []
 
       setSettings(data.settings || {})
       setChannels(loadedChannels)
@@ -527,7 +581,7 @@ export default function AdminWorkspacePage() {
         cache: "no-store",
       })
 
-      const data: WorkspaceMessagesResponse | null = await res.json().catch(() => null)
+      const data = await res.json().catch(() => null)
 
       if (!res.ok || !data?.ok) {
         setError(data?.error || "Failed to load messages.")
@@ -535,13 +589,208 @@ export default function AdminWorkspacePage() {
         return
       }
 
-      setMessages(Array.isArray(data.messages) ? data.messages : [])
+      setMessages(Array.isArray(data?.messages) ? data.messages : [])
     } catch (err) {
       console.error("WORKSPACE LOAD MESSAGES ERROR:", err)
       setError("Something went wrong while loading messages.")
       setMessages([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadOrCreateDMThread(recipientId: string) {
+    try {
+      setDmLoading(true)
+      setError("")
+      setDmMessages([])
+      setDmThreadId(null)
+
+      const bootstrapRes = await fetch("/api/admin/workspace/dms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientId,
+          bootstrapOnly: true,
+        }),
+      })
+
+      const bootstrapData = await bootstrapRes.json().catch(() => null)
+
+      if (!bootstrapRes.ok || !bootstrapData?.ok || !bootstrapData?.threadId) {
+        setError(bootstrapData?.error || "Failed to open direct message thread.")
+        return
+      }
+
+      const threadId = String(bootstrapData.threadId)
+      setDmThreadId(threadId)
+
+      const threadRes = await fetch(`/api/admin/workspace/dms/${threadId}`, {
+        cache: "no-store",
+      })
+
+      const threadData: DMMessagesResponse | null = await threadRes.json().catch(() => null)
+
+      if (!threadRes.ok || !threadData?.ok) {
+        setError(threadData?.error || "Failed to load direct messages.")
+        return
+      }
+
+      setDmMessages(Array.isArray(threadData.messages) ? threadData.messages : [])
+    } catch (err) {
+      console.error("LOAD DM THREAD ERROR:", err)
+      setError("Something went wrong while loading the direct message thread.")
+    } finally {
+      setDmLoading(false)
+    }
+  }
+
+  function getActiveComposerRef() {
+    return activePane.type === "dm" ? dmComposerRef : channelComposerRef
+  }
+
+  function updateActiveComposerValue(nextValue: string) {
+    if (activePane.type === "dm") {
+      setDmMessageText(nextValue)
+    } else {
+      setMessageText(nextValue)
+    }
+  }
+
+  function insertAtSelection(prefix: string, suffix = "") {
+    const ref = getActiveComposerRef()
+    const el = ref.current
+    if (!el) return
+
+    const start = el.selectionStart ?? 0
+    const end = el.selectionEnd ?? 0
+    const currentValue = activePane.type === "dm" ? dmMessageText : messageText
+    const selected = currentValue.slice(start, end)
+    const next = `${currentValue.slice(0, start)}${prefix}${selected}${suffix}${currentValue.slice(end)}`
+
+    updateActiveComposerValue(next)
+
+    requestAnimationFrame(() => {
+      el.focus()
+      const caretStart = start + prefix.length
+      const caretEnd = caretStart + selected.length
+      el.setSelectionRange(
+        selected ? caretStart : caretStart,
+        selected ? caretEnd : caretStart
+      )
+    })
+  }
+
+  function insertText(text: string) {
+    const ref = getActiveComposerRef()
+    const el = ref.current
+    if (!el) return
+
+    const start = el.selectionStart ?? 0
+    const end = el.selectionEnd ?? 0
+    const currentValue = activePane.type === "dm" ? dmMessageText : messageText
+    const next = `${currentValue.slice(0, start)}${text}${currentValue.slice(end)}`
+    updateActiveComposerValue(next)
+
+    requestAnimationFrame(() => {
+      el.focus()
+      const caret = start + text.length
+      el.setSelectionRange(caret, caret)
+    })
+  }
+
+  async function sendDMMessage() {
+    if (activePane.type !== "dm") return
+
+    const message = dmMessageText.trim()
+    if (!message) return
+
+    try {
+      setDmPosting(true)
+      setError("")
+
+      const res = await fetch("/api/admin/workspace/dms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientId: activePane.id,
+          message,
+        }),
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || !data?.ok || !data?.threadId) {
+        setError(data?.error || "Failed to send direct message.")
+        return
+      }
+
+      setDmMessageText("")
+      setDmThreadId(String(data.threadId))
+      setComposerEmojiOpen(false)
+
+      const threadRes = await fetch(`/api/admin/workspace/dms/${String(data.threadId)}`, {
+        cache: "no-store",
+      })
+      const threadData: DMMessagesResponse | null = await threadRes.json().catch(() => null)
+
+      if (!threadRes.ok || !threadData?.ok) {
+        setError(threadData?.error || "Failed to refresh direct messages.")
+        return
+      }
+
+      setDmMessages(Array.isArray(threadData.messages) ? threadData.messages : [])
+    } catch (err) {
+      console.error("SEND DM MESSAGE ERROR:", err)
+      setError("Something went wrong while sending the direct message.")
+    } finally {
+      setDmPosting(false)
+    }
+  }
+
+  async function deleteDMMessage(messageId: string) {
+    if (!dmThreadId) return
+
+    try {
+      setDmDeletingId(messageId)
+      setError("")
+
+      const res = await fetch(`/api/admin/workspace/dms/${dmThreadId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId }),
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || !data?.ok) {
+        setError(data?.error || "Failed to delete direct message.")
+        return
+      }
+
+      const threadRes = await fetch(`/api/admin/workspace/dms/${dmThreadId}`, {
+        cache: "no-store",
+      })
+      const threadData: DMMessagesResponse | null = await threadRes.json().catch(() => null)
+
+      if (!threadRes.ok || !threadData?.ok) {
+        setError(threadData?.error || "Failed to refresh direct messages.")
+        return
+      }
+
+      setDmMessages(Array.isArray(threadData.messages) ? threadData.messages : [])
+    } catch (err) {
+      console.error("DELETE DM MESSAGE ERROR:", err)
+      setError("Something went wrong while deleting the direct message.")
+    } finally {
+      setDmDeletingId(null)
+    }
+  }
+
+  function handleDMComposerKey(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault()
+      void sendDMMessage()
     }
   }
 
@@ -558,8 +807,8 @@ export default function AdminWorkspacePage() {
           note.id === noteId
             ? {
                 ...note,
-                ...(data.note || {}),
-                my_emojis: data.note?.my_emojis || [],
+                ...data.note,
+                my_emojis: data.note.my_emojis || [],
               }
             : note
         )
@@ -583,116 +832,6 @@ export default function AdminWorkspacePage() {
     } catch (err) {
       console.error("LOAD NOTE COMMENTS ERROR:", err)
       setNoteComments([])
-    }
-  }
-
-  async function openDirectMessage(member: WorkspaceMember) {
-    try {
-      setError("")
-      setDmLoading(true)
-      setDmMessages([])
-
-      const res = await fetch("/api/admin/workspace/dms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          recipientId: member.id,
-          message: "__open_thread__",
-        }),
-      })
-
-      const data: DmThreadResponse | null = await res.json().catch(() => null)
-
-      if (!res.ok || !data?.ok || !data?.threadId) {
-        setError(data?.error || "Failed to open direct message.")
-        setActiveDmThreadId(null)
-        return
-      }
-
-      setActiveDmThreadId(data.threadId)
-      await loadDmMessages(data.threadId)
-    } catch (err) {
-      console.error("OPEN DM ERROR:", err)
-      setError("Something went wrong while opening direct message.")
-      setActiveDmThreadId(null)
-    } finally {
-      setDmLoading(false)
-    }
-  }
-
-  async function loadDmMessages(threadId: string) {
-    try {
-      setDmLoading(true)
-      setError("")
-
-      const res = await fetch(`/api/admin/workspace/dms/${threadId}`, {
-        cache: "no-store",
-      })
-
-      const data: DmThreadResponse | null = await res.json().catch(() => null)
-
-      if (!res.ok || !data?.ok) {
-        setError(data?.error || "Failed to load direct messages.")
-        setDmMessages([])
-        return
-      }
-
-      const rows: DMMessage[] = Array.isArray(data?.messages) ? data.messages : []
-      setDmMessages(rows.filter((message: DMMessage) => message.content !== "__open_thread__"))
-    } catch (err) {
-      console.error("LOAD DM MESSAGES ERROR:", err)
-      setError("Something went wrong while loading direct messages.")
-      setDmMessages([])
-    } finally {
-      setDmLoading(false)
-    }
-  }
-
-  async function sendDmMessage() {
-    if (!activeDm?.id) return
-
-    const content = dmMessageText.trim()
-    if (!content) return
-
-    try {
-      setDmPosting(true)
-      setError("")
-
-      const res = await fetch("/api/admin/workspace/dms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          recipientId: activeDm.id,
-          message: content,
-        }),
-      })
-
-      const data: DmThreadResponse | null = await res.json().catch(() => null)
-
-      if (!res.ok || !data?.ok || !data?.threadId) {
-        setError(data?.error || "Failed to send direct message.")
-        return
-      }
-
-      setDmMessageText("")
-      setActiveDmThreadId(data.threadId)
-      await loadDmMessages(data.threadId)
-    } catch (err) {
-      console.error("SEND DM ERROR:", err)
-      setError("Something went wrong while sending direct message.")
-    } finally {
-      setDmPosting(false)
-    }
-  }
-
-  function handleDmComposerKey(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault()
-      void sendDmMessage()
     }
   }
 
@@ -877,7 +1016,9 @@ export default function AdminWorkspacePage() {
               : [],
           forwardedFromNoteId: forwardingNote?.id || null,
           forwardedOriginalAuthorName:
-            forwardingNote?.forwarded_original_author_name || forwardingNote?.title || null,
+            forwardingNote?.forwarded_original_author_name ||
+            forwardingNote?.title ||
+            null,
         }),
       })
 
@@ -1030,6 +1171,7 @@ export default function AdminWorkspacePage() {
       setReplyingTo(null)
       setForwardingMessage(null)
       setForwardingNote(null)
+      setComposerEmojiOpen(false)
       await loadMessages(activePane.slug)
     } catch (err) {
       console.error("WORKSPACE SEND MESSAGE ERROR:", err)
@@ -1169,7 +1311,7 @@ export default function AdminWorkspacePage() {
     setMemberProfileOpen(true)
   }
 
-  function handleComposerKey(event: KeyboardEvent<HTMLTextAreaElement>) {
+  function handleComposerKey(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
       void sendMessage()
@@ -1189,7 +1331,9 @@ export default function AdminWorkspacePage() {
     if (composerMode === "note") {
       return `Drop a pinned note in ${activeChannel?.name || "general"}...`
     }
-    return `Message ${activeChannel?.name || "general"}...`
+    return activePane.type === "dm"
+      ? `Message ${activeDm?.name || "this person"}...`
+      : `Message ${activeChannel?.name || "general"}...`
   }
 
   function renderCenterTitle() {
@@ -1210,8 +1354,403 @@ export default function AdminWorkspacePage() {
     return activeChannel?.description || "Internal communication"
   }
 
+  function openChannelMessageEdit(message: WorkspaceMessage) {
+    if (message.is_deleted) return
+    setEditingChannelMessage(message)
+    setEditMessageText(message.content)
+  }
+
+  function openDmMessageEdit(message: DMMessage) {
+    if (message.is_deleted) return
+    setEditingDmMessage(message)
+    setEditMessageText(message.content)
+  }
+
+  async function saveMessageEdit() {
+    const nextText = editMessageText.trim()
+    if (!nextText) {
+      setError("Message content is required.")
+      return
+    }
+
+    try {
+      setSavingMessageEdit(true)
+      setError("")
+
+      if (editingChannelMessage) {
+        const res = await fetch(`/api/admin/workspace/messages/${editingChannelMessage.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: nextText }),
+        })
+
+        const data = await res.json().catch(() => null)
+        if (!res.ok || !data?.ok) {
+          setError(data?.error || "Failed to edit message.")
+          return
+        }
+
+        setEditingChannelMessage(null)
+        setEditMessageText("")
+        if (activePane.type === "channel") {
+          await loadMessages(activePane.slug)
+        }
+        return
+      }
+
+      if (editingDmMessage && dmThreadId) {
+        const res = await fetch(`/api/admin/workspace/dms/${dmThreadId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "edit_message",
+            messageId: editingDmMessage.id,
+            content: nextText,
+          }),
+        })
+
+        const data = await res.json().catch(() => null)
+        if (!res.ok || !data?.ok) {
+          setError(data?.error || "Failed to edit direct message.")
+          return
+        }
+
+        setEditingDmMessage(null)
+        setEditMessageText("")
+        if (activePane.type === "dm") {
+          await loadOrCreateDMThread(activePane.id)
+        }
+      }
+    } catch (err) {
+      console.error("SAVE MESSAGE EDIT ERROR:", err)
+      setError("Something went wrong while editing the message.")
+    } finally {
+      setSavingMessageEdit(false)
+    }
+  }
+
+  function resetForwardState() {
+    setForwardPickerOpen(false)
+    setForwardSearch("")
+    setPendingForward(null)
+    setForwardingMessage(null)
+    setForwardingNote(null)
+    setForwardSubmitting(false)
+  }
+
+  function openForwardPickerForMessage(message: WorkspaceMessage) {
+    if (message.is_deleted) return
+    setPendingForward({ kind: "message", message })
+    setForwardingMessage(message)
+    setForwardingNote(null)
+    setReplyingTo(null)
+    setForwardSearch("")
+    setForwardPickerOpen(true)
+  }
+
+  function openForwardPickerForNote(note: WorkspaceNote) {
+    setPendingForward({ kind: "note", note })
+    setForwardingMessage(null)
+    setForwardingNote(note)
+    setReplyingTo(null)
+    setForwardSearch("")
+    setForwardPickerOpen(true)
+  }
+
+  async function forwardToChannel(channelSlug: string) {
+    if (!pendingForward) return
+
+    try {
+      setForwardSubmitting(true)
+      setError("")
+
+      const content =
+        pendingForward.kind === "message"
+          ? pendingForward.message.content
+          : pendingForward.note.body || pendingForward.note.description || pendingForward.note.title
+
+      const forwardedOriginalAuthorName =
+        pendingForward.kind === "message"
+          ? pendingForward.message.forwarded_original_author_name || pendingForward.message.author
+          : pendingForward.note.forwarded_original_author_name || pendingForward.note.title
+
+      const res = await fetch("/api/admin/workspace/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel: channelSlug,
+          content,
+          messageType: "message",
+          forwardedFromMessageId: pendingForward.kind === "message" ? pendingForward.message.id : null,
+          forwardedFromNoteId: pendingForward.kind === "note" ? pendingForward.note.id : null,
+          forwardedOriginalAuthorName,
+        }),
+      })
+
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) {
+        setError(data?.error || "Failed to forward.")
+        return
+      }
+
+      resetForwardState()
+      setActivePane({ type: "channel", slug: channelSlug })
+      await loadMessages(channelSlug)
+    } catch (err) {
+      console.error("FORWARD CHANNEL ERROR:", err)
+      setError("Something went wrong while forwarding.")
+    } finally {
+      setForwardSubmitting(false)
+    }
+  }
+
+  async function forwardToDm(recipientId: string) {
+    if (!pendingForward) return
+
+    try {
+      setForwardSubmitting(true)
+      setError("")
+
+      const content =
+        pendingForward.kind === "message"
+          ? pendingForward.message.content
+          : pendingForward.note.body || pendingForward.note.description || pendingForward.note.title
+
+      const forwardedOriginalAuthorName =
+        pendingForward.kind === "message"
+          ? pendingForward.message.forwarded_original_author_name || pendingForward.message.author
+          : pendingForward.note.forwarded_original_author_name || pendingForward.note.title
+
+      const res = await fetch("/api/admin/workspace/dms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientId,
+          message: `Forwarded from ${forwardedOriginalAuthorName}\n\n${content}`,
+        }),
+      })
+
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) {
+        setError(data?.error || "Failed to forward.")
+        return
+      }
+
+      resetForwardState()
+      setActivePane({ type: "dm", id: recipientId })
+      await loadOrCreateDMThread(recipientId)
+    } catch (err) {
+      console.error("FORWARD DM ERROR:", err)
+      setError("Something went wrong while forwarding.")
+    } finally {
+      setForwardSubmitting(false)
+    }
+  }
+
   const canCreateChannels = settings.allow_channel_creation !== false
   const canCreateNotes = settings.allow_note_creation !== false
+
+  function renderSharedComposer(kind: "channel" | "dm") {
+    const isDm = kind === "dm"
+    const value = isDm ? dmMessageText : messageText
+    const setValue = isDm ? setDmMessageText : setMessageText
+    const ref = isDm ? dmComposerRef : channelComposerRef
+    const postingState = isDm ? dmPosting : posting
+    const onSend = isDm ? () => void sendDMMessage() : () => void sendMessage()
+
+    return (
+      <div
+        style={{
+          padding: "12px 26px 16px",
+          borderTop: "1px solid rgba(15,23,42,0.08)",
+          background: "#ffffff",
+          flexShrink: 0,
+        }}
+      >
+        {kind === "channel" && (replyingTo || forwardingMessage || forwardingNote) ? (
+          <div
+            style={{
+              marginBottom: 10,
+              borderRadius: 12,
+              background: "#f8fafc",
+              border: "1px solid rgba(15,23,42,0.08)",
+              padding: "10px 12px",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <div style={{ fontSize: 12, color: "#475569", flex: 1 }}>
+              {replyingTo ? (
+                <>
+                  Replying to <strong>{replyingTo.author}</strong>
+                </>
+              ) : forwardingMessage ? (
+                <>
+                  Forwarding message from <strong>{forwardingMessage.author}</strong>
+                </>
+              ) : (
+                <>
+                  Forwarding note <strong>{forwardingNote?.title}</strong>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setReplyingTo(null)
+                setForwardingMessage(null)
+                setForwardingNote(null)
+              }}
+              style={tinyIconButtonStyle}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : null}
+
+        <div
+          style={{
+            borderRadius: 16,
+            border: "1px solid rgba(15,23,42,0.12)",
+            background: "#f8f9fd",
+            position: "relative",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "10px 12px 0" }}>
+            <ToolbarButton onClick={() => insertAtSelection("**", "**")}>B</ToolbarButton>
+            <ToolbarButton onClick={() => insertAtSelection("*", "*")}>I</ToolbarButton>
+            <ToolbarButton onClick={() => insertAtSelection("__", "__")}>U</ToolbarButton>
+            <div style={{ width: 1, height: 16, background: "rgba(15,23,42,0.10)", margin: "0 6px" }} />
+            <ToolbarIconButton onClick={() => insertAtSelection("[", "](url)")}>
+              <Link2 size={14} />
+            </ToolbarIconButton>
+            <ToolbarIconButton>
+              <Paperclip size={14} />
+            </ToolbarIconButton>
+            {!isDm ? (
+              <ToolbarIconButton onClick={() => setComposerMode("note")}>
+                <Pin size={14} />
+              </ToolbarIconButton>
+            ) : null}
+            <ToolbarIconButton onClick={() => setComposerEmojiOpen((prev) => !prev)}>
+              <Smile size={14} />
+            </ToolbarIconButton>
+            <ToolbarIconButton onClick={() => insertText("@")}>
+              <AtSign size={14} />
+            </ToolbarIconButton>
+          </div>
+
+          {composerEmojiOpen ? (
+            <div
+              style={{
+                position: "absolute",
+                top: 42,
+                left: 12,
+                zIndex: 30,
+                width: 248,
+                borderRadius: 12,
+                border: "1px solid rgba(15,23,42,0.08)",
+                background: "#ffffff",
+                boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
+                padding: 12,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.8,
+                  color: "#94a3b8",
+                  marginBottom: 8,
+                  fontFamily: '"DM Mono", ui-monospace, monospace',
+                }}
+              >
+                Emoji
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(6, 1fr)",
+                  gap: 6,
+                }}
+              >
+                {EMOJI_SET.map((emoji) => (
+                  <button
+                    key={`composer-${emoji}`}
+                    type="button"
+                    onClick={() => {
+                      insertText(emoji)
+                      setComposerEmojiOpen(false)
+                    }}
+                    style={emojiOptionStyle}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <textarea
+            ref={ref}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={isDm ? handleDMComposerKey : handleComposerKey}
+            placeholder={composerPlaceholder()}
+            rows={3}
+            style={{
+              width: "100%",
+              resize: "none",
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              padding: "12px 14px 8px",
+              fontSize: 14,
+              lineHeight: 1.6,
+              color: "#111827",
+              minHeight: 90,
+            }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "0 12px 12px",
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 11, color: "#94a3b8" }}>
+              ↵ to send · Shift+↵ newline · @ to mention
+            </span>
+
+            <button
+              type="button"
+              onClick={onSend}
+              disabled={postingState}
+              style={{
+                marginLeft: "auto",
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                border: "none",
+                background: "#6c72ff",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                opacity: postingState ? 0.6 : 1,
+              }}
+            >
+              <Send size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -1487,12 +2026,7 @@ export default function AdminWorkspacePage() {
                           <button
                             key={dm.id}
                             type="button"
-                            onClick={() => {
-                              setActivePane({ type: "dm", id: dm.id })
-                              setReplyingTo(null)
-                              setForwardingMessage(null)
-                              setForwardingNote(null)
-                            }}
+                            onClick={() => setActivePane({ type: "dm", id: dm.id })}
                             style={{
                               height: 40,
                               border: "none",
@@ -1597,7 +2131,7 @@ export default function AdminWorkspacePage() {
                         activeNote.shared_scope === "specific_users" ? "specific_users" : "workspace"
                       )
                       setSelectedNoteRecipientIds(activeNote.recipient_ids || [])
-                    } else {
+                    } else if (activePane.type === "channel") {
                       setComposerMode("note")
                     }
                   }}
@@ -1822,14 +2356,7 @@ export default function AdminWorkspacePage() {
                       style={smallGhostButtonStyle}
                       onClick={() => {
                         if (!activeNote) return
-                        setForwardingNote(activeNote)
-                        setNoteTitle(`Fwd: ${activeNote.title}`)
-                        setNoteBody(activeNote.body || "")
-                        setNoteType("personal")
-                        setNoteSharedScope("workspace")
-                        setSelectedNoteRecipientIds([])
-                        setNoteRecipientSearch("")
-                        setNoteModalOpen(true)
+                        openForwardPickerForNote(activeNote)
                       }}
                     >
                       <Forward size={14} />
@@ -1939,60 +2466,58 @@ export default function AdminWorkspacePage() {
                   </div>
                 </div>
               ) : activePane.type === "dm" ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: "100%",
-                  }}
-                >
-                  <div
-                    style={{
-                      flex: 1,
-                      minHeight: 0,
-                    }}
-                  >
-                    {dmLoading ? (
-                      <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                        Loading direct messages...
+                <>
+                  {dmLoading ? (
+                    <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
+                      Loading direct messages...
+                    </div>
+                  ) : dmMessages.length === 0 ? (
+                    <div style={{ padding: "40px 0", color: "#64748b", fontSize: 14 }}>
+                      <div style={{ fontWeight: 600, color: "#111827", marginBottom: 6 }}>
+                        Direct message with {activeDm?.name || "Unknown"}
                       </div>
-                    ) : dmMessages.length === 0 ? (
-                      <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                        No direct messages yet. Write the first one below.
+                      <div>No messages yet. Send the first message below.</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          color: "#94a3b8",
+                          fontSize: 11,
+                          fontFamily: '"DM Mono", ui-monospace, monospace',
+                          marginBottom: 18,
+                        }}
+                      >
+                        <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
+                        <span>Direct Message</span>
+                        <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
                       </div>
-                    ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                         {dmMessages.map((message) => {
-                          const mine = message.author === currentUserDisplayName
                           const initials = getInitials(message.author)
+                          const canDeleteDmMessage =
+                            currentUser?.id === message.author_id ||
+                            currentUser?.role === "super_admin" ||
+                            currentUser?.admin_role === "super_admin"
+                          const canEditDmMessage = canDeleteDmMessage
 
                           return (
-                            <div
-                              key={message.id}
-                              style={{
-                                display: "flex",
-                                justifyContent: mine ? "flex-end" : "flex-start",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: 10,
-                                  alignItems: "flex-end",
-                                  maxWidth: "78%",
-                                  flexDirection: mine ? "row-reverse" : "row",
-                                }}
-                              >
+                            <div key={message.id}>
+                              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
                                 <div
                                   style={{
-                                    width: 34,
-                                    height: 34,
+                                    width: 38,
+                                    height: 38,
                                     borderRadius: "50%",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     fontWeight: 700,
-                                    fontSize: 11,
+                                    fontSize: 12,
                                     flexShrink: 0,
                                     ...avatarStyle(initials),
                                   }}
@@ -2000,17 +2525,17 @@ export default function AdminWorkspacePage() {
                                   {initials}
                                 </div>
 
-                                <div>
+                                <div style={{ minWidth: 0, flex: 1 }}>
                                   <div
                                     style={{
                                       display: "flex",
-                                      alignItems: "center",
+                                      alignItems: "baseline",
                                       gap: 8,
-                                      justifyContent: mine ? "flex-end" : "flex-start",
-                                      marginBottom: 4,
+                                      flexWrap: "wrap",
+                                      marginBottom: 6,
                                     }}
                                   >
-                                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#111827" }}>
+                                    <span style={{ fontWeight: 700, color: "#111827", fontSize: 13.5 }}>
                                       {message.author}
                                     </span>
                                     <span
@@ -2021,28 +2546,78 @@ export default function AdminWorkspacePage() {
                                         borderRadius: 4,
                                         fontFamily: '"DM Mono", ui-monospace, monospace',
                                         textTransform: "uppercase",
+                                        letterSpacing: 0.4,
                                       }}
                                     >
                                       {message.role}
                                     </span>
-                                    <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                                    <span
+                                      style={{
+                                        fontSize: 11,
+                                        color: "#94a3b8",
+                                        fontFamily: '"DM Mono", ui-monospace, monospace',
+                                      }}
+                                    >
                                       {formatTime(message.created_at)}
                                     </span>
+                                    {message.edited_at ? (
+                                      <span style={{ fontSize: 11, color: "#cbd5e1" }}>(edited)</span>
+                                    ) : null}
                                   </div>
 
-                                  <div
-                                    style={{
-                                      background: mine ? "#6c72ff" : "#f8fafc",
-                                      color: mine ? "#ffffff" : "#111827",
-                                      border: mine ? "none" : "1px solid rgba(15,23,42,0.08)",
-                                      borderRadius: 16,
-                                      padding: "10px 12px",
-                                      fontSize: 14,
-                                      lineHeight: 1.6,
-                                      whiteSpace: "pre-wrap",
-                                    }}
-                                  >
+                                  <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>
                                     {message.content}
+                                  </div>
+
+                                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+                                    {!message.is_deleted && canEditDmMessage ? (
+                                      <button
+                                        type="button"
+                                        style={smallGhostButtonStyle}
+                                        onClick={() => openDmMessageEdit(message)}
+                                      >
+                                        <Edit3 size={14} />
+                                        Edit
+                                      </button>
+                                    ) : null}
+
+                                    {!message.is_deleted ? (
+                                      <button
+                                        type="button"
+                                        style={smallGhostButtonStyle}
+                                        onClick={() =>
+                                          openForwardPickerForMessage({
+                                            id: message.id,
+                                            author: message.author,
+                                            author_id: message.author_id,
+                                            role: message.role,
+                                            content: message.content,
+                                            created_at: message.created_at,
+                                            updated_at: message.created_at,
+                                            edited_at: message.edited_at,
+                                            is_pinned: false,
+                                            my_emojis: [],
+                                            reactions: [],
+                                            is_deleted: message.is_deleted,
+                                          })
+                                        }
+                                      >
+                                        <Forward size={14} />
+                                        Forward
+                                      </button>
+                                    ) : null}
+
+                                    {!message.is_deleted && canDeleteDmMessage ? (
+                                      <button
+                                        type="button"
+                                        style={smallGhostButtonStyle}
+                                        onClick={() => void deleteDMMessage(message.id)}
+                                        disabled={dmDeletingId === message.id}
+                                      >
+                                        <Trash2 size={14} />
+                                        {dmDeletingId === message.id ? "Deleting..." : "Delete"}
+                                      </button>
+                                    ) : null}
                                   </div>
                                 </div>
                               </div>
@@ -2050,9 +2625,9 @@ export default function AdminWorkspacePage() {
                           )
                         })}
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </>
+                  )}
+                </>
               ) : loading ? (
                 <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
                   Loading messages...
@@ -2082,6 +2657,11 @@ export default function AdminWorkspacePage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                     {messages.map((message) => {
                       const initials = getInitials(message.author)
+                      const canDeleteChannelMessage =
+                        currentUser?.id === message.author_id ||
+                        currentUser?.role === "super_admin" ||
+                        currentUser?.admin_role === "super_admin"
+                      const canEditChannelMessage = canDeleteChannelMessage
 
                       return (
                         <div key={message.id}>
@@ -2178,156 +2758,165 @@ export default function AdminWorkspacePage() {
                                 </div>
                               ) : null}
 
-                              <div
-                                style={{
-                                  color: "#111827",
-                                  fontSize: 14,
-                                  lineHeight: 1.65,
-                                  whiteSpace: "pre-wrap",
-                                }}
-                              >
+                              <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>
                                 {message.content}
                               </div>
 
                               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-                                {message.reactions.map((reaction) => {
-                                  const mine = message.my_emojis.includes(reaction.emoji)
+                                {!message.is_deleted &&
+                                  message.reactions.map((reaction) => {
+                                    const mine = message.my_emojis.includes(reaction.emoji)
 
-                                  return (
+                                    return (
+                                      <button
+                                        key={`${message.id}-${reaction.emoji}`}
+                                        type="button"
+                                        onClick={() => void react(message.id, reaction.emoji)}
+                                        style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: 5,
+                                          padding: "4px 8px",
+                                          borderRadius: 999,
+                                          border: mine
+                                            ? "1px solid rgba(79,70,229,0.28)"
+                                            : "1px solid rgba(15,23,42,0.10)",
+                                          background: mine ? "rgba(79,70,229,0.08)" : "#ffffff",
+                                          color: mine ? "#4f46e5" : "#475569",
+                                          fontSize: 12,
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        <span>{reaction.emoji}</span>
+                                        <span style={{ fontSize: 11, color: mine ? "#4f46e5" : "#64748b" }}>
+                                          {reaction.count}
+                                        </span>
+                                      </button>
+                                    )
+                                  })}
+
+                                {!message.is_deleted ? (
+                                  <button
+                                    type="button"
+                                    style={smallGhostButtonStyle}
+                                    onClick={() => {
+                                      setReplyingTo(message)
+                                      setForwardingMessage(null)
+                                      setForwardingNote(null)
+                                    }}
+                                  >
+                                    <CornerDownRight size={14} />
+                                    Reply
+                                  </button>
+                                ) : null}
+
+                                {!message.is_deleted ? (
+                                  <button
+                                    type="button"
+                                    style={smallGhostButtonStyle}
+                                    onClick={() => openForwardPickerForMessage(message)}
+                                  >
+                                    <Forward size={14} />
+                                    Forward
+                                  </button>
+                                ) : null}
+
+                                {!message.is_deleted && canEditChannelMessage ? (
+                                  <button
+                                    type="button"
+                                    style={smallGhostButtonStyle}
+                                    onClick={() => openChannelMessageEdit(message)}
+                                  >
+                                    <Edit3 size={14} />
+                                    Edit
+                                  </button>
+                                ) : null}
+
+                                {!message.is_deleted && canDeleteChannelMessage ? (
+                                  <button
+                                    type="button"
+                                    style={smallGhostButtonStyle}
+                                    onClick={() => void deleteMessage(message.id)}
+                                  >
+                                    <Trash2 size={14} />
+                                    Delete
+                                  </button>
+                                ) : null}
+
+                                {!message.is_deleted ? (
+                                  <div style={{ position: "relative" }}>
                                     <button
-                                      key={`${message.id}-${reaction.emoji}`}
                                       type="button"
-                                      onClick={() => void react(message.id, reaction.emoji)}
+                                      onClick={() =>
+                                        setEmojiPickerFor((prev) => (prev === message.id ? null : message.id))
+                                      }
                                       style={{
                                         display: "inline-flex",
                                         alignItems: "center",
                                         gap: 5,
                                         padding: "4px 8px",
                                         borderRadius: 999,
-                                        border: mine
-                                          ? "1px solid rgba(79,70,229,0.28)"
-                                          : "1px solid rgba(15,23,42,0.10)",
-                                        background: mine ? "rgba(79,70,229,0.08)" : "#ffffff",
-                                        color: mine ? "#4f46e5" : "#475569",
+                                        border: "1px solid rgba(15,23,42,0.10)",
+                                        background: "#ffffff",
+                                        color: "#475569",
                                         fontSize: 12,
                                         cursor: "pointer",
                                       }}
                                     >
-                                      <span>{reaction.emoji}</span>
-                                      <span style={{ fontSize: 11, color: mine ? "#4f46e5" : "#64748b" }}>
-                                        {reaction.count}
-                                      </span>
+                                      <Smile size={13} />
+                                      React
                                     </button>
-                                  )
-                                })}
 
-                                <button
-                                  type="button"
-                                  style={smallGhostButtonStyle}
-                                  onClick={() => {
-                                    setReplyingTo(message)
-                                    setForwardingMessage(null)
-                                    setForwardingNote(null)
-                                  }}
-                                >
-                                  <CornerDownRight size={14} />
-                                  Reply
-                                </button>
-
-                                <button
-                                  type="button"
-                                  style={smallGhostButtonStyle}
-                                  onClick={() => {
-                                    setForwardingMessage(message)
-                                    setForwardingNote(null)
-                                    setReplyingTo(null)
-                                  }}
-                                >
-                                  <Forward size={14} />
-                                  Forward
-                                </button>
-
-                                <button
-                                  type="button"
-                                  style={smallGhostButtonStyle}
-                                  onClick={() => void deleteMessage(message.id)}
-                                >
-                                  <Trash2 size={14} />
-                                  Delete
-                                </button>
-
-                                <div style={{ position: "relative" }}>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setEmojiPickerFor((prev) => (prev === message.id ? null : message.id))
-                                    }
-                                    style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 5,
-                                      padding: "4px 8px",
-                                      borderRadius: 999,
-                                      border: "1px solid rgba(15,23,42,0.10)",
-                                      background: "#ffffff",
-                                      color: "#475569",
-                                      fontSize: 12,
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    <Smile size={13} />
-                                    React
-                                  </button>
-
-                                  {emojiPickerFor === message.id ? (
-                                    <div
-                                      style={{
-                                        position: "absolute",
-                                        top: "calc(100% + 8px)",
-                                        left: 0,
-                                        zIndex: 20,
-                                        width: 248,
-                                        borderRadius: 12,
-                                        border: "1px solid rgba(15,23,42,0.08)",
-                                        background: "#ffffff",
-                                        boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-                                        padding: 12,
-                                      }}
-                                    >
+                                    {emojiPickerFor === message.id ? (
                                       <div
                                         style={{
-                                          fontSize: 10,
-                                          textTransform: "uppercase",
-                                          letterSpacing: 0.8,
-                                          color: "#94a3b8",
-                                          marginBottom: 8,
-                                          fontFamily: '"DM Mono", ui-monospace, monospace',
+                                          position: "absolute",
+                                          top: "calc(100% + 8px)",
+                                          left: 0,
+                                          zIndex: 20,
+                                          width: 248,
+                                          borderRadius: 12,
+                                          border: "1px solid rgba(15,23,42,0.08)",
+                                          background: "#ffffff",
+                                          boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
+                                          padding: 12,
                                         }}
                                       >
-                                        Reactions
-                                      </div>
+                                        <div
+                                          style={{
+                                            fontSize: 10,
+                                            textTransform: "uppercase",
+                                            letterSpacing: 0.8,
+                                            color: "#94a3b8",
+                                            marginBottom: 8,
+                                            fontFamily: '"DM Mono", ui-monospace, monospace',
+                                          }}
+                                        >
+                                          Reactions
+                                        </div>
 
-                                      <div
-                                        style={{
-                                          display: "grid",
-                                          gridTemplateColumns: "repeat(6, 1fr)",
-                                          gap: 6,
-                                        }}
-                                      >
-                                        {EMOJI_SET.map((emoji) => (
-                                          <button
-                                            key={`${message.id}-${emoji}`}
-                                            type="button"
-                                            onClick={() => void react(message.id, emoji)}
-                                            style={emojiOptionStyle}
-                                          >
-                                            {emoji}
-                                          </button>
-                                        ))}
+                                        <div
+                                          style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(6, 1fr)",
+                                            gap: 6,
+                                          }}
+                                        >
+                                          {EMOJI_SET.map((emoji) => (
+                                            <button
+                                              key={`${message.id}-${emoji}`}
+                                              type="button"
+                                              onClick={() => void react(message.id, emoji)}
+                                              style={emojiOptionStyle}
+                                            >
+                                              {emoji}
+                                            </button>
+                                          ))}
+                                        </div>
                                       </div>
-                                    </div>
-                                  ) : null}
-                                </div>
+                                    ) : null}
+                                  </div>
+                                ) : null}
                               </div>
                             </div>
                           </div>
@@ -2339,215 +2928,8 @@ export default function AdminWorkspacePage() {
               )}
             </div>
 
-            {activePane.type === "channel" ? (
-              <div
-                style={{
-                  padding: "12px 26px 16px",
-                  borderTop: "1px solid rgba(15,23,42,0.08)",
-                  background: "#ffffff",
-                  flexShrink: 0,
-                }}
-              >
-                {(replyingTo || forwardingMessage || forwardingNote) && (
-                  <div
-                    style={{
-                      marginBottom: 10,
-                      borderRadius: 12,
-                      background: "#f8fafc",
-                      border: "1px solid rgba(15,23,42,0.08)",
-                      padding: "10px 12px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <div style={{ fontSize: 12, color: "#475569", flex: 1 }}>
-                      {replyingTo ? (
-                        <>
-                          Replying to <strong>{replyingTo.author}</strong>
-                        </>
-                      ) : forwardingMessage ? (
-                        <>
-                          Forwarding message from <strong>{forwardingMessage.author}</strong>
-                        </>
-                      ) : (
-                        <>
-                          Forwarding note <strong>{forwardingNote?.title}</strong>
-                        </>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReplyingTo(null)
-                        setForwardingMessage(null)
-                        setForwardingNote(null)
-                      }}
-                      style={tinyIconButtonStyle}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
-
-                <div
-                  style={{
-                    borderRadius: 16,
-                    border: "1px solid rgba(15,23,42,0.12)",
-                    background: "#f8f9fd",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "10px 12px 0" }}>
-                    <ToolbarButton>B</ToolbarButton>
-                    <ToolbarButton>/</ToolbarButton>
-                    <ToolbarButton>$</ToolbarButton>
-                    <div style={{ width: 1, height: 16, background: "rgba(15,23,42,0.10)", margin: "0 6px" }} />
-                    <ToolbarIconButton>
-                      <Link2 size={14} />
-                    </ToolbarIconButton>
-                    <ToolbarIconButton>
-                      <Paperclip size={14} />
-                    </ToolbarIconButton>
-                    <ToolbarIconButton onClick={() => setComposerMode("note")}>
-                      <Pin size={14} />
-                    </ToolbarIconButton>
-                    <ToolbarIconButton>
-                      <Smile size={14} />
-                    </ToolbarIconButton>
-                    <ToolbarIconButton>
-                      <AtSign size={14} />
-                    </ToolbarIconButton>
-                  </div>
-
-                  <textarea
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    onKeyDown={handleComposerKey}
-                    placeholder={composerPlaceholder()}
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      resize: "none",
-                      border: "none",
-                      outline: "none",
-                      background: "transparent",
-                      padding: "12px 14px 8px",
-                      fontSize: 14,
-                      lineHeight: 1.6,
-                      color: "#111827",
-                      minHeight: 90,
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "0 12px 12px",
-                      gap: 8,
-                    }}
-                  >
-                    <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                      ↵ to send · Shift+↵ newline · @ to mention
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => void sendMessage()}
-                      disabled={posting}
-                      style={{
-                        marginLeft: "auto",
-                        width: 36,
-                        height: 36,
-                        borderRadius: 12,
-                        border: "none",
-                        background: "#6c72ff",
-                        color: "#ffffff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        opacity: posting ? 0.6 : 1,
-                      }}
-                    >
-                      <Send size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : activePane.type === "dm" ? (
-              <div
-                style={{
-                  padding: "12px 26px 16px",
-                  borderTop: "1px solid rgba(15,23,42,0.08)",
-                  background: "#ffffff",
-                  flexShrink: 0,
-                }}
-              >
-                <div
-                  style={{
-                    borderRadius: 16,
-                    border: "1px solid rgba(15,23,42,0.12)",
-                    background: "#f8f9fd",
-                  }}
-                >
-                  <textarea
-                    value={dmMessageText}
-                    onChange={(e) => setDmMessageText(e.target.value)}
-                    onKeyDown={handleDmComposerKey}
-                    placeholder={`Message ${activeDm?.name || "this person"}...`}
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      resize: "none",
-                      border: "none",
-                      outline: "none",
-                      background: "transparent",
-                      padding: "12px 14px 8px",
-                      fontSize: 14,
-                      lineHeight: 1.6,
-                      color: "#111827",
-                      minHeight: 90,
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "0 12px 12px",
-                      gap: 8,
-                    }}
-                  >
-                    <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                      ↵ to send · Shift+↵ newline
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => void sendDmMessage()}
-                      disabled={dmPosting || !activeDmThreadId}
-                      style={{
-                        marginLeft: "auto",
-                        width: 36,
-                        height: 36,
-                        borderRadius: 12,
-                        border: "none",
-                        background: "#6c72ff",
-                        color: "#ffffff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        opacity: dmPosting || !activeDmThreadId ? 0.6 : 1,
-                      }}
-                    >
-                      <Send size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            {activePane.type === "channel" ? renderSharedComposer("channel") : null}
+            {activePane.type === "dm" ? renderSharedComposer("dm") : null}
           </main>
 
           {membersOpen && (
@@ -2710,7 +3092,9 @@ export default function AdminWorkspacePage() {
 
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: 13, color: "#111827", fontWeight: 600 }}>{member.name}</div>
-                        <div style={{ fontSize: 11.5, color: "#6b7280" }}>{member.title || member.role}</div>
+                        <div style={{ fontSize: 11.5, color: "#6b7280" }}>
+                          {member.title || member.role}
+                        </div>
                       </div>
                     </button>
                   ))
@@ -2731,7 +3115,6 @@ export default function AdminWorkspacePage() {
           <div onClick={(e) => e.stopPropagation()} style={modalCardStyle}>
             <div style={modalHeaderStyle}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Create Channel</div>
-
               <button type="button" onClick={() => setChannelModalOpen(false)} style={modalCloseStyle}>
                 <X size={16} />
               </button>
@@ -2864,7 +3247,6 @@ export default function AdminWorkspacePage() {
           <div onClick={(e) => e.stopPropagation()} style={modalCardStyle}>
             <div style={modalHeaderStyle}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Edit Channel</div>
-
               <button type="button" onClick={() => setChannelEditModalOpen(false)} style={modalCloseStyle}>
                 <X size={16} />
               </button>
@@ -2992,7 +3374,6 @@ export default function AdminWorkspacePage() {
               <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
                 {forwardingNote ? "Forward Note" : "Create Note"}
               </div>
-
               <button type="button" onClick={() => setNoteModalOpen(false)} style={modalCloseStyle}>
                 <X size={16} />
               </button>
@@ -3152,7 +3533,6 @@ export default function AdminWorkspacePage() {
                   type="button"
                   style={profileActionButton}
                   onClick={() => {
-                    if (!selectedMember) return
                     setMemberProfileOpen(false)
                     setActivePane({ type: "dm", id: selectedMember.id })
                   }}
@@ -3230,7 +3610,6 @@ export default function AdminWorkspacePage() {
                     type="button"
                     style={profileActionButton}
                     onClick={() => {
-                      if (!selectedMember) return
                       setMemberProfileOpen(false)
                       setActivePane({ type: "dm", id: selectedMember.id })
                     }}
@@ -3270,6 +3649,245 @@ export default function AdminWorkspacePage() {
           </div>
         </div>
       ) : null}
+
+      {(editingChannelMessage || editingDmMessage) && (
+        <div
+          onClick={() => {
+            if (!savingMessageEdit) {
+              setEditingChannelMessage(null)
+              setEditingDmMessage(null)
+              setEditMessageText("")
+            }
+          }}
+          style={modalOverlayStyle}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ ...modalCardStyle, width: 560 }}>
+            <div style={modalHeaderStyle}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Edit Message</div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingChannelMessage(null)
+                  setEditingDmMessage(null)
+                  setEditMessageText("")
+                }}
+                style={modalCloseStyle}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div style={{ padding: 18 }}>
+              <textarea
+                value={editMessageText}
+                onChange={(e) => setEditMessageText(e.target.value)}
+                rows={6}
+                style={{
+                  ...inputStyle,
+                  height: "auto",
+                  minHeight: 160,
+                  paddingTop: 10,
+                  resize: "vertical",
+                  marginBottom: 14,
+                }}
+              />
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingChannelMessage(null)
+                    setEditingDmMessage(null)
+                    setEditMessageText("")
+                  }}
+                  style={secondaryActionStyle}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void saveMessageEdit()}
+                  disabled={savingMessageEdit}
+                  style={primaryActionStyle}
+                >
+                  {savingMessageEdit ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {forwardPickerOpen && pendingForward ? (
+        <div
+          onClick={() => {
+            if (!forwardSubmitting) resetForwardState()
+          }}
+          style={modalOverlayStyle}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ ...modalCardStyle, width: 620 }}>
+            <div style={modalHeaderStyle}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Forward to</div>
+              <button type="button" onClick={() => resetForwardState()} style={modalCloseStyle}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: 18 }}>
+              <input
+                value={forwardSearch}
+                onChange={(e) => setForwardSearch(e.target.value)}
+                placeholder="Search channels or people..."
+                style={{ ...inputStyle, marginBottom: 14 }}
+              />
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  <div style={labelStyle}>Channels</div>
+                  <div style={recipientPanelStyle}>
+                    {filteredForwardChannels.length === 0 ? (
+                      <div style={{ padding: "8px 10px", fontSize: 12, color: "#94a3b8" }}>No channels found</div>
+                    ) : (
+                      filteredForwardChannels.map((channel) => (
+                        <button
+                          key={channel.id}
+                          type="button"
+                          onClick={() => void forwardToChannel(channel.slug)}
+                          disabled={forwardSubmitting}
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            background: "#ffffff",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            padding: "8px 10px",
+                            borderRadius: 10,
+                            cursor: "pointer",
+                            textAlign: "left",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 8,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "rgba(99,102,241,0.10)",
+                              color: normalizeColor(channel.color_hex),
+                              flexShrink: 0,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {channel.icon_symbol || "#"}
+                          </span>
+                          <span style={{ minWidth: 0 }}>
+                            <span
+                              style={{
+                                display: "block",
+                                fontSize: 13,
+                                color: "#111827",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {channel.name}
+                            </span>
+                            <span
+                              style={{
+                                display: "block",
+                                fontSize: 12,
+                                color: "#64748b",
+                              }}
+                            >
+                              {channel.description || channel.slug}
+                            </span>
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={labelStyle}>Direct messages</div>
+                  <div style={recipientPanelStyle}>
+                    {filteredForwardMembers.length === 0 ? (
+                      <div style={{ padding: "8px 10px", fontSize: 12, color: "#94a3b8" }}>No people found</div>
+                    ) : (
+                      filteredForwardMembers.map((member) => (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => void forwardToDm(member.id)}
+                          disabled={forwardSubmitting}
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            background: "#ffffff",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            padding: "8px 10px",
+                            borderRadius: 10,
+                            cursor: "pointer",
+                            textAlign: "left",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: "50%",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              flexShrink: 0,
+                              ...avatarStyle(getInitials(member.name)),
+                            }}
+                          >
+                            {getInitials(member.name)}
+                          </span>
+                          <span style={{ minWidth: 0 }}>
+                            <span
+                              style={{
+                                display: "block",
+                                fontSize: 13,
+                                color: "#111827",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {member.name}
+                            </span>
+                            <span
+                              style={{
+                                display: "block",
+                                fontSize: 12,
+                                color: "#64748b",
+                              }}
+                            >
+                              {member.email || member.title || member.role}
+                            </span>
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                <button type="button" onClick={() => resetForwardState()} style={secondaryActionStyle}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   )
 }
@@ -3278,7 +3896,7 @@ function ProfileLine({
   icon,
   label,
 }: {
-  icon: ReactNode
+  icon: React.ReactNode
   label: string
 }) {
   return (
@@ -3298,16 +3916,7 @@ function ProfileLine({
   )
 }
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s_-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-}
-
-const iconButtonStyle: CSSProperties = {
+const iconButtonStyle: React.CSSProperties = {
   width: 36,
   height: 36,
   borderRadius: 10,
@@ -3320,7 +3929,7 @@ const iconButtonStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const tinyIconButtonStyle: CSSProperties = {
+const tinyIconButtonStyle: React.CSSProperties = {
   width: 22,
   height: 22,
   border: "none",
@@ -3333,7 +3942,7 @@ const tinyIconButtonStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const smallGhostButtonStyle: CSSProperties = {
+const smallGhostButtonStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 5,
@@ -3346,7 +3955,7 @@ const smallGhostButtonStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const tinyTextButtonStyle: CSSProperties = {
+const tinyTextButtonStyle: React.CSSProperties = {
   border: "none",
   background: "transparent",
   color: "#64748b",
@@ -3354,7 +3963,7 @@ const tinyTextButtonStyle: CSSProperties = {
   fontSize: 11,
 }
 
-const primaryButtonStyle: CSSProperties = {
+const primaryButtonStyle: React.CSSProperties = {
   width: 40,
   height: 40,
   borderRadius: 10,
@@ -3367,7 +3976,7 @@ const primaryButtonStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const notePickerStyle: CSSProperties = {
+const notePickerStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(6, 1fr)",
   gap: 6,
@@ -3378,7 +3987,7 @@ const notePickerStyle: CSSProperties = {
   border: "1px solid rgba(15,23,42,0.08)",
 }
 
-const emojiOptionStyle: CSSProperties = {
+const emojiOptionStyle: React.CSSProperties = {
   height: 34,
   borderRadius: 8,
   border: "none",
@@ -3387,7 +3996,7 @@ const emojiOptionStyle: CSSProperties = {
   fontSize: 18,
 }
 
-const noteTitleInputStyle: CSSProperties = {
+const noteTitleInputStyle: React.CSSProperties = {
   width: "100%",
   height: 44,
   borderRadius: 10,
@@ -3401,7 +4010,7 @@ const noteTitleInputStyle: CSSProperties = {
   marginBottom: 12,
 }
 
-const noteBodyInputStyle: CSSProperties = {
+const noteBodyInputStyle: React.CSSProperties = {
   width: "100%",
   borderRadius: 10,
   border: "1px solid rgba(15,23,42,0.10)",
@@ -3415,7 +4024,7 @@ const noteBodyInputStyle: CSSProperties = {
   marginBottom: 12,
 }
 
-const modalOverlayStyle: CSSProperties = {
+const modalOverlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
   background: "rgba(15,23,42,0.18)",
@@ -3425,7 +4034,7 @@ const modalOverlayStyle: CSSProperties = {
   zIndex: 1000,
 }
 
-const modalCardStyle: CSSProperties = {
+const modalCardStyle: React.CSSProperties = {
   width: 420,
   borderRadius: 16,
   background: "#ffffff",
@@ -3434,7 +4043,7 @@ const modalCardStyle: CSSProperties = {
   overflow: "hidden",
 }
 
-const modalHeaderStyle: CSSProperties = {
+const modalHeaderStyle: React.CSSProperties = {
   height: 56,
   display: "flex",
   alignItems: "center",
@@ -3442,7 +4051,7 @@ const modalHeaderStyle: CSSProperties = {
   borderBottom: "1px solid rgba(15,23,42,0.08)",
 }
 
-const modalCloseStyle: CSSProperties = {
+const modalCloseStyle: React.CSSProperties = {
   marginLeft: "auto",
   width: 30,
   height: 30,
@@ -3456,14 +4065,14 @@ const modalCloseStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const labelStyle: CSSProperties = {
+const labelStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 600,
   color: "#111827",
   marginBottom: 6,
 }
 
-const inputStyle: CSSProperties = {
+const inputStyle: React.CSSProperties = {
   width: "100%",
   height: 42,
   borderRadius: 10,
@@ -3475,7 +4084,7 @@ const inputStyle: CSSProperties = {
   outline: "none",
 }
 
-const checkboxLabelStyle: CSSProperties = {
+const checkboxLabelStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 8,
@@ -3483,7 +4092,7 @@ const checkboxLabelStyle: CSSProperties = {
   color: "#334155",
 }
 
-const secondaryActionStyle: CSSProperties = {
+const secondaryActionStyle: React.CSSProperties = {
   flex: 1,
   height: 42,
   borderRadius: 10,
@@ -3495,7 +4104,7 @@ const secondaryActionStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const primaryActionStyle: CSSProperties = {
+const primaryActionStyle: React.CSSProperties = {
   flex: 1,
   height: 42,
   borderRadius: 10,
@@ -3507,7 +4116,7 @@ const primaryActionStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const recipientPanelStyle: CSSProperties = {
+const recipientPanelStyle: React.CSSProperties = {
   maxHeight: 220,
   overflowY: "auto",
   borderRadius: 12,
@@ -3519,7 +4128,7 @@ const recipientPanelStyle: CSSProperties = {
   gap: 6,
 }
 
-const recipientOptionStyle: CSSProperties = {
+const recipientOptionStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 10,
@@ -3528,7 +4137,7 @@ const recipientOptionStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const recipientChipStyle: CSSProperties = {
+const recipientChipStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
@@ -3541,14 +4150,14 @@ const recipientChipStyle: CSSProperties = {
   cursor: "pointer",
 }
 
-const sectionHeaderRow: CSSProperties = {
+const sectionHeaderRow: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   marginBottom: 10,
 }
 
-const sectionToggleStyle: CSSProperties = {
+const sectionToggleStyle: React.CSSProperties = {
   border: "none",
   background: "transparent",
   color: "#94a3b8",
@@ -3562,7 +4171,7 @@ const sectionToggleStyle: CSSProperties = {
   fontFamily: '"DM Mono", ui-monospace, monospace',
 }
 
-const inviteButtonStyle: CSSProperties = {
+const inviteButtonStyle: React.CSSProperties = {
   width: "100%",
   height: 36,
   borderRadius: 10,
@@ -3578,7 +4187,7 @@ const inviteButtonStyle: CSSProperties = {
   fontWeight: 600,
 }
 
-const profileActionButton: CSSProperties = {
+const profileActionButton: React.CSSProperties = {
   width: 42,
   height: 42,
   borderRadius: 12,
@@ -3592,7 +4201,7 @@ const profileActionButton: CSSProperties = {
   backdropFilter: "blur(8px)",
 }
 
-const recipientAvatarStyle = (name: string): CSSProperties => ({
+const recipientAvatarStyle = (name: string): React.CSSProperties => ({
   width: 28,
   height: 28,
   borderRadius: "50%",
@@ -3605,10 +4214,17 @@ const recipientAvatarStyle = (name: string): CSSProperties => ({
   ...avatarStyle(getInitials(name)),
 })
 
-function ToolbarButton({ children }: { children: ReactNode }) {
+function ToolbarButton({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode
+  onClick?: () => void
+}) {
   return (
     <button
       type="button"
+      onClick={onClick}
       style={{
         width: 26,
         height: 26,
@@ -3630,7 +4246,7 @@ function ToolbarIconButton({
   children,
   onClick,
 }: {
-  children: ReactNode
+  children: React.ReactNode
   onClick?: () => void
 }) {
   return (
@@ -3655,7 +4271,7 @@ function ToolbarIconButton({
   )
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
