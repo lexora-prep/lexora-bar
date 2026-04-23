@@ -46,48 +46,113 @@ export default function ResetPasswordPage() {
   const passwordChecks = useMemo(() => getPasswordChecks(password), [password])
 
   useEffect(() => {
+    let mounted = true
+
     async function initializeRecoverySession() {
       try {
         setCheckingLink(true)
         setError("")
 
+        // 1) PKCE flow: /reset-password?code=...
+        const url = new URL(window.location.href)
+        const code = url.searchParams.get("code")
+
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+          if (error) {
+            if (mounted) {
+              setError(error.message || "This password reset link is invalid or has expired.")
+              setReady(false)
+            }
+            return
+          }
+
+          // Remove the code from the URL after successful exchange
+          window.history.replaceState({}, document.title, "/reset-password")
+
+          if (mounted) {
+            setReady(true)
+          }
+          return
+        }
+
+        // 2) Fallback: implicit flow with hash tokens
         const hash = window.location.hash.startsWith("#")
           ? window.location.hash.substring(1)
           : window.location.hash
 
-        const params = new URLSearchParams(hash)
+        const hashParams = new URLSearchParams(hash)
+        const accessToken = hashParams.get("access_token")
+        const refreshToken = hashParams.get("refresh_token")
+        const type = hashParams.get("type")
 
-        const accessToken = params.get("access_token")
-        const refreshToken = params.get("refresh_token")
-        const type = params.get("type")
+        if (type === "recovery" && accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
 
-        if (type !== "recovery" || !accessToken || !refreshToken) {
+          if (error) {
+            if (mounted) {
+              setError(error.message || "Unable to verify reset link.")
+              setReady(false)
+            }
+            return
+          }
+
+          // Remove sensitive tokens from the URL
+          window.history.replaceState({}, document.title, "/reset-password")
+
+          if (mounted) {
+            setReady(true)
+          }
+          return
+        }
+
+        // 3) Final fallback: if Supabase already established a recovery session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (session) {
+          if (mounted) {
+            setReady(true)
+          }
+          return
+        }
+
+        if (mounted) {
           setError("This password reset link is invalid or has expired.")
           setReady(false)
-          return
         }
-
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        })
-
-        if (error) {
-          setError(error.message || "Unable to verify reset link.")
-          setReady(false)
-          return
-        }
-
-        setReady(true)
       } catch {
-        setError("Something went wrong while validating the reset link.")
-        setReady(false)
+        if (mounted) {
+          setError("Something went wrong while validating the reset link.")
+          setReady(false)
+        }
       } finally {
-        setCheckingLink(false)
+        if (mounted) {
+          setCheckingLink(false)
+        }
       }
     }
 
     initializeRecoverySession()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setReady(true)
+        setCheckingLink(false)
+      }
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [supabase])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -115,9 +180,7 @@ export default function ResetPasswordPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password,
-      })
+      const { error } = await supabase.auth.updateUser({ password })
 
       if (error) {
         setError(error.message || "Unable to update password.")
