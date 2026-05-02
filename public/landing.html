@@ -2778,6 +2778,144 @@ nav{
   }
 }
 
+
+/* === LEXORA PUBLIC POLISH PATCH === */
+body,
+nav,
+main,
+footer,
+.legal-card,
+.demo-shell,
+.price-card,
+.cta-band {
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  -ms-user-select:none;
+  user-select:none;
+}
+
+input,
+textarea,
+select,
+button {
+  -webkit-user-select:auto;
+  -moz-user-select:auto;
+  -ms-user-select:auto;
+  user-select:auto;
+}
+
+::selection {
+  background:transparent;
+  color:inherit;
+}
+
+::-moz-selection {
+  background:transparent;
+  color:inherit;
+}
+
+.footer-brand-logo img {
+  background:rgba(255,255,255,0.96) !important;
+  border-radius:14px !important;
+  padding:6px !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.20),
+    0 10px 28px rgba(0,0,0,0.28),
+    0 0 24px rgba(124,58,237,0.35) !important;
+  filter:none !important;
+}
+
+.footer-brand .fname {
+  text-shadow:0 2px 12px rgba(0,0,0,0.28);
+}
+
+.price-card {
+  overflow:visible !important;
+}
+
+.price-card.featured {
+  position:relative;
+  isolation:isolate;
+  box-shadow:
+    0 18px 50px rgba(14,27,53,0.18),
+    0 0 0 1px rgba(124,58,237,0.12) !important;
+}
+
+.price-card.featured::before {
+  content:"";
+  position:absolute;
+  inset:-3px;
+  z-index:-1;
+  border-radius:calc(var(--rl) + 4px);
+  background:conic-gradient(
+    from 0deg,
+    rgba(14,27,53,0.95),
+    rgba(124,58,237,0.95),
+    rgba(167,139,250,0.85),
+    rgba(14,27,53,0.95)
+  );
+  filter:drop-shadow(0 0 18px rgba(124,58,237,0.35));
+  animation:lexoraBorderSpin 4.8s linear infinite;
+}
+
+.price-card.featured::after {
+  content:"";
+  position:absolute;
+  inset:3px;
+  z-index:-1;
+  border-radius:calc(var(--rl) - 1px);
+  background:var(--white);
+}
+
+.popular-badge {
+  top:-22px !important;
+  z-index:5 !important;
+  min-width:154px;
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#0E1B35 0%,#312E81 48%,#7C3AED 100%) !important;
+  color:#fff !important;
+  border:1px solid rgba(255,255,255,0.36);
+  box-shadow:
+    0 12px 28px rgba(14,27,53,0.28),
+    0 0 24px rgba(124,58,237,0.38) !important;
+  overflow:hidden;
+}
+
+.popular-badge::after {
+  content:"";
+  position:absolute;
+  top:-40%;
+  bottom:-40%;
+  width:42px;
+  left:-60px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.75),transparent);
+  transform:rotate(18deg);
+  animation:lexoraBadgeShine 2.8s ease-in-out infinite;
+}
+
+@keyframes lexoraBorderSpin {
+  to { transform:rotate(360deg); }
+}
+
+@keyframes lexoraBadgeShine {
+  0% { left:-70px; }
+  45% { left:110%; }
+  100% { left:110%; }
+}
+
+@media(max-width:768px){
+  .popular-badge {
+    top:-18px !important;
+    min-width:138px;
+    height:30px;
+    font-size:10px !important;
+  }
+}
+/* === END LEXORA PUBLIC POLISH PATCH === */
+
 </style>
 </head>
 
@@ -2794,7 +2932,7 @@ nav{
     <a href="#features">Features</a>
     <a href="#howitworks">How it works</a>
     <a href="#pricing">Pricing</a>
-    <a href="#faq">FAQ</a>
+    <a href="/faq">FAQ</a>
   </div>
 
   <div class="nav-cta">
@@ -3705,26 +3843,26 @@ nav{
       <a href="#features">BLL rule training</a>
       <a href="#howitworks">How it works</a>
       <a href="#pricing">Pricing</a>
-      <a href="#faq">FAQ</a>
-      <a href="#refund">Refund policy</a>
+      <a href="/faq">FAQ</a>
+      <a href="/refund">Refund policy</a>
     </div>
 
     <div class="footer-col">
       <h4>Support</h4>
-      <a href="#faq">Help Center</a>
+      <a href="/faq">Help Center</a>
       <a href="mailto:support@lexoraprep.com">Contact us</a>
-      <a href="#terms">Legal disclaimers</a>
-      <a href="#privacy">Privacy</a>
+      <a href="/terms">Legal disclaimers</a>
+      <a href="/privacy">Privacy</a>
       <button class="footer-cookie-btn" type="button" onclick="openCookieSettings()">Cookie Preferences</button>
     </div>
 
     <div class="footer-col">
       <h4>Legal</h4>
-      <a href="#terms">Terms and Conditions</a>
-      <a href="#privacy">Privacy Policy</a>
-      <a href="#refund">Refund Policy</a>
-      <a href="#cookies">Cookie Policy</a>
-      <a href="#faq">FAQ</a>
+      <a href="/terms">Terms and Conditions</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/refund">Refund Policy</a>
+      <a href="/cookies">Cookie Policy</a>
+      <a href="/faq">FAQ</a>
     </div>
   </div>
 
@@ -3736,11 +3874,11 @@ nav{
     </div>
 
     <div class="footer-links">
-      <a href="#terms">Terms</a>
-      <a href="#privacy">Privacy</a>
-      <a href="#refund">Refund</a>
-      <a href="#cookies">Cookies</a>
-      <a href="#faq">FAQ</a>
+      <a href="/terms">Terms</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/refund">Refund</a>
+      <a href="/cookies">Cookies</a>
+      <a href="/faq">FAQ</a>
     </div>
   </div>
 </footer>
@@ -3753,7 +3891,7 @@ nav{
     <button class="cookie-btn primary" type="button" onclick="acceptAllCookies()">Accept all</button>
     <button class="cookie-btn" type="button" onclick="rejectAllCookies()">Reject non-essential</button>
     <button class="cookie-btn" type="button" onclick="openCookieSettings()">Manage preferences</button>
-    <a class="cookie-btn" href="#cookies">Cookie Policy</a>
+    <a class="cookie-btn" href="/cookies">Cookie Policy</a>
   </div>
 </div>
 
@@ -4277,6 +4415,29 @@ nav{
 
   setTimeout(typeRule,800);
   initCookies();
+})();
+</script>
+
+
+<script>
+(function(){
+  function isEditable(el){
+    if(!el) return false;
+    var tag = (el.tagName || "").toLowerCase();
+    return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
+  }
+
+  document.addEventListener("selectstart", function(e){
+    if(!isEditable(e.target)) e.preventDefault();
+  });
+
+  document.addEventListener("dragstart", function(e){
+    if(!isEditable(e.target)) e.preventDefault();
+  });
+
+  document.addEventListener("copy", function(e){
+    if(!isEditable(e.target)) e.preventDefault();
+  });
 })();
 </script>
 
