@@ -1,497 +1,4284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Lexora Prep — Master Every Black Letter Rule</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Lexora Prep | Black Letter Law Rule Training</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#06070D;color:#fff;overflow-x:hidden}
-a{text-decoration:none;color:inherit}
-nav{display:flex;align-items:center;justify-content:space-between;padding:0 60px;height:68px;border-bottom:1px solid rgba(255,255,255,0.07);position:sticky;top:0;background:rgba(6,7,13,0.92);backdrop-filter:blur(12px);z-index:100}
-.nav-logo{font-size:18px;font-weight:700;color:#fff;letter-spacing:-.3px}
-.nav-logo span{color:#4F8EF7}
-.nav-links{display:flex;gap:32px;align-items:center}
-.nav-links a{font-size:13px;color:rgba(255,255,255,0.55);transition:.2s}
-.nav-links a:hover{color:#fff}
-.nav-cta{display:flex;gap:10px;align-items:center}
-.btn-ghost{height:36px;padding:0 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:transparent;color:rgba(255,255,255,0.75);font-size:13px;cursor:pointer;transition:.2s;font-family:inherit}
-.btn-ghost:hover{border-color:rgba(255,255,255,0.4);color:#fff;background:rgba(255,255,255,0.05)}
-.btn-primary{height:36px;padding:0 20px;border-radius:8px;border:none;background:#2563EB;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
-.btn-primary:hover{background:#1D4ED8}
-.hero{text-align:center;padding:100px 60px 80px;max-width:900px;margin:0 auto}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(37,99,235,0.12);border:1px solid rgba(37,99,235,0.3);border-radius:100px;padding:6px 16px;font-size:12px;color:#93C5FD;margin-bottom:32px;font-weight:500}
-.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:#4F8EF7}
-.hero h1{font-size:64px;font-weight:800;line-height:1.08;letter-spacing:-2px;color:#fff;margin-bottom:24px}
-.hero h1 .accent{color:#4F8EF7}
-.hero p{font-size:18px;color:rgba(255,255,255,0.5);line-height:1.7;max-width:580px;margin:0 auto 40px}
-.hero-btns{display:flex;gap:14px;justify-content:center;align-items:center;margin-bottom:20px}
-.hero-btn-main{height:52px;padding:0 36px;border-radius:12px;border:none;background:#2563EB;color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit}
-.hero-btn-main:hover{background:#1D4ED8;transform:translateY(-1px)}
-.hero-btn-sec{height:52px;padding:0 30px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.75);font-size:15px;cursor:pointer;transition:.2s;font-family:inherit}
-.hero-btn-sec:hover{border-color:rgba(255,255,255,0.35);color:#fff}
-.hero-note{font-size:12px;color:rgba(255,255,255,0.3)}
-.marquee-wrap{overflow:hidden;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);padding:16px 0;background:rgba(255,255,255,0.01)}
-.marquee-inner{display:flex;white-space:nowrap;animation:marquee 22s linear infinite}
-@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.marquee-item{display:inline-flex;align-items:center;gap:10px;padding:0 32px;font-size:12px;color:rgba(255,255,255,0.3);font-weight:500}
-.marquee-dot{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.2)}
-.rule-showcase{padding:80px 60px;background:rgba(255,255,255,0.01)}
-.section-label{font-size:11px;font-weight:700;color:#4F8EF7;letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;text-align:center}
-.section-title{font-size:42px;font-weight:800;color:#fff;text-align:center;letter-spacing:-1px;line-height:1.15;margin-bottom:12px}
-.section-sub{font-size:16px;color:rgba(255,255,255,0.45);text-align:center;margin-bottom:56px;max-width:500px;margin-left:auto;margin-right:auto}
-.rule-card{max-width:720px;margin:0 auto;background:#0D1117;border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden}
-.rule-card-header{background:#161B22;padding:14px 20px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.07)}
-.wdot{width:12px;height:12px;border-radius:50%}
-.rule-card-title{font-size:12px;color:rgba(255,255,255,0.4);margin-left:8px;font-family:monospace}
-.rule-body{padding:28px 32px;min-height:220px}
-.rule-subject{font-size:11px;font-weight:700;color:#4F8EF7;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
-.rule-text{font-size:16px;color:rgba(255,255,255,0.88);line-height:1.7;min-height:136px;height:136px;font-family:Georgia,serif;overflow:hidden;word-break:break-word}
-.rule-cursor{display:inline-block;width:2px;height:18px;background:#4F8EF7;vertical-align:middle;animation:blink 1s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-.rule-footer{padding:16px 32px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:10px;flex-wrap:wrap;min-height:58px}
-.rule-tag{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(37,99,235,0.12);color:#93C5FD;border:1px solid rgba(37,99,235,0.2)}
-.features{padding:90px 60px;max-width:1100px;margin:0 auto}
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:56px}
-.feat-card{background:#0D1117;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;transition:.25s}
-.feat-card:hover{border-color:rgba(79,142,247,0.4);background:#0F1520}
-.feat-icon{width:44px;height:44px;border-radius:10px;background:rgba(37,99,235,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
-.feat-card h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:10px}
-.feat-card p{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7}
-.pricing{padding:90px 60px;max-width:1100px;margin:0 auto}
-.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
-.price-card{background:#0D1117;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px}
-.price-card.featured{border:2px solid #2563EB;background:#070E1C;position:relative}
-.popular-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#2563EB;color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:100px;white-space:nowrap}
-.price-tier{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
-.price-tier.blue{color:#4F8EF7}
-.price-tier.purple{color:#A78BFA}
-.price-tier.gray{color:rgba(255,255,255,0.4)}
-.price-amount{font-size:40px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:6px}
-.price-amount .mo{font-size:15px;font-weight:400;color:rgba(255,255,255,0.4)}
-.price-desc{font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:24px;line-height:1.6}
-.price-divider{height:1px;background:rgba(255,255,255,0.07);margin-bottom:20px}
-.price-feat{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
-.chk{width:16px;height:16px;border-radius:50%;background:rgba(37,99,235,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.chk svg{width:9px;height:9px}
-.price-feat span{font-size:13px;color:rgba(255,255,255,0.65);line-height:1.5}
-.price-btn{width:100%;height:44px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:24px;transition:.2s;font-family:inherit}
-.price-btn.solid{background:#2563EB;color:#fff;border:none}
-.price-btn.solid:hover{background:#1D4ED8}
-.price-btn.outline{background:transparent;color:rgba(255,255,255,0.65);border:1px solid rgba(255,255,255,0.15)}
-.price-btn.outline:hover{border-color:rgba(255,255,255,0.35);color:#fff}
-.price-btn.disabled,
-.price-btn.disabled:hover{border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);background:rgba(255,255,255,0.03);cursor:not-allowed}
-.faq-section{padding:90px 60px;max-width:760px;margin:0 auto}
-.faq-item{border-bottom:1px solid rgba(255,255,255,0.07);padding:20px 0;cursor:pointer}
-.faq-q{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:600;color:rgba(255,255,255,0.85);gap:16px}
-.faq-a{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.7;margin-top:14px;display:none}
-.faq-a.open{display:block}
-.faq-arrow{font-size:20px;color:rgba(255,255,255,0.3);transition:.2s;flex-shrink:0;line-height:1}
-.faq-arrow.open{transform:rotate(45deg);color:#4F8EF7}
-.cta-band{margin:0 60px 80px;background:#0F1A2E;border:1px solid rgba(37,99,235,0.25);border-radius:20px;padding:60px;text-align:center}
-.cta-band h2{font-size:40px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:14px}
-.cta-band p{font-size:16px;color:rgba(255,255,255,0.45);margin-bottom:34px}
-footer{background:#06070D;border-top:1px solid rgba(255,255,255,0.07);padding:60px 60px 32px}
-.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
-.footer-brand .fname{font-size:18px;font-weight:700;color:#fff;margin-bottom:10px}
-.footer-brand .fname span{color:#4F8EF7}
-.footer-brand p{font-size:13px;color:rgba(255,255,255,0.35);line-height:1.7;max-width:260px}
-.footer-col h4{font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
-.footer-col a{display:block;font-size:13px;color:rgba(255,255,255,0.38);margin-bottom:10px;transition:.15s}
-.footer-col a:hover{color:rgba(255,255,255,0.75)}
-.footer-bottom{border-top:1px solid rgba(255,255,255,0.06);padding-top:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
-.footer-legal{font-size:11px;color:rgba(255,255,255,0.25);line-height:1.8}
-.footer-links{display:flex;gap:20px;flex-shrink:0}
-.footer-links a{font-size:11px;color:rgba(255,255,255,0.3);transition:.15s}
-.footer-links a:hover{color:rgba(255,255,255,0.6)}
-@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
-.fade-up{opacity:0;animation:fadeUp .7s ease forwards}
-.d1{animation-delay:.1s}
-.d2{animation-delay:.25s}
-.d3{animation-delay:.4s}
-.d4{animation-delay:.55s}
-@media(max-width:768px){
-  nav{padding:0 20px}
-  .nav-links{display:none}
-  .hero{padding:60px 20px 40px}
-  .hero h1{font-size:36px}
-  .feat-grid,.pricing-grid,.footer-top{grid-template-columns:1fr}
-  .features,.pricing,.faq-section{padding:60px 20px}
-  .rule-showcase{padding:60px 20px}
-  .cta-band{margin:0 20px 60px;padding:40px 24px}
-  footer{padding:40px 20px 24px}
-  .footer-bottom{flex-direction:column;gap:16px}
-  .rule-body{padding:24px 20px;min-height:240px}
-  .rule-text{min-height:156px;height:156px}
+:root{
+  --ivory:#F7F8FC;
+  --ivory-2:#F0F2F8;
+  --white:#FFFFFF;
+  --navy:#0E1B35;
+  --navy-2:#162B55;
+  --navy-3:#1E3A72;
+  --purple:#5B21B6;
+  --purple-2:#7C3AED;
+  --purple-3:#A78BFA;
+  --purple-dim:#F3F0FF;
+  --purple-mid:#DDD6FE;
+  --blue:#3730A3;
+  --blue-2:#4F46E5;
+  --blue-dim:#EEF2FF;
+  --blue-mid:#C7D2FE;
+  --text:#0E1B35;
+  --text-2:#1E293B;
+  --text-3:#475569;
+  --text-4:#94A3B8;
+  --border:#E2E6F0;
+  --border-2:#CDD3E6;
+  --green:#059669;
+  --green-dim:#ECFDF5;
+  --green-mid:#A7F3D0;
+  --red:#DC2626;
+  --gold:#FBBF24;
+  --gold-2:#F59E0B;
+  --sh-sm:0 1px 3px rgba(14,27,53,0.06),0 1px 2px rgba(14,27,53,0.04);
+  --sh:0 4px 16px rgba(14,27,53,0.08),0 1px 4px rgba(14,27,53,0.04);
+  --sh-lg:0 12px 40px rgba(14,27,53,0.10),0 4px 12px rgba(14,27,53,0.05);
+  --sh-xl:0 24px 60px rgba(14,27,53,0.12),0 8px 20px rgba(14,27,53,0.06);
+  --r:14px;
+  --rl:20px;
+  --rxl:28px;
 }
+
+*,
+*::before,
+*::after{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  font-family:"Outfit",sans-serif;
+  background:var(--ivory);
+  color:var(--text);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+a{
+  text-decoration:none;
+  color:inherit;
+}
+
+button,
+input,
+textarea,
+select{
+  font-family:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.page{
+  display:none;
+}
+
+.page.active{
+  display:block;
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(22px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@keyframes fadeIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+@keyframes blink{
+  0%,100%{opacity:1}
+  50%{opacity:0}
+}
+
+@keyframes marquee{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}
+
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-7px)}
+}
+
+@keyframes cardFloat{
+  0%,100%{transform:translateY(0) rotate(-1deg)}
+  50%{transform:translateY(-10px) rotate(-1deg)}
+}
+
+@keyframes cardFloat2{
+  0%,100%{transform:translateY(0) rotate(1.5deg)}
+  50%{transform:translateY(-8px) rotate(1.5deg)}
+}
+
+@keyframes pulseDot{
+  0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,0.4)}
+  70%{box-shadow:0 0 0 6px rgba(5,150,105,0)}
+}
+
+@keyframes orbDrift{
+  0%,100%{transform:translate(0,0)}
+  33%{transform:translate(30px,-20px)}
+  66%{transform:translate(-20px,15px)}
+}
+
+@keyframes slideIn{
+  from{opacity:0;transform:translateX(14px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+@keyframes sealFloat{
+  0%,100%{
+    transform:translateY(0) rotate(-7deg) scale(1);
+    filter:
+      drop-shadow(0 18px 28px rgba(79,70,229,.28))
+      drop-shadow(0 0 18px rgba(124,58,237,.30))
+      drop-shadow(0 0 10px rgba(251,191,36,.20));
+  }
+  50%{
+    transform:translateY(-9px) rotate(-3deg) scale(1.055);
+    filter:
+      drop-shadow(0 26px 42px rgba(79,70,229,.38))
+      drop-shadow(0 0 28px rgba(124,58,237,.48))
+      drop-shadow(0 0 18px rgba(251,191,36,.34));
+  }
+}
+
+@keyframes sealShineSweep{
+  0%{transform:translateX(-150%) rotate(18deg);opacity:0}
+  12%{opacity:.95}
+  42%{transform:translateX(175%) rotate(18deg);opacity:.8}
+  55%,100%{transform:translateX(175%) rotate(18deg);opacity:0}
+}
+
+@keyframes sealGlowPulse{
+  0%,100%{opacity:.48;transform:scale(.96)}
+  50%{opacity:.95;transform:scale(1.08)}
+}
+
+@keyframes sealSpark{
+  0%,100%{opacity:.25;transform:scale(.7) rotate(0deg)}
+  50%{opacity:1;transform:scale(1.12) rotate(18deg)}
+}
+
+50%{opacity:1;transform:scale(1.045)}
+}
+
+nav{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  height:72px;
+  display:grid;
+  grid-template-columns:minmax(180px,260px) 1fr minmax(220px,260px);
+  align-items:center;
+  column-gap:24px;
+  padding:0 clamp(28px,4vw,64px);
+  background:rgba(247,248,252,0.96);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+
+.nav-logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:17px;
+  font-weight:800;
+  color:var(--navy);
+  letter-spacing:-0.3px;
+  justify-self:start;
+  white-space:nowrap;
+  min-width:0;
+}
+
+.logo-mark{
+  width:38px;
+  height:38px;
+  object-fit:contain;
+  display:block;
+  background:transparent;
+  border-radius:0;
+  flex-shrink:0;
+}
+
+.logo-accent{
+  color:var(--purple-2);
+}
+
+.nav-links{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  justify-self:center;
+  white-space:nowrap;
+}
+
+.nav-links a{
+  padding:8px 14px;
+  border-radius:999px;
+  font-size:13.5px;
+  font-weight:650;
+  color:var(--text-3);
+  transition:.15s;
+  line-height:1;
+  white-space:nowrap;
+}
+
+.nav-links a:hover{
+  color:var(--navy);
+  background:var(--white);
+  box-shadow:0 2px 8px rgba(14,27,53,0.06);
+}
+
+.nav-cta{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  justify-self:end;
+  white-space:nowrap;
+}
+
+.btn-ghost{
+  height:40px;
+  padding:0 18px;
+  border-radius:12px;
+  border:1.5px solid var(--border-2);
+  background:#fff;
+  color:var(--text-2);
+  font-size:13.5px;
+  font-weight:750;
+  transition:.15s;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 2px 8px rgba(14,27,53,0.04);
+}
+
+.btn-ghost:hover{
+  border-color:var(--navy);
+  color:var(--navy);
+}
+
+.btn-primary{
+  height:40px;
+  padding:0 22px;
+  border-radius:12px;
+  border:none;
+  background:var(--navy);
+  color:#fff;
+  font-size:13.5px;
+  font-weight:800;
+  transition:.15s;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 6px 18px rgba(14,27,53,0.22);
+}
+
+.btn-primary:hover{
+  background:var(--navy-2);
+  transform:translateY(-1px);
+  box-shadow:0 4px 14px rgba(14,27,53,0.30);
+}
+
+.hero-section{
+  background:var(--white);
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+  position:relative;
+}
+
+.hero-ornament{
+  position:absolute;
+  top:-80px;
+  right:-80px;
+  width:520px;
+  height:520px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(124,58,237,0.07) 0%,rgba(99,102,241,0.04) 50%,transparent 70%);
+  pointer-events:none;
+  animation:orbDrift 14s ease-in-out infinite;
+}
+
+.hero-ornament-2{
+  position:absolute;
+  bottom:-60px;
+  left:-60px;
+  width:360px;
+  height:360px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(14,27,53,0.06) 0%,rgba(124,58,237,0.04) 40%,transparent 70%);
+  pointer-events:none;
+  animation:orbDrift 18s 3s ease-in-out infinite reverse;
+}
+
+.hero-inner{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  width:100%;
+  max-width:none;
+  margin:0;
+  min-height:calc(100vh - 66px);
+  align-items:stretch;
+}
+
+.hero-left{
+  padding:clamp(72px,8vw,120px) clamp(56px,7vw,120px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.hero-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+  border-radius:999px;
+  padding:5px 14px 5px 8px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--purple);
+  margin-bottom:28px;
+  animation:fadeIn .5s ease forwards;
+  width:max-content;
+}
+
+.badge-icon{
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:var(--purple-2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+
+.badge-icon svg{
+  width:11px;
+  height:11px;
+}
+
+.hero h1{
+  font-family:"Outfit",sans-serif;
+  font-size:clamp(54px,5.2vw,82px);
+  line-height:.98;
+  font-weight:800;
+  color:var(--navy);
+  margin-bottom:24px;
+  letter-spacing:-2.4px;
+}
+
+.hero h1 em{
+  font-family:"DM Serif Display",serif;
+  font-style:italic;
+  font-weight:400;
+  color:var(--purple);
+  letter-spacing:-1px;
+}
+
+.hero-sub{
+  font-size:18px;
+  color:var(--text-3);
+  line-height:1.75;
+  max-width:560px;
+  margin-bottom:38px;
+  font-weight:400;
+}
+
+.hero-btns{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:40px;
+}
+
+.hero-btn-main{
+  height:50px;
+  padding:0 28px;
+  border-radius:12px;
+  border:none;
+  background:var(--navy);
+  color:#fff;
+  font-size:14.5px;
+  font-weight:700;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:.18s;
+  box-shadow:0 4px 16px rgba(14,27,53,0.24);
+}
+
+.hero-btn-main:hover{
+  background:var(--navy-2);
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(14,27,53,0.32);
+}
+
+.hero-btn-main svg,
+.hero-btn-sec svg{
+  width:15px;
+  height:15px;
+}
+
+.hero-btn-sec{
+  height:50px;
+  padding:0 24px;
+  border-radius:12px;
+  border:1.5px solid var(--border-2);
+  background:transparent;
+  color:var(--text-2);
+  font-size:14.5px;
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:.18s;
+}
+
+.hero-btn-sec:hover{
+  border-color:var(--navy);
+  color:var(--navy);
+  transform:translateY(-1px);
+}
+
+.hero-note{
+  font-size:12px;
+  color:var(--text-4);
+  font-weight:500;
+}
+
+.hero-stats-row{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  padding-top:32px;
+  border-top:1px solid var(--border);
+}
+
+.hero-stat-num{
+  font-size:20px;
+  font-weight:800;
+  color:var(--navy);
+  letter-spacing:-0.5px;
+  line-height:1;
+}
+
+.hero-stat-label{
+  font-size:12px;
+  color:var(--text-4);
+  font-weight:500;
+  line-height:1.4;
+}
+
+.hero-stat-divider{
+  width:1px;
+  height:32px;
+  background:var(--border);
+}
+
+.hero-right{
+  background:var(--ivory);
+  border-left:1px solid var(--border);
+  min-height:calc(100vh - 66px);
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:clamp(72px,7vw,110px) clamp(48px,6vw,100px);
+  position:relative;
+  overflow:hidden;
+}
+
+.hero-right::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:32px 32px;
+  opacity:.5;
+}
+
+.hero-mockup{
+  position:relative;
+  z-index:1;
+  width:min(100%,520px);
+  max-width:520px;
+}
+
+.mock-rule-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--rl);
+  padding:26px 28px;
+  box-shadow:var(--sh-xl);
+  margin-bottom:16px;
+  animation:float 5s ease-in-out infinite;
+}
+
+.mock-rule-subject{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:10.5px;
+  font-weight:700;
+  color:var(--purple-2);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:12px;
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+  border-radius:999px;
+  padding:4px 10px;
+}
+
+.mock-rule-label{
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-4);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+
+.mock-rule-text{
+  font-family:"DM Serif Display",serif;
+  font-size:17px;
+  line-height:1.7;
+  color:var(--navy);
+  margin-bottom:18px;
+}
+
+.mock-rule-text .kw{
+  background:rgba(79,70,229,0.08);
+  border-bottom:1.5px solid var(--blue-2);
+  border-radius:3px;
+  padding:0 2px;
+  color:var(--blue);
+  font-style:italic;
+}
+
+.mock-tags{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.mock-tag{
+  font-size:10.5px;
+  font-weight:600;
+  padding:4px 10px;
+  border-radius:999px;
+  background:var(--blue-dim);
+  border:1px solid var(--blue-mid);
+  color:var(--blue);
+}
+
+.mock-score-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.mock-score-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px 18px;
+  box-shadow:var(--sh-sm);
+  animation:cardFloat 6s ease-in-out infinite;
+}
+
+.mock-score-card:nth-child(2){
+  animation-name:cardFloat2;
+  animation-delay:.5s;
+}
+
+.mock-score-label{
+  font-size:10px;
+  font-weight:700;
+  color:var(--text-4);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+
+.mock-score-num{
+  font-size:28px;
+  font-weight:800;
+  letter-spacing:-1px;
+  line-height:1;
+}
+
+.mock-score-num.green{
+  color:var(--green);
+}
+
+.mock-score-num.gold{
+  color:var(--purple-2);
+}
+
+.mock-score-bar{
+  height:4px;
+  border-radius:999px;
+  background:var(--border);
+  margin-top:8px;
+  overflow:hidden;
+}
+
+.mock-score-bar-fill{
+  height:100%;
+  border-radius:999px;
+}
+
+.mock-score-bar-fill.green{
+  background:linear-gradient(90deg,var(--green),#34D399);
+  width:82%;
+}
+
+.mock-score-bar-fill.gold{
+  background:linear-gradient(90deg,var(--purple-2),var(--purple-3));
+  width:67%;
+}
+
+.mock-chip{
+  position:absolute;
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:6px 12px;
+  box-shadow:var(--sh);
+  font-size:11px;
+  font-weight:600;
+  color:var(--navy);
+  display:flex;
+  align-items:center;
+  gap:5px;
+  animation:float 4s ease-in-out infinite;
+  z-index:2;
+}
+
+.mock-chip-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+}
+
+.mock-chip-1{
+  top:22px;
+  right:-8px;
+}
+
+.mock-chip-2{
+  bottom:90px;
+  left:-14px;
+  animation-delay:.6s;
+}
+
+.marquee-wrap{
+  padding:14px 0;
+  background:var(--ivory-2);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+}
+
+.marquee-inner{
+  display:flex;
+  white-space:nowrap;
+  animation:marquee 30s linear infinite;
+}
+
+.marquee-item{
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  padding:0 28px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-3);
+}
+
+.marquee-dot{
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:var(--border-2);
+  flex-shrink:0;
+}
+
+.section-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  font-size:11px;
+  font-weight:700;
+  color:var(--purple-2);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+
+.section-eyebrow-line{
+  width:18px;
+  height:2px;
+  background:var(--purple-2);
+  border-radius:2px;
+}
+
+.section-title{
+  font-family:"DM Serif Display",serif;
+  font-size:44px;
+  font-weight:400;
+  letter-spacing:-0.5px;
+  line-height:1.1;
+  color:var(--navy);
+  margin-bottom:12px;
+}
+
+.section-title em{
+  font-style:italic;
+  color:var(--purple-2);
+}
+
+.section-sub{
+  font-size:16px;
+  color:var(--text-3);
+  line-height:1.75;
+  max-width:540px;
+  margin-bottom:56px;
+  font-weight:400;
+}
+
+.rules-strip{
+  background:var(--navy);
+  padding:64px 52px;
+}
+
+.rules-strip-inner{
+  max-width:1200px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:64px;
+  align-items:center;
+}
+
+.rules-strip-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  font-size:11px;
+  font-weight:700;
+  color:var(--purple-3);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+
+.rules-strip-line{
+  width:18px;
+  height:2px;
+  background:var(--purple-3);
+  border-radius:2px;
+}
+
+.rules-strip-title{
+  font-family:"DM Serif Display",serif;
+  font-size:48px;
+  font-weight:400;
+  color:#fff;
+  line-height:1.06;
+  letter-spacing:-0.5px;
+  margin-bottom:14px;
+}
+
+.rules-strip-title em{
+  font-style:italic;
+  color:var(--purple-3);
+}
+
+.rules-strip-sub{
+  font-size:15px;
+  color:rgba(255,255,255,0.56);
+  line-height:1.75;
+  max-width:400px;
+}
+
+.rules-strip-right{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.rules-stat-card{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.10);
+  border-radius:var(--r);
+  padding:20px 18px;
+}
+
+.rules-stat-num{
+  font-size:28px;
+  font-weight:800;
+  color:#fff;
+  letter-spacing:-1px;
+  line-height:1;
+}
+
+.rules-stat-label{
+  font-size:12px;
+  color:rgba(255,255,255,0.48);
+  font-weight:500;
+  margin-top:5px;
+  line-height:1.4;
+}
+
+.rules-stat-accent{
+  color:var(--purple-2);
+}
+
+.demo-section,
+.analytics-showcase,
+.mee-section,
+.pricing-section{
+  padding:100px 52px;
+  background:var(--white);
+}
+
+.how-section,
+.features-section{
+  padding:100px 52px;
+  background:var(--ivory-2);
+}
+
+.demo-inner,
+.analytics-inner,
+.how-inner,
+.feat-inner{
+  max-width:1200px;
+  margin:0 auto;
+}
+
+.demo-shell{
+  background:var(--ivory);
+  border:1px solid var(--border);
+  border-radius:var(--rxl);
+  overflow:visible;
+  box-shadow:var(--sh-xl);
+  position:relative;
+}
+
+.try-now-seal{
+  position:absolute;
+  top:-66px;
+  right:34px;
+  z-index:50;
+  width:142px;
+  height:142px;
+  border:0;
+  background:transparent;
+  padding:0;
+  animation:sealFloat 2.9s ease-in-out infinite;
+  transform-origin:center;
+  isolation:isolate;
+}
+
+.try-now-seal::before{
+  content:"";
+  position:absolute;
+  inset:-20px;
+  z-index:-3;
+  border-radius:50%;
+  background:
+    radial-gradient(circle,rgba(251,191,36,.28) 0%,rgba(251,191,36,.10) 32%,transparent 62%),
+    radial-gradient(circle,rgba(124,58,237,.28) 0%,rgba(124,58,237,.10) 42%,transparent 72%);
+  filter:blur(8px);
+  animation:sealGlowPulse 2.4s ease-in-out infinite;
+}
+
+.try-now-seal::after{
+  content:"";
+  position:absolute;
+  top:12px;
+  right:10px;
+  width:14px;
+  height:14px;
+  z-index:4;
+  background:#FFFFFF;
+  clip-path:polygon(50% 0%,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0% 50%,39% 36%);
+  box-shadow:
+    -70px 20px 0 -3px rgba(255,255,255,.85),
+    -24px 82px 0 -4px rgba(255,255,255,.78);
+  animation:sealSpark 1.8s ease-in-out infinite;
+}
+
+.try-now-seal-inner{
+  position:relative;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  clip-path:polygon(
+    50% 0%,
+    57% 13%,
+    70% 5%,
+    75% 20%,
+    91% 17%,
+    87% 34%,
+    100% 45%,
+    88% 56%,
+    96% 70%,
+    80% 75%,
+    83% 91%,
+    66% 87%,
+    55% 100%,
+    45% 88%,
+    30% 96%,
+    25% 80%,
+    9% 83%,
+    13% 66%,
+    0% 55%,
+    12% 44%,
+    4% 30%,
+    20% 25%,
+    17% 9%,
+    34% 13%
+  );
+  background:
+    radial-gradient(circle at 28% 18%,rgba(255,255,255,.70) 0%,rgba(255,255,255,.22) 18%,transparent 34%),
+    linear-gradient(135deg,#8B5CF6 0%,#6D28D9 32%,#4F46E5 64%,#06B6D4 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.34),
+    inset 0 -16px 26px rgba(14,27,53,.16);
+}
+
+.try-now-seal-inner::before{
+  content:"";
+  position:absolute;
+  top:-18%;
+  bottom:-18%;
+  left:-70%;
+  width:48%;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.78) 48%,transparent 100%);
+  animation:sealShineSweep 2.45s ease-in-out infinite;
+}
+
+.try-now-seal-inner::after{
+  content:"";
+  position:absolute;
+  inset:11px;
+  clip-path:polygon(
+    50% 0%,
+    57% 13%,
+    70% 5%,
+    75% 20%,
+    91% 17%,
+    87% 34%,
+    100% 45%,
+    88% 56%,
+    96% 70%,
+    80% 75%,
+    83% 91%,
+    66% 87%,
+    55% 100%,
+    45% 88%,
+    30% 96%,
+    25% 80%,
+    9% 83%,
+    13% 66%,
+    0% 55%,
+    12% 44%,
+    4% 30%,
+    20% 25%,
+    17% 9%,
+    34% 13%
+  );
+  border:2px solid rgba(255,255,255,.52);
+  opacity:.95;
+}
+
+.try-now-seal-outline{
+  position:absolute;
+  inset:-6px;
+  z-index:-1;
+  clip-path:polygon(
+    50% 0%,
+    57% 13%,
+    70% 5%,
+    75% 20%,
+    91% 17%,
+    87% 34%,
+    100% 45%,
+    88% 56%,
+    96% 70%,
+    80% 75%,
+    83% 91%,
+    66% 87%,
+    55% 100%,
+    45% 88%,
+    30% 96%,
+    25% 80%,
+    9% 83%,
+    13% 66%,
+    0% 55%,
+    12% 44%,
+    4% 30%,
+    20% 25%,
+    17% 9%,
+    34% 13%
+  );
+  background:
+    linear-gradient(135deg,#FEF3C7 0%,#FBBF24 34%,#F59E0B 62%,#FDE68A 100%);
+  box-shadow:
+    0 0 0 5px rgba(251,191,36,.13),
+    0 0 30px rgba(251,191,36,.38),
+    0 18px 38px rgba(79,70,229,.28);
+}
+
+.try-now-seal-text{
+  position:relative;
+  z-index:3;
+  display:block;
+  color:#fff;
+  font-size:18px;
+  line-height:1.02;
+  font-weight:900;
+  letter-spacing:.025em;
+  text-transform:uppercase;
+  text-align:center;
+  text-shadow:
+    0 2px 0 rgba(14,27,53,.16),
+    0 4px 14px rgba(14,27,53,.38);
+  transform:rotate(-2deg);
+}
+
+.demo-titlebar{
+  background:var(--white);
+  border-bottom:1px solid var(--border);
+  padding:12px 18px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  border-radius:var(--rxl) var(--rxl) 0 0;
+}
+
+.wdot{
+  width:11px;
+  height:11px;
+  border-radius:50%;
+}
+
+.demo-title-text{
+  font-family:"JetBrains Mono",monospace;
+  font-size:11.5px;
+  color:var(--text-4);
+  margin-left:8px;
+  font-weight:500;
+}
+
+.recall-body{
+  padding:24px;
+  overflow:hidden;
+  border-radius:0 0 var(--rxl) var(--rxl);
+}
+
+.rule-prompt-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:22px;
+  margin-bottom:18px;
+  box-shadow:var(--sh-sm);
+}
+
+.rule-question-card{
+  background:
+    radial-gradient(circle at 12% 0%,rgba(124,58,237,.10) 0%,transparent 34%),
+    linear-gradient(180deg,#FFFFFF 0%,#FBFCFF 100%);
+  border:1.5px solid #DDE4F2;
+  border-radius:18px;
+  padding:18px 20px;
+  margin-bottom:16px;
+  box-shadow:0 8px 24px rgba(14,27,53,.07);
+  position:relative;
+  overflow:hidden;
+}
+
+.rule-question-card::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:3px;
+  background:linear-gradient(90deg,var(--purple-2),#06B6D4,var(--gold));
+}
+
+.question-kicker{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  font-size:10.5px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--purple-2);
+  margin-bottom:10px;
+}
+
+.question-kicker-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--purple-2);
+  box-shadow:0 0 0 4px rgba(124,58,237,.12);
+}
+
+.question-text{
+  font-size:18px;
+  line-height:1.45;
+  font-weight:800;
+  color:var(--navy);
+  letter-spacing:-.3px;
+}
+
+.question-helper{
+  margin-top:8px;
+  font-size:12.5px;
+  line-height:1.55;
+  color:var(--text-3);
+}
+
+.prompt-topline{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.demo-subject-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:10.5px;
+  font-weight:700;
+  color:var(--purple-2);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+  border-radius:999px;
+  padding:4px 11px;
+}
+
+.prompt-hint{
+  font-size:11px;
+  font-weight:600;
+  padding:5px 11px;
+  border-radius:999px;
+  background:var(--blue-dim);
+  border:1px solid var(--blue-mid);
+  color:var(--blue);
+}
+
+.demo-rule-text{
+  font-family:"DM Serif Display",serif;
+  font-size:19px;
+  line-height:1.72;
+  min-height:84px;
+  color:var(--navy);
+}
+
+.demo-rule-text.waiting{
+  font-family:"Outfit",sans-serif;
+  min-height:118px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:22px;
+  border:1.5px dashed #C4B5FD;
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 20% 10%,rgba(124,58,237,.10) 0%,transparent 34%),
+    linear-gradient(180deg,#FFFFFF 0%,#F8FAFF 100%);
+  color:var(--purple-2);
+  font-size:15px;
+  line-height:1.65;
+  font-weight:800;
+  letter-spacing:-.1px;
+}
+
+.demo-rule-text.waiting strong{
+  color:var(--navy);
+  font-weight:900;
+}
+
+.demo-rule-text.waiting .wait-note{
+  display:block;
+  margin-top:8px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--text-4);
+}
+
+.rule-cursor{
+  display:inline-block;
+  width:2px;
+  height:18px;
+  background:var(--navy);
+  vertical-align:middle;
+  animation:blink 1s infinite;
+  margin-left:1px;
+}
+
+.demo-footer-inline{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  padding-top:14px;
+}
+
+.rule-tag{
+  font-size:11px;
+  font-weight:600;
+  padding:4px 11px;
+  border-radius:999px;
+  background:var(--blue-dim);
+  border:1px solid var(--blue-mid);
+  color:var(--blue);
+}
+
+.answer-stage{
+  display:grid;
+  grid-template-columns:1fr 360px;
+  gap:16px;
+  align-items:start;
+}
+
+.answer-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:18px;
+  box-shadow:var(--sh-sm);
+}
+
+.practice-label{
+  font-size:10.5px;
+  font-weight:700;
+  color:var(--text-4);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+
+.answer-input{
+  width:100%;
+  min-height:150px;
+  border-radius:10px;
+  border:1.5px solid var(--border);
+  background:var(--ivory);
+  color:var(--text);
+  padding:13px;
+  font-size:13.5px;
+  line-height:1.75;
+  outline:none;
+  resize:none;
+  transition:.15s;
+}
+
+.answer-input:focus{
+  border-color:var(--navy-3);
+  box-shadow:0 0 0 3px rgba(14,27,53,0.07);
+  background:var(--white);
+}
+
+.answer-input::placeholder{
+  color:var(--text-4);
+}
+
+.answer-helper{
+  margin-top:9px;
+  font-size:11.5px;
+  color:var(--text-4);
+  line-height:1.65;
+}
+
+.practice-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:12px;
+}
+
+.submit-btn{
+  height:38px;
+  padding:0 18px;
+  border:none;
+  border-radius:9px;
+  background:var(--navy);
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  transition:.15s;
+  box-shadow:0 2px 8px rgba(14,27,53,0.20);
+}
+
+.submit-btn:hover{
+  background:var(--navy-2);
+  transform:translateY(-1px);
+}
+
+.ghost-mini-btn{
+  height:38px;
+  padding:0 14px;
+  border-radius:9px;
+  border:1.5px solid var(--border-2);
+  background:transparent;
+  color:var(--text-3);
+  font-size:13px;
+  font-weight:600;
+  transition:.15s;
+}
+
+.ghost-mini-btn:hover{
+  border-color:var(--navy);
+  color:var(--navy);
+}
+
+.floating-result{
+  display:none;
+  position:sticky;
+  top:82px;
+  background:var(--white);
+  border:1.5px solid var(--border);
+  border-radius:var(--rl);
+  padding:20px;
+  box-shadow:var(--sh-xl);
+}
+
+.floating-result.show{
+  display:block;
+  animation:slideIn .3s ease;
+}
+
+.result-head{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding-bottom:16px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:16px;
+}
+
+.score-ring-wrap{
+  position:relative;
+  width:70px;
+  height:70px;
+  flex-shrink:0;
+}
+
+.score-ring-svg{
+  width:70px;
+  height:70px;
+  transform:rotate(-90deg);
+}
+
+.score-ring-bg{
+  fill:none;
+  stroke:var(--border);
+  stroke-width:6;
+}
+
+.score-ring-fill{
+  fill:none;
+  stroke-width:6;
+  stroke-linecap:round;
+  stroke-dasharray:188;
+  stroke-dashoffset:188;
+  transition:stroke-dashoffset 1s ease;
+}
+
+.score-ring-fill.good{stroke:url(#rGood)}
+.score-ring-fill.mid{stroke:url(#rMid)}
+.score-ring-fill.low{stroke:url(#rLow)}
+
+.score-ring-num{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:17px;
+  font-weight:800;
+  color:var(--navy);
+  letter-spacing:-0.5px;
+}
+
+.result-meta{
+  flex:1;
+  min-width:0;
+}
+
+.result-status{
+  font-size:13.5px;
+  font-weight:700;
+  color:var(--navy);
+  margin-bottom:3px;
+}
+
+.result-sub{
+  font-size:11.5px;
+  color:var(--text-3);
+  font-weight:500;
+  line-height:1.5;
+}
+
+.kw-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  background:var(--green-dim);
+  border:1px solid var(--green-mid);
+  color:var(--green);
+  font-size:11px;
+  font-weight:700;
+  padding:3px 9px;
+  border-radius:999px;
+  margin-top:6px;
+}
+
+.analytics-block{
+  margin-bottom:14px;
+}
+
+.analytics-title,
+.result-title{
+  font-size:9.5px;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--text-4);
+  margin-bottom:9px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.analytics-title::after,
+.result-title::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--border);
+}
+
+.analytics-bars{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+
+.abar-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.abar-label{
+  font-size:10.5px;
+  font-weight:600;
+  color:var(--text-3);
+  width:76px;
+  flex-shrink:0;
+  line-height:1.2;
+}
+
+.abar-track{
+  flex:1;
+  height:6px;
+  background:#E4E8F4;
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.abar-fill{
+  height:100%;
+  border-radius:999px;
+  width:0;
+  transition:width 1s ease;
+}
+
+.abar-fill.navy{
+  background:linear-gradient(90deg,var(--navy),var(--navy-3));
+}
+
+.abar-fill.gold{
+  background:linear-gradient(90deg,var(--purple),var(--purple-2));
+}
+
+.abar-fill.blue{
+  background:linear-gradient(90deg,var(--blue),#60A5FA);
+}
+
+.abar-pct{
+  font-size:10.5px;
+  font-weight:700;
+  color:var(--text-3);
+  width:28px;
+  text-align:right;
+  flex-shrink:0;
+}
+
+.donut-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  background:var(--ivory);
+  border-radius:10px;
+  border:1px solid var(--border);
+  margin-bottom:14px;
+}
+
+.donut-labels{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+
+.donut-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:10.5px;
+  font-weight:600;
+  color:var(--text-3);
+}
+
+.donut-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+
+.result-section{
+  margin-top:12px;
+}
+
+.keyword-row{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+}
+
+.keyword-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:10.5px;
+  font-weight:700;
+}
+
+.keyword-pill.blue{
+  color:var(--blue);
+  background:var(--blue-dim);
+  border:1px solid var(--blue-mid);
+}
+
+.keyword-pill.amber{
+  color:var(--purple-2);
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+}
+
+.correct-rule-box{
+  padding:12px;
+  background:var(--ivory);
+  border-radius:10px;
+  border:1px solid var(--border);
+  margin-top:12px;
+}
+
+.correct-rule{
+  font-size:12px;
+  line-height:1.8;
+  color:var(--text-2);
+}
+
+.missed-highlight{
+  color:var(--purple-2);
+  background:var(--purple-dim);
+  border-bottom:2px solid var(--purple-3);
+  padding:1px 2px;
+  border-radius:3px;
+  font-weight:700;
+}
+
+.result-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:7px;
+  margin-top:14px;
+}
+
+.outline-action{
+  height:32px;
+  padding:0 12px;
+  border-radius:999px;
+  border:1.5px solid var(--border-2);
+  background:transparent;
+  color:var(--text-3);
+  font-size:12px;
+  font-weight:600;
+  transition:.15s;
+}
+
+.outline-action:hover{
+  border-color:var(--navy);
+  color:var(--navy);
+}
+
+.primary-navy{
+  height:32px;
+  padding:0 14px;
+  border-radius:999px;
+  border:none;
+  background:var(--navy);
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  transition:.15s;
+  box-shadow:0 2px 8px rgba(14,27,53,0.20);
+}
+
+.primary-navy:hover{
+  background:var(--navy-2);
+  transform:translateY(-1px);
+}
+
+.analytics-showcase{
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+
+.analytics-grid{
+  max-width:1200px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+}
+
+.analytics-card,
+.how-card,
+.mee-card,
+.bento-card,
+.price-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--rl);
+  padding:26px;
+  transition:.22s;
+  position:relative;
+  overflow:hidden;
+}
+
+.analytics-card:hover,
+.how-card:hover,
+.mee-card:hover,
+.bento-card:hover,
+.price-card:hover{
+  box-shadow:var(--sh-lg);
+  transform:translateY(-2px);
+}
+
+.analytics-card h3,
+.how-card h3,
+.mee-card h4,
+.bento-card h3{
+  font-size:16px;
+  font-weight:700;
+  color:var(--navy);
+  margin-bottom:8px;
+}
+
+.analytics-card p,
+.how-card p,
+.mee-card p,
+.bento-card p{
+  font-size:13.5px;
+  color:var(--text-3);
+  line-height:1.75;
+}
+
+.analytics-number{
+  font-size:42px;
+  font-weight:800;
+  letter-spacing:-1.5px;
+  color:var(--purple-2);
+  margin-bottom:8px;
+}
+
+.how-grid,
+.pricing-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+.how-num{
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  font-weight:800;
+  color:var(--purple);
+  margin-bottom:16px;
+  font-family:"DM Serif Display",serif;
+}
+
+.how-card.featured{
+  background:var(--navy);
+  border-color:var(--navy);
+}
+
+.how-card.featured h3{
+  color:#fff;
+}
+
+.how-card.featured p{
+  color:rgba(255,255,255,0.58);
+}
+
+.mee-inner{
+  max-width:1200px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:72px;
+  align-items:center;
+}
+
+.mee-right{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.mee-card{
+  padding:20px;
+}
+
+.mee-card-icon,
+.feat-icon{
+  width:42px;
+  height:42px;
+  border-radius:11px;
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:16px;
+}
+
+.mee-card-icon{
+  width:36px;
+  height:36px;
+  border-radius:9px;
+  margin-bottom:12px;
+}
+
+.bento-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+.bento-card.wide{
+  grid-column:span 2;
+}
+
+.bento-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:12px;
+  font-size:11px;
+  font-weight:600;
+  color:var(--purple-2);
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+  border-radius:999px;
+  padding:3px 10px;
+}
+
+.bento-number{
+  font-size:48px;
+  font-weight:800;
+  letter-spacing:-2px;
+  line-height:1;
+  margin-bottom:4px;
+  color:var(--navy);
+}
+
+.pricing-inner{
+  max-width:1040px;
+  margin:0 auto;
+}
+
+.price-card{
+  background:var(--ivory);
+  border:1.5px solid var(--border);
+  display:flex;
+  flex-direction:column;
+}
+
+.price-card.featured{
+  border-color:var(--navy);
+  border-width:2px;
+  background:var(--white);
+  box-shadow:0 8px 32px rgba(14,27,53,0.12);
+}
+
+.popular-badge{
+  position:absolute;
+  top:-11px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--navy);
+  color:#fff;
+  font-size:10.5px;
+  font-weight:800;
+  padding:4px 14px;
+  border-radius:999px;
+  white-space:nowrap;
+  box-shadow:0 4px 10px rgba(14,27,53,0.25);
+}
+
+.price-tier{
+  font-size:10.5px;
+  font-weight:800;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+
+.price-tier.gray{color:var(--text-4)}
+.price-tier.navy{color:var(--navy)}
+.price-tier.gold{color:var(--purple-2)}
+
+.price-amount{
+  font-size:40px;
+  font-weight:800;
+  letter-spacing:-1.5px;
+  line-height:1;
+  color:var(--navy);
+  margin-bottom:5px;
+}
+
+.price-amount .mo{
+  font-size:14px;
+  font-weight:500;
+  color:var(--text-4);
+  letter-spacing:0;
+}
+
+.price-desc{
+  font-size:12.5px;
+  color:var(--text-3);
+  margin-bottom:18px;
+  line-height:1.7;
+}
+
+.price-divider{
+  height:1px;
+  background:var(--border);
+  margin-bottom:18px;
+}
+
+.price-feat{
+  display:flex;
+  gap:9px;
+  align-items:flex-start;
+  margin-bottom:10px;
+}
+
+.chk{
+  width:17px;
+  height:17px;
+  border-radius:50%;
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  margin-top:1px;
+}
+
+.chk svg{
+  width:8px;
+  height:8px;
+}
+
+.price-feat span{
+  font-size:13px;
+  color:var(--text-2);
+  line-height:1.6;
+}
+
+.price-btn-inner{
+  width:100%;
+  height:44px;
+  border-radius:11px;
+  font-size:13.5px;
+  font-weight:700;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:.18s;
+  border:none;
+  margin-top:22px;
+}
+
+.price-btn-inner.solid{
+  background:var(--navy);
+  color:#fff;
+  box-shadow:0 2px 8px rgba(14,27,53,0.20);
+}
+
+.price-btn-inner.solid:hover{
+  background:var(--navy-2);
+  transform:translateY(-1px);
+}
+
+.price-btn-inner.outline{
+  background:transparent;
+  border:1.5px solid var(--border-2);
+  color:var(--text-2);
+}
+
+.price-btn-inner.outline:hover{
+  border-color:var(--navy);
+  color:var(--navy);
+}
+
+.cta-section{
+  padding:80px 52px;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+.cta-band{
+  background:var(--navy);
+  border-radius:var(--rxl);
+  padding:72px 60px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.cta-band::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse 60% 60% at 50% 0%,rgba(124,58,237,0.18) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+.cta-band h2{
+  font-family:"DM Serif Display",serif;
+  font-size:46px;
+  font-weight:400;
+  letter-spacing:-0.5px;
+  color:#fff;
+  margin-bottom:12px;
+  position:relative;
+}
+
+.cta-band h2 em{
+  font-style:italic;
+  color:var(--purple-2);
+}
+
+.cta-band p{
+  font-size:16px;
+  color:rgba(255,255,255,0.52);
+  margin-bottom:30px;
+  position:relative;
+}
+
+.cta-btn{
+  height:52px;
+  padding:0 32px;
+  border-radius:12px;
+  border:none;
+  background:var(--purple-2);
+  color:#fff;
+  font-size:15px;
+  font-weight:700;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:.18s;
+  box-shadow:0 4px 18px rgba(124,58,237,0.32);
+  position:relative;
+}
+
+.cta-btn:hover{
+  background:var(--purple-3);
+  transform:translateY(-2px);
+  box-shadow:0 8px 26px rgba(124,58,237,0.42);
+}
+
+.legal-page-wrap{
+  max-width:840px;
+  margin:0 auto;
+  padding:68px 20px 92px;
+}
+
+.legal-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--rl);
+  padding:44px;
+  box-shadow:var(--sh);
+}
+
+.legal-eyebrow{
+  color:var(--purple);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+
+.legal-card h1{
+  font-family:"DM Serif Display",serif;
+  font-size:38px;
+  font-weight:400;
+  letter-spacing:-0.5px;
+  margin-bottom:8px;
+  color:var(--navy);
+}
+
+.legal-updated{
+  font-size:12.5px;
+  color:var(--text-4);
+  margin-bottom:26px;
+}
+
+.legal-card h2{
+  font-size:18px;
+  font-weight:700;
+  margin-top:28px;
+  margin-bottom:8px;
+  color:var(--navy);
+}
+
+.legal-card p,
+.legal-card li{
+  font-size:13.5px;
+  color:var(--text-2);
+  line-height:1.85;
+}
+
+.legal-card ul{
+  padding-left:20px;
+  margin-top:8px;
+}
+
+.legal-card li{
+  margin-bottom:5px;
+}
+
+.legal-note{
+  margin-top:26px;
+  padding:14px 16px;
+  border-radius:10px;
+  background:var(--purple-dim);
+  border:1px solid var(--purple-mid);
+  font-size:13px;
+  line-height:1.75;
+  color:var(--purple-2);
+  font-weight:500;
+}
+
+footer{
+  background:var(--navy);
+  border-top:1px solid rgba(255,255,255,0.07);
+  padding:60px 52px 34px;
+}
+
+.footer-top{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:44px;
+  margin-bottom:44px;
+}
+
+.footer-brand-logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:13px;
+}
+
+.footer-brand-logo img{
+  width:38px;
+  height:38px;
+  object-fit:contain;
+  display:block;
+  background:transparent;
+  border-radius:0;
+  flex-shrink:0;
+}
+
+.footer-brand .fname{
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+}
+
+.footer-brand .fname span{
+  color:var(--purple-3);
+}
+
+.footer-brand p{
+  max-width:240px;
+  font-size:12.5px;
+  line-height:1.8;
+  color:rgba(255,255,255,0.34);
+}
+
+.footer-col h4{
+  font-size:10.5px;
+  font-weight:700;
+  color:rgba(255,255,255,0.40);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  margin-bottom:14px;
+}
+
+.footer-col a{
+  display:block;
+  font-size:13px;
+  color:rgba(255,255,255,0.34);
+  margin-bottom:10px;
+  transition:.15s;
+}
+
+.footer-col a:hover{
+  color:#fff;
+}
+
+.footer-cookie-btn{
+  display:block;
+  border:none;
+  background:transparent;
+  padding:0;
+  margin:0 0 10px;
+  font-size:13px;
+  color:rgba(255,255,255,0.34);
+  cursor:pointer;
+  text-align:left;
+  transition:.15s;
+}
+
+.footer-cookie-btn:hover{
+  color:#fff;
+}
+
+.footer-bottom{
+  border-top:1px solid rgba(255,255,255,0.07);
+  padding-top:24px;
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  align-items:flex-start;
+}
+
+.footer-legal{
+  font-size:11px;
+  color:rgba(255,255,255,0.18);
+  line-height:1.85;
+  max-width:640px;
+}
+
+.footer-links{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  flex-shrink:0;
+}
+
+.footer-links a{
+  font-size:11px;
+  color:rgba(255,255,255,0.26);
+  transition:.15s;
+}
+
+.footer-links a:hover{
+  color:rgba(255,255,255,0.65);
+}
+
+.cookie-banner{
+  position:fixed;
+  left:22px;
+  right:22px;
+  bottom:22px;
+  max-width:940px;
+  margin:0 auto;
+  z-index:5000;
+  background:var(--white);
+  border:1.5px solid var(--border);
+  border-radius:var(--rl);
+  box-shadow:var(--sh-xl);
+  padding:20px 22px;
+  display:none;
+}
+
+.cookie-banner.show{
+  display:block;
+  animation:fadeUp .3s ease;
+}
+
+.cookie-banner h3{
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:7px;
+  color:var(--navy);
+}
+
+.cookie-banner p{
+  font-size:13px;
+  line-height:1.7;
+  color:var(--text-3);
+  max-width:680px;
+}
+
+.cookie-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+
+.cookie-btn{
+  height:36px;
+  padding:0 15px;
+  border-radius:9px;
+  border:1.5px solid var(--border-2);
+  background:transparent;
+  color:var(--text-2);
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:.15s;
+}
+
+.cookie-btn:hover{
+  border-color:var(--navy);
+  color:var(--navy);
+}
+
+.cookie-btn.primary{
+  background:var(--navy);
+  border-color:var(--navy);
+  color:#fff;
+}
+
+.cookie-btn.primary:hover{
+  background:var(--navy-2);
+}
+
+.cookie-modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(14,27,53,0.42);
+  backdrop-filter:blur(4px);
+  z-index:6000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.cookie-modal-backdrop.show{
+  display:flex;
+}
+
+.cookie-modal{
+  width:min(700px,100%);
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--rl);
+  box-shadow:var(--sh-xl);
+  overflow:hidden;
+  animation:fadeUp .3s ease;
+}
+
+.cookie-modal-header{
+  padding:26px;
+  border-bottom:1px solid var(--border);
+}
+
+.cookie-modal-header h2{
+  font-family:"DM Serif Display",serif;
+  font-size:24px;
+  font-weight:400;
+  margin-bottom:9px;
+  color:var(--navy);
+}
+
+.cookie-modal-header p{
+  color:var(--text-3);
+  line-height:1.7;
+  font-size:13.5px;
+}
+
+.cookie-options{
+  padding:8px 26px 22px;
+}
+
+.cookie-option{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  padding:16px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.cookie-option:last-child{
+  border-bottom:none;
+}
+
+.cookie-option h4{
+  font-size:14.5px;
+  font-weight:600;
+  margin-bottom:5px;
+  color:var(--navy);
+}
+
+.cookie-option p{
+  font-size:12.5px;
+  color:var(--text-3);
+  line-height:1.65;
+}
+
+.cookie-switch{
+  width:46px;
+  height:26px;
+  border-radius:999px;
+  border:none;
+  background:var(--border-2);
+  position:relative;
+  cursor:pointer;
+  flex:0 0 auto;
+  margin-top:4px;
+  transition:background .2s;
+}
+
+.cookie-switch::after{
+  content:"";
+  position:absolute;
+  width:20px;
+  height:20px;
+  top:3px;
+  left:3px;
+  border-radius:50%;
+  background:#fff;
+  transition:.2s;
+  box-shadow:0 1px 3px rgba(0,0,0,0.14);
+}
+
+.cookie-switch.on{
+  background:var(--navy);
+}
+
+.cookie-switch.on::after{
+  left:23px;
+}
+
+.cookie-switch.locked{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+.cookie-modal-actions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  padding:18px 26px;
+  border-top:1px solid var(--border);
+  flex-wrap:wrap;
+}
+
+@media(max-width:1060px){
+  .hero-inner{
+    grid-template-columns:1fr;
+    min-height:auto;
+  }
+
+  .hero-right{
+    border-left:none;
+    border-top:1px solid var(--border);
+    min-height:440px;
+  }
+
+  .hero-left{
+    padding:60px 40px;
+  }
+
+  .rules-strip-inner,
+  .mee-inner{
+    grid-template-columns:1fr;
+  }
+
+  .answer-stage{
+    grid-template-columns:1fr;
+  }
+
+  .floating-result{
+    position:relative;
+    top:auto;
+  }
+
+  .bento-card.wide{
+    grid-column:span 1;
+  }
+
+  .bento-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .analytics-grid{
+    grid-template-columns:1fr;
+  }
+
+  .try-now-seal{
+    top:-56px;
+    right:24px;
+    width:118px;
+    height:118px;
+  }
+
+  .try-now-seal-text{
+    font-size:15px;
+  }
+}
+
+@media(max-width:768px){
+  nav{
+    height:66px;
+    display:flex;
+    justify-content:space-between;
+    padding:0 18px;
+  }
+
+  .nav-links{
+    display:none;
+  }
+
+  .nav-cta{
+    gap:7px;
+  }
+
+  .btn-ghost,
+  .btn-primary{
+    height:36px;
+    padding:0 13px;
+    font-size:12.5px;
+  }
+
+  .hero h1{
+    font-size:42px;
+    letter-spacing:-1.4px;
+  }
+
+  .hero-sub{
+    font-size:16px;
+  }
+
+  .hero-left{
+    padding:48px 20px;
+  }
+
+  .hero-right{
+    padding:48px 20px;
+  }
+
+  .hero-btns{
+    flex-direction:column;
+  }
+
+  .hero-btn-main,
+  .hero-btn-sec{
+    width:100%;
+  }
+
+  .hero-stats-row{
+    flex-wrap:wrap;
+    gap:16px;
+  }
+
+  .hero-stat-divider{
+    display:none;
+  }
+
+  .demo-section,
+  .analytics-showcase,
+  .features-section,
+  .how-section,
+  .mee-section,
+  .pricing-section{
+    padding:64px 20px;
+  }
+
+  .rules-strip{
+    padding:52px 20px;
+  }
+
+  .section-title{
+    font-size:32px;
+  }
+
+  .rules-strip-title{
+    font-size:36px;
+  }
+
+  .bento-grid,
+  .pricing-grid,
+  .how-grid{
+    grid-template-columns:1fr;
+  }
+
+  .footer-top{
+    grid-template-columns:1fr;
+  }
+
+  .footer-bottom{
+    flex-direction:column;
+  }
+
+  .cta-section{
+    padding:44px 20px;
+  }
+
+  .cta-band{
+    padding:44px 24px;
+    border-radius:var(--rl);
+  }
+
+  .cta-band h2{
+    font-size:32px;
+  }
+
+  footer{
+    padding:44px 18px 26px;
+  }
+
+  .legal-page-wrap{
+    padding:44px 18px 76px;
+  }
+
+  .legal-card{
+    padding:26px;
+  }
+
+  .legal-card h1{
+    font-size:28px;
+  }
+
+  .recall-body{
+    padding:16px;
+  }
+
+  .cookie-banner{
+    left:12px;
+    right:12px;
+    bottom:12px;
+  }
+
+  .try-now-seal{
+    top:-44px;
+    right:10px;
+    width:92px;
+    height:92px;
+  }
+
+  .try-now-seal-text{
+    font-size:12px;
+  }
+
+  .try-now-seal-outline{
+    inset:-4px;
+  }
+
+  .prompt-topline{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+}
+
+/* NAVBAR FINAL ALIGNMENT FIX */
+nav{
+  height:72px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  padding:0 56px !important;
+  position:sticky !important;
+  top:0 !important;
+}
+
+.nav-logo{
+  height:72px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:10px !important;
+  flex:0 0 240px !important;
+  line-height:1 !important;
+  position:relative !important;
+  top:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+
+.logo-mark{
+  width:38px !important;
+  height:38px !important;
+  display:block !important;
+  object-fit:contain !important;
+  margin:0 !important;
+  padding:0 !important;
+  flex-shrink:0 !important;
+}
+
+.nav-links{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  height:72px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:18px !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+
+.nav-links a{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  height:40px !important;
+  padding:0 4px !important;
+  margin:0 !important;
+  line-height:1 !important;
+  font-size:13.5px !important;
+  font-weight:650 !important;
+  border-radius:8px !important;
+}
+
+.nav-cta{
+  height:72px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:10px !important;
+  flex:0 0 240px !important;
+  margin:0 !important;
+  padding:0 !important;
+  position:relative !important;
+  top:0 !important;
+}
+
+.btn-ghost,
+.btn-primary{
+  height:40px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  margin:0 !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+@media(max-width:768px){
+  nav{
+    height:66px !important;
+    padding:0 18px !important;
+  }
+
+  .nav-logo,
+  .nav-cta{
+    height:66px !important;
+    flex:0 0 auto !important;
+  }
+
+  .nav-links{
+    display:none !important;
+  }
+
+  .btn-ghost,
+  .btn-primary{
+    height:36px !important;
+    padding:0 13px !important;
+    font-size:12.5px !important;
+  }
+}
+
 </style>
 </head>
+
 <body>
+
 <nav>
-  <div class="nav-logo">Lexora<span>.</span>Prep</div>
+  <a href="#home" class="nav-logo">
+    <img src="/lexora-icon-transparent.png" alt="Lexora Prep logo" class="logo-mark"/>
+    Lexora <span class="logo-accent">Prep</span>
+  </a>
+
   <div class="nav-links">
+    <a href="#home">Home</a>
     <a href="#features">Features</a>
     <a href="#howitworks">How it works</a>
     <a href="#pricing">Pricing</a>
-    <a href="#about">About us</a>
-    <a href="#contact">Contact</a>
+    <a href="#faq">FAQ</a>
   </div>
+
   <div class="nav-cta">
-    <a href="/login" target="_top" class="btn-ghost" style="display:inline-flex;align-items:center;justify-content:center;">Log in</a>
-    <a href="/register" target="_top" class="btn-primary" style="display:inline-flex;align-items:center;justify-content:center;">Start free &rarr;</a>
+    <a href="/login" target="_top" class="btn-ghost">Log in</a>
+    <a href="/register" target="_top" class="btn-primary">Start free →</a>
   </div>
 </nav>
 
-<div class="hero">
-  <div class="hero-badge fade-up d1"><span class="hero-badge-dot"></span>Now covering all 12 UBE subjects — 1,200+ rules</div>
-  <h1 class="fade-up d2">Master every<br><span class="accent">black letter rule</span><br>before exam day.</h1>
-  <p class="fade-up d3">The only bar prep platform built specifically for black letter law memorization — with spaced repetition, smart daily plans, and subject-by-subject analytics.</p>
-  <div class="hero-btns fade-up d4">
-    <a href="/register" target="_top" class="hero-btn-main" style="display:inline-flex;align-items:center;justify-content:center;">Get started free &rarr;</a>
-    <a href="#howitworks" class="hero-btn-sec" style="display:inline-flex;align-items:center;justify-content:center;">See how it works</a>
-  </div>
-  <div class="hero-note fade-up d4">No credit card required · Free demo plan available</div>
-</div>
+<main>
 
-<div class="marquee-wrap">
-  <div class="marquee-inner">
-    <span class="marquee-item">Contracts<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Torts<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Evidence<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Civil Procedure<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Criminal Law<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Property<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Constitutional Law<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Business Associations<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Family Law<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Trusts &amp; Wills<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Secured Transactions<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Conflict of Laws<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Contracts<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Torts<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Evidence<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Civil Procedure<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Criminal Law<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Property<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Constitutional Law<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Business Associations<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Family Law<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Trusts &amp; Wills<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Secured Transactions<span class="marquee-dot"></span></span>
-    <span class="marquee-item">Conflict of Laws<span class="marquee-dot"></span></span>
-  </div>
-</div>
+<section id="page-home" class="page active">
 
-<div class="rule-showcase" id="howitworks">
-  <div class="section-label">Live rule training</div>
-  <div class="section-title">See it in action</div>
-  <div class="section-sub">Rules animate character by character — just like how memory actually forms.</div>
-  <div class="rule-card">
-    <div class="rule-card-header">
-      <div class="wdot" style="background:#FF5F56"></div>
-      <div class="wdot" style="background:#FFBD2E"></div>
-      <div class="wdot" style="background:#27C93F"></div>
-      <span class="rule-card-title">lexora-prep — rule-trainer.js</span>
-    </div>
-    <div class="rule-body">
-      <div class="rule-subject" id="rc-subject">Contracts</div>
-      <div class="rule-text" id="rc-text"><span class="rule-cursor"></span></div>
-    </div>
-    <div class="rule-footer" id="rc-tags"></div>
-  </div>
-</div>
+  <div class="hero-section" id="home">
+    <div class="hero-ornament"></div>
+    <div class="hero-ornament-2"></div>
 
-<div class="features" id="features">
-  <div class="section-label">Platform features</div>
-  <div class="section-title">Everything you need.<br>Nothing you don’t.</div>
-  <div class="section-sub">Built for one purpose — to get you passing the bar.</div>
-  <div class="feat-grid">
-    <div class="feat-card">
-      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><path d="M11 3L13.5 8H19L14.5 11.5L16.5 17L11 13.5L5.5 17L7.5 11.5L3 8H8.5L11 3Z"/></svg></div>
-      <h3>Spaced repetition engine</h3>
-      <p>Rules resurface at scientifically optimized intervals so you retain them through exam day — not just until tomorrow.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><rect x="3" y="3" width="16" height="16" rx="3"/><path d="M7 11h8M7 15h5"/></svg></div>
-      <h3>Smart daily study plan</h3>
-      <p>Set your exam date and available hours. Lexora auto-distributes your MBE questions, BLL rules, and reviews across every study day.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><path d="M3 17V11l5-5 5 5 5-7v13"/></svg></div>
-      <h3>Subject-level analytics</h3>
-      <p>Track your accuracy, completion, and BLL score per subject. Instantly know where you’re strong and where you need more reps.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M11 7v4l3 3"/></svg></div>
-      <h3>Weak area targeting</h3>
-      <p>The system flags your weak subjects automatically and routes extra reps where your score needs the most lift before the exam.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><rect x="2" y="5" width="18" height="13" rx="2"/><path d="M2 9h18"/></svg></div>
-      <h3>Flashcard trainer</h3>
-      <p>1,200+ rules formatted as high-retention flashcards. Flip through on any device — during commutes, breaks, anywhere.</p>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#4F8EF7" stroke-width="1.8"><path d="M19 11A8 8 0 112.93 7.5"/><path d="M19 3v8h-8"/></svg></div>
-      <h3>Streak &amp; consistency tracker</h3>
-      <p>Stay motivated with a streak system that freezes, not resets, when you miss a day.</p>
-    </div>
-  </div>
-</div>
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-badge">
+          <div class="badge-icon">
+            <svg viewBox="0 0 11 11" fill="#fff"><path d="M5.5 1L6.8 4H10L7.3 5.9 8.4 9 5.5 7.2 2.6 9 3.7 5.9 1 4H4.2Z"/></svg>
+          </div>
+          Black Letter Law Rule Training
+        </div>
 
-<div class="pricing" id="pricing">
-  <div class="section-label" style="text-align:center">Pricing</div>
-  <div class="section-title" style="text-align:center">Simple, transparent plans.</div>
-  <div class="section-sub" style="text-align:center;max-width:480px;margin-left:auto;margin-right:auto;margin-bottom:0">Choose the plan that fits your timeline. Cancel anytime.</div>
-  <div class="pricing-grid">
-    <div class="price-card">
-      <div class="price-tier gray">Demo</div>
-      <div class="price-amount">Free</div>
-      <div class="price-desc">Try the platform with a limited sample of rules and features.</div>
-      <div class="price-divider"></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>5 sample rules per subject</span></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Basic progress preview</span></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>No MBE access</span></div>
-      <a href="/register" target="_top" class="price-btn outline" style="display:inline-flex;align-items:center;justify-content:center;">Start for free</a>
+        <h1>
+          Memorize the rules.<br>
+          <em>Master the MEE.</em>
+        </h1>
+
+        <p class="hero-sub">
+          Lexora Prep is a structured rule training platform with more than 1,000 Black Letter Law rule statements. Practice recall, identify gaps, and build the rule memory your essays demand.
+        </p>
+
+        <div class="hero-btns">
+          <button onclick="window.location.href='/register'" class="hero-btn-main">
+            <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7.5h9M8 3.5l4 4-4 4"/></svg>
+            Start training free
+          </button>
+
+          <button onclick="document.getElementById('howitworks').scrollIntoView({behavior:'smooth'})" class="hero-btn-sec">
+            <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="7.5" r="5.5"/><path d="M6 5.5l4 2-4 2V5.5z" fill="currentColor" stroke="none"/></svg>
+            See how it works
+          </button>
+        </div>
+
+        <p class="hero-note">No credit card required for demo access</p>
+
+        <div class="hero-stats-row">
+          <div class="hero-stat">
+            <div>
+              <div class="hero-stat-num">1,000+</div>
+              <div class="hero-stat-label">BLL rule statements</div>
+            </div>
+          </div>
+
+          <div class="hero-stat-divider"></div>
+
+          <div class="hero-stat">
+            <div>
+              <div class="hero-stat-num">12</div>
+              <div class="hero-stat-label">Subject areas</div>
+            </div>
+          </div>
+
+          <div class="hero-stat-divider"></div>
+
+          <div class="hero-stat">
+            <div>
+              <div class="hero-stat-num">5</div>
+              <div class="hero-stat-label">Training modes</div>
+            </div>
+          </div>
+
+          <div class="hero-stat-divider"></div>
+
+          <div class="hero-stat">
+            <div>
+              <div class="hero-stat-num">MEE</div>
+              <div class="hero-stat-label">Essay focused</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="mock-chip mock-chip-1">
+          <div class="mock-chip-dot" style="background:var(--green);animation:pulseDot 2s infinite"></div>
+          Rule recalled correctly
+        </div>
+
+        <div class="mock-chip mock-chip-2">
+          <div class="mock-chip-dot" style="background:var(--purple-2)"></div>
+          Weak area flagged
+        </div>
+
+        <div class="hero-mockup">
+          <div class="mock-rule-card">
+            <div class="mock-rule-subject">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="var(--purple-2)"><circle cx="5" cy="5" r="4"/></svg>
+              Contracts
+            </div>
+
+            <div class="mock-rule-label">Rule statement</div>
+
+            <div class="mock-rule-text">
+              An <span class="kw">offer</span> is a <span class="kw">manifestation of willingness</span> to enter into a bargain, so made as to justify another person in understanding that <span class="kw">assent is invited</span> and will conclude the bargain.
+            </div>
+
+            <div class="mock-tags">
+              <span class="mock-tag">Formation</span>
+              <span class="mock-tag">Offer</span>
+              <span class="mock-tag">Assent</span>
+            </div>
+          </div>
+
+          <div class="mock-score-row">
+            <div class="mock-score-card">
+              <div class="mock-score-label">Recall score</div>
+              <div class="mock-score-num green">82%</div>
+              <div class="mock-score-bar"><div class="mock-score-bar-fill green"></div></div>
+            </div>
+
+            <div class="mock-score-card">
+              <div class="mock-score-label">Keywords found</div>
+              <div class="mock-score-num gold">4 / 6</div>
+              <div class="mock-score-bar"><div class="mock-score-bar-fill gold"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="price-card featured">
-      <div class="popular-badge">Most popular</div>
-      <div class="price-tier blue">BLL Monthly</div>
-      <div class="price-amount">$19<span class="mo">.99/mo</span></div>
-      <div class="price-desc">Full black letter law memorization tools and study planning.</div>
-      <div class="price-divider"></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Full BLL rule access — all 12 subjects</span></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Smart study plan &amp; calendar</span></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Spaced repetition &amp; flashcards</span></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Weak area training</span></div>
-      <a href="/register" target="_top" class="price-btn solid" style="display:inline-flex;align-items:center;justify-content:center;">Get started &rarr;</a>
-    </div>
-
-    <div class="price-card" id="premium-plan-card">
-      <div class="price-tier purple" id="premium-plan-tier">Premium</div>
-      <div class="price-amount" id="premium-plan-price">Coming Soon</div>
-      <div class="price-desc" id="premium-plan-desc">MBE Premium is coming soon. You can currently subscribe only to Black Letter Law training.</div>
-      <div class="price-divider"></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Everything in BLL Monthly</span></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Full MBE question bank</span></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Premium analytics &amp; state comparison</span></div>
-      <div class="price-feat"><div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span>Priority support</span></div>
-      <a
-        class="price-btn outline disabled"
-        id="premium-plan-btn"
-        style="display:inline-flex;align-items:center;justify-content:center;pointer-events:none;opacity:0.6;"
-      >
-        Coming Soon
-      </a>
+  <div class="marquee-wrap">
+    <div class="marquee-inner">
+      <span class="marquee-item">Contracts<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Torts<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Evidence<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Civil Procedure<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Criminal Law<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Property<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Constitutional Law<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Business Associations<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Family Law<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Trusts &amp; Wills<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Secured Transactions<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Conflict of Laws<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Contracts<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Torts<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Evidence<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Civil Procedure<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Criminal Law<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Property<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Constitutional Law<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Business Associations<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Family Law<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Trusts &amp; Wills<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Secured Transactions<span class="marquee-dot"></span></span>
+      <span class="marquee-item">Conflict of Laws<span class="marquee-dot"></span></span>
     </div>
   </div>
-</div>
 
-<div class="faq-section">
-  <div class="section-label" style="text-align:center">FAQ</div>
-  <div class="section-title" style="text-align:center;margin-bottom:40px">Common questions</div>
-  <div class="faq-item">
-    <div class="faq-q">What is black letter law and why does it matter for the bar exam? <span class="faq-arrow">+</span></div>
-    <div class="faq-a">Black letter law refers to the core, well-established legal principles and rules that are universally tested on the bar exam. Mastering these rules, not just recognizing them, is one of the highest-leverage things you can do to improve your MBE and MEE scores.</div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q">How is Lexora Prep different from Barbri or Themis? <span class="faq-arrow">+</span></div>
-    <div class="faq-a">Barbri and Themis are full-service courses. Lexora Prep is a specialized memorization engine focused on black letter law retention, with spaced repetition, daily smart plans, and subject analytics. It works as a standalone product or as a supplement to any course you are already using.</div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q">Can I use Lexora Prep alongside my existing bar prep course? <span class="faq-arrow">+</span></div>
-    <div class="faq-a">Absolutely. Many students use Lexora Prep as a daily memorization layer on top of their main course. The smart plan integrates with your exam date and adjusts automatically around your schedule.</div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q">Do you offer refunds? <span class="faq-arrow">+</span></div>
-    <div class="faq-a">Yes. We offer a 7-day money-back guarantee on all paid plans. If it is not the right fit, contact support within 7 days of purchase.</div>
-  </div>
-  <div class="faq-item">
-    <div class="faq-q">Which bar exam does Lexora Prep cover? <span class="faq-arrow">+</span></div>
-    <div class="faq-a">Lexora Prep currently covers all 12 UBE subjects including the 7 MBE subjects. State-specific content for select jurisdictions is on the roadmap for late 2026.</div>
-  </div>
-</div>
+  <div class="rules-strip">
+    <div class="rules-strip-inner">
+      <div>
+        <div class="rules-strip-eyebrow">
+          <div class="rules-strip-line"></div>
+          Rule coverage
+        </div>
 
-<div class="cta-band">
-  <h2>Your exam date is closer<br>than it feels.</h2>
-  <p>Start building your rule library today — free, no credit card required.</p>
-  <a href="/register" target="_top" class="hero-btn-main" style="display:inline-flex;align-items:center;justify-content:center;">Start free — no card needed &rarr;</a>
-</div>
+        <div class="rules-strip-title">
+          More than <em>1,000</em><br>rule statements.
+        </div>
+
+        <p class="rules-strip-sub">
+          Lexora Prep covers the Black Letter Law rules that bar takers are expected to know and apply, organized by subject, tested through recall, and refined by spaced practice.
+        </p>
+      </div>
+
+      <div class="rules-strip-right">
+        <div class="rules-stat-card">
+          <div class="rules-stat-num">1,000<span class="rules-stat-accent">+</span></div>
+          <div class="rules-stat-label">Black Letter Law rule statements across all subject areas</div>
+        </div>
+
+        <div class="rules-stat-card">
+          <div class="rules-stat-num">12</div>
+          <div class="rules-stat-label">UBE subject areas fully covered in structured training</div>
+        </div>
+
+        <div class="rules-stat-card">
+          <div class="rules-stat-num">5</div>
+          <div class="rules-stat-label">Training modes: study, recall, timed, flashcard, weak focus</div>
+        </div>
+
+        <div class="rules-stat-card">
+          <div class="rules-stat-num">MEE</div>
+          <div class="rules-stat-label">Essay rule recall is the core use case Lexora Prep is built for</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-section" id="howitworks">
+    <div class="demo-inner">
+      <div class="section-eyebrow">
+        <div class="section-eyebrow-line"></div>
+        Rule recall training
+      </div>
+
+      <div class="section-title">Read. Recall. <em>See your gaps.</em></div>
+
+      <p class="section-sub">
+        Lexora shows you the rule statement. You retype it from memory. The analytics panel instantly shows keyword coverage, recall accuracy, and which rule elements you missed.
+      </p>
+
+      <svg width="0" height="0" style="position:absolute">
+        <defs>
+          <linearGradient id="rGood" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#059669"/>
+            <stop offset="100%" stop-color="#34D399"/>
+          </linearGradient>
+          <linearGradient id="rMid" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#B45309"/>
+            <stop offset="100%" stop-color="#FBBF24"/>
+          </linearGradient>
+          <linearGradient id="rLow" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#DC2626"/>
+            <stop offset="100%" stop-color="#F87171"/>
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <div class="demo-shell">
+        <button class="try-now-seal" type="button" onclick="document.getElementById('demoAnswer').focus()" aria-label="Try it now">
+          <span class="try-now-seal-outline"></span>
+          <span class="try-now-seal-inner">
+            <span class="try-now-seal-text">Try<br>It Now</span>
+          </span>
+        </button>
+
+        <div class="demo-titlebar">
+          <div class="wdot" style="background:#FF5F56"></div>
+          <div class="wdot" style="background:#FFBD2E"></div>
+          <div class="wdot" style="background:#27C93F"></div>
+          <span class="demo-title-text">lexora prep · rule recall</span>
+        </div>
+
+        <div class="recall-body">
+          <div class="rule-question-card">
+            <div class="question-kicker">
+              <span class="question-kicker-dot"></span>
+              Recall prompt
+            </div>
+            <div class="question-text" id="rc-question">What rule should the student recall?</div>
+          </div>
+
+          <div class="rule-prompt-card">
+            <div class="prompt-topline">
+              <div class="demo-subject-pill">
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="var(--purple-2)"><circle cx="4.5" cy="4.5" r="3.5"/></svg>
+                <span id="rc-subject">Property</span>
+              </div>
+
+              <div class="prompt-hint">Read the prompt, then type the rule from memory</div>
+            </div>
+
+            <div class="demo-rule-text" id="rc-text"><span class="rule-cursor"></span></div>
+            <div class="demo-footer-inline" id="rc-tags"></div>
+          </div>
+
+          <div class="answer-stage">
+            <div class="answer-card">
+              <div class="practice-label">Your answer</div>
+
+              <textarea class="answer-input" id="demoAnswer" placeholder="Retype the rule statement from memory..."></textarea>
+
+              <div class="answer-helper">
+                Lexora checks keyword coverage and text similarity. Missing rule elements are highlighted after submission.
+              </div>
+
+              <div class="practice-actions">
+                <button class="ghost-mini-btn" id="fillSampleBtn" type="button">Use sample answer</button>
+                <button class="submit-btn" id="showResultBtn" type="button">Submit →</button>
+              </div>
+            </div>
+
+            <div class="floating-result" id="resultPanel">
+              <div class="result-head">
+                <div class="score-ring-wrap">
+                  <svg class="score-ring-svg" viewBox="0 0 70 70">
+                    <circle class="score-ring-bg" cx="35" cy="35" r="28"/>
+                    <circle class="score-ring-fill" id="scoreRingFill" cx="35" cy="35" r="28"/>
+                  </svg>
+                  <div class="score-ring-num" id="resultScore">—</div>
+                </div>
+
+                <div class="result-meta">
+                  <div class="result-status" id="resultStatus">Submit to see results</div>
+                  <div class="result-sub" id="resultSubStatus">Your recall analytics will appear here</div>
+                  <div class="kw-badge" id="keywordCount">— keywords</div>
+                </div>
+              </div>
+
+              <div class="analytics-block">
+                <div class="analytics-title">Performance breakdown</div>
+
+                <div class="analytics-bars">
+                  <div class="abar-row">
+                    <div class="abar-label">Keyword recall</div>
+                    <div class="abar-track"><div class="abar-fill navy" id="barKeyword"></div></div>
+                    <div class="abar-pct" id="pctKeyword">—</div>
+                  </div>
+
+                  <div class="abar-row">
+                    <div class="abar-label">Text similarity</div>
+                    <div class="abar-track"><div class="abar-fill gold" id="barSimilarity"></div></div>
+                    <div class="abar-pct" id="pctSimilarity">—</div>
+                  </div>
+
+                  <div class="abar-row">
+                    <div class="abar-label">Overall score</div>
+                    <div class="abar-track"><div class="abar-fill blue" id="barOverall"></div></div>
+                    <div class="abar-pct" id="pctOverall">—</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="donut-row">
+                <svg width="52" height="52" viewBox="0 0 52 52" style="flex-shrink:0">
+                  <circle cx="26" cy="26" r="18" fill="none" stroke="var(--border)" stroke-width="9"/>
+                  <circle id="donutFound" cx="26" cy="26" r="18" fill="none" stroke="var(--navy)" stroke-width="9" stroke-dasharray="113" stroke-dashoffset="113" transform="rotate(-90 26 26)" style="transition:stroke-dashoffset 1s ease;stroke-linecap:round"/>
+                  <circle id="donutMissed" cx="26" cy="26" r="18" fill="none" stroke="var(--purple-2)" stroke-width="9" stroke-dasharray="113" stroke-dashoffset="113" transform="rotate(-90 26 26)" style="transition:stroke-dashoffset 1s .2s ease;stroke-linecap:round"/>
+                </svg>
+
+                <div class="donut-labels">
+                  <div class="donut-label"><div class="donut-dot" style="background:var(--navy)"></div><span id="donutFoundLabel">Matched: —</span></div>
+                  <div class="donut-label"><div class="donut-dot" style="background:var(--purple)"></div><span id="donutMissedLabel">Missed: —</span></div>
+                  <div class="donut-label"><div class="donut-dot" style="background:var(--border-2)"></div><span id="donutTotalLabel">Total: — keywords</span></div>
+                </div>
+              </div>
+
+              <div class="result-section">
+                <div class="result-title">Matched keywords</div>
+                <div class="keyword-row" id="keywordsFound"></div>
+              </div>
+
+              <div class="result-section">
+                <div class="result-title">Missed keywords</div>
+                <div class="keyword-row" id="keywordsMissing"></div>
+              </div>
+
+              <div class="correct-rule-box">
+                <div class="result-title">Rule statement · missed terms highlighted</div>
+                <div class="correct-rule" id="correctRuleText"></div>
+              </div>
+
+              <div class="result-actions">
+                <button class="outline-action" id="tryAgainBtn" type="button">Try Again</button>
+                <button class="primary-navy" id="nextDemoRuleBtn" type="button">Next Rule →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="analytics-showcase">
+    <div class="demo-inner">
+      <div class="section-eyebrow">
+        <div class="section-eyebrow-line"></div>
+        Performance analytics
+      </div>
+
+      <div class="section-title" style="max-width:560px">Not just practice. <em>Measurable progress.</em></div>
+
+      <p class="section-sub">
+        Every rule you train builds a data record. Lexora tracks recall accuracy, weak subjects, spaced review, and study consistency.
+      </p>
+
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <div class="analytics-number">53%</div>
+          <h3>BLL score tracking</h3>
+          <p>Watch your rule recall performance improve over time with measurable score trends.</p>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-number">32</div>
+          <h3>Weak rules found</h3>
+          <p>Identify rules that need more repetition and route them into focused review sessions.</p>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-number">97</div>
+          <h3>Spaced reviews due</h3>
+          <p>Return to rules at the right interval so memory gets stronger instead of fading.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="how-section">
+    <div class="how-inner">
+      <div class="section-eyebrow">
+        <div class="section-eyebrow-line"></div>
+        How Lexora helps
+      </div>
+
+      <div class="section-title">Structured training for <em>rule memory.</em></div>
+
+      <p class="section-sub">
+        Bar essays reward candidates who can state the correct rule precisely. Lexora Prep builds that muscle through deliberate, repeatable practice.
+      </p>
+
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-num">01</div>
+          <h3>Read the rule statement</h3>
+          <p>Each rule is presented in a clean, distraction-free card. Read the full Black Letter Law statement before attempting recall.</p>
+        </div>
+
+        <div class="how-card featured">
+          <div class="how-num">02</div>
+          <h3>Recall from memory</h3>
+          <p>Retype the rule without looking. Lexora checks keyword coverage and highlights every element you missed.</p>
+        </div>
+
+        <div class="how-card">
+          <div class="how-num">03</div>
+          <h3>Focus on weak rules</h3>
+          <p>Lexora tracks lower recall scores and routes more practice time to weak rules through spaced review.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mee-section">
+    <div class="mee-inner">
+      <div>
+        <div class="section-eyebrow">
+          <div class="section-eyebrow-line"></div>
+          MEE essay preparation
+        </div>
+
+        <div class="section-title">Rule memory is <em>essay performance.</em></div>
+
+        <p class="section-sub" style="margin-bottom:28px">
+          The Multistate Essay Examination rewards candidates who can identify the issue and state the correct legal rule. Lexora Prep is built for exactly that.
+        </p>
+
+        <p style="font-size:14px;color:var(--text-3);line-height:1.75">
+          Lexora Prep is a supplemental rule training tool. It is not a full commercial bar preparation course. Users are responsible for completing full preparation with appropriate resources.
+        </p>
+      </div>
+
+      <div class="mee-right">
+        <div class="mee-card">
+          <div class="mee-card-icon">
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><path d="M3 13V9l4-4 4 4 3-5v9"/></svg>
+          </div>
+          <h4>Issue spotting requires rule knowledge</h4>
+          <p>You cannot spot what you do not know. Rule recall helps you identify issues faster under timed conditions.</p>
+        </div>
+
+        <div class="mee-card">
+          <div class="mee-card-icon">
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><rect x="2" y="2" width="13" height="13" rx="2"/><path d="M5 8.5h7M5 11h4"/></svg>
+          </div>
+          <h4>Essay graders reward precise rules</h4>
+          <p>Vague or incomplete rules lose points. Lexora trains you to recall exact rule elements.</p>
+        </div>
+
+        <div class="mee-card">
+          <div class="mee-card-icon">
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><circle cx="8.5" cy="8.5" r="6.5"/><path d="M8.5 5.5v3l2 2"/></svg>
+          </div>
+          <h4>Spaced recall builds durable memory</h4>
+          <p>Rules studied once fade. Spaced repetition keeps weak rules active until they become stable.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="features-section" id="features">
+    <div class="feat-inner">
+      <div class="section-eyebrow">
+        <div class="section-eyebrow-line"></div>
+        Platform features
+      </div>
+
+      <div class="section-title">Everything built for <em>rule training.</em></div>
+
+      <p class="section-sub">
+        Lexora Prep is purpose-built for Black Letter Law memorization, not a generic study app and not a full bar prep replacement.
+      </p>
+
+      <div class="bento-grid">
+        <div class="bento-card wide">
+          <div class="feat-icon">
+            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><path d="M9.5 2L11.5 7H17.5L12.5 10.5L14.5 16L9.5 12.5L4.5 16L6.5 10.5L1.5 7H7.5Z"/></svg>
+          </div>
+
+          <h3>Rule memorization and structured recall training</h3>
+
+          <p>
+            Study Black Letter Law rules in a clean card format built for repeated reading. Then retype each rule from memory. Lexora checks keyword coverage and text similarity, then highlights missed elements.
+          </p>
+
+          <div class="bento-tag">5 training modes included</div>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-number">1,000+</div>
+          <h3>BLL rule statements</h3>
+          <p>Organized by subject across all 12 UBE testing areas.</p>
+        </div>
+
+        <div class="bento-card">
+          <div class="feat-icon">
+            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><rect x="2" y="4" width="15" height="12" rx="2"/><path d="M2 8h15"/></svg>
+          </div>
+          <h3>Flashcard trainer</h3>
+          <p>Quick daily rule review sessions in a fast-flip format for short study sprints.</p>
+        </div>
+
+        <div class="bento-card">
+          <div class="feat-icon">
+            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><path d="M3 16V10l4.5-4.5L12 10l4-6v12"/></svg>
+          </div>
+          <h3>Subject analytics</h3>
+          <p>Track recall accuracy by subject and see where your rule memory is strongest or weakest.</p>
+        </div>
+
+        <div class="bento-card">
+          <div class="feat-icon">
+            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><circle cx="9.5" cy="9.5" r="7"/><path d="M9.5 6v3.5l2.5 2.5"/></svg>
+          </div>
+          <h3>Weak rule targeting</h3>
+          <p>Spaced repetition routes more practice toward rules where your recall scores are lowest.</p>
+        </div>
+
+        <div class="bento-card">
+          <div class="feat-icon">
+            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><rect x="3" y="5" width="13" height="10" rx="2"/><path d="M7 5V4a2 2 0 014 0v1"/></svg>
+          </div>
+          <h3>Smart study plan</h3>
+          <p>Build a structured rule training schedule based on progress, weak areas, and preparation time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pricing-section" id="pricing">
+    <div class="pricing-inner">
+      <div class="section-eyebrow">
+        <div class="section-eyebrow-line"></div>
+        Pricing
+      </div>
+
+      <div class="section-title">Simple plans for <em>focused preparation.</em></div>
+
+      <p class="section-sub">
+        Cancel anytime. No surprise charges. Demo access requires no payment.
+      </p>
+
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-tier gray">Demo</div>
+          <div class="price-amount">Free</div>
+          <div class="price-desc">Try Lexora Prep with limited sample rule access.</div>
+          <div class="price-divider"></div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>Limited sample BLL rules</span>
+          </div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>Platform preview access</span>
+          </div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>No payment required</span>
+          </div>
+
+          <a href="/register" target="_top"><button class="price-btn-inner outline">Start free</button></a>
+        </div>
+
+        <div class="price-card featured">
+          <div class="popular-badge">Most popular</div>
+          <div class="price-tier navy">BLL Monthly</div>
+          <div class="price-amount">$19<span class="mo">.99/mo</span></div>
+          <div class="price-desc">Full Black Letter Law rule training access.</div>
+          <div class="price-divider"></div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>Full BLL rule access</span>
+          </div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>Spaced repetition and flashcards</span>
+          </div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>Smart study plan</span>
+          </div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>Weak rule targeting</span>
+          </div>
+
+          <a href="/register" target="_top"><button class="price-btn-inner solid">Start training →</button></a>
+        </div>
+
+        <div class="price-card">
+          <div class="price-tier gold">Premium</div>
+          <div class="price-amount">$24<span class="mo">.99/mo</span></div>
+          <div class="price-desc">Advanced rule sets and priority training tools.</div>
+          <div class="price-divider"></div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>Everything in BLL Monthly</span>
+          </div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>120 Golden Rules</span>
+          </div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>120 Golden Flashcards</span>
+          </div>
+
+          <div class="price-feat">
+            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <span>Priority support</span>
+          </div>
+
+          <a href="/register" target="_top"><button class="price-btn-inner outline">Choose Premium</button></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-section">
+    <div class="cta-band">
+      <h2>Build the rule memory<br><em>your essays demand.</em></h2>
+      <p>More than 1,000 Black Letter Law rule statements. Structured recall training. Start free.</p>
+      <button onclick="window.location.href='/register'" class="cta-btn">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7.5h9M8 3.5l4 4-4 4"/></svg>
+        Start training free
+      </button>
+    </div>
+  </div>
+</section>
+
+<section id="page-faq" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Help Center</div>
+      <h1>Frequently Asked Questions</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <h2>What is Lexora Prep?</h2>
+      <p>Lexora Prep is a Black Letter Law memorization and rule training platform for bar exam candidates. It helps users read, recall, and practice legal rule statements through structured repetition, flashcards, weak-rule targeting, and study planning.</p>
+
+      <h2>Is Lexora Prep a full bar prep course?</h2>
+      <p>No. Lexora Prep is not a full commercial bar preparation course and should not be used as your only study resource. It is a supplemental study tool focused on Black Letter Law rule memorization and recall training.</p>
+
+      <h2>Who is Lexora Prep designed for?</h2>
+      <p>Lexora Prep is designed for bar exam candidates who want to strengthen their Black Letter Law rule memory, particularly for the MEE essay portion, where recalling precise rule statements is critical.</p>
+
+      <h2>What is included in the Premium plan?</h2>
+      <p>The Premium plan is $24.99 per month and includes everything in BLL Monthly, plus 120 Golden Rules, 120 Golden Flashcards, and priority support.</p>
+
+      <h2>How does Lexora Prep help with the MEE?</h2>
+      <p>MEE essay performance depends heavily on recognizing the issue and stating the correct legal rule precisely. Lexora Prep trains users to recall and recite Black Letter Law rule statements through structured practice.</p>
+
+      <h2>Does Lexora Prep guarantee bar exam success?</h2>
+      <p>No. Lexora Prep does not guarantee that you will pass the bar exam, receive a particular score, improve your score, or be admitted to practice law.</p>
+
+      <h2>Are the rules accurate?</h2>
+      <p>Lexora Prep aims to provide accurate and useful educational summaries of Black Letter Law. Legal rules can vary by jurisdiction and may change over time. Users should verify important rules with official sources, licensed bar preparation materials, or applicable primary law when necessary.</p>
+
+      <h2>What happens if I find an error?</h2>
+      <p>If you believe you found an error, contact support. If the report helps us improve the platform, Lexora Prep may, at its discretion, provide a discount, voucher, or account credit. Such credits are not guaranteed.</p>
+
+      <h2>Can I share my account?</h2>
+      <p>No. Each account is for one individual user only. Password sharing, shared access, resale, copying, or redistribution of materials is not allowed.</p>
+
+      <h2>How are payments processed?</h2>
+      <p>Payments are processed through Paddle. Lexora Prep does not store full credit card numbers on its own servers.</p>
+
+      <h2>How do refunds work?</h2>
+      <p>A full refund may be available within 7 days of purchase only if less than 25% of paid materials have been accessed. Refunds are not automatic and are handled according to the Refund Policy.</p>
+
+      <div class="legal-note">For support, contact: support@lexoraprep.com</div>
+    </div>
+  </div>
+</section>
+
+<section id="page-terms" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Terms and Conditions</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <p>These Terms and Conditions govern your access to and use of Lexora Prep, including the website, platform, software, study tools, rules, flashcards, analytics, and related services. By creating an account, purchasing a subscription, or using Lexora Prep, you agree to these Terms.</p>
+
+      <h2>1. Educational Purpose Only</h2>
+      <p>Lexora Prep is an educational technology platform designed to support Black Letter Law memorization and rule training. It is not a law firm, legal advisor, law school, licensed bar preparation company, or official bar examination authority.</p>
+
+      <h2>2. Supplemental Study Tool</h2>
+      <p>Lexora Prep is intended only as a supplemental study aid. It should not be used as your only source of preparation for any bar examination.</p>
+
+      <h2>3. No Guarantee of Results</h2>
+      <p>Lexora Prep does not guarantee that you will pass any bar exam, receive a particular score, improve your score, be admitted to practice law, or achieve any academic, professional, or licensing outcome.</p>
+
+      <h2>4. User Responsibility</h2>
+      <p>You are solely responsible for your own preparation, study decisions, use of the platform, and reliance on any educational content.</p>
+
+      <h2>5. Account Use and Security</h2>
+      <p>You must provide accurate account information and keep your login credentials secure. Each account is for one individual user only. You may not share your password, sell access, or allow another person to use your account.</p>
+
+      <h2>6. Prohibited Conduct</h2>
+      <ul>
+        <li>Copying, scraping, downloading, reproducing, publishing, selling, or redistributing Lexora Prep content without permission.</li>
+        <li>Sharing your account, password, paid access, screenshots, rule banks, flashcards, or premium materials with others.</li>
+        <li>Using bots, crawlers, automation tools, or unauthorized scripts to access the platform.</li>
+        <li>Attempting to bypass payment, access controls, subscription limits, or security features.</li>
+        <li>Using the platform for unlawful, abusive, fraudulent, or harmful purposes.</li>
+      </ul>
+
+      <h2>7. Intellectual Property</h2>
+      <p>All Lexora Prep materials are owned by Lexora Prep or its licensors and are protected by applicable laws. You receive a limited, revocable, non-transferable license to use the platform for personal study only.</p>
+
+      <h2>8. Subscriptions and Payments</h2>
+      <p>Paid subscriptions are billed according to the plan selected at checkout. Payments are processed through Paddle. Lexora Prep does not store full credit card numbers on its own servers.</p>
+
+      <h2>9. Cancellation</h2>
+      <p>You may cancel your subscription at any time. Cancellation stops future renewal charges but does not automatically create a refund unless the refund requirements in the Refund Policy are satisfied.</p>
+
+      <h2>10. Refunds</h2>
+      <p>Refunds are governed by the Refund Policy. A full refund may be available within 7 days of purchase only if less than 25% of paid materials have been accessed.</p>
+
+      <h2>11. Content Accuracy</h2>
+      <p>Legal rules may vary by jurisdiction, change over time, or require more detailed analysis than a memorization tool can provide. We do not warrant that all content is complete, current, or error free.</p>
+
+      <h2>12. Beta and Coming Soon Features</h2>
+      <p>Some features may be labeled beta, preview, or coming soon. These features may change, be delayed, or be removed.</p>
+
+      <h2>13. Suspension or Termination</h2>
+      <p>We may suspend or terminate your account if you violate these Terms, misuse the platform, or engage in conduct that may harm Lexora Prep, users, or third parties.</p>
+
+      <h2>14. Disclaimers</h2>
+      <p>Lexora Prep is provided on an as is and as available basis. To the fullest extent permitted by law, we disclaim all warranties, express or implied.</p>
+
+      <h2>15. Limitation of Liability</h2>
+      <p>To the fullest extent permitted by law, Lexora Prep and its affiliates will not be liable for indirect, incidental, consequential, or exemplary damages. Our total liability will not exceed the amount you paid during the one month period before the claim arose.</p>
+
+      <h2>16. Contact</h2>
+      <p>For questions: support@lexoraprep.com</p>
+
+      <div class="legal-note">Lexora Prep is a supplemental rule training tool. It is not a substitute for full bar preparation and does not guarantee exam success.</div>
+    </div>
+  </div>
+</section>
+
+<section id="page-privacy" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Privacy Policy</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <p>This Privacy Policy explains how Lexora Prep collects, uses, stores, and protects information when you use our website, platform, and related services.</p>
+
+      <h2>1. Information We Collect</h2>
+      <p>We may collect information you provide directly, including your name, email address, account credentials, subscription status, support messages, feedback, and other information you choose to submit.</p>
+
+      <h2>2. Study and Platform Data</h2>
+      <p>We may collect study related data, including subjects reviewed, rules accessed, flashcard progress, completion status, weak areas, study plan settings, and platform usage data.</p>
+
+      <h2>3. Payment Information</h2>
+      <p>Payments are processed through Paddle. Lexora Prep does not store full credit card numbers or payment card information on its own servers.</p>
+
+      <h2>4. How We Use Information</h2>
+      <p>We use information to create and manage accounts, provide platform features, process billing through Paddle, respond to support requests, improve the platform, prevent fraud, and comply with legal obligations.</p>
+
+      <h2>5. We Do Not Sell Personal Data</h2>
+      <p>Lexora Prep does not sell your personal data or provide it to third parties for their independent advertising purposes.</p>
+
+      <h2>6. Cookies and Similar Technologies</h2>
+      <p>We may use cookies and similar technologies to keep users logged in, remember preferences, support security, and analyze usage. See our Cookie Policy for more information.</p>
+
+      <h2>7. Data Security</h2>
+      <p>We use reasonable technical and organizational safeguards to protect user information. No internet based service can guarantee complete security.</p>
+
+      <h2>8. User Choices</h2>
+      <p>You may request access, correction, deletion, or account closure by contacting support.</p>
+
+      <h2>9. Contact</h2>
+      <p>For privacy questions: support@lexoraprep.com</p>
+
+      <div class="legal-note">Lexora Prep does not store full card details. Payment processing is handled through Paddle.</div>
+    </div>
+  </div>
+</section>
+
+<section id="page-refund" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Refund Policy</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <p>This Refund Policy explains when users may request a refund for Lexora Prep paid subscriptions or premium access.</p>
+
+      <h2>1. Seven Day Refund Window</h2>
+      <p>You may request a full refund within 7 calendar days of your initial purchase if you meet the usage requirement below.</p>
+
+      <h2>2. Usage Requirement</h2>
+      <p>To qualify for a full refund, you must have accessed less than 25% of the paid materials available under your plan. If 25% or more of paid materials have been used, Lexora Prep may deny the refund request.</p>
+
+      <h2>3. Non Refundable Situations</h2>
+      <p>Refunds are generally not available if the request is late, 25% or more of materials were used, the account violated the Terms, or the user forgot to cancel before renewal.</p>
+
+      <h2>4. Subscription Cancellation</h2>
+      <p>You may cancel your subscription to stop future billing. Cancellation does not automatically create a refund unless the refund request satisfies this Refund Policy.</p>
+
+      <h2>5. Payment Processor</h2>
+      <p>Refunds are processed through Paddle.</p>
+
+      <h2>6. How to Request a Refund</h2>
+      <p>Contact support@lexoraprep.com within the applicable refund window. Include the email used for purchase, the date of purchase, and the reason for the request.</p>
+
+      <div class="legal-note">Full refund may be available within 7 days only if less than 25% of paid materials were used.</div>
+    </div>
+  </div>
+</section>
+
+<section id="page-cookies" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Cookie Policy</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <p>This Cookie Policy explains how Lexora Prep uses cookies and similar technologies on our website and platform.</p>
+
+      <h2>1. What Are Cookies?</h2>
+      <p>Cookies are small text files placed on your device when you visit a website.</p>
+
+      <h2>2. Strictly Necessary Cookies</h2>
+      <p>Required for login, account security, session management, checkout, and basic functionality. These cannot be turned off.</p>
+
+      <h2>3. Preference Cookies</h2>
+      <p>Remember your display settings, saved preferences, and cookie consent choices.</p>
+
+      <h2>4. Analytics Cookies</h2>
+      <p>Help us understand how visitors use Lexora Prep and which features are used most.</p>
+
+      <h2>5. Marketing Cookies</h2>
+      <p>May help measure advertising performance. Not enabled without your consent where legally required.</p>
+
+      <h2>6. Paddle and Payment Cookies</h2>
+      <p>Paddle may use its own cookies for checkout, fraud prevention, and subscription management. Lexora Prep does not control all cookies set by Paddle during checkout.</p>
+
+      <h2>7. Consent and Preferences</h2>
+      <p>You can accept all cookies, reject non-essential cookies, or manage your preferences. Update choices anytime via Cookie Preferences in the footer.</p>
+
+      <h2>8. Contact</h2>
+      <p>For questions: support@lexoraprep.com</p>
+
+      <div class="legal-note">You can update your cookie choices anytime by clicking Cookie Preferences in the footer.</div>
+    </div>
+  </div>
+</section>
+
+</main>
 
 <footer>
   <div class="footer-top">
     <div class="footer-brand">
-      <div class="fname">Lexora<span>.</span>Prep</div>
-      <p>The black letter law memorization platform built for bar exam candidates who want to know every rule before exam day.</p>
+      <div class="footer-brand-logo">
+        <img src="/lexora-icon-transparent.png" alt="Lexora Prep logo"/>
+        <div class="fname">Lexora <span>Prep</span></div>
+      </div>
+
+      <p>Black Letter Law rule training for bar exam candidates. More than 1,000 rule statements. Structured recall practice.</p>
     </div>
+
     <div class="footer-col">
       <h4>Product</h4>
-      <a href="#features">Features</a>
-      <a href="#pricing">Pricing</a>
+      <a href="#features">BLL rule training</a>
       <a href="#howitworks">How it works</a>
-      <a href="#">Rule bank</a>
-      <a href="#">Changelog</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#refund">Refund policy</a>
     </div>
-    <div class="footer-col" id="about">
-      <h4>Company</h4>
-      <a href="#">About us</a>
-      <a href="#" id="contact">Contact us</a>
-      <a href="#">Blog</a>
-      <a href="#">Careers</a>
-      <a href="#">Press</a>
+
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="#faq">Help Center</a>
+      <a href="mailto:support@lexoraprep.com">Contact us</a>
+      <a href="#terms">Legal disclaimers</a>
+      <a href="#privacy">Privacy</a>
+      <button class="footer-cookie-btn" type="button" onclick="openCookieSettings()">Cookie Preferences</button>
     </div>
+
     <div class="footer-col">
       <h4>Legal</h4>
-      <a href="#">Terms &amp; Conditions</a>
-      <a href="#">Privacy Policy</a>
-      <a href="#">Cookie Policy</a>
-      <a href="#">Refund Policy</a>
-      <a href="#">Accessibility</a>
+      <a href="#terms">Terms and Conditions</a>
+      <a href="#privacy">Privacy Policy</a>
+      <a href="#refund">Refund Policy</a>
+      <a href="#cookies">Cookie Policy</a>
+      <a href="#faq">FAQ</a>
     </div>
   </div>
+
   <div class="footer-bottom">
     <div class="footer-legal">
       Copyright &copy; 2026 Lexora Prep LLC. All Rights Reserved.<br>
       Test names and other trademarks are the property of their respective trademark holders. None of the trademark holders are affiliated with Lexora Prep LLC or this website.<br>
-      Lexora Prep LLC is not affiliated with the National Conference of Bar Examiners (NCBE®) or any state board of bar examiners.
+      Lexora Prep LLC is not affiliated with the National Conference of Bar Examiners, NCBE, or any state board of bar examiners. Lexora Prep is a supplemental educational tool and does not guarantee bar exam success.
     </div>
+
     <div class="footer-links">
-      <a href="#">Terms</a>
-      <a href="#">Privacy</a>
-      <a href="#">Contact</a>
-      <a href="#">Support</a>
+      <a href="#terms">Terms</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#refund">Refund</a>
+      <a href="#cookies">Cookies</a>
+      <a href="#faq">FAQ</a>
     </div>
   </div>
 </footer>
 
+<div class="cookie-banner" id="cookieBanner">
+  <h3>We use cookies</h3>
+  <p>Lexora Prep uses necessary cookies to operate the website. With your permission, we may also use preference, analytics, and marketing cookies to improve the platform.</p>
+
+  <div class="cookie-actions">
+    <button class="cookie-btn primary" type="button" onclick="acceptAllCookies()">Accept all</button>
+    <button class="cookie-btn" type="button" onclick="rejectAllCookies()">Reject non-essential</button>
+    <button class="cookie-btn" type="button" onclick="openCookieSettings()">Manage preferences</button>
+    <a class="cookie-btn" href="#cookies">Cookie Policy</a>
+  </div>
+</div>
+
+<div class="cookie-modal-backdrop" id="cookieModal">
+  <div class="cookie-modal">
+    <div class="cookie-modal-header">
+      <h2>Cookie preferences</h2>
+      <p>Manage how Lexora Prep uses cookies. Necessary cookies are always on because they are required for login, security, and basic website functionality.</p>
+    </div>
+
+    <div class="cookie-options">
+      <div class="cookie-option">
+        <div>
+          <h4>Strictly necessary</h4>
+          <p>Required for login, security, checkout, and basic platform functions.</p>
+        </div>
+        <button class="cookie-switch on locked" type="button"></button>
+      </div>
+
+      <div class="cookie-option">
+        <div>
+          <h4>Preferences</h4>
+          <p>Remember your display settings, saved preferences, and cookie choices.</p>
+        </div>
+        <button class="cookie-switch" id="prefSwitch" type="button" onclick="toggleCookieSwitch('preferences')"></button>
+      </div>
+
+      <div class="cookie-option">
+        <div>
+          <h4>Analytics</h4>
+          <p>Help us understand website usage and which features users interact with.</p>
+        </div>
+        <button class="cookie-switch" id="analyticsSwitch" type="button" onclick="toggleCookieSwitch('analytics')"></button>
+      </div>
+
+      <div class="cookie-option">
+        <div>
+          <h4>Marketing</h4>
+          <p>Support referral tracking and future advertising features.</p>
+        </div>
+        <button class="cookie-switch" id="marketingSwitch" type="button" onclick="toggleCookieSwitch('marketing')"></button>
+      </div>
+    </div>
+
+    <div class="cookie-modal-actions">
+      <button class="cookie-btn" type="button" onclick="rejectAllCookies()">Reject non-essential</button>
+      <button class="cookie-btn" type="button" onclick="closeCookieSettings()">Cancel</button>
+      <button class="cookie-btn primary" type="button" onclick="saveCookiePreferences()">Save preferences</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
-  var rules = [
-    {subject:'Contracts',text:'An offer is a manifestation of willingness to enter into a bargain, so made as to justify another person in understanding that his assent to that bargain is invited and will conclude it.',tags:['Offer & Acceptance','Restatement 2nd §24']},
-    {subject:'Torts',text:'To establish negligence, a plaintiff must prove: (1) duty, (2) breach, (3) causation, both actual and proximate, and (4) damages. The standard of care is that of a reasonably prudent person under the same or similar circumstances.',tags:['Negligence','Prima Facie Case']},
-    {subject:'Evidence',text:'Hearsay is an out-of-court statement offered to prove the truth of the matter asserted. Under FRE 801(d)(2), an admission by a party-opponent is not hearsay and is admissible against that party.',tags:['FRE 801','Hearsay']},
-    {subject:'Property',text:'Adverse possession requires actual, open and notorious, exclusive, hostile, and continuous possession under a claim of right for the statutory period. All elements must be satisfied concurrently.',tags:['Adverse Possession','Real Property']},
-    {subject:'Constitutional Law',text:'Under strict scrutiny, the government must show that the law is necessary to serve a compelling governmental interest and is narrowly tailored to achieve that interest. This standard applies to fundamental rights and suspect classifications.',tags:['Equal Protection','Strict Scrutiny']}
+  var pages={
+    home:document.getElementById("page-home"),
+    faq:document.getElementById("page-faq"),
+    terms:document.getElementById("page-terms"),
+    privacy:document.getElementById("page-privacy"),
+    refund:document.getElementById("page-refund"),
+    cookies:document.getElementById("page-cookies")
+  };
+
+  function showPage(){
+    var hash=window.location.hash.replace("#","")||"home";
+
+    if(hash==="features"||hash==="pricing"||hash==="howitworks"){
+      Object.keys(pages).forEach(function(k){pages[k].classList.remove("active")});
+      pages.home.classList.add("active");
+      setTimeout(function(){
+        var t=document.getElementById(hash);
+        if(t)t.scrollIntoView({behavior:"smooth",block:"start"});
+      },50);
+      return;
+    }
+
+    if(!pages[hash])hash="home";
+
+    Object.keys(pages).forEach(function(k){pages[k].classList.remove("active")});
+    pages[hash].classList.add("active");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  window.addEventListener("hashchange",showPage);
+  showPage();
+
+  var rules=[
+    {
+      subject:"Property",
+      question:"What are the elements required to establish adverse possession?",
+      text:"Adverse possession generally requires actual, open and notorious, exclusive, hostile, and continuous possession for the statutory period.",
+      tags:["Adverse Possession","Property","Possession"],
+      keywords:["actual","open and notorious","exclusive","hostile","continuous","statutory period"],
+      sample:"Adverse possession requires actual, open and notorious, exclusive, hostile possession for the statutory period."
+    },
+    {
+      subject:"Evidence",
+      question:"What is hearsay, and when is it inadmissible?",
+      text:"Hearsay is an out of court statement offered to prove the truth of the matter asserted. Unless an exclusion or exception applies, hearsay is inadmissible.",
+      tags:["Hearsay","FRE 801","Evidence"],
+      keywords:["out of court statement","truth of the matter asserted","exclusion","exception","inadmissible"],
+      sample:"Hearsay is an out of court statement offered for the truth of the matter asserted and is inadmissible unless an exception applies."
+    },
+    {
+      subject:"Contracts",
+      question:"What is the legal definition of an offer?",
+      text:"An offer is a manifestation of willingness to enter into a bargain, so made as to justify another person in understanding that assent is invited and will conclude the bargain.",
+      tags:["Offer","Acceptance","Contracts"],
+      keywords:["manifestation","willingness","bargain","assent","invited","conclude"],
+      sample:"An offer is a manifestation of willingness to enter a bargain where another person understands assent is invited."
+    },
+    {
+      subject:"Torts",
+      question:"What elements must a plaintiff prove to establish negligence?",
+      text:"To establish negligence, a plaintiff must prove duty, breach, actual and proximate causation, and damages.",
+      tags:["Negligence","Duty","Causation"],
+      keywords:["duty","breach","actual causation","proximate causation","damages"],
+      sample:"Negligence requires duty, breach, causation, and damages."
+    }
   ];
 
-  var ri = 0;
-  var ci = 0;
-  var t;
+  var ri=0;
+  var ci=0;
+  var typingTimer=null;
 
-  function type(){
-    var r = rules[ri];
-    var el = document.getElementById('rc-text');
-    var sub = document.getElementById('rc-subject');
-    var tags = document.getElementById('rc-tags');
+  function getR(){
+    return rules[ri];
+  }
 
-    if (!el || !sub || !tags) return;
+  function typeRule(){
+    var r=getR();
+    var el=document.getElementById("rc-text");
+    var sub=document.getElementById("rc-subject");
+    var tags=document.getElementById("rc-tags");
+    var question=document.getElementById("rc-question");
 
-    if (ci === 0) {
-      sub.textContent = r.subject;
-      el.innerHTML = '<span class="rule-cursor"></span>';
-      tags.innerHTML = '';
+    if(!el||!sub||!tags)return;
+
+    if(ci===0){
+      sub.textContent=r.subject;
+      if(question)question.textContent=r.question||"Recall the applicable rule statement.";
+      el.classList.add("waiting");
+      el.innerHTML='<div><strong>Type your answer from memory first.</strong><span class="wait-note">The rule statement will appear in 10 seconds so you can compare your wording.</span></div>';
+      tags.innerHTML="";
+      hideResult(false);
+
+      typingTimer=setTimeout(function(){
+        ci=1;
+        el.classList.remove("waiting");
+        el.innerHTML='<span class="rule-cursor"></span>';
+        typeRule();
+      },10000);
+
+      return;
     }
 
-    if (ci < r.text.length) {
-      el.innerHTML = r.text.substring(0, ci + 1) + '<span class="rule-cursor"></span>';
+    if(ci<r.text.length){
+      el.innerHTML=r.text.substring(0,ci+1)+'<span class="rule-cursor"></span>';
       ci++;
-      t = setTimeout(type, ci < 20 ? 60 : 28);
-    } else {
+      typingTimer=setTimeout(typeRule,ci<20?55:22);
+    }else{
       r.tags.forEach(function(tag){
-        var s = document.createElement('span');
-        s.className = 'rule-tag';
-        s.textContent = tag;
+        var s=document.createElement("span");
+        s.className="rule-tag";
+        s.textContent=tag;
         tags.appendChild(s);
       });
-
-      t = setTimeout(function(){
-        ci = 0;
-        ri = (ri + 1) % rules.length;
-        el.innerHTML = '<span class="rule-cursor"></span>';
-        tags.innerHTML = '';
-        setTimeout(type, 400);
-      }, 3800);
     }
   }
 
-  setTimeout(type, 800);
-
-  document.querySelectorAll('.faq-item').forEach(function(item){
-    item.addEventListener('click', function(){
-      var a = item.querySelector('.faq-a');
-      var arrow = item.querySelector('.faq-arrow');
-      var open = a.classList.contains('open');
-
-      document.querySelectorAll('.faq-a').forEach(function(x){ x.classList.remove('open'); });
-      document.querySelectorAll('.faq-arrow').forEach(function(x){ x.classList.remove('open'); });
-
-      if (!open) {
-        a.classList.add('open');
-        arrow.classList.add('open');
-      }
-    });
-  });
-
-  function applyPremiumOffState() {
-    var premiumTier = document.getElementById('premium-plan-tier');
-    var premiumPrice = document.getElementById('premium-plan-price');
-    var premiumDesc = document.getElementById('premium-plan-desc');
-    var premiumBtn = document.getElementById('premium-plan-btn');
-
-    if (!premiumTier || !premiumPrice || !premiumDesc || !premiumBtn) return;
-
-    premiumTier.textContent = 'Premium';
-    premiumPrice.innerHTML = 'Coming Soon';
-    premiumDesc.textContent = 'MBE Premium is coming soon. You can currently subscribe only to Black Letter Law training.';
-    premiumBtn.textContent = 'Coming Soon';
-    premiumBtn.removeAttribute('href');
-    premiumBtn.removeAttribute('target');
-    premiumBtn.classList.add('disabled');
-    premiumBtn.style.pointerEvents = 'none';
-    premiumBtn.style.opacity = '0.6';
+  function restartTyping(){
+    if(typingTimer)clearTimeout(typingTimer);
+    ci=0;
+    var a=document.getElementById("demoAnswer");
+    var el=document.getElementById("rc-text");
+    if(a)a.value="";
+    if(el)el.classList.remove("waiting");
+    hideResult(false);
+    typeRule();
   }
 
-  function applyPremiumOnState() {
-    var premiumTier = document.getElementById('premium-plan-tier');
-    var premiumPrice = document.getElementById('premium-plan-price');
-    var premiumDesc = document.getElementById('premium-plan-desc');
-    var premiumBtn = document.getElementById('premium-plan-btn');
-
-    if (!premiumTier || !premiumPrice || !premiumDesc || !premiumBtn) return;
-
-    premiumTier.textContent = 'Premium';
-    premiumPrice.innerHTML = '$29<span class="mo">.99/mo</span>';
-    premiumDesc.textContent = 'Full platform access including AI generated MBE practice and advanced analytics.';
-    premiumBtn.textContent = 'Get Premium →';
-    premiumBtn.setAttribute('href', '/register');
-    premiumBtn.setAttribute('target', '_top');
-    premiumBtn.classList.remove('disabled');
-    premiumBtn.style.pointerEvents = 'auto';
-    premiumBtn.style.opacity = '1';
+  function norm(v){
+    return String(v||"").toLowerCase().replace(/[^a-z0-9\\s]/g," ").replace(/\\s+/g," ").trim();
   }
 
-  applyPremiumOffState();
+  function kwMatch(ans,kw){
+    var ca=norm(ans);
+    var ck=norm(kw);
 
-  fetch('/api/public-feature-flags', { cache: 'no-store' })
-    .then(function(res){
-      if (!res.ok) throw new Error('Failed to fetch feature flags');
-      return res.json();
-    })
-    .then(function(flags){
-      if (flags && flags.mbePublicVisible === true) {
-        applyPremiumOnState();
-      } else {
-        applyPremiumOffState();
-      }
-    })
-    .catch(function(err){
-      console.error('Failed to load public feature flags', err);
-      applyPremiumOffState();
+    if(ca.indexOf(ck)!==-1)return true;
+
+    var parts=ck.split(" ").filter(Boolean);
+
+    if(parts.length===1)return ca.indexOf(parts[0])!==-1;
+
+    return parts.filter(function(p){
+      return ca.indexOf(p)!==-1;
+    }).length/parts.length>=0.75;
+  }
+
+  function calcSim(ans,correct){
+    var a=norm(ans).split(" ").filter(Boolean);
+    var b=norm(correct).split(" ").filter(Boolean);
+
+    if(!a.length||!b.length)return 0;
+
+    var sa={};
+    a.forEach(function(w){sa[w]=true});
+
+    return Math.round(b.filter(function(w){
+      return sa[w];
+    }).length/b.length*100);
+  }
+
+  function renderPills(container,items,cls){
+    container.innerHTML="";
+
+    if(!items.length){
+      var e=document.createElement("span");
+      e.className="keyword-pill blue";
+      e.textContent="none";
+      container.appendChild(e);
+      return;
+    }
+
+    items.forEach(function(item){
+      var p=document.createElement("span");
+      p.className="keyword-pill "+cls;
+      p.textContent=item;
+      container.appendChild(p);
     });
+  }
+
+  function escRe(v){
+    return v.replace(/[.*+?^${}()|[\\]\\\\]/g,"\\\\$&");
+  }
+
+  function hlMissed(text,missing){
+    var out=text;
+
+    missing.slice().sort(function(a,b){
+      return b.length-a.length;
+    }).forEach(function(kw){
+      out=out.replace(new RegExp("("+escRe(kw)+")","gi"),'<span class="missed-highlight">$1</span>');
+    });
+
+    return out;
+  }
+
+  function animBar(id,pct){
+    var el=document.getElementById(id);
+    if(!el)return;
+    el.style.width="0";
+    setTimeout(function(){
+      el.style.width=pct+"%";
+    },60);
+  }
+
+  function animRing(pct,cls){
+    var fill=document.getElementById("scoreRingFill");
+    var num=document.getElementById("resultScore");
+
+    if(!fill||!num)return;
+
+    fill.className="score-ring-fill "+cls;
+
+    var circ=176;
+    var offset=circ-(circ*pct/100);
+
+    fill.style.strokeDasharray=circ;
+    fill.style.strokeDashoffset=circ;
+
+    setTimeout(function(){
+      fill.style.strokeDashoffset=offset;
+    },80);
+
+    var start=0;
+    var end=pct;
+    var dur=900;
+    var st=null;
+
+    function step(ts){
+      if(!st)st=ts;
+      var p=Math.min((ts-st)/dur,1);
+      num.textContent=Math.round(start+(end-start)*p)+"%";
+      if(p<1)requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  function showResult(){
+    var r=getR();
+    var answer=document.getElementById("demoAnswer");
+
+    if(!answer)return;
+
+    var found=[];
+    var missing=[];
+
+    r.keywords.forEach(function(kw){
+      if(kwMatch(answer.value,kw)){
+        found.push(kw);
+      }else{
+        missing.push(kw);
+      }
+    });
+
+    var kwS=Math.round(found.length/r.keywords.length*100);
+    var simS=calcSim(answer.value,r.text);
+    var final=Math.round(kwS*0.7+simS*0.3);
+    var cls=final>=85?"good":final>=65?"mid":"low";
+
+    animRing(final,cls);
+
+    document.getElementById("resultStatus").textContent=final>=85?"Strong recall ✓":final>=65?"Almost there — review missed terms":"Missed key rule elements";
+    document.getElementById("resultSubStatus").textContent=final>=85?"Rule memory is solid for this statement":"Repeat this rule until recall reaches 85%+";
+    document.getElementById("keywordCount").textContent=found.length+" / "+r.keywords.length+" keywords matched";
+
+    animBar("barKeyword",kwS);
+    document.getElementById("pctKeyword").textContent=kwS+"%";
+
+    animBar("barSimilarity",simS);
+    document.getElementById("pctSimilarity").textContent=simS+"%";
+
+    animBar("barOverall",final);
+    document.getElementById("pctOverall").textContent=final+"%";
+
+    var circ=113;
+    var fp=found.length/r.keywords.length;
+    var mp=missing.length/r.keywords.length;
+    var df=document.getElementById("donutFound");
+    var dm=document.getElementById("donutMissed");
+
+    if(df&&dm){
+      var fl=circ*fp;
+      var ml=circ*mp;
+
+      df.style.strokeDasharray=fl+" "+(circ-fl);
+      df.style.strokeDashoffset=circ;
+
+      setTimeout(function(){
+        df.style.strokeDashoffset=0;
+      },100);
+
+      dm.style.strokeDasharray=ml+" "+(circ-ml);
+      dm.style.strokeDashoffset=circ-fl;
+
+      setTimeout(function(){
+        dm.style.strokeDashoffset=circ-fl-ml;
+      },300);
+    }
+
+    document.getElementById("donutFoundLabel").textContent="Matched: "+found.length;
+    document.getElementById("donutMissedLabel").textContent="Missed: "+missing.length;
+    document.getElementById("donutTotalLabel").textContent="Total: "+r.keywords.length+" keywords";
+
+    renderPills(document.getElementById("keywordsFound"),found,"blue");
+    renderPills(document.getElementById("keywordsMissing"),missing,"amber");
+
+    document.getElementById("correctRuleText").innerHTML=hlMissed(r.text,missing);
+    document.getElementById("resultPanel").classList.add("show");
+  }
+
+  function hideResult(clear){
+    var p=document.getElementById("resultPanel");
+    var a=document.getElementById("demoAnswer");
+
+    if(p)p.classList.remove("show");
+
+    if(clear&&a){
+      a.value="";
+      a.focus();
+    }
+  }
+
+  var showResultBtn=document.getElementById("showResultBtn");
+  var tryAgainBtn=document.getElementById("tryAgainBtn");
+  var nextDemoRuleBtn=document.getElementById("nextDemoRuleBtn");
+  var fillSampleBtn=document.getElementById("fillSampleBtn");
+  var demoAnswer=document.getElementById("demoAnswer");
+
+  if(showResultBtn)showResultBtn.addEventListener("click",showResult);
+
+  if(tryAgainBtn){
+    tryAgainBtn.addEventListener("click",function(){
+      hideResult(true);
+    });
+  }
+
+  if(nextDemoRuleBtn){
+    nextDemoRuleBtn.addEventListener("click",function(){
+      ri=(ri+1)%rules.length;
+      restartTyping();
+    });
+  }
+
+  if(fillSampleBtn&&demoAnswer){
+    fillSampleBtn.addEventListener("click",function(){
+      demoAnswer.value=getR().sample;
+      demoAnswer.focus();
+    });
+  }
+
+  var prefs={
+    necessary:true,
+    preferences:false,
+    analytics:false,
+    marketing:false
+  };
+
+  function getStored(){
+    try{
+      var s=localStorage.getItem("lexora_cp");
+      return s?JSON.parse(s):null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function store(p){
+    localStorage.setItem("lexora_cp",JSON.stringify({
+      necessary:true,
+      preferences:!!p.preferences,
+      analytics:!!p.analytics,
+      marketing:!!p.marketing,
+      savedAt:new Date().toISOString()
+    }));
+  }
+
+  function apply(p){
+    prefs={
+      necessary:true,
+      preferences:!!p.preferences,
+      analytics:!!p.analytics,
+      marketing:!!p.marketing
+    };
+    updateSwitches();
+  }
+
+  function updateSwitches(){
+    var ps=document.getElementById("prefSwitch");
+    var as=document.getElementById("analyticsSwitch");
+    var ms=document.getElementById("marketingSwitch");
+
+    if(ps)ps.classList.toggle("on",prefs.preferences);
+    if(as)as.classList.toggle("on",prefs.analytics);
+    if(ms)ms.classList.toggle("on",prefs.marketing);
+  }
+
+  window.toggleCookieSwitch=function(type){
+    if(type==="preferences")prefs.preferences=!prefs.preferences;
+    if(type==="analytics")prefs.analytics=!prefs.analytics;
+    if(type==="marketing")prefs.marketing=!prefs.marketing;
+    updateSwitches();
+  };
+
+  window.openCookieSettings=function(){
+    var modal=document.getElementById("cookieModal");
+    if(modal){
+      updateSwitches();
+      modal.classList.add("show");
+    }
+  };
+
+  window.closeCookieSettings=function(){
+    var modal=document.getElementById("cookieModal");
+    if(modal)modal.classList.remove("show");
+  };
+
+  window.acceptAllCookies=function(){
+    var p={necessary:true,preferences:true,analytics:true,marketing:true};
+    store(p);
+    apply(p);
+    hideBanner();
+    closeCookieSettings();
+  };
+
+  window.rejectAllCookies=function(){
+    var p={necessary:true,preferences:false,analytics:false,marketing:false};
+    store(p);
+    apply(p);
+    hideBanner();
+    closeCookieSettings();
+  };
+
+  window.saveCookiePreferences=function(){
+    store(prefs);
+    apply(prefs);
+    hideBanner();
+    closeCookieSettings();
+  };
+
+  function showBanner(){
+    var b=document.getElementById("cookieBanner");
+    if(b)b.classList.add("show");
+  }
+
+  function hideBanner(){
+    var b=document.getElementById("cookieBanner");
+    if(b)b.classList.remove("show");
+  }
+
+  function initCookies(){
+    var stored=getStored();
+
+    if(stored){
+      apply(stored);
+      return;
+    }
+
+    if(navigator.globalPrivacyControl===true){
+      var p={necessary:true,preferences:false,analytics:false,marketing:false};
+      store(p);
+      apply(p);
+      return;
+    }
+
+    showBanner();
+  }
+
+  setTimeout(typeRule,800);
+  initCookies();
 })();
 </script>
+
 </body>
 </html>

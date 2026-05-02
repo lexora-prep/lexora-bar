@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { prisma } from "@/lib/prisma"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function makeRuleKey(rule: {
+  subject_id?: string | null
+  topic_id?: string | null
+  subtopic_id?: string | null
+  title?: string | null
+}) {
+  return [
+    String(rule.subject_id ?? "").trim().toLowerCase(),
+    String(rule.topic_id ?? "").trim().toLowerCase(),
+    String(rule.subtopic_id ?? "").trim().toLowerCase(),
+    String(rule.title ?? "").trim().toLowerCase(),
+  ].join("::")
+}
 
 function normalizeKeywords(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item).trim())
-      .filter(Boolean)
+    return value.map((item) => String(item).trim()).filter(Boolean)
   }
 
   if (typeof value === "string") {
@@ -20,9 +27,7 @@ function normalizeKeywords(value: unknown): string[] {
     try {
       const parsed = JSON.parse(trimmed)
       if (Array.isArray(parsed)) {
-        return parsed
-          .map((item) => String(item).trim())
-          .filter(Boolean)
+        return parsed.map((item) => String(item).trim()).filter(Boolean)
       }
     } catch {
       return trimmed
@@ -35,167 +40,133 @@ function normalizeKeywords(value: unknown): string[] {
   return []
 }
 
-function cleanString(value: unknown): string {
-  if (value === null || value === undefined) return ""
-  return String(value).trim()
-}
+function isBetterRule(
+  candidate: {
+    prompt_question?: string | null
+    rule_text?: string | null
+    updated_at?: Date | null
+    created_at?: Date | null
+  },
+  current?: {
+    prompt_question?: string | null
+    rule_text?: string | null
+    updated_at?: Date | null
+    created_at?: Date | null
+  } | null
+) {
+  if (!current) return true
 
-function cleanId(value: unknown): string {
-  if (value === null || value === undefined) return ""
-  return String(value).trim()
+  const candidateHasPrompt = !!String(candidate.prompt_question ?? "").trim()
+  const currentHasPrompt = !!String(current.prompt_question ?? "").trim()
+
+  if (candidateHasPrompt && !currentHasPrompt) return true
+  if (!candidateHasPrompt && currentHasPrompt) return false
+
+  const candidateHasRuleText = !!String(candidate.rule_text ?? "").trim()
+  const currentHasRuleText = !!String(current.rule_text ?? "").trim()
+
+  if (candidateHasRuleText && !currentHasRuleText) return true
+  if (!candidateHasRuleText && currentHasRuleText) return false
+
+  const candidateUpdated = candidate.updated_at?.getTime() ?? 0
+  const currentUpdated = current.updated_at?.getTime() ?? 0
+  if (candidateUpdated !== currentUpdated) return candidateUpdated > currentUpdated
+
+  const candidateCreated = candidate.created_at?.getTime() ?? 0
+  const currentCreated = current.created_at?.getTime() ?? 0
+  return candidateCreated > currentCreated
 }
 
 export async function GET() {
   try {
-    const { data: rulesData, error: rulesError } = await supabase
-      .from("rules")
-      .select("*")
+    const rawRules = await prisma.rules.findMany({
+      where: {
+        is_active: true,
+        prompt_question: {
+          not: null,
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        rule_text: true,
+        buzzwords: true,
+        topic_id: true,
+        subtopic_id: true,
+        subject_id: true,
+        prompt_question: true,
+        application_example: true,
+        common_trap: true,
+        priority: true,
+        updated_at: true,
+        created_at: true,
+        topics: {
+          select: {
+            name: true,
+          },
+        },
+        subtopics: {
+          select: {
+            name: true,
+          },
+        },
+        subjects: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: [{ updated_at: "desc" }, { created_at: "desc" }],
+    })
 
-    if (rulesError) {
-      console.error("GET ALL RULES ERROR:", rulesError)
-      return NextResponse.json(
-        { error: rulesError.message },
-        { status: 500 }
-      )
-    }
+    const canonicalMap = new Map<string, (typeof rawRules)[number]>()
 
-    const rules = Array.isArray(rulesData) ? rulesData : []
+    for (const rule of rawRules) {
+      if (!String(rule.prompt_question ?? "").trim()) continue
+      if (!String(rule.rule_text ?? "").trim()) continue
 
-    const subjectIds = Array.from(
-      new Set(
-        rules
-          .map((rule: any) => cleanId(rule.subject_id))
-          .filter(Boolean)
-      )
-    )
+      const key = makeRuleKey(rule)
+      const existing = canonicalMap.get(key)
 
-    const topicIds = Array.from(
-      new Set(
-        rules
-          .map((rule: any) => cleanId(rule.topic_id))
-          .filter(Boolean)
-      )
-    )
-
-    const subtopicIds = Array.from(
-      new Set(
-        rules
-          .map((rule: any) => cleanId(rule.subtopic_id))
-          .filter(Boolean)
-      )
-    )
-
-    let subjectMap: Record<string, string> = {}
-    let topicMap: Record<string, string> = {}
-    let subtopicMap: Record<string, string> = {}
-
-    if (subjectIds.length > 0) {
-      const { data: subjectsData, error: subjectsError } = await supabase
-        .from("subjects")
-        .select("id, name")
-        .in("id", subjectIds)
-
-      if (subjectsError) {
-        console.error("GET SUBJECT MAP ERROR:", subjectsError)
-      } else {
-        subjectMap = Object.fromEntries(
-          (subjectsData ?? []).map((row: any) => [
-            cleanId(row.id),
-            cleanString(row.name),
-          ])
-        )
+      if (isBetterRule(rule, existing)) {
+        canonicalMap.set(key, rule)
       }
     }
 
-    if (topicIds.length > 0) {
-      const { data: topicsData, error: topicsError } = await supabase
-        .from("topics")
-        .select("id, name, subject_id")
-        .in("id", topicIds)
+    const normalized = Array.from(canonicalMap.values())
+      .map((rule) => ({
+        id: rule.id,
+        title: String(rule.title ?? "").trim(),
+        rule_text: String(rule.rule_text ?? "").trim(),
+        keywords: normalizeKeywords(rule.buzzwords),
+        subject_id: rule.subject_id ?? "",
+        subject: rule.subjects?.name ?? "",
+        topic_id: rule.topic_id ?? "",
+        topic: rule.topics?.name ?? "",
+        subtopic_id: rule.subtopic_id ?? "",
+        subtopic: rule.subtopics?.name ?? "",
+        prompt_question: String(rule.prompt_question ?? "").trim(),
+        application_example: String(rule.application_example ?? "").trim(),
+        common_trap: String(rule.common_trap ?? "").trim(),
+        priority: String(rule.priority ?? "").trim(),
+        avgScore: 0,
+      }))
+      .sort((a, b) => {
+        const subjectCompare = a.subject.localeCompare(b.subject)
+        if (subjectCompare !== 0) return subjectCompare
 
-      if (topicsError) {
-        console.error("GET TOPIC MAP ERROR:", topicsError)
-      } else {
-        topicMap = Object.fromEntries(
-          (topicsData ?? []).map((row: any) => [
-            cleanId(row.id),
-            cleanString(row.name),
-          ])
-        )
-      }
-    }
+        const topicCompare = a.topic.localeCompare(b.topic)
+        if (topicCompare !== 0) return topicCompare
 
-    if (subtopicIds.length > 0) {
-      const { data: subtopicsData, error: subtopicsError } = await supabase
-        .from("subtopics")
-        .select("id, name")
-        .in("id", subtopicIds)
+        const subtopicCompare = a.subtopic.localeCompare(b.subtopic)
+        if (subtopicCompare !== 0) return subtopicCompare
 
-      if (subtopicsError) {
-        console.error("GET SUBTOPIC MAP ERROR:", subtopicsError)
-      } else {
-        subtopicMap = Object.fromEntries(
-          (subtopicsData ?? []).map((row: any) => [
-            cleanId(row.id),
-            cleanString(row.name),
-          ])
-        )
-      }
-    }
-
-    const normalized = rules
-      .map((rule: any) => {
-        const rawSubjectId = cleanId(rule.subject_id)
-        const rawTopicId = cleanId(rule.topic_id)
-        const rawSubtopicId = cleanId(rule.subtopic_id)
-
-        const rawSubjectName = cleanString(
-          rule.subject ?? rule.subject_name ?? rule.subject_title
-        )
-
-        const rawTopicName = cleanString(
-          rule.topic ?? rule.topic_name ?? rule.topic_title
-        )
-
-        const rawSubtopicName = cleanString(
-          rule.subtopic ?? rule.subtopic_name ?? rule.subtopic_title
-        )
-
-        const subjectName = subjectMap[rawSubjectId] || rawSubjectName
-        const topicName = topicMap[rawTopicId] || rawTopicName
-        const subtopicName = subtopicMap[rawSubtopicId] || rawSubtopicName
-
-        return {
-          id: cleanId(rule.id),
-          title: cleanString(rule.title),
-          rule_text: cleanString(rule.rule_text),
-          keywords: normalizeKeywords(rule.keywords ?? rule.buzzwords),
-          subject_id: rawSubjectId,
-          subject: subjectName,
-          topic_id: rawTopicId,
-          topic: topicName,
-          subtopic_id: rawSubtopicId,
-          subtopic: subtopicName,
-          prompt_question: cleanString(rule.prompt_question),
-          avgScore:
-            typeof rule.avgScore === "number"
-              ? rule.avgScore
-              : typeof rule.avg_score === "number"
-                ? rule.avg_score
-                : 0,
-        }
+        return a.title.localeCompare(b.title)
       })
-      .filter((rule) => rule.id)
-
-    console.log("GET ALL RULES COUNT:", normalized.length)
-    console.log("GET ALL RULES SAMPLE:", normalized.slice(0, 5))
 
     return NextResponse.json(normalized)
-  } catch (err) {
-    console.error("GET ALL RULES CRASH:", err)
-    return NextResponse.json(
-      { error: "Unexpected server error" },
-      { status: 500 }
-    )
+  } catch (error) {
+    console.error("GET ALL RULES ERROR:", error)
+    return NextResponse.json({ error: "Failed to load all rules" }, { status: 500 })
   }
 }

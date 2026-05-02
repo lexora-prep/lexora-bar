@@ -1,0 +1,75 @@
+{
+  "totalActiveRules": 2167,
+  "duplicateGroups": 2,
+  "duplicateRows": 4,
+  "unsupportedBuzzwordRules": 947,
+  "bySubject": {
+    "Criminal Law and Procedure": {
+      "total": 340,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 126
+    },
+    "Trusts": {
+      "total": 27,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 10
+    },
+    "Trusts and Estates": {
+      "total": 82,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 55
+    },
+    "Torts": {
+      "total": 234,
+      "duplicateRows": 2,
+      "unsupportedBuzzwordRules": 49
+    },
+    "Evidence": {
+      "total": 211,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 96
+    },
+    "Civil Procedure": {
+      "total": 224,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 94
+    },
+    "Real Property": {
+      "total": 265,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 104
+    },
+    "Contracts": {
+      "total": 213,
+      "duplicateRows": 2,
+      "unsupportedBuzzwordRules": 65
+    },
+    "Secured Transactions": {
+      "total": 127,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 79
+    },
+    "Family Law": {
+      "total": 82,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 51
+    },
+    "Business Associations": {
+      "total": 132,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 102
+    },
+    "Constitutional Law": {
+      "total": 190,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 98
+    },
+    "Conflict of Laws": {
+      "total": 40,
+      "duplicateRows": 0,
+      "unsupportedBuzzwordRules": 18
+    }
+  },
+  "duplicatePath": "data/audit/duplicate-rules-2026-05-01T07-07-01-576Z.json",
+  "buzzwordPath": "data/audit/unsupported-buzzwords-2026-05-01T07-07-01-576Z.json"
+}

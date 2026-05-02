@@ -1,6 +1,77 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+type WeakRuleRow = {
+  id: string
+  ruleId: string
+  title: string
+  rule: string
+  subject: string
+  topic: string
+  subtopic: string
+  ruleText: string
+  applicationExample: string
+  commonTrap: string
+  promptQuestion: string
+  accuracy: number
+  attempts: number
+  priority: number
+  trend: "up" | "down"
+  needsPractice: boolean
+  mastery: number
+  level: "CRITICAL" | "NEEDS_WORK" | "IMPROVING" | "MASTERED"
+  updatedAt: string | null
+}
+
+function calculateAccuracy(correctCount: number, attempts: number) {
+  if (!attempts) return 0
+  return Math.max(0, Math.min(100, Math.round((correctCount / attempts) * 100)))
+}
+
+function calculateLevel(accuracy: number): WeakRuleRow["level"] {
+  if (accuracy >= 80) return "MASTERED"
+  if (accuracy >= 60) return "IMPROVING"
+  if (accuracy >= 30) return "NEEDS_WORK"
+  return "CRITICAL"
+}
+
+function calculateTrend(params: {
+  accuracy: number
+  needsPractice: boolean
+  masteryLevel: number
+}) {
+  const { accuracy, needsPractice, masteryLevel } = params
+
+  if (needsPractice) return "down"
+  if (masteryLevel >= 70 || accuracy >= 70) return "up"
+  return "down"
+}
+
+function calculatePriority(params: {
+  accuracy: number
+  attempts: number
+  lastUpdatedAt: Date | null
+  needsPractice: boolean
+}) {
+  const { accuracy, attempts, lastUpdatedAt, needsPractice } = params
+
+  const now = Date.now()
+  const updatedAt = lastUpdatedAt?.getTime() ?? now
+  const daysAgo = Math.max(0, Math.floor((now - updatedAt) / (1000 * 60 * 60 * 24)))
+  const recencyWeight = Math.max(0, 30 - daysAgo)
+
+  let priority =
+    (100 - accuracy) * 0.6 +
+    attempts * 0.2 +
+    recencyWeight * 0.2
+
+  if (needsPractice) {
+    priority += 10
+  }
+
+  return Math.round(priority)
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -10,138 +81,191 @@ export async function GET(req: Request) {
       return NextResponse.json(
         {
           error: "Missing userId",
-          subjects: [],
-          topWeakRules: [],
+          count: 0,
           weakAreas: [],
+          topWeakRules: [],
+          subjects: [],
         },
         { status: 400 }
       )
     }
 
-    const progress = await prisma.userRuleStat.findMany({
+    const progressRows = await prisma.user_rule_progress.findMany({
       where: {
-        userId,
+        user_id: userId,
+        attempts: {
+          gte: 1,
+        },
       },
+      select: {
+        rule_id: true,
+        attempts: true,
+        correct_count: true,
+        needs_practice: true,
+        mastery_level: true,
+        updated_at: true,
+        created_at: true,
+        rules: {
+          select: {
+            id: true,
+            title: true,
+            rule_text: true,
+            prompt_question: true,
+            application_example: true,
+            how_to_apply: true,
+            common_traps: true,
+            exam_tip: true,
+            common_trap: true,
+            topics: {
+              select: {
+                name: true,
+              },
+            },
+            subtopics: {
+              select: {
+                name: true,
+              },
+            },
+            subjects: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [
+        {
+          updated_at: "desc",
+        },
+        {
+          created_at: "desc",
+        },
+      ],
     })
 
-    const ruleIds = progress.map((p) => p.ruleId)
-
-    const rules = ruleIds.length
-      ? await prisma.rules.findMany({
-          where: {
-            id: { in: ruleIds },
-          },
-          include: {
-            subjects: true,
-            topics: true,
-          },
+    const weakAreas: WeakRuleRow[] = progressRows
+      .map((row) => {
+        const attempts = Number(row.attempts ?? 0)
+        const correctCount = Number(row.correct_count ?? 0)
+        const accuracy = calculateAccuracy(correctCount, attempts)
+        const needsPractice = !!row.needs_practice
+        const mastery = Number(row.mastery_level ?? accuracy)
+        const trend = calculateTrend({
+          accuracy,
+          needsPractice,
+          masteryLevel: mastery,
         })
-      : []
+        const priority = calculatePriority({
+          accuracy,
+          attempts,
+          lastUpdatedAt: row.updated_at ?? row.created_at ?? null,
+          needsPractice,
+        })
+        const level = calculateLevel(accuracy)
 
-    const ruleMap = new Map(rules.map((r) => [r.id, r]))
-    const subjectMap: Record<string, any> = {}
-
-    for (const p of progress) {
-      const rule = ruleMap.get(p.ruleId)
-      const subjectName = rule?.subjects?.name || "Unknown"
-
-      if (!subjectMap[subjectName]) {
-        subjectMap[subjectName] = {
-          subject: subjectName,
-          masteryTotal: 0,
-          masteryCount: 0,
-          critical: 0,
-          needsWork: 0,
-          improving: 0,
-          mastered: 0,
-          rules: [],
+        return {
+          id: row.rule_id,
+          ruleId: row.rule_id,
+          title: row.rules?.title || "Untitled",
+          rule: row.rules?.title || "Untitled",
+          subject: row.rules?.subjects?.name || "Unknown",
+          topic: row.rules?.topics?.name || "",
+          subtopic: row.rules?.subtopics?.name || "",
+          ruleText: row.rules?.rule_text || "",
+          applicationExample: row.rules?.application_example || "",
+          howToApply: Array.isArray(row.rules?.how_to_apply) ? row.rules.how_to_apply : [],
+          commonTraps: Array.isArray(row.rules?.common_traps) ? row.rules.common_traps : [],
+          examTip: row.rules?.exam_tip || "",
+          commonTrap: row.rules?.common_trap || "",
+          promptQuestion: row.rules?.prompt_question || "",
+          accuracy,
+          attempts,
+          priority,
+          trend: trend as "up" | "down",
+          needsPractice,
+          mastery,
+          level,
+          updatedAt: (row.updated_at ?? row.created_at ?? null)?.toISOString?.() ?? null,
         }
-      }
-
-      const mastery = Math.round(Number(p.accuracy || 0))
-      let level = "CRITICAL"
-
-      if (mastery >= 80) level = "MASTERED"
-      else if (mastery >= 60) level = "IMPROVING"
-      else if (mastery >= 30) level = "NEEDS_WORK"
-
-      if (level === "CRITICAL") subjectMap[subjectName].critical++
-      if (level === "NEEDS_WORK") subjectMap[subjectName].needsWork++
-      if (level === "IMPROVING") subjectMap[subjectName].improving++
-      if (level === "MASTERED") subjectMap[subjectName].mastered++
-
-      subjectMap[subjectName].masteryTotal += mastery
-      subjectMap[subjectName].masteryCount++
-
-      const priority = 100 - mastery + (level === "CRITICAL" ? 30 : 0)
-
-      subjectMap[subjectName].rules.push({
-        ruleId: p.ruleId,
-        title: rule?.title || "Rule",
-        subject: subjectName,
-        mastery,
-        accuracy: mastery,
-        attempts: Number(p.attemptsTotal || 0),
-        level,
-        priority,
-        trend: mastery >= 60 ? "up" : "down",
       })
-    }
+      .filter((row) => row.needsPractice || row.accuracy < 70)
+      .sort((a, b) => b.priority - a.priority)
 
-    for (const s of Object.values(subjectMap)) {
-      s.rules.sort((a: any, b: any) => b.priority - a.priority)
-    }
+    const topWeakRules = weakAreas.slice(0, 5)
 
-    const subjects = Object.values(subjectMap).map((s: any) => {
-      const avg =
-        s.masteryCount === 0
-          ? 0
-          : Math.round(s.masteryTotal / s.masteryCount)
-
-      return {
-        subject: s.subject,
-        mastery: avg,
-        critical: s.critical,
-        needsWork: s.needsWork,
-        improving: s.improving,
-        mastered: s.mastered,
-        rules: s.rules,
+    const groupedSubjectMap = new Map<
+      string,
+      {
+        subject: string
+        masteryTotal: number
+        masteryCount: number
+        critical: number
+        needsWork: number
+        improving: number
+        mastered: number
+        rules: WeakRuleRow[]
       }
-    })
+    >()
 
-    const topWeakRules = Object.values(subjectMap)
-      .flatMap((s: any) => s.rules)
-      .filter((r: any) => r.mastery < 70)
-      .sort((a: any, b: any) => b.priority - a.priority)
-      .slice(0, 5)
+    for (const item of weakAreas) {
+      const existing = groupedSubjectMap.get(item.subject) ?? {
+        subject: item.subject,
+        masteryTotal: 0,
+        masteryCount: 0,
+        critical: 0,
+        needsWork: 0,
+        improving: 0,
+        mastered: 0,
+        rules: [],
+      }
 
-    const weakAreas = topWeakRules.map((r: any) => ({
-      id: r.ruleId,
-      ruleId: r.ruleId,
-      rule: r.title,
-      title: r.title,
-      subject: r.subject,
-      attempts: r.attempts,
-      accuracy: r.accuracy,
-      mastery: r.mastery,
-      trend: r.trend,
-      level: r.level,
-      priority: r.priority,
-    }))
+      existing.masteryTotal += item.accuracy
+      existing.masteryCount += 1
+
+      if (item.level === "CRITICAL") existing.critical += 1
+      if (item.level === "NEEDS_WORK") existing.needsWork += 1
+      if (item.level === "IMPROVING") existing.improving += 1
+      if (item.level === "MASTERED") existing.mastered += 1
+
+      existing.rules.push(item)
+      groupedSubjectMap.set(item.subject, existing)
+    }
+
+    const subjects = Array.from(groupedSubjectMap.values())
+      .map((group) => ({
+        subject: group.subject,
+        mastery:
+          group.masteryCount > 0
+            ? Math.round(group.masteryTotal / group.masteryCount)
+            : 0,
+        critical: group.critical,
+        needsWork: group.needsWork,
+        improving: group.improving,
+        mastered: group.mastered,
+        rules: group.rules.sort((a, b) => b.priority - a.priority),
+      }))
+      .sort((a, b) => {
+        const aWorst = a.rules[0]?.priority ?? 0
+        const bWorst = b.rules[0]?.priority ?? 0
+        return bWorst - aWorst
+      })
 
     return NextResponse.json({
-      subjects,
-      topWeakRules,
+      count: weakAreas.length,
       weakAreas,
+      topWeakRules,
+      subjects,
     })
-  } catch (err) {
-    console.error("RULE WEAK AREAS ERROR:", err)
+  } catch (error) {
+    console.error("RULE WEAK AREAS ERROR:", error)
 
     return NextResponse.json(
       {
-        subjects: [],
-        topWeakRules: [],
+        count: 0,
         weakAreas: [],
+        topWeakRules: [],
+        subjects: [],
       },
       { status: 500 }
     )

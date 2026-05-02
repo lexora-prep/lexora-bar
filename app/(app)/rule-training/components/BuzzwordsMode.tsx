@@ -2,10 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react"
 
+type SubmitPayload = {
+  userAnswer: string
+  score: number
+  matchedKeywords: string[]
+  missedKeywords: string[]
+  keywordScore: number
+  similarity: number
+}
+
 type Props = {
   ruleText: string
   keywords: string[]
   onNextRule: () => void
+  onSubmitModeAttempt?: (payload: SubmitPayload) => void | Promise<void>
+  isSubmitting?: boolean
 }
 
 function normalizeText(text: unknown) {
@@ -38,6 +49,8 @@ export default function BuzzwordsMode({
   ruleText,
   keywords,
   onNextRule,
+  onSubmitModeAttempt,
+  isSubmitting = false,
 }: Props) {
   const safeRuleText = typeof ruleText === "string" ? ruleText : ""
   const safeKeywords = useMemo(() => buildSafeKeywords(keywords), [keywords])
@@ -45,6 +58,10 @@ export default function BuzzwordsMode({
   const [options, setOptions] = useState<string[]>([])
   const [selected, setSelected] = useState<string[]>([])
   const [checked, setChecked] = useState(false)
+  const [matchedKeywords, setMatchedKeywords] = useState<string[]>([])
+  const [missedKeywords, setMissedKeywords] = useState<string[]>([])
+  const [wrongSelections, setWrongSelections] = useState<string[]>([])
+  const [score, setScore] = useState(0)
 
   useEffect(() => {
     const distractors = [
@@ -79,6 +96,10 @@ export default function BuzzwordsMode({
     setOptions(mixed)
     setSelected([])
     setChecked(false)
+    setMatchedKeywords([])
+    setMissedKeywords([])
+    setWrongSelections([])
+    setScore(0)
   }, [safeKeywords, safeRuleText])
 
   function toggleKeyword(keyword: string) {
@@ -91,8 +112,45 @@ export default function BuzzwordsMode({
     )
   }
 
-  function handleCheck() {
+  async function handleCheck() {
+    const matched = selected.filter((item) =>
+      safeKeywords.some((kw) => normalizeText(kw) === normalizeText(item))
+    )
+
+    const wrong = selected.filter(
+      (item) => !safeKeywords.some((kw) => normalizeText(kw) === normalizeText(item))
+    )
+
+    const missed = safeKeywords.filter(
+      (kw) => !selected.some((item) => normalizeText(item) === normalizeText(kw))
+    )
+
+    const base =
+      safeKeywords.length > 0
+        ? Math.round((matched.length / safeKeywords.length) * 100)
+        : 0
+
+    const penalty =
+      safeKeywords.length > 0
+        ? Math.round((wrong.length / safeKeywords.length) * 100)
+        : 0
+
+    const nextScore = Math.max(0, Math.min(100, base - penalty))
+
+    setMatchedKeywords(matched)
+    setWrongSelections(wrong)
+    setMissedKeywords(missed)
+    setScore(nextScore)
     setChecked(true)
+
+    await onSubmitModeAttempt?.({
+      userAnswer: selected.join(" "),
+      score: nextScore,
+      matchedKeywords: matched,
+      missedKeywords: missed,
+      keywordScore: nextScore,
+      similarity: nextScore,
+    })
   }
 
   function handleSkip() {
@@ -103,6 +161,10 @@ export default function BuzzwordsMode({
   function handleTryAgain() {
     setSelected([])
     setChecked(false)
+    setMatchedKeywords([])
+    setMissedKeywords([])
+    setWrongSelections([])
+    setScore(0)
   }
 
   function isCorrectKeyword(keyword: string) {
@@ -168,11 +230,10 @@ export default function BuzzwordsMode({
     }
   }
 
-  const correctSelections = selected.filter((item) => isCorrectKeyword(item))
-  const missedKeywords = safeKeywords.filter((item) => !isSelected(item))
   const allCorrect =
     checked &&
     missedKeywords.length === 0 &&
+    wrongSelections.length === 0 &&
     selected.length === safeKeywords.length
 
   return (
@@ -302,7 +363,7 @@ export default function BuzzwordsMode({
               color: "#A1A1AA",
             }}
           >
-            {selected.length} selected
+            {!checked ? `${selected.length} selected` : `Score ${score}%`}
           </div>
 
           <div style={{ display: "flex", gap: 12 }}>
@@ -328,6 +389,7 @@ export default function BuzzwordsMode({
                 <button
                   type="button"
                   onClick={handleCheck}
+                  disabled={isSubmitting}
                   style={{
                     padding: "10px 22px",
                     borderRadius: 12,
@@ -336,10 +398,11 @@ export default function BuzzwordsMode({
                     color: "#FFFFFF",
                     fontWeight: 700,
                     fontSize: 13,
-                    cursor: "pointer",
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                    opacity: isSubmitting ? 0.7 : 1,
                   }}
                 >
-                  Check Selection
+                  {isSubmitting ? "Checking..." : "Check Selection"}
                 </button>
               </>
             ) : (
@@ -407,7 +470,7 @@ export default function BuzzwordsMode({
               </span>
             ) : (
               <>
-                {correctSelections.length > 0 && (
+                {matchedKeywords.length > 0 && (
                   <span
                     style={{
                       padding: "6px 12px",
@@ -419,13 +482,30 @@ export default function BuzzwordsMode({
                       fontWeight: 600,
                     }}
                   >
-                    {correctSelections.length} correct
+                    {matchedKeywords.length} correct
                   </span>
                 )}
 
+                {wrongSelections.map((keyword) => (
+                  <span
+                    key={`wrong-${keyword}`}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: 999,
+                      border: "1px solid #FECACA",
+                      background: "#FEF2F2",
+                      color: "#B91C1C",
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Wrong: {keyword}
+                  </span>
+                ))}
+
                 {missedKeywords.map((keyword) => (
                   <span
-                    key={keyword}
+                    key={`missed-${keyword}`}
                     style={{
                       padding: "6px 12px",
                       borderRadius: 999,

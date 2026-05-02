@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from "react"
 
+type SubmitPayload = {
+  userAnswer: string
+  score: number
+  matchedKeywords: string[]
+  missedKeywords: string[]
+  keywordScore: number
+  similarity: number
+}
+
 type Props = {
   ruleId?: string
   title: string
@@ -12,6 +21,8 @@ type Props = {
   keywords: string[]
   onNextRule?: () => void
   onSaveRule?: () => void
+  onSubmitModeAttempt?: (payload: SubmitPayload) => void | Promise<void>
+  isSubmitting?: boolean
 }
 
 type ReviewResult = "knew" | "missed" | null
@@ -26,6 +37,8 @@ export default function FlashcardMode({
   keywords,
   onNextRule,
   onSaveRule,
+  onSubmitModeAttempt,
+  isSubmitting = false,
 }: Props) {
   const [revealed, setRevealed] = useState(false)
   const [reviewResult, setReviewResult] = useState<ReviewResult>(null)
@@ -41,21 +54,16 @@ export default function FlashcardMode({
   }
 
   async function record(result: "knew" | "missed") {
-    try {
-      await fetch("/api/record-flashcard", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ruleId,
-          result,
-          mode: "flashcard",
-        }),
-      })
-    } catch (e) {
-      console.error(e)
-    }
+    const score = result === "knew" ? 100 : 0
+
+    await onSubmitModeAttempt?.({
+      userAnswer: result === "knew" ? ruleText : "",
+      score,
+      matchedKeywords: result === "knew" ? keywords : [],
+      missedKeywords: result === "knew" ? [] : keywords,
+      keywordScore: score,
+      similarity: score,
+    })
 
     setReviewResult(result)
   }
@@ -239,6 +247,7 @@ export default function FlashcardMode({
         >
           <button
             onClick={() => record("missed")}
+            disabled={isSubmitting}
             style={{
               height: 44,
               borderRadius: 14,
@@ -247,7 +256,8 @@ export default function FlashcardMode({
               color: "#DC2626",
               fontSize: 14,
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+              opacity: isSubmitting ? 0.7 : 1,
             }}
           >
             ✗ Missed It
@@ -255,6 +265,7 @@ export default function FlashcardMode({
 
           <button
             onClick={() => record("knew")}
+            disabled={isSubmitting}
             style={{
               height: 44,
               borderRadius: 14,
@@ -263,7 +274,8 @@ export default function FlashcardMode({
               color: "#1D4ED8",
               fontSize: 14,
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+              opacity: isSubmitting ? 0.7 : 1,
             }}
           >
             ✓ Knew It

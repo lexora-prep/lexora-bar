@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
+import { ArrowUp, ArrowDown, Minus } from "lucide-react"
 import AddRuleModal from "@/app/components/AddRuleModal"
 
 type Keyword = {
@@ -33,37 +34,26 @@ function subjectColor(subject: string) {
   switch (subject) {
     case "Contracts":
       return "bg-blue-100 text-blue-600"
-
     case "Torts":
       return "bg-purple-100 text-purple-600"
-
     case "Evidence":
       return "bg-cyan-100 text-cyan-600"
-
     case "Civil Procedure":
       return "bg-green-100 text-green-600"
-
     case "Criminal Law and Procedure":
       return "bg-red-100 text-red-600"
-
     case "Real Property":
       return "bg-amber-100 text-amber-600"
-
     case "Business Associations":
       return "bg-pink-100 text-pink-600"
-
     case "Family Law":
       return "bg-teal-100 text-teal-600"
-
     case "Trusts":
       return "bg-orange-100 text-orange-600"
-
     case "Secured Transactions":
       return "bg-yellow-100 text-yellow-700"
-
     case "Conflict of Laws":
       return "bg-slate-200 text-slate-700"
-
     default:
       return "bg-slate-100 text-slate-600"
   }
@@ -74,7 +64,6 @@ function highlightBuzzwords(text: string, keywords: string[]) {
   if (!keywords || keywords.length === 0) return text
 
   let result = text
-
   const sorted = [...keywords].sort((a, b) => b.length - a.length)
 
   sorted.forEach((word) => {
@@ -86,11 +75,163 @@ function highlightBuzzwords(text: string, keywords: string[]) {
 
     result = result.replace(
       regex,
-      `<span class="bg-blue-200 text-blue-900 px-2 py-[2px] rounded-md font-semibold font-mono tracking-tight">$1</span>`
+      `<span class="rounded-md bg-blue-300/60 px-2 py-[2px] text-slate-800">${"$1"}</span>`
     )
   })
 
   return result
+}
+
+function getScrollableParent(element: HTMLElement | null): HTMLElement | Window {
+  let current = element?.parentElement ?? null
+
+  while (current) {
+    const style = window.getComputedStyle(current)
+    const overflowY = style.overflowY
+    const canScroll =
+      (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+      current.scrollHeight > current.clientHeight
+
+    if (canScroll) {
+      return current
+    }
+
+    current = current.parentElement
+  }
+
+  return window
+}
+
+function getScrollTargetMetrics(target: HTMLElement | Window) {
+  if (target === window) {
+    const doc = document.documentElement
+    const body = document.body
+    const scrollTop = window.scrollY || doc.scrollTop || body.scrollTop || 0
+    const scrollHeight = Math.max(
+      doc.scrollHeight,
+      body.scrollHeight,
+      doc.offsetHeight,
+      body.offsetHeight,
+      doc.clientHeight
+    )
+    const clientHeight = window.innerHeight || doc.clientHeight || 0
+    const maxScroll = Math.max(scrollHeight - clientHeight, 0)
+
+    return {
+      scrollTop,
+      scrollHeight,
+      clientHeight,
+      maxScroll,
+    }
+  }
+
+  const scrollTop =
+    target instanceof Window
+      ? window.scrollY
+      : target.scrollTop
+
+  const scrollHeight =
+    target instanceof Window
+      ? document.documentElement.scrollHeight
+      : target.scrollHeight
+
+  const clientHeight =
+    target instanceof Window
+      ? window.innerHeight
+      : target.clientHeight
+  const maxScroll = Math.max(scrollHeight - clientHeight, 0)
+
+  return {
+    scrollTop,
+    scrollHeight,
+    clientHeight,
+    maxScroll,
+  }
+}
+
+function scrollTargetTo(target: HTMLElement | Window, top: number) {
+  if (target === window) {
+    window.scrollTo({
+      top,
+      behavior: "smooth",
+    })
+    return
+  }
+
+  target.scrollTo({
+    top,
+    behavior: "smooth",
+  })
+}
+
+function FloatingScrollButtons() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  function resolveTarget() {
+    const root =
+      document.getElementById("rule-bank-page-root") ||
+      document.getElementById("__next") ||
+      document.body
+
+    return getScrollableParent(root)
+  }
+
+  function goTop() {
+    const target = resolveTarget()
+    scrollTargetTo(target, 0)
+  }
+
+  function goMiddle() {
+    const target = resolveTarget()
+    const { maxScroll } = getScrollTargetMetrics(target)
+    scrollTargetTo(target, maxScroll / 2)
+  }
+
+  function goBottom() {
+    const target = resolveTarget()
+    const { maxScroll } = getScrollTargetMetrics(target)
+    scrollTargetTo(target, maxScroll)
+  }
+
+  if (!mounted) return null
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={goTop}
+        aria-label="Go to top"
+        title="Go to top"
+        className="fixed right-5 top-24 z-[9999] flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-[0_10px_30px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5 hover:bg-slate-50"
+      >
+        <ArrowUp size={18} />
+      </button>
+
+      <button
+        type="button"
+        onClick={goMiddle}
+        aria-label="Go to middle"
+        title="Go to middle"
+        className="fixed right-5 top-1/2 z-[9999] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-[0_10px_30px_rgba(15,23,42,0.16)] transition hover:bg-slate-50"
+      >
+        <Minus size={18} />
+      </button>
+
+      <button
+        type="button"
+        onClick={goBottom}
+        aria-label="Go to bottom"
+        title="Go to bottom"
+        className="fixed bottom-6 right-5 z-[9999] flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-[0_10px_30px_rgba(15,23,42,0.16)] transition hover:translate-y-0.5 hover:bg-slate-50"
+      >
+        <ArrowDown size={18} />
+      </button>
+    </>
+  )
 }
 
 export default function RuleBankPage() {
@@ -109,7 +250,6 @@ export default function RuleBankPage() {
         const data = await res.json()
 
         const flattened: Rule[] = []
-
         const subjects = Array.isArray(data?.subjects) ? data.subjects : []
 
         subjects.forEach((subject: any) => {
@@ -122,9 +262,7 @@ export default function RuleBankPage() {
               flattened.push({
                 id: Number(rule?.id),
                 title: String(rule?.title ?? ""),
-                ruleText: String(
-                  rule?.ruleText ?? rule?.rule_text ?? ""
-                ),
+                ruleText: String(rule?.ruleText ?? rule?.rule_text ?? ""),
                 applicationExample: String(
                   rule?.applicationExample ?? rule?.application_example ?? ""
                 ),
@@ -223,7 +361,9 @@ export default function RuleBankPage() {
   }
 
   return (
-    <div className="p-8">
+    <div id="rule-bank-page-root" className="relative p-8">
+      <FloatingScrollButtons />
+
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Rule Bank</h1>
@@ -370,7 +510,7 @@ export default function RuleBankPage() {
                         {keywords.map((k) => (
                           <span
                             key={k.id}
-                            className="rounded bg-indigo-100 px-2 py-1 font-mono text-xs tracking-tight text-indigo-700"
+                            className="rounded bg-indigo-100/80 px-2 py-1 font-mono text-xs tracking-tight text-indigo-700"
                           >
                             {k.keyword}
                           </span>

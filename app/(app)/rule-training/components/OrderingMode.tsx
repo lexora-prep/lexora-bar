@@ -2,10 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react"
 
+type SubmitPayload = {
+  userAnswer: string
+  score: number
+  matchedKeywords: string[]
+  missedKeywords: string[]
+  keywordScore: number
+  similarity: number
+}
+
 type Props = {
   ruleText: string
   keywords: string[]
   onNextRule: () => void
+  onSubmitModeAttempt?: (payload: SubmitPayload) => void | Promise<void>
+  isSubmitting?: boolean
 }
 
 function normalizeText(text: unknown) {
@@ -70,13 +81,20 @@ const RULE_TEXT_STYLE: React.CSSProperties = {
   color: "#334155",
 }
 
-export default function OrderingMode({ ruleText, onNextRule }: Props) {
+export default function OrderingMode({
+  ruleText,
+  keywords,
+  onNextRule,
+  onSubmitModeAttempt,
+  isSubmitting = false,
+}: Props) {
   const correctFragments = useMemo(() => splitRuleIntoFragments(ruleText), [ruleText])
 
   const [items, setItems] = useState<string[]>([])
   const [checked, setChecked] = useState(false)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [score, setScore] = useState(0)
 
   useEffect(() => {
     if (correctFragments.length <= 1) {
@@ -84,6 +102,7 @@ export default function OrderingMode({ ruleText, onNextRule }: Props) {
       setChecked(false)
       setDragIndex(null)
       setDragOverIndex(null)
+      setScore(0)
       return
     }
 
@@ -96,16 +115,43 @@ export default function OrderingMode({ ruleText, onNextRule }: Props) {
     setChecked(false)
     setDragIndex(null)
     setDragOverIndex(null)
+    setScore(0)
   }, [correctFragments])
 
-  function handleCheck() {
+  async function handleCheck() {
+    const correctPositions = items.filter(
+      (item, index) => normalizeText(item) === normalizeText(correctFragments[index])
+    ).length
+
+    const nextScore =
+      correctFragments.length > 0
+        ? Math.round((correctPositions / correctFragments.length) * 100)
+        : 0
+
+    const fullText = items.join(" ")
+    const safeKeywords = Array.isArray(keywords) ? keywords : []
+    const matchedKeywords = safeKeywords.filter((kw) =>
+      normalizeText(fullText).includes(normalizeText(kw))
+    )
+
+    setScore(nextScore)
     setChecked(true)
+
+    await onSubmitModeAttempt?.({
+      userAnswer: fullText,
+      score: nextScore,
+      matchedKeywords,
+      missedKeywords: [],
+      keywordScore: matchedKeywords.length > 0 ? 100 : 0,
+      similarity: nextScore,
+    })
   }
 
   function handleTryAgain() {
     if (correctFragments.length <= 1) {
       setItems(correctFragments)
       setChecked(false)
+      setScore(0)
       return
     }
 
@@ -118,6 +164,7 @@ export default function OrderingMode({ ruleText, onNextRule }: Props) {
     setChecked(false)
     setDragIndex(null)
     setDragOverIndex(null)
+    setScore(0)
   }
 
   function moveItem(from: number, to: number) {
@@ -303,8 +350,8 @@ export default function OrderingMode({ ruleText, onNextRule }: Props) {
         >
           {checked
             ? allCorrect
-              ? "Correct order"
-              : "Review the wrong positions"
+              ? `Correct order • ${score}%`
+              : `Review the wrong positions • ${score}%`
             : "Drag to reorder"}
         </div>
 
@@ -331,6 +378,7 @@ export default function OrderingMode({ ruleText, onNextRule }: Props) {
               <button
                 type="button"
                 onClick={handleCheck}
+                disabled={isSubmitting}
                 style={{
                   padding: "10px 22px",
                   borderRadius: 12,
@@ -339,10 +387,11 @@ export default function OrderingMode({ ruleText, onNextRule }: Props) {
                   color: "#FFFFFF",
                   fontWeight: 700,
                   fontSize: 13,
-                  cursor: "pointer",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  opacity: isSubmitting ? 0.7 : 1,
                 }}
               >
-                Check Order
+                {isSubmitting ? "Checking..." : "Check Order"}
               </button>
             </>
           ) : (

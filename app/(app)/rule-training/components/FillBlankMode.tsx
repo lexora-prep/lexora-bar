@@ -2,10 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react"
 
+type SubmitPayload = {
+  userAnswer: string
+  score: number
+  matchedKeywords: string[]
+  missedKeywords: string[]
+  keywordScore: number
+  similarity: number
+}
+
 type Props = {
   ruleText: string
   keywords: string[]
   onNextRule: () => void
+  onSubmitModeAttempt?: (payload: SubmitPayload) => void | Promise<void>
+  isSubmitting?: boolean
 }
 
 function normalizeText(text: unknown) {
@@ -39,6 +50,8 @@ export default function FillBlankMode({
   ruleText,
   keywords,
   onNextRule,
+  onSubmitModeAttempt,
+  isSubmitting = false,
 }: Props) {
   const safeRuleText = typeof ruleText === "string" ? ruleText : ""
   const safeKeywords = useMemo(() => buildSafeKeywords(keywords), [keywords])
@@ -46,11 +59,17 @@ export default function FillBlankMode({
   const [answers, setAnswers] = useState<string[]>([])
   const [checked, setChecked] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+  const [matchedKeywords, setMatchedKeywords] = useState<string[]>([])
+  const [missedKeywords, setMissedKeywords] = useState<string[]>([])
+  const [score, setScore] = useState(0)
 
   useEffect(() => {
     setAnswers(new Array(safeKeywords.length).fill(""))
     setChecked(false)
     setFocusedIndex(null)
+    setMatchedKeywords([])
+    setMissedKeywords([])
+    setScore(0)
   }, [safeRuleText, safeKeywords])
 
   function updateAnswer(index: number, value: string) {
@@ -59,24 +78,48 @@ export default function FillBlankMode({
     setAnswers(copy)
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    const matched = safeKeywords.filter((keyword, index) =>
+      isCorrectAnswer(answers[index], keyword)
+    )
+
+    const missed = safeKeywords.filter((keyword, index) =>
+      !isCorrectAnswer(answers[index], keyword)
+    )
+
+    const nextScore =
+      safeKeywords.length > 0
+        ? Math.round((matched.length / safeKeywords.length) * 100)
+        : 0
+
+    setMatchedKeywords(matched)
+    setMissedKeywords(missed)
+    setScore(nextScore)
     setChecked(true)
     setFocusedIndex(null)
+
+    await onSubmitModeAttempt?.({
+      userAnswer: answers.join(" "),
+      score: nextScore,
+      matchedKeywords: matched,
+      missedKeywords: missed,
+      keywordScore: nextScore,
+      similarity: nextScore,
+    })
   }
 
   function handleTryAgain() {
     setAnswers(new Array(safeKeywords.length).fill(""))
     setChecked(false)
     setFocusedIndex(null)
+    setMatchedKeywords([])
+    setMissedKeywords([])
+    setScore(0)
   }
 
   const allCorrect =
     safeKeywords.length > 0 &&
     safeKeywords.every((keyword, index) => isCorrectAnswer(answers[index], keyword))
-
-  const missingKeywords = safeKeywords.filter((keyword, index) => {
-    return !isCorrectAnswer(answers[index], keyword)
-  })
 
   function getBlankWidth(keyword: string) {
     const words = countWords(keyword)
@@ -193,7 +236,7 @@ export default function FillBlankMode({
           >
             <input
               value={answerValue}
-              disabled={checked}
+              disabled={checked || isSubmitting}
               onFocus={() => setFocusedIndex(index)}
               onBlur={() => setFocusedIndex((prev) => (prev === index ? null : prev))}
               onChange={(e) => updateAnswer(index, e.target.value)}
@@ -273,8 +316,8 @@ export default function FillBlankMode({
             {!checked
               ? "Fill all blanks to submit"
               : allCorrect
-                ? "All blanks correct"
-                : "Review the missed blanks"}
+                ? `All blanks correct • ${score}%`
+                : `Review the missed blanks • ${score}%`}
           </div>
 
           <div style={{ display: "flex", gap: 12 }}>
@@ -300,6 +343,7 @@ export default function FillBlankMode({
                 <button
                   type="button"
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                   style={{
                     padding: "10px 22px",
                     borderRadius: 12,
@@ -308,10 +352,11 @@ export default function FillBlankMode({
                     color: "#FFFFFF",
                     fontWeight: 700,
                     fontSize: 13,
-                    cursor: "pointer",
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                    opacity: isSubmitting ? 0.7 : 1,
                   }}
                 >
-                  Check Answers
+                  {isSubmitting ? "Checking..." : "Check Answers"}
                 </button>
               </>
             ) : (
@@ -354,7 +399,7 @@ export default function FillBlankMode({
           </div>
         </div>
 
-        {checked && !allCorrect && missingKeywords.length > 0 && (
+        {checked && !allCorrect && missedKeywords.length > 0 && (
           <div
             style={{
               marginTop: 14,
@@ -363,7 +408,7 @@ export default function FillBlankMode({
               gap: 6,
             }}
           >
-            {missingKeywords.map((keyword) => (
+            {missedKeywords.map((keyword) => (
               <span
                 key={keyword}
                 style={{
@@ -372,6 +417,34 @@ export default function FillBlankMode({
                   border: "1px solid #FECACA",
                   background: "#FEF2F2",
                   color: "#B91C1C",
+                  fontSize: 11,
+                  fontWeight: 600,
+                }}
+              >
+                {keyword}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {checked && matchedKeywords.length > 0 && (
+          <div
+            style={{
+              marginTop: 10,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 6,
+            }}
+          >
+            {matchedKeywords.map((keyword) => (
+              <span
+                key={keyword}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 999,
+                  border: "1px solid #BFDBFE",
+                  background: "#EFF6FF",
+                  color: "#2563EB",
                   fontSize: 11,
                   fontWeight: 600,
                 }}

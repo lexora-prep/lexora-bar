@@ -26,13 +26,9 @@ import {
   Pause,
   Square,
   FolderClock,
-  Check,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
-import {
-  UnsavedChangesProvider,
-  useUnsavedChanges,
-} from "@/app/_providers/UnsavedChangesProvider"
+import { useUnsavedChanges } from "@/app/_providers/UnsavedChangesProvider"
 import ModeSwitcher from "./components/ModeSwitcher"
 import TypingMode from "./components/TypingMode"
 import FillBlankMode from "./components/FillBlankMode"
@@ -46,6 +42,12 @@ type Subject = {
   total_rules?: number
   completed_rules?: number
   weak_rules?: number
+  exam_status?: string
+  show_in_rule_training?: boolean
+  show_in_analytics?: boolean
+  badge_text?: string
+  badge_tone?: string
+  badge_subtext?: string
 }
 
 type Rule = {
@@ -61,6 +63,9 @@ type Rule = {
   subject_id?: string
   avgScore?: number
   prompt_question?: string
+  application_example?: string
+  common_trap?: string
+  priority?: string
 }
 
 type TopicOption = {
@@ -77,6 +82,15 @@ type ResultShape = {
   similarity?: number
   matched_keywords?: string[]
   missed_keywords?: string[]
+}
+
+type ModeAttemptPayload = {
+  userAnswer: string
+  score: number
+  matchedKeywords: string[]
+  missedKeywords: string[]
+  keywordScore: number
+  similarity: number
 }
 
 type SessionQuestionStyle = "prompt" | "recite" | "mixed"
@@ -198,6 +212,33 @@ function hashString(value: string) {
   return Math.abs(hash)
 }
 
+function getResultKeywordTotal(result: ResultShape | null) {
+  if (!result) return 0
+
+  const matched = Array.isArray(result.matched_keywords)
+    ? result.matched_keywords.length
+    : 0
+
+  const missed = Array.isArray(result.missed_keywords)
+    ? result.missed_keywords.length
+    : 0
+
+  return matched + missed
+}
+
+function getDisplayKeywordsForResult(result: ResultShape | null, fallback: string[] = []) {
+  if (!result) return fallback
+
+  const matched = Array.isArray(result.matched_keywords) ? result.matched_keywords : []
+  const missed = Array.isArray(result.missed_keywords) ? result.missed_keywords : []
+
+  const merged = [...matched, ...missed]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+
+  return merged.length > 0 ? Array.from(new Set(merged)) : fallback
+}
+
 function normalizeKeywords(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.map((item) => String(item).trim()).filter(Boolean)
@@ -224,27 +265,23 @@ function normalizeKeywords(value: unknown): string[] {
 }
 
 function normalizeRuleRow(raw: any): Rule {
-  const topicName = String(
-    raw.topic ?? raw.topic_name ?? raw.topic_title ?? ""
-  ).trim()
-
+  const topicName = String(raw.topic ?? raw.topic_name ?? raw.topic_title ?? "").trim()
   const subtopicName = String(
     raw.subtopic ?? raw.subtopic_name ?? raw.subtopic_title ?? ""
   ).trim()
-
   const subjectName = String(
     raw.subject ?? raw.subject_name ?? raw.subject_title ?? ""
   ).trim()
 
   return {
-    id: String(raw.id ?? ""),
+    id: String(raw.id ?? "").trim(),
     title: String(raw.title ?? "").trim(),
     rule_text: String(raw.rule_text ?? "").trim(),
     keywords: normalizeKeywords(raw.keywords ?? raw.buzzwords),
     topic: topicName,
     subtopic: subtopicName,
-    topic_id: String(raw.topic_id ?? topicName ?? "").trim(),
-    subtopic_id: String(raw.subtopic_id ?? subtopicName ?? "").trim(),
+    topic_id: String(raw.topic_id ?? "").trim(),
+    subtopic_id: String(raw.subtopic_id ?? "").trim(),
     subject: subjectName,
     subject_id: String(raw.subject_id ?? "").trim(),
     avgScore:
@@ -254,15 +291,54 @@ function normalizeRuleRow(raw: any): Rule {
           ? raw.avg_score
           : 0,
     prompt_question: String(raw.prompt_question ?? "").trim(),
+    application_example: String(raw.application_example ?? "").trim(),
+    common_trap: String(raw.common_trap ?? "").trim(),
+    priority: String(raw.priority ?? "").trim(),
   }
+}
+
+function buildClientRuleKey(rule: Rule) {
+  return [
+    String(rule.subject_id || rule.subject || "").trim().toLowerCase(),
+    String(rule.topic_id || rule.topic || "").trim().toLowerCase(),
+    String(rule.subtopic_id || rule.subtopic || "").trim().toLowerCase(),
+    String(rule.title || "").trim().toLowerCase(),
+  ].join("::")
 }
 
 function mergeUniqueRules(rules: Rule[]) {
   const map = new Map<string, Rule>()
+
   for (const rule of rules) {
     if (!rule?.id) continue
-    map.set(rule.id, rule)
+
+    const key = buildClientRuleKey(rule)
+    const existing = map.get(key)
+
+    if (!existing) {
+      map.set(key, rule)
+      continue
+    }
+
+    const ruleHasPrompt = !!String(rule.prompt_question ?? "").trim()
+    const existingHasPrompt = !!String(existing.prompt_question ?? "").trim()
+
+    if (ruleHasPrompt && !existingHasPrompt) {
+      map.set(key, rule)
+      continue
+    }
+
+    if (!existing.rule_text && rule.rule_text) {
+      map.set(key, rule)
+      continue
+    }
+
+    if ((rule.keywords?.length ?? 0) > (existing.keywords?.length ?? 0)) {
+      map.set(key, rule)
+      continue
+    }
   }
+
   return Array.from(map.values())
 }
 
@@ -280,13 +356,21 @@ function buildPromptText(
   effectiveStyle: "prompt" | "recite"
 ) {
   if (!rule) return ""
+
   if (effectiveStyle === "recite") {
     return rule.title?.trim()
       ? `Recite the full black letter law rule for ${rule.title}.`
       : "Recite the full black letter law rule."
   }
-  if (rule.prompt_question?.trim()) return rule.prompt_question.trim()
-  if (rule.title?.trim()) return `What is the rule for ${rule.title}?`
+
+  if (rule.prompt_question?.trim()) {
+    return rule.prompt_question.trim()
+  }
+
+  if (rule.title?.trim()) {
+    return `State the black letter law rule for ${rule.title}.`
+  }
+
   return "State the applicable rule."
 }
 
@@ -403,11 +487,20 @@ function getDraftGroupName(draft: SessionDraft) {
 
 function RuleTrainingPageContent() {
   const searchParams = useSearchParams()
+  const modeFromUrl = searchParams.get("mode") || ""
+  const weakFocusRuleIdFromUrl = searchParams.get("ruleId") || searchParams.get("weakFocusRuleId") || ""
+  const weakFocusSubjectFromUrl = searchParams.get("subject") || ""
+  const weakFocusTopicFromUrl = searchParams.get("topic") || ""
+  const weakFocusSubtopicFromUrl = searchParams.get("subtopic") || ""
+  const autoStartFromUrl = searchParams.get("autoStart") === "1"
+  const drillFromWeakAreasFromUrl = searchParams.get("drillFromWeakAreas") === "1"
+  const returnToFromUrl = searchParams.get("returnTo") || ""
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const { setDirty, clearDirty, requestAction } = useUnsavedChanges()
 
   const restoredSessionRef = useRef(false)
+  const directWeakAreasStartedRef = useRef(false)
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [authReady, setAuthReady] = useState(false)
@@ -424,7 +517,7 @@ function RuleTrainingPageContent() {
   const [draftGroupOpen, setDraftGroupOpen] = useState<Record<string, boolean>>({})
 
   const [modeSwitchRequest, setModeSwitchRequest] = useState<SessionType | null>(null)
-  const [selectedSessionType, setSelectedSessionType] = useState<SessionType | null>(null)
+  const [selectedSessionType, setSelectedSessionType] = useState<SessionType | null>(modeFromUrl === "weak_focus" || modeFromUrl === "weak-focus" || searchParams.get("trainingMode") === "weak_focus" ? "weak_focus" : null)
   const [sessionStarted, setSessionStarted] = useState(false)
   const [sessionPaused, setSessionPaused] = useState(false)
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false)
@@ -445,12 +538,15 @@ function RuleTrainingPageContent() {
 
   const [mode, setMode] = useState<RuleMode>("typing")
   const [studySessionId, setStudySessionId] = useState<string | null>(null)
-  const [trainingMode, setTrainingMode] = useState<SessionType>("study")
+  const [trainingMode, setTrainingMode] = useState<SessionType>(modeFromUrl === "weak_focus" || modeFromUrl === "weak-focus" || searchParams.get("trainingMode") === "weak_focus" ? "weak_focus" : "study")
 
   const [mbeOpen, setMbeOpen] = useState(true)
   const [meeOpen, setMeeOpen] = useState(true)
   const [attempts, setAttempts] = useState<number[]>([])
   const [weakRules, setWeakRules] = useState<string[]>([])
+  const [weakAreaItems, setWeakAreaItems] = useState<any[]>([])
+  const [weakAreaRuleIds, setWeakAreaRuleIds] = useState<string[]>([])
+  const [directWeakCompletedRuleIds, setDirectWeakCompletedRuleIds] = useState<string[]>([])
   const [ruleDifficulty, setRuleDifficulty] = useState<Record<string, number>>({})
   const [ruleMastery, setRuleMastery] = useState<Record<string, number>>({})
   const [ruleSchedule, setRuleSchedule] = useState<Record<string, number>>({})
@@ -475,10 +571,15 @@ function RuleTrainingPageContent() {
     questionStyle: "prompt" as SessionQuestionStyle,
   })
 
+  const visibleSubjects = useMemo(
+    () => subjects.filter((subject) => subject.show_in_rule_training !== false),
+    [subjects]
+  )
+
   const topicsBySubject = useMemo(() => {
     const map = new Map<string, TopicOption[]>()
 
-    for (const subject of subjects) {
+    for (const subject of visibleSubjects) {
       const grouped = new Map<string, TopicOption>()
 
       for (const rule of allRules) {
@@ -511,7 +612,7 @@ function RuleTrainingPageContent() {
     }
 
     return map
-  }, [subjects, allRules])
+  }, [visibleSubjects, allRules])
 
   useEffect(() => {
     try {
@@ -616,6 +717,7 @@ function RuleTrainingPageContent() {
   }
 
   function abandonCurrentSessionState() {
+    directWeakAreasStartedRef.current = false
     setSessionStarted(false)
     setSessionPaused(false)
     setSelectedRuleIndex(null)
@@ -624,6 +726,7 @@ function RuleTrainingPageContent() {
     setResult(null)
     setAnswer("")
     setSessionRuleResults([])
+    setDirectWeakCompletedRuleIds([])
     setSavedRuleIds([])
     setReportedRuleIds([])
     setRemainingSeconds(null)
@@ -658,8 +761,7 @@ function RuleTrainingPageContent() {
     } else {
       clearDirty()
     }
-
-    return () => clearDirty()
+return () => clearDirty()
   }, [
     sessionStarted,
     setDirty,
@@ -689,6 +791,7 @@ function RuleTrainingPageContent() {
 
   useEffect(() => {
     if (!authReady) return
+
     try {
       const raw = sessionStorage.getItem(STORAGE_ACTIVE_SESSION)
       if (!raw) return
@@ -768,9 +871,7 @@ function RuleTrainingPageContent() {
         ? [...completedRules].sort((a, b) => a.score - b.score)[0]
         : null
 
-    const missedKeywords = Array.from(
-      new Set(completedRules.flatMap((r) => r.missedKeywords))
-    )
+    const missedKeywords = Array.from(new Set(completedRules.flatMap((r) => r.missedKeywords)))
 
     const totalTimeSec = completedRules.reduce((sum, item) => sum + item.timeSpentSec, 0)
     const avgTimePerRuleSec =
@@ -879,6 +980,7 @@ function RuleTrainingPageContent() {
     setResult(null)
     setAttempts([])
     setAnswerStartTime(Date.now())
+
     if (trainingMode === "timed") {
       setRemainingSeconds(quizConfig.timePerQuestion)
       setTimerStarted(false)
@@ -915,9 +1017,47 @@ function RuleTrainingPageContent() {
     setModeSwitchRequest(null)
   }
 
-  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId)
-  const selectedRule =
-    selectedRuleIndex !== null ? rules[selectedRuleIndex] : null
+  useEffect(() => {
+    async function loadWeakAreaRulesForTraining() {
+      if (!currentUserId) {
+        setWeakAreaItems([])
+        setWeakAreaRuleIds([])
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/weak-areas?userId=${currentUserId}`, {
+          cache: "no-store",
+        })
+
+        const data = await res.json()
+        const rows = Array.isArray(data) ? data : Array.isArray(data?.weakAreas) ? data.weakAreas : []
+
+        const ids = rows
+          .map((item: any) => String(item?.ruleId || item?.id || "").trim())
+          .filter(Boolean)
+
+        setWeakAreaItems(rows)
+        setWeakAreaRuleIds(Array.from(new Set(ids)))
+      } catch (error) {
+        console.error("WEAK FOCUS LOAD WEAK AREAS ERROR:", error)
+        setWeakAreaItems([])
+        setWeakAreaRuleIds([])
+      }
+    }
+
+    loadWeakAreaRulesForTraining()
+  }, [currentUserId])
+
+  const selectedSubject = visibleSubjects.find((s) => s.id === selectedSubjectId)
+  const selectedRule = selectedRuleIndex !== null ? rules[selectedRuleIndex] : null
+  const activeQueueTotal = trainingQueue.length > 0 ? trainingQueue.length : rules.length
+  const activeQueuePosition =
+    selectedRuleIndex !== null && trainingQueue.length > 0
+      ? Math.max(0, trainingQueue.indexOf(selectedRuleIndex)) + 1
+      : selectedRuleIndex !== null
+        ? selectedRuleIndex + 1
+        : 1
 
   const effectiveQuestionStyle = getEffectiveQuestionStyle(
     quizConfig.questionStyle,
@@ -973,12 +1113,14 @@ function RuleTrainingPageContent() {
       }
     })
 
-    setRules(normalizedRules)
+    const canonicalRules = mergeUniqueRules(normalizedRules)
+
+    setRules(canonicalRules)
     setAnswer("")
 
     const weakId = searchParams.get("weak")
     if (weakId) {
-      const index = normalizedRules.findIndex((r) => r.id === weakId)
+      const index = canonicalRules.findIndex((r) => r.id === weakId)
       if (index !== -1) {
         setSelectedRuleIndex(index)
         setTrainingMode("weak_focus")
@@ -988,9 +1130,9 @@ function RuleTrainingPageContent() {
       }
     }
 
-    if (normalizedRules.length > 0) {
+    if (canonicalRules.length > 0) {
       const initialQueue = buildTrainingQueue(
-        normalizedRules,
+        canonicalRules,
         quizConfig.size,
         weakRules,
         quizConfig.order
@@ -1025,7 +1167,11 @@ function RuleTrainingPageContent() {
         const data = await res.json()
 
         if (Array.isArray(data)) {
-          setAllRules(data.map((row: any) => normalizeRuleRow(row)).filter((row) => row.id))
+          const normalized = data
+            .map((row: any) => normalizeRuleRow(row))
+            .filter((row) => row.id)
+
+          setAllRules(mergeUniqueRules(normalized))
         } else {
           setAllRules([])
         }
@@ -1041,10 +1187,14 @@ function RuleTrainingPageContent() {
       })
       const data = await res.json()
       if (!Array.isArray(data)) return
-      setSubjects(data)
 
-      if (!restoredSessionRef.current && data.length > 0) {
-        await onPickSubject(data[0])
+      const filtered = data.filter(
+        (subject: Subject) => subject.show_in_rule_training !== false
+      )
+      setSubjects(filtered)
+
+      if (!restoredSessionRef.current && filtered.length > 0) {
+        await onPickSubject(filtered[0])
       }
     }
 
@@ -1111,6 +1261,130 @@ function RuleTrainingPageContent() {
     void handleSubmit()
   }, [remainingSeconds, trainingMode, sessionStarted, sessionPaused, isSubmitting, result])
 
+  async function submitModeAttempt(payload: ModeAttemptPayload) {
+    if (selectedRuleIndex === null || isSubmitting || !currentUserId) return
+    if (!rules[selectedRuleIndex]) return
+
+    setIsSubmitting(true)
+
+    try {
+      const recallTime = Date.now() - answerStartTime
+      const recallSeconds = Math.round(recallTime / 1000)
+      const rule = rules[selectedRuleIndex]
+
+      const res = await fetch("/api/submit-attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ruleId: rule.id,
+          userAnswer: payload.userAnswer,
+          userId: currentUserId,
+          mode,
+          exerciseMode: mode,
+          trainingMode,
+          scoreOverride: payload.score,
+          matchedKeywordsOverride: payload.matchedKeywords,
+          missedKeywordsOverride: payload.missedKeywords,
+          keywordScoreOverride: payload.keywordScore,
+          similarityOverride: payload.similarity,
+        }),
+      })
+
+      const data = await res.json()
+
+      const matched_keywords = data.matched_keywords ?? payload.matchedKeywords ?? []
+      const missed_keywords = data.missed_keywords ?? payload.missedKeywords ?? []
+      const score = typeof data.score === "number" ? data.score : payload.score
+
+      const keywordScore =
+        typeof data.keywordScore === "number"
+          ? data.keywordScore
+          : payload.keywordScore
+
+      const similarity =
+        typeof data.similarity === "number"
+          ? data.similarity
+          : payload.similarity
+
+      const normalized: ResultShape = {
+        score,
+        matched_keywords,
+        missed_keywords,
+        keywordScore,
+        similarity,
+      }
+
+      setResult(normalized)
+      setAttempts((prev) => [...prev, score])
+
+      setRuleDifficulty((prev) => ({
+        ...prev,
+        [rule.id]: score,
+      }))
+
+      setRuleMastery((prev) => {
+        const previous = prev[rule.id] ?? 0
+        let change = 0
+
+        if (score >= 90) change = 10
+        else if (score >= 80) change = 6
+        else if (score >= 70) change = 3
+        else if (score >= 60) change = 0
+        else change = -8
+
+        const updated = Math.max(0, Math.min(100, previous + change))
+        return { ...prev, [rule.id]: updated }
+      })
+
+      const now = Date.now()
+      let delay = 0
+      if (score < 50) delay = 0
+      else if (score < 70 || recallSeconds > 40) delay = 1
+      else if (score < 85 || recallSeconds > 25) delay = 3
+      else if (score < 95 || recallSeconds > 15) delay = 7
+      else delay = 21
+
+      const nextReview = now + delay * 24 * 60 * 60 * 1000
+      setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+
+      if (score >= 70 && drillFromWeakAreasFromUrl) {
+        setDirectWeakCompletedRuleIds((prev) =>
+          prev.includes(rule.id) ? prev : [...prev, rule.id]
+        )
+        setWeakRules((prev) => prev.filter((id) => id !== rule.id))
+        setWeakAreaRuleIds((prev) => prev.filter((id) => id !== rule.id))
+        setWeakAreaItems((prev) =>
+          prev.filter((item) => String(item?.ruleId || item?.id || "").trim() !== rule.id)
+        )
+      } else if (score < 65) {
+        setWeakRules((prev) => (prev.includes(rule.id) ? prev : [...prev, rule.id]))
+      }
+
+      setRules((prev) =>
+        prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
+      )
+
+      setSessionRuleResults((prev) => {
+        const next = prev.filter((item) => item.ruleId !== rule.id)
+        next.push({
+          ruleId: rule.id,
+          title: rule.title,
+          score,
+          matchedKeywords: Array.isArray(matched_keywords) ? matched_keywords : [],
+          missedKeywords: Array.isArray(missed_keywords) ? missed_keywords : [],
+          keywordScore,
+          similarity,
+          timeSpentSec: recallSeconds,
+        })
+        return next
+      })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   async function handleSubmit() {
     if (selectedRuleIndex === null || isSubmitting || !currentUserId) return
     if (!rules[selectedRuleIndex]) return
@@ -1130,6 +1404,8 @@ function RuleTrainingPageContent() {
           ruleId: rule.id,
           userAnswer: safeAnswer,
           userId: currentUserId,
+          mode,
+          exerciseMode: mode,
           trainingMode,
         }),
       })
@@ -1144,9 +1420,7 @@ function RuleTrainingPageContent() {
         typeof data.keywordScore === "number"
           ? data.keywordScore
           : (rule.keywords?.length ?? 0) > 0
-            ? Math.round(
-                (matched_keywords.length / (rule.keywords?.length ?? 1)) * 100
-              )
+            ? Math.round((matched_keywords.length / (rule.keywords?.length ?? 1)) * 100)
             : 0
 
       const similarity =
@@ -1195,7 +1469,16 @@ function RuleTrainingPageContent() {
       const nextReview = now + delay * 24 * 60 * 60 * 1000
       setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
 
-      if (score < 65) {
+      if (score >= 70 && drillFromWeakAreasFromUrl) {
+        setDirectWeakCompletedRuleIds((prev) =>
+          prev.includes(rule.id) ? prev : [...prev, rule.id]
+        )
+        setWeakRules((prev) => prev.filter((id) => id !== rule.id))
+        setWeakAreaRuleIds((prev) => prev.filter((id) => id !== rule.id))
+        setWeakAreaItems((prev) =>
+          prev.filter((item) => String(item?.ruleId || item?.id || "").trim() !== rule.id)
+        )
+      } else if (score < 65) {
         setWeakRules((prev) => (prev.includes(rule.id) ? prev : [...prev, rule.id]))
       }
 
@@ -1227,36 +1510,61 @@ function RuleTrainingPageContent() {
   function handleNextRule() {
     if (selectedRuleIndex === null) return
 
+    const completedSet = new Set(directWeakCompletedRuleIds)
+
+    if (
+      drillFromWeakAreasFromUrl &&
+      selectedRuleIndex !== null &&
+      rules[selectedRuleIndex] &&
+      result &&
+      (result.score ?? 0) >= 70
+    ) {
+      completedSet.add(rules[selectedRuleIndex].id)
+    }
+
     let nextIndex: number | null = null
 
-    if (trainingMode === "study") {
-      const next = selectedRuleIndex + 1
-      nextIndex = next < rules.length ? next : null
-    } else if (trainingMode === "weak_focus") {
-      const weakIndexes = rules
-        .map((r, i) => (weakRules.includes(r.id) ? i : null))
-        .filter((v) => v !== null) as number[]
-
-      if (weakIndexes.length > 0) {
-        const currentPos = weakIndexes.indexOf(selectedRuleIndex)
-        nextIndex =
-          currentPos !== -1 && currentPos < weakIndexes.length - 1
-            ? weakIndexes[currentPos + 1]
-            : null
-      }
-    } else if (trainingQueue.length > 0) {
+    if (trainingQueue.length > 0) {
       const currentPosition = trainingQueue.indexOf(selectedRuleIndex)
-      const nextPosition = currentPosition + 1
-      nextIndex =
-        nextPosition >= 0 && nextPosition < trainingQueue.length
-          ? trainingQueue[nextPosition]
-          : null
+
+      for (let i = currentPosition + 1; i < trainingQueue.length; i += 1) {
+        const candidateIndex = trainingQueue[i]
+        const candidateRule = rules[candidateIndex]
+
+        if (!candidateRule) continue
+        if (drillFromWeakAreasFromUrl && completedSet.has(candidateRule.id)) continue
+
+        nextIndex = candidateIndex
+        break
+      }
     } else {
-      const next = selectedRuleIndex + 1
-      nextIndex = next < rules.length ? next : null
+      for (let i = selectedRuleIndex + 1; i < rules.length; i += 1) {
+        const candidateRule = rules[i]
+
+        if (!candidateRule) continue
+        if (drillFromWeakAreasFromUrl && completedSet.has(candidateRule.id)) continue
+
+        nextIndex = i
+        break
+      }
     }
 
     if (nextIndex === null) {
+      if (drillFromWeakAreasFromUrl && returnToFromUrl) {
+        const completedIds = Array.from(completedSet)
+
+        clearDirty()
+
+        const params = new URLSearchParams()
+        params.set("refresh", "1")
+        if (completedIds.length > 0) {
+          params.set("completedRuleIds", completedIds.join(","))
+        }
+
+        router.push(`${returnToFromUrl}?${params.toString()}`)
+        return
+      }
+
       finalizeSession()
       return
     }
@@ -1336,6 +1644,7 @@ function RuleTrainingPageContent() {
     setRemainingSeconds(null)
     setTimerStarted(false)
     setStopConfirmOpen(false)
+
     if (clearPersisted) {
       try {
         sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
@@ -1352,18 +1661,59 @@ function RuleTrainingPageContent() {
     })
   }
 
+  function finishDirectWeakAreaDrill() {
+    if (!drillFromWeakAreasFromUrl || !returnToFromUrl) {
+      finalizeSession()
+      return
+    }
+
+    const completedSet = new Set(directWeakCompletedRuleIds)
+
+    if (
+      selectedRuleIndex !== null &&
+      rules[selectedRuleIndex] &&
+      result &&
+      (result.score ?? 0) >= 70
+    ) {
+      completedSet.add(rules[selectedRuleIndex].id)
+    }
+
+    clearDirty()
+
+    const params = new URLSearchParams()
+    params.set("refresh", "1")
+
+    const completedIds = Array.from(completedSet)
+    if (completedIds.length > 0) {
+      params.set("completedRuleIds", completedIds.join(","))
+    }
+
+    router.push(`${returnToFromUrl}?${params.toString()}`)
+  }
+
+
   function handlePauseSession() {
     if (!sessionStarted) return
     setSessionPaused((prev) => !prev)
   }
 
   function handleSaveActiveSession() {
+    if (drillFromWeakAreasFromUrl && returnToFromUrl) {
+      finishDirectWeakAreaDrill()
+      return
+    }
+
     saveCurrentSessionDraft()
     stopSession(true)
     setActiveTab("active")
   }
 
   function confirmStopToActiveSession() {
+    if (drillFromWeakAreasFromUrl && returnToFromUrl) {
+      finishDirectWeakAreaDrill()
+      return
+    }
+
     saveCurrentSessionDraft()
     stopSession(true)
     setActiveTab("active")
@@ -1387,31 +1737,252 @@ function RuleTrainingPageContent() {
     return mergeUniqueRules(results.flat())
   }
 
+  // DIRECT_WEAK_AREAS_SKIP_RESTORE_FIX
+  useEffect(() => {
+    if (!drillFromWeakAreasFromUrl) return
+
+    restoredSessionRef.current = true
+
+    try {
+        sessionStorage.removeItem("STORAGE_ACTIVE_SESSION")
+        sessionStorage.removeItem("lexora-rule-training-active-session")
+        sessionStorage.removeItem("lexora_rule_training_active_drafts_v3")
+        sessionStorage.removeItem("lexora_rule_training_active_session_v6")
+        sessionStorage.removeItem("lexora_rule_training_session_history_v3")
+        sessionStorage.removeItem("rule-training-active-session")
+    } catch (error) {
+      console.error("DIRECT WEAK DRILL SESSION STORAGE CLEAR ERROR:", error)
+    }
+  }, [drillFromWeakAreasFromUrl])
+
+  // WEAK_FOCUS_URL_MODE_SYNC_FINAL
+  useEffect(() => {
+    const shouldUseWeakFocus =
+      modeFromUrl === "weak_focus" ||
+      modeFromUrl === "weak-focus" ||
+      searchParams.get("trainingMode") === "weak_focus"
+
+    if (!shouldUseWeakFocus) return
+
+    setTrainingMode("weak_focus")
+    setSelectedSessionType("weak_focus")
+  }, [modeFromUrl, searchParams])
+
+  // ACTIVE_SESSION_SCROLL_FIX
+  useEffect(() => {
+    if (!sessionStarted || activeTab !== "active") return
+
+    const resetScroll = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+
+      const appMain = document.querySelector("main")
+      if (appMain) {
+        appMain.scrollTo({ top: 0, left: 0, behavior: "auto" })
+      }
+
+      const scrollContainers = document.querySelectorAll("[data-radix-scroll-area-viewport], .overflow-y-auto, .overflow-auto")
+      scrollContainers.forEach((container) => {
+        if (container instanceof HTMLElement) {
+          container.scrollTop = 0
+        }
+      })
+    }
+
+    resetScroll()
+    requestAnimationFrame(resetScroll)
+    window.setTimeout(resetScroll, 50)
+  }, [sessionStarted, activeTab, selectedRuleIndex])
+
+  // WEAK_AREAS_DIRECT_DRILL_QUEUE_FIX
+  useEffect(() => {
+    if (!authReady) return
+    if (!currentUserId) return
+    if (!autoStartFromUrl) return
+    if (!drillFromWeakAreasFromUrl) return
+    if (!weakFocusRuleIdFromUrl) return
+    if (sessionStarted) return
+    if (allRules.length === 0) return
+    if (weakAreaItems.length === 0) return
+
+    const clickedRuleId = String(weakFocusRuleIdFromUrl).trim()
+    const targetSubject = String(weakFocusSubjectFromUrl || "").trim()
+
+    const sameSubjectWeakIds = weakAreaItems
+      .filter((item) => {
+        const itemSubject = String(item?.subject || "").trim()
+        if (!targetSubject) return true
+        return itemSubject === targetSubject
+      })
+      .map((item) => String(item?.id || item?.ruleId || "").trim())
+      .filter(Boolean)
+
+    const orderedIds = [
+      clickedRuleId,
+      ...sameSubjectWeakIds.filter((id) => id !== clickedRuleId),
+    ]
+
+    const ruleById = new Map(allRules.map((rule) => [rule.id, rule]))
+    const orderedRules = orderedIds
+      .map((id) => ruleById.get(id))
+      .filter(Boolean) as Rule[]
+
+    if (orderedRules.length === 0) return
+
+    setSelectedSessionType("weak_focus")
+    setTrainingMode("weak_focus")
+    setRules(orderedRules)
+    setTrainingQueue(orderedRules.map((_, index) => index))
+    setSelectedRuleIndex(0)
+    setResult(null)
+    setAnswer("")
+    setAttempts([])
+    setSessionRuleResults([])
+    setDirectWeakCompletedRuleIds([])
+    setSessionStarted(true)
+    setActiveTab("active")
+    setAnswerStartTime(Date.now())
+  }, [
+    authReady,
+    currentUserId,
+    autoStartFromUrl,
+    drillFromWeakAreasFromUrl,
+    weakFocusRuleIdFromUrl,
+    weakFocusSubjectFromUrl,
+    sessionStarted,
+    allRules,
+    weakAreaItems,
+  ])
+
   async function resolveRulesForSession(
     effectiveMode: SessionType
   ): Promise<Rule[]> {
     const now = Date.now()
 
     if (effectiveMode === "weak_focus") {
-      let weakOnly = allRules.filter((r) => weakRules.includes(r.id))
+      const directWeakRuleId = String(weakFocusRuleIdFromUrl || "").trim()
 
-      if (weakOnly.length === 0 && subjects.length > 0) {
-        const fetched = await fetchRulesForSubjectIds(subjects.map((s) => s.id))
-        weakOnly = fetched.filter((r) => weakRules.includes(r.id))
+      if (directWeakRuleId) {
+        const existingDirectRule = allRules.find((rule) => rule.id === directWeakRuleId)
+
+        if (existingDirectRule) {
+          return [existingDirectRule]
+        }
+
+        try {
+          const detailRes = await fetch(
+            `/api/rules/detail?ruleId=${encodeURIComponent(directWeakRuleId)}`,
+            {
+              cache: "no-store",
+            }
+          )
+
+          if (detailRes.ok) {
+            const detailData = await detailRes.json()
+            const detailRule = detailData?.rule
+
+            if (detailRule?.id) {
+              return [
+                {
+                  id: String(detailRule.id),
+                  title: String(detailRule.title || "Untitled Rule"),
+                  rule: String(detailRule.title || "Untitled Rule"),
+                  subject: String(detailRule.subject || ""),
+                  topic: String(detailRule.topic || ""),
+                  subtopic: String(detailRule.subtopic || ""),
+                  ruleText: String(detailRule.ruleText || ""),
+                  rule_text: String(detailRule.ruleText || ""),
+                  promptQuestion: String(detailRule.promptQuestion || ""),
+                  prompt_question: String(detailRule.promptQuestion || ""),
+                  applicationExample: String(detailRule.applicationExample || ""),
+                  application_example: String(detailRule.applicationExample || ""),
+                  commonTrap: Array.isArray(detailRule.commonTraps)
+                    ? detailRule.commonTraps
+                        .map((trap: any) => `${trap?.title || "Common Trap"}: ${trap?.explanation || ""}`)
+                        .join(" ")
+                    : "",
+                  common_trap: Array.isArray(detailRule.commonTraps)
+                    ? detailRule.commonTraps
+                        .map((trap: any) => `${trap?.title || "Common Trap"}: ${trap?.explanation || ""}`)
+                        .join(" ")
+                    : "",
+                  howToApply: Array.isArray(detailRule.howToApply) ? detailRule.howToApply : [],
+                  commonTraps: Array.isArray(detailRule.commonTraps) ? detailRule.commonTraps : [],
+                  examTip: String(detailRule.examTip || ""),
+                } as Rule,
+              ]
+            }
+          }
+        } catch (error) {
+          console.error("DIRECT WEAK RULE LOAD ERROR:", error)
+        }
       }
 
-      return weakOnly.filter((r) => {
-        const nextReview = ruleSchedule[r.id]
-        if (!nextReview) return true
-        return nextReview <= now
-      })
-    }
+      const activeWeakRuleIds = weakAreaRuleIds.length > 0 ? weakAreaRuleIds : weakRules
+      let weakOnly = allRules.filter((r) => activeWeakRuleIds.includes(r.id))
 
-    const selectedSubjectNames = subjectCards
-      .filter((s) => quizConfig.subjectIds.includes(s.id))
-      .map((s) => s.name)
+      if (weakOnly.length === 0 && visibleSubjects.length > 0) {
+        const fetched = await fetchRulesForSubjectIds(visibleSubjects.map((s) => s.id))
+        weakOnly = fetched.filter((r) => activeWeakRuleIds.includes(r.id))
+      }
 
-    let filtered = [...allRules]
+      const selectedWeakSubjectNames = weakFocusSubjectCards
+        .filter((subject) => quizConfig.subjectIds.includes(subject.id))
+        .map((subject) => subject.name)
+
+      const selectedTopicKeys = new Set<string>(
+        selectedTopicIds.map((value) => String(value || "").trim()).filter(Boolean)
+      )
+
+      for (const subjectTopics of topicsBySubject.values()) {
+        for (const topic of subjectTopics) {
+          const topicId = String(topic.id || "").trim()
+          const topicName = String(topic.name || "").trim()
+
+          if (selectedTopicKeys.has(topicId) || selectedTopicKeys.has(topicName)) {
+            if (topicId) selectedTopicKeys.add(topicId)
+            if (topicName) selectedTopicKeys.add(topicName)
+          }
+        }
+      }
+
+      const hasWeakSubjectSelection = quizConfig.subjectIds.length > 0
+      const hasWeakTopicSelection = selectedTopicKeys.size > 0
+
+      if (hasWeakSubjectSelection || hasWeakTopicSelection) {
+        weakOnly = weakOnly.filter((rule) => {
+          const ruleSubjectId = String(rule.subject_id || "").trim()
+          const ruleSubjectName = String(rule.subject || "").trim()
+          const ruleTopicId = String(rule.topic_id || "").trim()
+          const ruleTopicName = String(rule.topic || "").trim()
+
+          const subjectMatch =
+            !hasWeakSubjectSelection ||
+            quizConfig.subjectIds.includes(ruleSubjectId) ||
+            selectedWeakSubjectNames.includes(ruleSubjectName)
+
+          const topicMatch =
+            !hasWeakTopicSelection ||
+            selectedTopicKeys.has(ruleTopicId) ||
+            selectedTopicKeys.has(ruleTopicName)
+
+          return subjectMatch && topicMatch
+        })
+      }
+
+        return mergeUniqueRules(
+          weakOnly.filter((rule) => {
+            const nextReview = ruleSchedule[rule.id]
+            if (!nextReview) return true
+            return nextReview <= now
+          })
+        )
+      }
+
+      const selectedSubjectNames = subjectCards
+        .filter((subject) => quizConfig.subjectIds.includes(subject.id))
+        .map((subject) => subject.name)
+
+      let filtered = [...allRules]
 
     const hasSubjectSelection = quizConfig.subjectIds.length > 0
     const hasTopicSelection = selectedTopicIds.length > 0
@@ -1553,13 +2124,13 @@ function RuleTrainingPageContent() {
   }
 
   const mbeSubjects = useMemo(
-    () => subjects.filter((s) => getSubjectGroup(s.name) === "MBE"),
-    [subjects]
+    () => visibleSubjects.filter((s) => getSubjectGroup(s.name) === "MBE"),
+    [visibleSubjects]
   )
 
   const meeSubjects = useMemo(
-    () => subjects.filter((s) => getSubjectGroup(s.name) === "MEE"),
-    [subjects]
+    () => visibleSubjects.filter((s) => getSubjectGroup(s.name) === "MEE"),
+    [visibleSubjects]
   )
 
   const currentSessionAverage =
@@ -1579,22 +2150,22 @@ function RuleTrainingPageContent() {
   }, [rules, trainingMode, weakRules])
 
   const subjectCards = useMemo(() => {
-    return subjects.map((subject) => {
+    return visibleSubjects.map((subject) => {
       const total =
-        subject.total_rules ??
-        allRules.filter(
-          (r) =>
-            r.subject_id === subject.id ||
-            r.subject === subject.name
-        ).length
+        typeof subject.total_rules === "number"
+          ? subject.total_rules
+          : allRules.filter(
+              (r) => r.subject_id === subject.id || r.subject === subject.name
+            ).length
 
       const weak =
-        subject.weak_rules ??
-        allRules.filter(
-          (r) =>
-            (r.subject_id === subject.id || r.subject === subject.name) &&
-            weakRules.includes(r.id)
-        ).length
+        typeof subject.weak_rules === "number"
+          ? subject.weak_rules
+          : allRules.filter(
+              (r) =>
+                (r.subject_id === subject.id || r.subject === subject.name) &&
+                weakRules.includes(r.id)
+            ).length
 
       return {
         ...subject,
@@ -1603,7 +2174,58 @@ function RuleTrainingPageContent() {
         group: getSubjectGroup(subject.name),
       }
     })
-  }, [subjects, allRules, weakRules])
+  }, [visibleSubjects, allRules, weakRules])
+
+  const weakFocusSubjectCards = useMemo(() => {
+    const subjectCounts = new Map<string, number>()
+
+    for (const item of weakAreaItems) {
+      const subjectName = String(item?.subject || "Unknown").trim()
+      if (!subjectName) continue
+      subjectCounts.set(subjectName, (subjectCounts.get(subjectName) || 0) + 1)
+    }
+
+    return subjectCards
+      .map((subject) => {
+        const weakCount = subjectCounts.get(subject.name) || 0
+        return {
+          ...subject,
+          total: weakCount,
+          weak: weakCount,
+        }
+      })
+      .filter((subject) => (subject.weak ?? 0) > 0)
+  }, [subjectCards, weakAreaItems])
+
+  const weakFocusTopicsBySubject = useMemo(() => {
+    const result = new Map<string, TopicOption[]>()
+
+    for (const subject of weakFocusSubjectCards) {
+      const topicMap = new Map<string, TopicOption>()
+
+      for (const item of weakAreaItems) {
+        const itemSubject = String(item?.subject || "").trim()
+        if (itemSubject !== subject.name) continue
+
+        const topicName = String(item?.topic || "Uncategorized").trim() || "Uncategorized"
+        const topicKey = topicName.toLowerCase()
+        const existing = topicMap.get(topicKey)
+        const nextCount = Number(existing?.count || 0) + 1
+
+        topicMap.set(topicKey, {
+          id: topicName,
+          name: topicName,
+          subjectId: subject.id,
+          subjectName: subject.name,
+          count: nextCount,
+        })
+      }
+
+      result.set(subject.id, Array.from(topicMap.values()))
+    }
+
+    return result
+  }, [weakFocusSubjectCards, weakAreaItems])
 
   const previewSubjectNames = subjectCards
     .filter((s) => quizConfig.subjectIds.includes(s.id))
@@ -1638,7 +2260,6 @@ function RuleTrainingPageContent() {
   const historyItems = useMemo(() => {
     return sessionHistory.filter((item) => {
       const modeOk = historyFilter === "all" ? true : item.mode === historyFilter
-
       const date = new Date(item.createdAt).getTime()
       const startOk = historyDateStart
         ? date >= new Date(`${historyDateStart}T00:00:00`).getTime()
@@ -1821,17 +2442,31 @@ function RuleTrainingPageContent() {
         key={subject.id}
         onClick={() => onPickSubject(subject)}
         className={`mb-1 w-full rounded-lg px-2 py-2 text-left transition ${
-          active
-            ? "bg-blue-50 text-blue-700"
-            : "text-slate-700 hover:bg-slate-50"
+          active ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"
         }`}
       >
         <div className="mb-1 flex items-start justify-between gap-2">
-          <div className={`text-[11px] ${active ? "font-semibold" : "font-medium"}`}>
-            {subject.name}
+          <div className="min-w-0">
+            <div className={`truncate text-[11px] ${active ? "font-semibold" : "font-medium"}`}>
+              {subject.name}
+            </div>
+
+            {!!subject.badge_text && (
+              <div
+                className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[9px] font-semibold ${
+                  subject.badge_tone === "removed"
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : "border-slate-200 bg-slate-50 text-slate-600"
+                }`}
+              >
+                {subject.badge_text}
+              </div>
+            )}
           </div>
-          <div className="text-[9px] text-slate-400">{total}r</div>
+
+          <div className="shrink-0 text-[9px] text-slate-400">{total}r</div>
         </div>
+
         <div className="h-1 rounded-full bg-slate-200">
           <div className="h-full rounded-full bg-blue-500" style={{ width: `${percent}%` }} />
         </div>
@@ -2136,7 +2771,25 @@ function RuleTrainingPageContent() {
                           title="Train your weak rules"
                           subtitle="Automatically uses weak and overdue rules."
                         >
-                          <SizeBlock
+                          <SubjectSelectorBlock
+                              title="Choose Weak Subjects and Topics"
+                              count={previewSubjectNames.length + selectedTopicIds.length}
+                              subjectCards={weakFocusSubjectCards}
+                              quizConfig={quizConfig}
+                              applySubjectPreset={applySubjectPreset}
+                              toggleQuizSubject={toggleQuizSubject}
+                              expandedSubjectIds={expandedSubjectIds}
+                              toggleExpandedSubject={toggleExpandedSubject}
+                              topicsBySubject={weakFocusTopicsBySubject}
+                              selectedTopicIds={selectedTopicIds}
+                              toggleTopic={toggleTopic}
+                              toggleWholeSubjectOnly={toggleWholeSubjectOnly}
+                              showWeakPreset
+                            />
+
+                            <OptionDivider />
+
+                            <SizeBlock
                             size={quizConfig.size}
                             customSize={quizConfig.customSize}
                             setPresetSize={setPresetSize}
@@ -2213,9 +2866,7 @@ function RuleTrainingPageContent() {
                       <div className="mb-4">
                         <div className="mb-2 flex items-center justify-between text-[11px]">
                           <span className="text-slate-400">Setup progress</span>
-                          <span className="font-semibold text-blue-600">
-                            {setupProgress}%
-                          </span>
+                          <span className="font-semibold text-blue-600">{setupProgress}%</span>
                         </div>
                         <div className="h-[4px] overflow-hidden rounded-full bg-slate-100">
                           <div
@@ -2292,9 +2943,7 @@ function RuleTrainingPageContent() {
                           ))}
 
                           {previewSubjectNames.length === 0 && previewTopicNames.length === 0 && (
-                            <span className="text-[11px] italic text-slate-400">
-                              None yet
-                            </span>
+                            <span className="text-[11px] italic text-slate-400">None yet</span>
                           )}
                         </div>
                       </div>
@@ -2498,9 +3147,7 @@ function RuleTrainingPageContent() {
                         >
                           <button
                             type="button"
-                            onClick={() =>
-                              setHistoryOpenId(open ? null : item.id)
-                            }
+                            onClick={() => setHistoryOpenId(open ? null : item.id)}
                             className="flex w-full items-center gap-4 px-5 py-5 text-left"
                           >
                             <div className="text-[16px] font-semibold text-slate-400">
@@ -2612,7 +3259,9 @@ function RuleTrainingPageContent() {
                               : "border-amber-200 bg-amber-50 text-amber-700"
                           }`}
                         >
-                          {remainingSeconds !== null ? `${remainingSeconds}s` : `${quizConfig.timePerQuestion}s`}
+                          {remainingSeconds !== null
+                            ? `${remainingSeconds}s`
+                            : `${quizConfig.timePerQuestion}s`}
                         </div>
                       )}
 
@@ -2636,7 +3285,7 @@ function RuleTrainingPageContent() {
                   {mode === "typing" && (
                     <TypingMode
                       ruleText={selectedRule.rule_text}
-                      keywords={selectedRule.keywords ?? []}
+                      keywords={getDisplayKeywordsForResult(result, selectedRule.keywords ?? [])}
                       title={selectedRule.title}
                       promptText={activePromptText as any}
                       defaultShowRule={shouldShowRuleByDefault(trainingMode) as any}
@@ -2658,24 +3307,30 @@ function RuleTrainingPageContent() {
                   {mode === "fillblank" && (
                     <FillBlankMode
                       ruleText={selectedRule.rule_text || ""}
-                      keywords={selectedRule.keywords || []}
+                      keywords={getDisplayKeywordsForResult(result, selectedRule.keywords || [])}
                       onNextRule={handleNextRule}
+                      onSubmitModeAttempt={submitModeAttempt}
+                      isSubmitting={isSubmitting}
                     />
                   )}
 
                   {mode === "buzzwords" && (
                     <BuzzwordsMode
                       ruleText={selectedRule.rule_text || ""}
-                      keywords={selectedRule.keywords || []}
+                      keywords={getDisplayKeywordsForResult(result, selectedRule.keywords || [])}
                       onNextRule={handleNextRule}
+                      onSubmitModeAttempt={submitModeAttempt}
+                      isSubmitting={isSubmitting}
                     />
                   )}
 
                   {mode === "ordering" && (
                     <OrderingMode
                       ruleText={selectedRule.rule_text || ""}
-                      keywords={selectedRule.keywords || []}
+                      keywords={getDisplayKeywordsForResult(result, selectedRule.keywords || [])}
                       onNextRule={handleNextRule}
+                      onSubmitModeAttempt={submitModeAttempt}
+                      isSubmitting={isSubmitting}
                     />
                   )}
 
@@ -2687,9 +3342,11 @@ function RuleTrainingPageContent() {
                       topic={selectedRule.topic}
                       subtopic={selectedRule.subtopic}
                       ruleText={selectedRule.rule_text || ""}
-                      keywords={selectedRule.keywords || []}
+                      keywords={getDisplayKeywordsForResult(result, selectedRule.keywords || [])}
                       onNextRule={handleNextRule}
                       onSaveRule={handleSaveRule}
+                      onSubmitModeAttempt={submitModeAttempt}
+                      isSubmitting={isSubmitting}
                     />
                   )}
                 </div>
@@ -2774,49 +3431,55 @@ function RuleTrainingPageContent() {
                 </div>
               </div>
 
-              <div className="mt-auto">
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-                  Actions
+              <div>
+                  <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Actions
+                  </div>
+
+                  {drillFromWeakAreasFromUrl ? (
+                    <button
+                      type="button"
+                      onClick={finishDirectWeakAreaDrill}
+                      className="h-11 w-full rounded-[14px] bg-slate-950 px-4 text-[13px] font-semibold text-white transition hover:bg-slate-800"
+                    >
+                      Finish Session
+                    </button>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={goBackToSetup}
+                        className="h-10 rounded-[12px] border border-slate-200 bg-white text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                      >
+                        ← Back
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handlePauseSession}
+                        className="h-10 rounded-[12px] border border-amber-200 bg-amber-50 text-[13px] font-semibold text-amber-700 transition hover:bg-amber-100"
+                      >
+                        {sessionPaused ? "Resume" : "Pause"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSaveActiveSession}
+                        className="h-10 rounded-[12px] border border-blue-200 bg-blue-50 text-[13px] font-semibold text-blue-700 transition hover:bg-blue-100"
+                      >
+                        Save
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setStopConfirmOpen(true)}
+                        className="h-10 rounded-[12px] border border-rose-200 bg-rose-50 text-[13px] font-semibold text-rose-700 transition hover:bg-rose-100"
+                      >
+                        Stop
+                      </button>
+                    </div>
+                  )}
                 </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={goBackToSetup}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <ArrowLeft size={12} />
-                    Back
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handlePauseSession}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-700 transition hover:bg-amber-100"
-                  >
-                    <Pause size={12} />
-                    {sessionPaused ? "Resume" : "Pause"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveActiveSession}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] font-semibold text-blue-700 transition hover:bg-blue-100"
-                  >
-                    <FolderClock size={12} />
-                    Save
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setStopConfirmOpen(true)}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-600 transition hover:bg-red-100"
-                  >
-                    <Square size={12} />
-                    Stop
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -3024,7 +3687,7 @@ function SubjectSelectorBlock({
               }`}
             >
               <div className="flex items-start justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div
                     className={`truncate text-[15px] font-semibold ${
                       selectedWholeSubject || selectedTopicCount > 0
@@ -3039,6 +3702,26 @@ function SubjectSelectorBlock({
                     {subject.total} rules
                     {selectedTopicCount > 0 ? ` • ${selectedTopicCount} topics selected` : ""}
                   </div>
+
+                  {!!subject.badge_text && (
+                    <div className="mt-2">
+                      <div
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                          subject.badge_tone === "removed"
+                            ? "border-amber-200 bg-amber-50 text-amber-700"
+                            : "border-slate-200 bg-slate-50 text-slate-600"
+                        }`}
+                      >
+                        {subject.badge_text}
+                      </div>
+
+                      {!!subject.badge_subtext && (
+                        <div className="mt-1 text-[10px] leading-4 text-slate-400">
+                          {subject.badge_subtext}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
@@ -3294,11 +3977,7 @@ function PreviewRow({
       }`}
     >
       <span className="text-slate-500">{label}</span>
-      <span
-        className={`text-right font-semibold ${
-          blue ? "text-blue-600" : "text-slate-900"
-        }`}
-      >
+      <span className={`text-right font-semibold ${blue ? "text-blue-600" : "text-slate-900"}`}>
         {value}
       </span>
     </div>
@@ -3392,9 +4071,7 @@ function ModeTypeCard({
         {title}
       </div>
 
-      <div className="mt-1 text-[11px] leading-4 text-slate-400">
-        {description}
-      </div>
+      <div className="mt-1 text-[11px] leading-4 text-slate-400">{description}</div>
     </button>
   )
 }
@@ -3582,9 +4259,7 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
                     </div>
                     <div className="truncate text-[12px] text-slate-500">{sub}</div>
                   </div>
-                  <span className={`text-[13px] font-bold ${scoreTone}`}>
-                    {rule.score}%
-                  </span>
+                  <span className={`text-[13px] font-bold ${scoreTone}`}>{rule.score}%</span>
                 </div>
               )
             })}
@@ -3616,9 +4291,7 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
                 <div key={rule.ruleId}>
                   <div className="mb-1 flex items-center justify-between gap-3">
                     <div className="truncate text-[13px] text-slate-700">{rule.title}</div>
-                    <div className={`text-[13px] font-bold ${scoreTone}`}>
-                      {rule.score}%
-                    </div>
+                    <div className={`text-[13px] font-bold ${scoreTone}`}>{rule.score}%</div>
                   </div>
                   <div className="h-[6px] rounded-full bg-slate-100">
                     <div

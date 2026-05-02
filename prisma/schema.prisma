@@ -39,7 +39,14 @@ model rules {
   subtopic_id             String?                   @db.Uuid
   title                   String
   rule_text               String
+  prompt_question         String?
   explanation             String?
+  application_example     String?
+  how_to_apply           Json?
+  common_traps           Json?
+  exam_tip               String?
+  common_trap             String?
+  priority                String?
   buzzwords               Json?
   cloze_template          String?
   is_active               Boolean                   @default(true)
@@ -57,20 +64,24 @@ model rules {
 
   @@index([subtopic_id])
   @@index([topic_id])
+  @@index([subject_id])
   @@schema("public")
 }
 
 model subjects {
-  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                String
-  order_index         Int                @default(0)
-  created_at          DateTime           @default(now()) @db.Timestamptz(6)
-  rules               rules[]
-  topics              topics[]
-  mbe_questions       MBEQuestion[]
-  topic_progress      TopicProgress[]
-  user_subject_stats  UserSubjectStat[]
-  state_subject_stats StateSubjectStat[]
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String
+  exam_status           String             @default("core")
+  show_in_rule_training Boolean            @default(true)
+  show_in_analytics     Boolean            @default(true)
+  order_index           Int                @default(0)
+  created_at            DateTime           @default(now()) @db.Timestamptz(6)
+  rules                 rules[]
+  topics                topics[]
+  mbe_questions         MBEQuestion[]
+  topic_progress        TopicProgress[]
+  user_subject_stats    UserSubjectStat[]
+  state_subject_stats   StateSubjectStat[]
 
   @@schema("public")
 }
@@ -126,11 +137,13 @@ model user_rule_attempts {
   user_id          String    @db.Uuid
   rule_id          String    @db.Uuid
   score            Int
+  training_mode    String?   @db.VarChar(50)
   missed_buzzwords Json?
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([user_id])
   @@index([user_id, created_at])
+  @@index([user_id, training_mode])
   @@schema("public")
 }
 
@@ -161,22 +174,29 @@ model user_rule_progress {
 }
 
 model user_rules {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id          String    @db.Uuid
-  original_rule_id String    @db.Uuid
-  topic_id         String    @db.Uuid
-  subtopic_id      String    @db.Uuid
-  title            String
-  rule_text        String
-  explanation      String?
-  buzzwords        Json?
-  cloze_template   String?
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
-  subject_id       String?   @db.Uuid
-  rules            rules     @relation(fields: [original_rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  subtopics        subtopics @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  topics           topics    @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String    @db.Uuid
+  original_rule_id    String    @db.Uuid
+  topic_id            String    @db.Uuid
+  subtopic_id         String    @db.Uuid
+  title               String
+  rule_text           String
+  prompt_question     String?
+  explanation         String?
+  application_example String?
+  how_to_apply       Json?
+  common_traps       Json?
+  exam_tip           String?
+  common_trap         String?
+  priority            String?
+  buzzwords           Json?
+  cloze_template      String?
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+  subject_id          String?   @db.Uuid
+  rules               rules     @relation(fields: [original_rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subtopics           subtopics @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  topics              topics    @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([original_rule_id])
   @@index([subtopic_id])
@@ -988,11 +1008,11 @@ model workspace_poll_votes {
 }
 
 model feature_flags {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key        String   @unique
-  value      String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  key         String   @id
+  value       Json
+  description String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([key])
   @@schema("public")
