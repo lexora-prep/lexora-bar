@@ -4,8 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Lexora Prep | Black Letter Law Rule Training</title>
-<link rel="icon" href="/lexora-icon-transparent.png" type="image/png">
-<link rel="apple-touch-icon" href="/lexora-icon-transparent.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -83,14 +81,6 @@ select{
 
 button{
   cursor:pointer;
-}
-
-input,
-textarea{
-  -webkit-user-select:text;
-  -moz-user-select:text;
-  -ms-user-select:text;
-  user-select:text;
 }
 
 .page{
@@ -1886,31 +1876,22 @@ nav{
   border-color:var(--navy);
   border-width:2px;
   background:var(--white);
-  box-shadow:0 14px 36px rgba(14,27,53,0.12);
-  overflow:visible;
-  position:relative;
-  z-index:1;
+  box-shadow:0 8px 32px rgba(14,27,53,0.12);
 }
 
 .popular-badge{
   position:absolute;
-  top:-16px;
+  top:-11px;
   left:50%;
   transform:translateX(-50%);
-  z-index:5;
-  background:linear-gradient(135deg,var(--navy),var(--purple-2));
+  background:var(--navy);
   color:#fff;
   font-size:10.5px;
-  font-weight:900;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  padding:6px 18px;
+  font-weight:800;
+  padding:4px 14px;
   border-radius:999px;
   white-space:nowrap;
-  box-shadow:
-    0 8px 20px rgba(14,27,53,0.22),
-    0 0 18px rgba(124,58,237,0.24);
-  border:1px solid rgba(255,255,255,0.28);
+  box-shadow:0 4px 10px rgba(14,27,53,0.25);
 }
 
 .price-tier{
@@ -2189,10 +2170,8 @@ footer{
   height:38px;
   object-fit:contain;
   display:block;
-  background:#fff;
-  border-radius:12px;
-  padding:5px;
-  box-shadow:0 8px 22px rgba(255,255,255,0.10);
+  background:transparent;
+  border-radius:0;
   flex-shrink:0;
 }
 
@@ -2262,7 +2241,7 @@ footer{
 
 .footer-legal{
   font-size:11px;
-  color:rgba(255,255,255,0.52);
+  color:rgba(255,255,255,0.18);
   line-height:1.85;
   max-width:640px;
 }
@@ -2276,7 +2255,7 @@ footer{
 
 .footer-links a{
   font-size:11px;
-  color:rgba(255,255,255,0.56);
+  color:rgba(255,255,255,0.26);
   transition:.15s;
 }
 
@@ -2835,16 +2814,15 @@ button {
   color:inherit;
 }
 
-.footer-brand-logo img{
-  width:38px;
-  height:38px;
-  object-fit:contain;
-  display:block;
-  background:#fff;
-  border-radius:12px;
-  padding:5px;
-  box-shadow:0 8px 22px rgba(255,255,255,0.10);
-  flex-shrink:0;
+.footer-brand-logo img {
+  background:rgba(255,255,255,0.96) !important;
+  border-radius:14px !important;
+  padding:6px !important;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.20),
+    0 10px 28px rgba(0,0,0,0.28),
+    0 0 24px rgba(124,58,237,0.35) !important;
+  filter:none !important;
 }
 
 .footer-brand .fname {
@@ -2855,35 +2833,67 @@ button {
   overflow:visible !important;
 }
 
-.price-card.featured{
-  border-color:var(--navy);
-  border-width:2px;
-  background:var(--white);
-  box-shadow:0 14px 36px rgba(14,27,53,0.12);
-  overflow:visible;
+.price-card.featured {
   position:relative;
-  z-index:1;
+  isolation:isolate;
+  box-shadow:
+    0 18px 50px rgba(14,27,53,0.18),
+    0 0 0 1px rgba(124,58,237,0.12) !important;
 }
 
-.popular-badge{
+.price-card.featured::before {
+  content:"";
   position:absolute;
-  top:-16px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:5;
-  background:linear-gradient(135deg,var(--navy),var(--purple-2));
-  color:#fff;
-  font-size:10.5px;
-  font-weight:900;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  padding:6px 18px;
-  border-radius:999px;
-  white-space:nowrap;
+  inset:-3px;
+  z-index:-1;
+  border-radius:calc(var(--rl) + 4px);
+  background:conic-gradient(
+    from 0deg,
+    rgba(14,27,53,0.95),
+    rgba(124,58,237,0.95),
+    rgba(167,139,250,0.85),
+    rgba(14,27,53,0.95)
+  );
+  filter:drop-shadow(0 0 18px rgba(124,58,237,0.35));
+  animation:lexoraBorderSpin 4.8s linear infinite;
+}
+
+.price-card.featured::after {
+  content:"";
+  position:absolute;
+  inset:3px;
+  z-index:-1;
+  border-radius:calc(var(--rl) - 1px);
+  background:var(--white);
+}
+
+.popular-badge {
+  top:-22px !important;
+  z-index:5 !important;
+  min-width:154px;
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#0E1B35 0%,#312E81 48%,#7C3AED 100%) !important;
+  color:#fff !important;
+  border:1px solid rgba(255,255,255,0.36);
   box-shadow:
-    0 8px 20px rgba(14,27,53,0.22),
-    0 0 18px rgba(124,58,237,0.24);
-  border:1px solid rgba(255,255,255,0.28);
+    0 12px 28px rgba(14,27,53,0.28),
+    0 0 24px rgba(124,58,237,0.38) !important;
+  overflow:hidden;
+}
+
+.popular-badge::after {
+  content:"";
+  position:absolute;
+  top:-40%;
+  bottom:-40%;
+  width:42px;
+  left:-60px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.75),transparent);
+  transform:rotate(18deg);
+  animation:lexoraBadgeShine 2.8s ease-in-out infinite;
 }
 
 @keyframes lexoraBorderSpin {
@@ -2897,137 +2907,88 @@ button {
 }
 
 @media(max-width:768px){
-  .popular-badge{
-  position:absolute;
-  top:-16px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:5;
-  background:linear-gradient(135deg,var(--navy),var(--purple-2));
-  color:#fff;
-  font-size:10.5px;
-  font-weight:900;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  padding:6px 18px;
-  border-radius:999px;
-  white-space:nowrap;
-  box-shadow:
-    0 8px 20px rgba(14,27,53,0.22),
-    0 0 18px rgba(124,58,237,0.24);
-  border:1px solid rgba(255,255,255,0.28);
-}
+  .popular-badge {
+    top:-18px !important;
+    min-width:138px;
+    height:30px;
+    font-size:10px !important;
+  }
 }
 /* === END LEXORA PUBLIC POLISH PATCH === */
 
 
-/* Basic public page text selection protection */
+/* FINAL LEXORA LANDING FIXES */
+html,
 body,
-nav,
-footer,
-.hero-section,
-.rules-strip,
-.demo-section,
-.analytics-showcase,
-.how-section,
-.mee-section,
-.features-section,
-.pricing-section,
-.cta-section,
-.legal-card{
-  -webkit-user-select:none;
-  -moz-user-select:none;
-  -ms-user-select:none;
-  user-select:none;
+main,
+section,
+div,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+a,
+button,
+li {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 input,
 textarea,
-select,
-button,
-a{
-  -webkit-user-select:auto;
-  -moz-user-select:auto;
-  -ms-user-select:auto;
-  user-select:auto;
+select {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
-
-/* Final pricing badge fix: keep Most Popular, remove rotating square */
+/* Remove the rotating/diamond/square background behind the pricing card */
 .price-card.featured::before,
-.price-card.featured::after,
-.pricing-card.featured::before,
-.pricing-card.featured::after,
-.popular-badge::before,
-.popular-badge::after{
-  content:none !important;
-  display:none !important;
-  animation:none !important;
-  transform:none !important;
-  background:none !important;
-  box-shadow:none !important;
+.price-card.featured::after {
+  content: none !important;
+  display: none !important;
+  animation: none !important;
+  transform: none !important;
+  opacity: 0 !important;
 }
 
-.price-card.featured{
-  overflow:visible !important;
-  position:relative !important;
-  z-index:1 !important;
+/* Keep the Most popular label visible and clean */
+.popular-badge {
+  z-index: 5 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
 }
 
-.popular-badge{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  top:-16px !important;
-  left:50% !important;
-  transform:translateX(-50%) !important;
-  z-index:10 !important;
-  overflow:visible !important;
-  animation:none !important;
+/* Footer readability fix */
+.footer-legal,
+.footer-legal *,
+.footer-bottom,
+.footer-bottom *,
+.footer-col a,
+.footer-cookie-btn,
+.footer-brand p {
+  color: rgba(255,255,255,0.62) !important;
 }
 
-
-/* Footer visibility and social links */
-.footer-brand-logo img{
-  background:#fff !important;
-  border-radius:12px !important;
-  padding:5px !important;
-  box-shadow:0 8px 22px rgba(0,0,0,0.18) !important;
+.footer-links a {
+  color: rgba(255,255,255,0.72) !important;
 }
 
-.footer-legal{
-  color:rgba(255,255,255,0.52) !important;
+.footer-links a:hover,
+.footer-col a:hover,
+.footer-cookie-btn:hover {
+  color: #ffffff !important;
 }
 
-.footer-social{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-top:18px;
-  flex-wrap:wrap;
-}
-
-.footer-social a{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:7px;
-  height:34px;
-  padding:0 12px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,0.12);
-  color:rgba(255,255,255,0.72);
-  background:rgba(255,255,255,0.05);
-  font-size:12px;
-  font-weight:700;
-  transition:.16s;
-}
-
-.footer-social a:hover{
-  color:#fff;
-  border-color:rgba(255,255,255,0.26);
-  background:rgba(255,255,255,0.09);
-  transform:translateY(-1px);
+/* Logo visibility in dark footer */
+.footer-brand-logo img {
+  background: rgba(255,255,255,0.96) !important;
+  border-radius: 999px !important;
+  padding: 3px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
 }
 
 </style>
@@ -3036,13 +2997,13 @@ a{
 <body>
 
 <nav>
-  <a href="/" class="nav-logo">
+  <a href="#home" class="nav-logo">
     <img src="/lexora-icon-transparent.png" alt="Lexora Prep logo" class="logo-mark"/>
     Lexora <span class="logo-accent">Prep</span>
   </a>
 
   <div class="nav-links">
-    <a href="/">Home</a>
+    <a href="#home">Home</a>
     <a href="#features">Features</a>
     <a href="#howitworks">How it works</a>
     <a href="#pricing">Pricing</a>
@@ -3666,17 +3627,7 @@ a{
 
           <div class="price-feat">
             <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Performance analytics included</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             <span>Weak rule targeting</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Performance analytics and progress tracking</span>
           </div>
 
           <a href="/register" target="_top"><button class="price-btn-inner solid">Start training →</button></a>
@@ -3726,15 +3677,229 @@ a{
   </div>
 </section>
 
+<section id="page-faq" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Help Center</div>
+      <h1>Frequently Asked Questions</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
 
+      <h2>What is Lexora Prep?</h2>
+      <p>Lexora Prep is a Black Letter Law memorization and rule training platform for bar exam candidates. It helps users read, recall, and practice legal rule statements through structured repetition, flashcards, weak-rule targeting, and study planning.</p>
 
+      <h2>Is Lexora Prep a full bar prep course?</h2>
+      <p>No. Lexora Prep is not a full commercial bar preparation course and should not be used as your only study resource. It is a supplemental study tool focused on Black Letter Law rule memorization and recall training.</p>
 
+      <h2>Who is Lexora Prep designed for?</h2>
+      <p>Lexora Prep is designed for bar exam candidates who want to strengthen their Black Letter Law rule memory, particularly for the MEE essay portion, where recalling precise rule statements is critical.</p>
 
+      <h2>What is included in the Premium plan?</h2>
+      <p>The Premium plan is $24.99 per month and includes everything in BLL Monthly, plus 120 Golden Rules, 120 Golden Flashcards, and priority support.</p>
 
+      <h2>How does Lexora Prep help with the MEE?</h2>
+      <p>MEE essay performance depends heavily on recognizing the issue and stating the correct legal rule precisely. Lexora Prep trains users to recall and recite Black Letter Law rule statements through structured practice.</p>
 
+      <h2>Does Lexora Prep guarantee bar exam success?</h2>
+      <p>No. Lexora Prep does not guarantee that you will pass the bar exam, receive a particular score, improve your score, or be admitted to practice law.</p>
 
+      <h2>Are the rules accurate?</h2>
+      <p>Lexora Prep aims to provide accurate and useful educational summaries of Black Letter Law. Legal rules can vary by jurisdiction and may change over time. Users should verify important rules with official sources, licensed bar preparation materials, or applicable primary law when necessary.</p>
 
+      <h2>What happens if I find an error?</h2>
+      <p>If you believe you found an error, contact support. If the report helps us improve the platform, Lexora Prep may, at its discretion, provide a discount, voucher, or account credit. Such credits are not guaranteed.</p>
 
+      <h2>Can I share my account?</h2>
+      <p>No. Each account is for one individual user only. Password sharing, shared access, resale, copying, or redistribution of materials is not allowed.</p>
+
+      <h2>How are payments processed?</h2>
+      <p>Payments are processed through Paddle. Lexora Prep does not store full credit card numbers on its own servers.</p>
+
+      <h2>How do refunds work?</h2>
+      <p>A full refund may be available within 7 days of purchase only if less than 25% of paid materials have been accessed. Refunds are not automatic and are handled according to the Refund Policy.</p>
+
+      <div class="legal-note">For support, contact: support@lexoraprep.com</div>
+    </div>
+  </div>
+</section>
+
+<section id="page-terms" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Terms and Conditions</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <p>These Terms and Conditions govern your access to and use of Lexora Prep, including the website, platform, software, study tools, rules, flashcards, analytics, and related services. By creating an account, purchasing a subscription, or using Lexora Prep, you agree to these Terms.</p>
+
+      <h2>1. Educational Purpose Only</h2>
+      <p>Lexora Prep is an educational technology platform designed to support Black Letter Law memorization and rule training. It is not a law firm, legal advisor, law school, licensed bar preparation company, or official bar examination authority.</p>
+
+      <h2>2. Supplemental Study Tool</h2>
+      <p>Lexora Prep is intended only as a supplemental study aid. It should not be used as your only source of preparation for any bar examination.</p>
+
+      <h2>3. No Guarantee of Results</h2>
+      <p>Lexora Prep does not guarantee that you will pass any bar exam, receive a particular score, improve your score, be admitted to practice law, or achieve any academic, professional, or licensing outcome.</p>
+
+      <h2>4. User Responsibility</h2>
+      <p>You are solely responsible for your own preparation, study decisions, use of the platform, and reliance on any educational content.</p>
+
+      <h2>5. Account Use and Security</h2>
+      <p>You must provide accurate account information and keep your login credentials secure. Each account is for one individual user only. You may not share your password, sell access, or allow another person to use your account.</p>
+
+      <h2>6. Prohibited Conduct</h2>
+      <ul>
+        <li>Copying, scraping, downloading, reproducing, publishing, selling, or redistributing Lexora Prep content without permission.</li>
+        <li>Sharing your account, password, paid access, screenshots, rule banks, flashcards, or premium materials with others.</li>
+        <li>Using bots, crawlers, automation tools, or unauthorized scripts to access the platform.</li>
+        <li>Attempting to bypass payment, access controls, subscription limits, or security features.</li>
+        <li>Using the platform for unlawful, abusive, fraudulent, or harmful purposes.</li>
+      </ul>
+
+      <h2>7. Intellectual Property</h2>
+      <p>All Lexora Prep materials are owned by Lexora Prep or its licensors and are protected by applicable laws. You receive a limited, revocable, non-transferable license to use the platform for personal study only.</p>
+
+      <h2>8. Subscriptions and Payments</h2>
+      <p>Paid subscriptions are billed according to the plan selected at checkout. Payments are processed through Paddle. Lexora Prep does not store full credit card numbers on its own servers.</p>
+
+      <h2>9. Cancellation</h2>
+      <p>You may cancel your subscription at any time. Cancellation stops future renewal charges but does not automatically create a refund unless the refund requirements in the Refund Policy are satisfied.</p>
+
+      <h2>10. Refunds</h2>
+      <p>Refunds are governed by the Refund Policy. A full refund may be available within 7 days of purchase only if less than 25% of paid materials have been accessed.</p>
+
+      <h2>11. Content Accuracy</h2>
+      <p>Legal rules may vary by jurisdiction, change over time, or require more detailed analysis than a memorization tool can provide. We do not warrant that all content is complete, current, or error free.</p>
+
+      <h2>12. Beta and Coming Soon Features</h2>
+      <p>Some features may be labeled beta, preview, or coming soon. These features may change, be delayed, or be removed.</p>
+
+      <h2>13. Suspension or Termination</h2>
+      <p>We may suspend or terminate your account if you violate these Terms, misuse the platform, or engage in conduct that may harm Lexora Prep, users, or third parties.</p>
+
+      <h2>14. Disclaimers</h2>
+      <p>Lexora Prep is provided on an as is and as available basis. To the fullest extent permitted by law, we disclaim all warranties, express or implied.</p>
+
+      <h2>15. Limitation of Liability</h2>
+      <p>To the fullest extent permitted by law, Lexora Prep and its affiliates will not be liable for indirect, incidental, consequential, or exemplary damages. Our total liability will not exceed the amount you paid during the one month period before the claim arose.</p>
+
+      <h2>16. Contact</h2>
+      <p>For questions: support@lexoraprep.com</p>
+
+      <div class="legal-note">Lexora Prep is a supplemental rule training tool. It is not a substitute for full bar preparation and does not guarantee exam success.</div>
+    </div>
+  </div>
+</section>
+
+<section id="page-privacy" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Privacy Policy</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <p>This Privacy Policy explains how Lexora Prep collects, uses, stores, and protects information when you use our website, platform, and related services.</p>
+
+      <h2>1. Information We Collect</h2>
+      <p>We may collect information you provide directly, including your name, email address, account credentials, subscription status, support messages, feedback, and other information you choose to submit.</p>
+
+      <h2>2. Study and Platform Data</h2>
+      <p>We may collect study related data, including subjects reviewed, rules accessed, flashcard progress, completion status, weak areas, study plan settings, and platform usage data.</p>
+
+      <h2>3. Payment Information</h2>
+      <p>Payments are processed through Paddle. Lexora Prep does not store full credit card numbers or payment card information on its own servers.</p>
+
+      <h2>4. How We Use Information</h2>
+      <p>We use information to create and manage accounts, provide platform features, process billing through Paddle, respond to support requests, improve the platform, prevent fraud, and comply with legal obligations.</p>
+
+      <h2>5. We Do Not Sell Personal Data</h2>
+      <p>Lexora Prep does not sell your personal data or provide it to third parties for their independent advertising purposes.</p>
+
+      <h2>6. Cookies and Similar Technologies</h2>
+      <p>We may use cookies and similar technologies to keep users logged in, remember preferences, support security, and analyze usage. See our Cookie Policy for more information.</p>
+
+      <h2>7. Data Security</h2>
+      <p>We use reasonable technical and organizational safeguards to protect user information. No internet based service can guarantee complete security.</p>
+
+      <h2>8. User Choices</h2>
+      <p>You may request access, correction, deletion, or account closure by contacting support.</p>
+
+      <h2>9. Contact</h2>
+      <p>For privacy questions: support@lexoraprep.com</p>
+
+      <div class="legal-note">Lexora Prep does not store full card details. Payment processing is handled through Paddle.</div>
+    </div>
+  </div>
+</section>
+
+<section id="page-refund" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Refund Policy</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <p>This Refund Policy explains when users may request a refund for Lexora Prep paid subscriptions or premium access.</p>
+
+      <h2>1. Seven Day Refund Window</h2>
+      <p>You may request a full refund within 7 calendar days of your initial purchase if you meet the usage requirement below.</p>
+
+      <h2>2. Usage Requirement</h2>
+      <p>To qualify for a full refund, you must have accessed less than 25% of the paid materials available under your plan. If 25% or more of paid materials have been used, Lexora Prep may deny the refund request.</p>
+
+      <h2>3. Non Refundable Situations</h2>
+      <p>Refunds are generally not available if the request is late, 25% or more of materials were used, the account violated the Terms, or the user forgot to cancel before renewal.</p>
+
+      <h2>4. Subscription Cancellation</h2>
+      <p>You may cancel your subscription to stop future billing. Cancellation does not automatically create a refund unless the refund request satisfies this Refund Policy.</p>
+
+      <h2>5. Payment Processor</h2>
+      <p>Refunds are processed through Paddle.</p>
+
+      <h2>6. How to Request a Refund</h2>
+      <p>Contact support@lexoraprep.com within the applicable refund window. Include the email used for purchase, the date of purchase, and the reason for the request.</p>
+
+      <div class="legal-note">Full refund may be available within 7 days only if less than 25% of paid materials were used.</div>
+    </div>
+  </div>
+</section>
+
+<section id="page-cookies" class="page">
+  <div class="legal-page-wrap">
+    <div class="legal-card">
+      <div class="legal-eyebrow">Legal</div>
+      <h1>Cookie Policy</h1>
+      <div class="legal-updated">Last updated: April 29, 2026</div>
+
+      <p>This Cookie Policy explains how Lexora Prep uses cookies and similar technologies on our website and platform.</p>
+
+      <h2>1. What Are Cookies?</h2>
+      <p>Cookies are small text files placed on your device when you visit a website.</p>
+
+      <h2>2. Strictly Necessary Cookies</h2>
+      <p>Required for login, account security, session management, checkout, and basic functionality. These cannot be turned off.</p>
+
+      <h2>3. Preference Cookies</h2>
+      <p>Remember your display settings, saved preferences, and cookie consent choices.</p>
+
+      <h2>4. Analytics Cookies</h2>
+      <p>Help us understand how visitors use Lexora Prep and which features are used most.</p>
+
+      <h2>5. Marketing Cookies</h2>
+      <p>May help measure advertising performance. Not enabled without your consent where legally required.</p>
+
+      <h2>6. Paddle and Payment Cookies</h2>
+      <p>Paddle may use its own cookies for checkout, fraud prevention, and subscription management. Lexora Prep does not control all cookies set by Paddle during checkout.</p>
+
+      <h2>7. Consent and Preferences</h2>
+      <p>You can accept all cookies, reject non-essential cookies, or manage your preferences. Update choices anytime via Cookie Preferences in the footer.</p>
+
+      <h2>8. Contact</h2>
+      <p>For questions: support@lexoraprep.com</p>
+
+      <div class="legal-note">You can update your cookie choices anytime by clicking Cookie Preferences in the footer.</div>
+    </div>
+  </div>
+</section>
 
 </main>
 
@@ -3747,11 +3912,6 @@ a{
       </div>
 
       <p>Black Letter Law rule training for bar exam candidates. More than 1,000 rule statements. Structured recall practice.</p>
-
-      <div class="footer-social" aria-label="Follow Lexora Prep">
-        <a href="https://www.instagram.com/LexoraPrep" target="_blank" rel="noopener noreferrer">Instagram</a>
-        <a href="https://www.tiktok.com/@LexoraPrep" target="_blank" rel="noopener noreferrer">TikTok</a>
-      </div>
     </div>
 
     <div class="footer-col">
@@ -3760,13 +3920,14 @@ a{
       <a href="#howitworks">How it works</a>
       <a href="#pricing">Pricing</a>
       <a href="/faq">FAQ</a>
+    <a href="/contact">Contact</a>
       <a href="/refund">Refund policy</a>
     </div>
 
     <div class="footer-col">
       <h4>Support</h4>
       <a href="/faq">Help Center</a>
-      <a href="/contact">Contact us</a>
+      <a href="mailto:support@lexoraprep.com">Contact us</a>
       <a href="/terms">Legal disclaimers</a>
       <a href="/privacy">Privacy</a>
       <button class="footer-cookie-btn" type="button" onclick="openCookieSettings()">Cookie Preferences</button>
@@ -3779,6 +3940,7 @@ a{
       <a href="/refund">Refund Policy</a>
       <a href="/cookies">Cookie Policy</a>
       <a href="/faq">FAQ</a>
+    <a href="/contact">Contact</a>
     </div>
   </div>
 
@@ -3795,6 +3957,7 @@ a{
       <a href="/refund">Refund</a>
       <a href="/cookies">Cookies</a>
       <a href="/faq">FAQ</a>
+    <a href="/contact">Contact</a>
     </div>
   </div>
 </footer>
