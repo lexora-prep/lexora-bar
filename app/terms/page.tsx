@@ -1,101 +1,186 @@
-
 import Link from "next/link"
 
-type LegalSection = {
-  title: string
-  body: string[]
-  items?: string[]
+export const metadata = {
+  title: "Terms and Conditions | Lexora Prep",
+  description: "Terms and Conditions for Lexora Prep LLC.",
 }
 
-type LegalPageProps = {
-  eyebrow: string
-  title: string
-  description: string
-  sections: LegalSection[]
-}
+const sections = [
+  {
+    title: "1. Company Information",
+    body: [
+      "These Terms and Conditions govern your access to and use of Lexora Prep, including the website, platform, software, study tools, rule statements, flashcards, analytics, and related services.",
+      "Lexora Prep is operated by Lexora Prep LLC, a limited liability company registered in the United States.",
+      "By creating an account, purchasing a subscription, accessing the platform, or using Lexora Prep, you agree to these Terms and Conditions."
+    ],
+  },
+  {
+    title: "2. Educational Purpose Only",
+    body: [
+      "Lexora Prep is an educational technology platform designed to support Black Letter Law memorization and rule recall training for bar exam candidates.",
+      "Lexora Prep LLC is not a law firm, legal advisor, law school, bar review company, official bar examination authority, or government agency.",
+      "The platform does not provide legal advice and does not create an attorney client relationship."
+    ],
+  },
+  {
+    title: "3. Supplemental Study Tool",
+    body: [
+      "Lexora Prep is intended only as a supplemental study aid. It should not be used as your only source of preparation for any bar examination.",
+      "Users are responsible for using appropriate official materials, licensed bar preparation materials, primary law, and other study resources as needed."
+    ],
+  },
+  {
+    title: "4. No Guarantee of Results",
+    body: [
+      "Lexora Prep LLC does not guarantee that you will pass any bar exam, receive a particular score, improve your score, be admitted to practice law, or achieve any academic, professional, or licensing outcome.",
+      "Your results depend on many factors outside Lexora Prep LLC’s control, including your study habits, prior knowledge, exam conditions, jurisdictional requirements, and use of other preparation materials."
+    ],
+  },
+  {
+    title: "5. User Responsibility",
+    body: [
+      "You are solely responsible for your own preparation, study decisions, use of the platform, interpretation of educational materials, and reliance on any content made available through Lexora Prep.",
+      "You are responsible for verifying important legal rules with official sources, licensed bar preparation materials, or applicable primary law when necessary."
+    ],
+  },
+  {
+    title: "6. Account Use and Security",
+    body: [
+      "You must provide accurate account information and keep your login credentials secure.",
+      "Each account is for one individual user only. You may not share your password, sell access, transfer your account, or allow another person to use your account.",
+      "You are responsible for activity that occurs under your account."
+    ],
+  },
+  {
+    title: "7. Prohibited Conduct",
+    body: [
+      "You may not copy, scrape, reproduce, publish, sell, redistribute, or commercially exploit Lexora Prep content without written permission from Lexora Prep LLC.",
+      "You may not share paid access, rule banks, flashcards, screenshots, premium materials, or platform content with third parties.",
+      "You may not use bots, crawlers, automation tools, unauthorized scripts, or technical workarounds to access the platform.",
+      "You may not attempt to bypass payment systems, access controls, subscription limits, account restrictions, or security features.",
+      "You may not use the platform for unlawful, abusive, fraudulent, harmful, or misleading purposes."
+    ],
+  },
+  {
+    title: "8. Intellectual Property",
+    body: [
+      "All Lexora Prep materials, including rule statements, flashcards, study tools, design elements, software, platform structure, text, logos, and other content, are owned by Lexora Prep LLC or its licensors and are protected by applicable intellectual property laws.",
+      "Subject to these Terms, Lexora Prep LLC grants you a limited, revocable, non exclusive, non transferable license to access and use the platform for personal study purposes only.",
+      "No ownership rights are transferred to you."
+    ],
+  },
+  {
+    title: "9. Subscriptions and Payments",
+    body: [
+      "Paid subscriptions and purchases for Lexora Prep are processed through Paddle. Paddle acts as the merchant of record and authorized reseller for transactions made through Paddle Checkout.",
+      "Payment terms, payment methods, taxes, invoices, subscription billing, renewals, cancellations, and payment related notices may be handled by Paddle in accordance with Paddle’s applicable buyer terms and policies.",
+      "Lexora Prep LLC does not store full credit card numbers on its own servers."
+    ],
+  },
+  {
+    title: "10. Subscription Cancellation",
+    body: [
+      "You may cancel a subscription at any time. Cancellation stops future renewal charges and takes effect at the end of the current billing period unless otherwise required by applicable law or Paddle’s buyer terms.",
+      "Access may continue until the end of the paid subscription period after cancellation."
+    ],
+  },
+  {
+    title: "11. Refunds",
+    body: [
+      "Refunds are governed by the Lexora Prep Refund Policy and processed through Paddle.",
+      "Lexora Prep provides a refund window of 14 calendar days from the transaction date.",
+      "Where mandatory consumer law gives you additional rights, those rights are not limited by these Terms."
+    ],
+  },
+  {
+    title: "12. Content Accuracy",
+    body: [
+      "Lexora Prep aims to provide accurate and useful educational summaries of Black Letter Law, but legal rules may vary by jurisdiction, change over time, or require more detailed analysis than a memorization tool can provide.",
+      "Lexora Prep LLC does not warrant that all content is complete, current, error free, or suitable for every jurisdiction."
+    ],
+  },
+  {
+    title: "13. Beta, Preview, and Coming Soon Features",
+    body: [
+      "Some features may be labeled beta, preview, experimental, or coming soon. These features may change, be delayed, be limited, or be removed at any time."
+    ],
+  },
+  {
+    title: "14. Suspension or Termination",
+    body: [
+      "Lexora Prep LLC may suspend or terminate your account if you violate these Terms, misuse the platform, engage in fraudulent conduct, create security risks, or use the platform in a way that may harm Lexora Prep LLC, users, or third parties."
+    ],
+  },
+  {
+    title: "15. Disclaimers",
+    body: [
+      "Lexora Prep is provided on an as is and as available basis. To the fullest extent permitted by law, Lexora Prep LLC disclaims all warranties, express or implied, including warranties of accuracy, fitness for a particular purpose, non infringement, and uninterrupted availability.",
+      "Nothing in these Terms limits rights that cannot be limited under applicable law."
+    ],
+  },
+  {
+    title: "16. Limitation of Liability",
+    body: [
+      "To the fullest extent permitted by law, Lexora Prep LLC and its affiliates will not be liable for indirect, incidental, consequential, special, exemplary, or punitive damages, including lost profits, lost data, lost business opportunities, or exam related outcomes.",
+      "To the fullest extent permitted by law, Lexora Prep LLC’s total liability for any claim relating to the platform will not exceed the amount you paid for Lexora Prep during the one month period before the claim arose."
+    ],
+  },
+  {
+    title: "17. Contact",
+    body: [
+      "For questions about these Terms, contact Lexora Prep LLC at support@lexoraprep.com."
+    ],
+  },
+]
 
-function LegalPage({ eyebrow, title, description, sections }: LegalPageProps) {
+export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-[#F7F8FC] px-5 py-12 text-[#0E1B35]">
+    <main className="min-h-screen bg-[#F7F8FC] px-5 py-12 text-[#0E1B35] sm:px-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-3 text-[15px] font-bold text-[#0E1B35]">
-            <img
-              src="/lexora-icon-transparent.png"
-              alt="Lexora Prep"
-              className="h-10 w-10 rounded-xl bg-white p-1 shadow-sm ring-1 ring-[#E2E6F0]"
-            />
-            <span>Lexora <span className="text-[#7C3AED]">Prep</span></span>
-          </Link>
+        <Link href="/" className="mb-8 inline-flex text-sm font-semibold text-[#7C3AED]">
+          ← Back to Lexora Prep
+        </Link>
 
-          <Link
-            href="/"
-            className="rounded-full border border-[#CDD3E6] bg-white px-4 py-2 text-[13px] font-semibold text-[#475569] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
-          >
-            Back to Home
-          </Link>
-        </div>
-
-        <article
-          className="rounded-[28px] border border-[#E2E6F0] bg-white p-7 shadow-[0_24px_60px_rgba(14,27,53,0.10)] md:p-12"
-          style={{ WebkitUserSelect: "none", userSelect: "none" }}
-        >
-          <div className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#7C3AED]">
-            {eyebrow}
+        <article className="rounded-[28px] border border-[#E2E6F0] bg-white p-7 shadow-[0_20px_70px_rgba(14,27,53,0.08)] sm:p-12">
+          <div className="mb-3 text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#7C3AED]">
+            Legal
           </div>
 
-          <h1 className="mb-3 text-[36px] font-extrabold tracking-[-0.04em] text-[#0E1B35] md:text-[48px]">
-            {title}
+          <h1 className="text-4xl font-extrabold tracking-[-0.04em] text-[#0E1B35] sm:text-5xl">
+            Terms and Conditions
           </h1>
 
-          <p className="mb-9 max-w-2xl text-[15px] leading-8 text-[#475569]">
-            {description}
+          <p className="mt-4 text-sm font-medium text-[#64748B]">
+            Last updated: May 3, 2026
           </p>
 
-          <div className="space-y-8">
-            {sections.map((section, index) => (
-              <section key={index} className="border-t border-[#E2E6F0] pt-7">
-                <h2 className="mb-3 text-[20px] font-bold text-[#0E1B35]">
+          <p className="mt-8 text-[16px] leading-8 text-[#334155]">
+            These Terms and Conditions apply to Lexora Prep LLC and the Lexora Prep platform.
+          </p>
+
+          <div className="mt-10 space-y-9">
+            {sections.map((section) => (
+              <section key={section.title}>
+                <h2 className="text-[22px] font-extrabold tracking-[-0.02em] text-[#0E1B35]">
                   {section.title}
                 </h2>
 
-                <div className="space-y-3">
-                  {section.body.map((paragraph, paragraphIndex) => (
-                    <p key={paragraphIndex} className="text-[15px] leading-8 text-[#1E293B]">
+                <div className="mt-3 space-y-3">
+                  {section.body.map((paragraph) => (
+                    <p key={paragraph} className="text-[15.5px] leading-8 text-[#1E293B]">
                       {paragraph}
                     </p>
                   ))}
-
-                  {section.items && section.items.length > 0 && (
-                    <ul className="mt-3 list-disc space-y-2 pl-6 text-[15px] leading-8 text-[#1E293B]">
-                      {section.items.map((item, itemIndex) => (
-                        <li key={itemIndex}>{item}</li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
               </section>
             ))}
           </div>
 
-          <div className="mt-10 rounded-[18px] border border-[#DDD6FE] bg-[#F3F0FF] px-5 py-4 text-[14px] font-semibold leading-7 text-[#5B21B6]">
-            For questions, contact support@lexoraprep.com.
+          <div className="mt-10 rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF] p-5 text-[14px] font-semibold leading-7 text-[#5B21B6]">
+            Lexora Prep LLC is a supplemental educational platform. It does not provide legal advice and does not guarantee bar exam success.
           </div>
         </article>
       </div>
     </main>
-  )
-}
-
-export default function Page() {
-  const sections: LegalSection[] = [{'title': '1. Educational Purpose Only', 'body': ['Lexora Prep is an educational technology platform designed to support Black Letter Law memorization and rule training. It is not a law firm, legal advisor, law school, licensed bar preparation company, or official bar examination authority.']}, {'title': '2. Supplemental Study Tool', 'body': ['Lexora Prep is intended only as a supplemental study aid. It should not be used as your only source of preparation for any bar examination.']}, {'title': '3. No Guarantee of Results', 'body': ['Lexora Prep does not guarantee that you will pass any bar exam, receive a particular score, improve your score, be admitted to practice law, or achieve any academic, professional, or licensing outcome.']}, {'title': '4. User Responsibility', 'body': ['You are solely responsible for your own preparation, study decisions, use of the platform, and reliance on any educational content.']}, {'title': '5. Account Use and Security', 'body': ['Each account is for one individual user only. You may not share your password, sell access, redistribute paid materials, or allow another person to use your account.']}, {'title': '6. Prohibited Conduct', 'body': ['You agree not to misuse Lexora Prep or interfere with the operation, security, or commercial integrity of the platform.'], 'items': ['Copying, scraping, downloading, reproducing, publishing, selling, or redistributing Lexora Prep content without permission.', 'Sharing paid access, screenshots, rule banks, flashcards, or premium materials with others.', 'Using bots, crawlers, automation tools, or unauthorized scripts to access the platform.', 'Attempting to bypass payment, subscription limits, access controls, or security features.', 'Using the platform for unlawful, abusive, fraudulent, or harmful purposes.']}, {'title': '7. Intellectual Property', 'body': ['All Lexora Prep materials are owned by Lexora Prep or its licensors and are protected by applicable intellectual property laws. You receive a limited, revocable, non transferable license to use the platform for personal study only.']}, {'title': '8. Subscriptions and Payments', 'body': ['Paid subscriptions are billed according to the plan selected at checkout. Payments are processed through Paddle. Lexora Prep does not store full credit card numbers on its own servers.']}, {'title': '9. Cancellation and Refunds', 'body': ['You may cancel your subscription at any time. Cancellation stops future renewal charges but does not automatically create a refund unless the refund requirements in the Refund Policy are satisfied.']}, {'title': '10. Content Accuracy', 'body': ['Legal rules may vary by jurisdiction, change over time, or require more detailed analysis than a memorization tool can provide. We do not warrant that all content is complete, current, or error free.']}, {'title': '11. Limitation of Liability', 'body': ['To the fullest extent permitted by law, Lexora Prep and its affiliates will not be liable for indirect, incidental, consequential, or exemplary damages. Our total liability will not exceed the amount you paid during the one month period before the claim arose.']}]
-
-  return (
-    <LegalPage
-      eyebrow="Legal"
-      title="Terms and Conditions"
-      description="These Terms and Conditions govern access to and use of Lexora Prep, including the website, platform, study tools, rule banks, flashcards, analytics, and related services."
-      sections={sections}
-    />
   )
 }
