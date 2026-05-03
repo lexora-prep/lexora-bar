@@ -12,7 +12,7 @@ const sections = [
     title: "Educational Purpose Only",
     body: [
       "Lexora Prep is an educational technology platform designed to support Black Letter Law memorization, rule recall, and structured study practice. Lexora Prep is not a law firm, legal advisor, law school, licensed bar preparation company, or official bar examination authority.",
-      "The platform does not provide legal advice, legal representation, legal opinions, or professional licensing advice."
+      "The platform does not provide legal advice, legal representation, legal opinions, professional licensing advice, or any guarantee of bar examination success."
     ]
   },
   {
@@ -30,10 +30,10 @@ const sections = [
     ]
   },
   {
-    title: "User Accounts",
+    title: "Immediate Digital Access",
     body: [
-      "Users are responsible for keeping account credentials confidential and for all activity that occurs under their accounts.",
-      "Lexora Prep may suspend or terminate access if an account is used in violation of these Terms, for misuse of the platform, for attempted unauthorized access, for payment issues, or where required to protect the platform or other users."
+      "Lexora Prep is a digital educational service. After purchase, users may receive immediate access to rule statements, study tools, analytics, training materials, and other digital content.",
+      "By purchasing and accessing Lexora Prep, users request immediate access to the digital service. Where permitted by applicable law, accessing or using digital content may affect refund or withdrawal rights."
     ]
   },
   {
@@ -46,8 +46,15 @@ const sections = [
   {
     title: "Refunds",
     body: [
-      "Refunds are governed by the Lexora Prep Refund Policy. Users may request a refund within 14 days of the relevant purchase or renewal transaction.",
-      "Refund requests should be submitted through Paddle's buyer support process or through Lexora Prep's contact page so the request can be routed appropriately."
+      "Refunds are governed by the Lexora Prep Refund Policy. Lexora Prep offers a 14 day refund window. Users may request a refund within 14 days of the relevant purchase or renewal transaction.",
+      "Refund requests are processed by Paddle as Merchant of Record and reviewed in accordance with Paddle's refund policy, applicable law, and the Lexora Prep Refund Policy."
+    ]
+  },
+  {
+    title: "Account Activity and Abuse Prevention",
+    body: [
+      "Lexora Prep may monitor platform usage to protect the service, prevent abuse, maintain account security, and enforce these Terms. This may include records of login activity, rule access, recall attempts, account activity, and subscription activity.",
+      "Lexora Prep may provide relevant account activity information where necessary to review suspected misuse, refund abuse, unauthorized copying, scraping, credential sharing, or improper use of the platform."
     ]
   },
   {
