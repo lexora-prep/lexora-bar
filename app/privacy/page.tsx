@@ -1,100 +1,75 @@
+import LegalPageTemplate from "../components/LegalPageTemplate"
 
-import Link from "next/link"
+const sections = [
+  {
+    title: "Overview",
+    body: [
+      "This Privacy Policy explains how Lexora Prep LLC collects, uses, stores, and protects information when users access Lexora Prep.",
+      "Lexora Prep is an educational technology platform for Black Letter Law rule memorization, recall practice, analytics, and related study tools."
+    ]
+  },
+  {
+    title: "Information We Collect",
+    body: [
+      "Lexora Prep may collect account information, email address, authentication data, subscription status, study activity, rule recall attempts, analytics data, settings, and technical information related to use of the platform.",
+      "Payment information is processed by Paddle. Lexora Prep does not store complete card numbers."
+    ]
+  },
+  {
+    title: "How We Use Information",
+    body: [
+      "Information is used to provide the platform, manage accounts, operate study tools, show analytics, improve product performance, process subscriptions, prevent abuse, provide support, and comply with legal obligations.",
+      "Study activity may be used to generate progress indicators, weak area reports, recall scores, and personalized study recommendations."
+    ]
+  },
+  {
+    title: "Payment Processing",
+    body: [
+      "Payments are processed by Paddle as Merchant of Record. Paddle may collect and process payment, billing, tax, fraud prevention, and transaction information under its own legal terms and privacy notices."
+    ]
+  },
+  {
+    title: "Cookies and Analytics",
+    body: [
+      "Lexora Prep may use cookies and similar technologies to operate the website, maintain sessions, remember preferences, improve performance, and understand usage patterns.",
+      "More information is available in the Cookie Policy."
+    ]
+  },
+  {
+    title: "Data Sharing",
+    body: [
+      "Lexora Prep may share information with service providers that support hosting, authentication, database storage, analytics, payment processing, support, security, and compliance.",
+      "Lexora Prep does not sell user personal information to advertisers."
+    ]
+  },
+  {
+    title: "Data Security",
+    body: [
+      "Lexora Prep uses reasonable technical and organizational measures to protect user information. No online service can guarantee absolute security.",
+      "Users are responsible for keeping account credentials secure."
+    ]
+  },
+  {
+    title: "User Rights",
+    body: [
+      "Depending on location, users may have rights to access, correct, delete, export, or restrict certain personal information.",
+      "Requests may be submitted through the Lexora Prep contact page."
+    ]
+  },
+  {
+    title: "Contact",
+    body: [
+      "Questions about this Privacy Policy may be submitted through the Lexora Prep contact page."
+    ]
+  }
+]
 
-type LegalSection = {
-  title: string
-  body: string[]
-  items?: string[]
-}
-
-type LegalPageProps = {
-  eyebrow: string
-  title: string
-  description: string
-  sections: LegalSection[]
-}
-
-function LegalPage({ eyebrow, title, description, sections }: LegalPageProps) {
+export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-[#F7F8FC] px-5 py-12 text-[#0E1B35]">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-3 text-[15px] font-bold text-[#0E1B35]">
-            <img
-              src="/lexora-icon-transparent.png"
-              alt="Lexora Prep"
-              className="h-10 w-10 rounded-xl bg-white p-1 shadow-sm ring-1 ring-[#E2E6F0]"
-            />
-            <span>Lexora <span className="text-[#7C3AED]">Prep</span></span>
-          </Link>
-
-          <Link
-            href="/"
-            className="rounded-full border border-[#CDD3E6] bg-white px-4 py-2 text-[13px] font-semibold text-[#475569] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
-          >
-            Back to Home
-          </Link>
-        </div>
-
-        <article
-          className="rounded-[28px] border border-[#E2E6F0] bg-white p-7 shadow-[0_24px_60px_rgba(14,27,53,0.10)] md:p-12"
-          style={{ WebkitUserSelect: "none", userSelect: "none" }}
-        >
-          <div className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#7C3AED]">
-            {eyebrow}
-          </div>
-
-          <h1 className="mb-3 text-[36px] font-extrabold tracking-[-0.04em] text-[#0E1B35] md:text-[48px]">
-            {title}
-          </h1>
-
-          <p className="mb-9 max-w-2xl text-[15px] leading-8 text-[#475569]">
-            {description}
-          </p>
-
-          <div className="space-y-8">
-            {sections.map((section, index) => (
-              <section key={index} className="border-t border-[#E2E6F0] pt-7">
-                <h2 className="mb-3 text-[20px] font-bold text-[#0E1B35]">
-                  {section.title}
-                </h2>
-
-                <div className="space-y-3">
-                  {section.body.map((paragraph, paragraphIndex) => (
-                    <p key={paragraphIndex} className="text-[15px] leading-8 text-[#1E293B]">
-                      {paragraph}
-                    </p>
-                  ))}
-
-                  {section.items && section.items.length > 0 && (
-                    <ul className="mt-3 list-disc space-y-2 pl-6 text-[15px] leading-8 text-[#1E293B]">
-                      {section.items.map((item, itemIndex) => (
-                        <li key={itemIndex}>{item}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </section>
-            ))}
-          </div>
-
-          <div className="mt-10 rounded-[18px] border border-[#DDD6FE] bg-[#F3F0FF] px-5 py-4 text-[14px] font-semibold leading-7 text-[#5B21B6]">
-            For questions, contact support@lexoraprep.com.
-          </div>
-        </article>
-      </div>
-    </main>
-  )
-}
-
-export default function Page() {
-  const sections: LegalSection[] = [{'title': '1. Information We Collect', 'body': ['We may collect information you provide directly, including your name, email address, account credentials, subscription status, support messages, feedback, and other information you choose to submit.']}, {'title': '2. Study and Platform Data', 'body': ['We may collect study related data, including subjects reviewed, rules accessed, flashcard progress, completion status, weak areas, study plan settings, and platform usage data.']}, {'title': '3. Payment Information', 'body': ['Payments are processed through Paddle. Lexora Prep does not store full credit card numbers or payment card information on its own servers.']}, {'title': '4. How We Use Information', 'body': ['We use information to create and manage accounts, provide platform features, process billing through Paddle, respond to support requests, improve the platform, prevent fraud, and comply with legal obligations.']}, {'title': '5. We Do Not Sell Personal Data', 'body': ['Lexora Prep does not sell your personal data or provide it to third parties for their independent advertising purposes.']}, {'title': '6. Cookies', 'body': ['We may use cookies and similar technologies to keep users logged in, remember preferences, support security, and analyze usage. See the Cookie Policy for more information.']}, {'title': '7. Security', 'body': ['We use reasonable technical and organizational safeguards to protect user information. No internet based service can guarantee complete security.']}, {'title': '8. User Choices', 'body': ['You may request access, correction, deletion, or account closure by contacting support@lexoraprep.com.']}]
-
-  return (
-    <LegalPage
-      eyebrow="Legal"
+    <LegalPageTemplate
+      eyebrow="Privacy"
       title="Privacy Policy"
-      description="This Privacy Policy explains how Lexora Prep collects, uses, stores, and protects information when you use our website, platform, and related services."
+      description="Last updated: May 3, 2026. This Privacy Policy explains how Lexora Prep LLC handles personal information."
       sections={sections}
     />
   )
