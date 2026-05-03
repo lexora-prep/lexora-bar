@@ -2189,7 +2189,7 @@ footer{
   max-width:240px;
   font-size:12.5px;
   line-height:1.8;
-  color:rgba(255,255,255,0.34);
+  color:rgba(255,255,255,0.58);
 }
 
 .footer-col h4{
@@ -2204,7 +2204,7 @@ footer{
 .footer-col a{
   display:block;
   font-size:13px;
-  color:rgba(255,255,255,0.34);
+  color:rgba(255,255,255,0.58);
   margin-bottom:10px;
   transition:.15s;
 }
@@ -2220,7 +2220,7 @@ footer{
   padding:0;
   margin:0 0 10px;
   font-size:13px;
-  color:rgba(255,255,255,0.34);
+  color:rgba(255,255,255,0.58);
   cursor:pointer;
   text-align:left;
   transition:.15s;
@@ -2241,7 +2241,7 @@ footer{
 
 .footer-legal{
   font-size:11px;
-  color:rgba(255,255,255,0.18);
+  color:rgba(255,255,255,0.54);
   line-height:1.85;
   max-width:640px;
 }
@@ -2255,7 +2255,7 @@ footer{
 
 .footer-links a{
   font-size:11px;
-  color:rgba(255,255,255,0.26);
+  color:rgba(255,255,255,0.62);
   transition:.15s;
 }
 
@@ -3178,6 +3178,618 @@ select {
   to{opacity:1;transform:translateY(0)}
 }
 
+
+
+/* =========================================================
+   LEXORA FINAL HOMEPAGE PATCH:
+   sticky nav, animated analytics snapshot, pricing cleanup,
+   footer link cleanup support.
+   ========================================================= */
+
+/* Stable sticky nav. Prevents page text from blending into menu while scrolling. */
+nav,
+.lexora-nav,
+.site-nav,
+.main-nav {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 99999 !important;
+  min-height: 72px !important;
+  background: rgba(247, 248, 252, 0.98) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.75) !important;
+  box-shadow: 0 10px 34px rgba(14, 27, 53, 0.08) !important;
+}
+
+/* Keep nav children visually aligned in one straight row. */
+nav .nav-logo,
+nav .nav-links,
+nav .nav-cta {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+nav .nav-links {
+  align-items: center !important;
+}
+
+nav .nav-cta {
+  align-items: center !important;
+}
+
+/* Remove the unwanted rotating square / decorative object behind Most Popular pricing card. */
+.price-card.featured::before,
+.price-card.featured::after,
+.pricing-card.featured::before,
+.pricing-card.featured::after,
+.popular-card::before,
+.popular-card::after,
+.most-popular-card::before,
+.most-popular-card::after,
+.price-glow-square,
+.pricing-glow-square,
+.rotating-square,
+.price-rotating-square,
+.pricing-rotating-square,
+.popular-orbit,
+.popular-shape,
+.price-shape {
+  display: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Keep Most Popular badge clean and visible. */
+.popular-badge,
+.most-popular-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 36px !important;
+  padding: 0 34px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, #111F3B 0%, #5B21B6 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.01em !important;
+  box-shadow: 0 18px 36px rgba(91, 33, 182, 0.22), 0 8px 18px rgba(14, 27, 53, 0.18) !important;
+}
+
+/* Animated homepage analytics snapshot */
+.lexora-analytics-snapshot {
+  position: relative;
+  overflow: hidden;
+  padding: 96px 52px;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(124, 58, 237, 0.08), transparent 34%),
+    radial-gradient(circle at 88% 20%, rgba(14, 27, 53, 0.06), transparent 32%),
+    #FFFFFF;
+  border-top: 1px solid var(--border, #E2E6F0);
+  border-bottom: 1px solid var(--border, #E2E6F0);
+}
+
+.lexora-analytics-inner {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.lexora-analytics-head {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 42px;
+  align-items: end;
+  margin-bottom: 34px;
+}
+
+.lexora-analytics-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--purple-2, #7C3AED);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.lexora-analytics-eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--purple-2, #7C3AED);
+}
+
+.lexora-analytics-title {
+  font-family: "DM Serif Display", serif;
+  color: var(--navy, #0E1B35);
+  font-size: clamp(36px, 4vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  font-weight: 400;
+}
+
+.lexora-analytics-title em {
+  color: var(--purple-2, #7C3AED);
+  font-style: italic;
+}
+
+.lexora-analytics-copy {
+  color: var(--text-3, #475569);
+  font-size: 16px;
+  line-height: 1.8;
+  max-width: 560px;
+}
+
+.lexora-dashboard-frame {
+  position: relative;
+  border-radius: 28px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.34), rgba(14, 27, 53, 0.14), rgba(124, 58, 237, 0.18));
+  box-shadow: 0 30px 80px rgba(14, 27, 53, 0.12), 0 0 80px rgba(124, 58, 237, 0.10);
+}
+
+.lexora-dashboard-frame::before {
+  content: "";
+  position: absolute;
+  inset: -22px;
+  border-radius: 38px;
+  background: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.18), transparent 58%);
+  filter: blur(12px);
+  opacity: 0.72;
+  z-index: -1;
+  animation: lexoraSoftGlow 5s ease-in-out infinite;
+}
+
+.lexora-dashboard-shell {
+  overflow: hidden;
+  border-radius: 27px;
+  background: #FFFFFF;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+}
+
+.lexora-dashboard-bar {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  background: #F1F5FB;
+  border-bottom: 1px solid #DCE3EF;
+}
+
+.lexora-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+}
+
+.lexora-url {
+  margin-left: 10px;
+  font-family: "JetBrains Mono", monospace;
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lexora-dashboard-body {
+  padding: 18px;
+  background: #FFFFFF;
+}
+
+.lexora-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.lexora-kpi {
+  min-height: 124px;
+  border-radius: 18px;
+  background: #F7F8FC;
+  border: 1px solid #E2E8F0;
+  padding: 18px;
+  overflow: hidden;
+  position: relative;
+}
+
+.lexora-kpi.dark {
+  background: linear-gradient(135deg, #0E1B35 0%, #162B55 54%, #5B21B6 100%);
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+.lexora-kpi-label {
+  color: #94A3B8;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+
+.lexora-kpi-value {
+  color: #0E1B35;
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.lexora-kpi.dark .lexora-kpi-value,
+.lexora-kpi.dark .lexora-kpi-label {
+  color: #FFFFFF;
+}
+
+.lexora-kpi-sub {
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.lexora-kpi-up {
+  color: #059669;
+}
+
+.lexora-kpi-down {
+  color: #DC2626;
+}
+
+.lexora-progress-line {
+  height: 5px;
+  border-radius: 999px;
+  background: #E2E8F0;
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.lexora-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7C3AED, #A78BFA);
+  animation: lexoraFill var(--speed, 1.8s) ease forwards;
+}
+
+.lexora-smart-plan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-radius: 18px;
+  padding: 18px;
+  color: #FFFFFF;
+  background: linear-gradient(90deg, #0E1B35 0%, #162B55 54%, #6D28D9 100%);
+  box-shadow: 0 14px 30px rgba(14, 27, 53, 0.16);
+  margin-bottom: 14px;
+}
+
+.lexora-plan-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lexora-plan-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+
+.lexora-plan-title {
+  font-size: 15px;
+  font-weight: 900;
+  margin-bottom: 3px;
+}
+
+.lexora-plan-sub {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lexora-plan-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.lexora-plan-button {
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 900;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.lexora-analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.lexora-table-card,
+.lexora-chart-card {
+  background: #F7F8FC;
+  border: 1px solid #E2E8F0;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.lexora-table-head {
+  height: 58px;
+  padding: 0 18px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lexora-table-title,
+.lexora-chart-title {
+  color: #0E1B35;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.lexora-table-tabs {
+  display: flex;
+  gap: 8px;
+  color: #94A3B8;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.lexora-table-tabs span:first-child {
+  color: #0E1B35;
+  background: #EEF2FF;
+  border: 1px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 6px 12px;
+}
+
+.lexora-subject-row {
+  display: grid;
+  grid-template-columns: 1fr 90px 180px 110px;
+  gap: 12px;
+  align-items: center;
+  min-height: 58px;
+  padding: 0 18px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.lexora-subject-row:last-child {
+  border-bottom: 0;
+}
+
+.lexora-subject-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #0E1B35;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.lexora-subject-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.lexora-rule-count {
+  color: #94A3B8;
+  font-weight: 800;
+  font-size: 13px;
+  text-align: right;
+}
+
+.lexora-rule-count strong {
+  color: #7C3AED;
+}
+
+.lexora-subject-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #E2E8F0;
+  overflow: hidden;
+}
+
+.lexora-subject-fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7C3AED, #A78BFA);
+  animation: lexoraFill var(--speed, 1.8s) ease forwards;
+}
+
+.lexora-level {
+  text-align: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.lexora-level.building {
+  color: #7C3AED;
+  background: #F3F0FF;
+  border: 1px solid #DDD6FE;
+}
+
+.lexora-level.progressing {
+  color: #4F46E5;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+}
+
+.lexora-level.strong {
+  color: #059669;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+}
+
+.lexora-side-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lexora-chart-card {
+  padding: 18px;
+  min-height: 168px;
+}
+
+.lexora-chart-title span {
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 800;
+  margin-left: 8px;
+}
+
+.lexora-score-chart {
+  width: 100%;
+  height: 88px;
+  margin-top: 18px;
+}
+
+.lexora-score-line {
+  stroke-dasharray: 440;
+  stroke-dashoffset: 440;
+  animation: lexoraDrawLine 2.2s ease forwards, lexoraPulseLine 3s ease-in-out 2.3s infinite;
+}
+
+.lexora-bar-chart {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 9px;
+  align-items: end;
+  height: 92px;
+  margin-top: 18px;
+}
+
+.lexora-mini-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.lexora-mini-bar {
+  width: 100%;
+  min-height: 6px;
+  border-radius: 7px 7px 3px 3px;
+  background: linear-gradient(180deg, #7C3AED, #A78BFA);
+  transform-origin: bottom;
+  transform: scaleY(0);
+  animation: lexoraGrowY 1.5s ease forwards;
+}
+
+.lexora-mini-label {
+  color: #94A3B8;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+@keyframes lexoraFill {
+  from { width: 0; }
+  to { width: var(--w); }
+}
+
+@keyframes lexoraGrowY {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@keyframes lexoraDrawLine {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes lexoraPulseLine {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(124,58,237,0)); }
+  50% { filter: drop-shadow(0 0 8px rgba(124,58,237,0.45)); }
+}
+
+@keyframes lexoraSoftGlow {
+  0%, 100% { opacity: .56; }
+  50% { opacity: .92; }
+}
+
+@keyframes lexoraCountFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.lexora-kpi-value {
+  animation: lexoraCountFloat 2.8s ease-in-out infinite;
+}
+
+@media (max-width: 1060px) {
+  .lexora-analytics-head,
+  .lexora-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lexora-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lexora-subject-row {
+    grid-template-columns: 1fr 72px 120px 90px;
+  }
+}
+
+@media (max-width: 768px) {
+  .lexora-analytics-snapshot {
+    padding: 64px 20px;
+  }
+
+  .lexora-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lexora-smart-plan {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .lexora-plan-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .lexora-plan-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lexora-subject-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 16px 18px;
+  }
+
+  .lexora-rule-count {
+    text-align: left;
+  }
+}
+
 </style>
 </head>
 
@@ -3601,53 +4213,6 @@ select {
     </div>
   </div>
 
-  
-  <div class="analytics-showcase" id="analytics">
-    <div class="demo-inner">
-      <div class="section-eyebrow">
-        <div class="section-eyebrow-line"></div>
-        Progress snapshot
-      </div>
-
-      <div class="section-title" style="max-width:640px">
-        See your rule memory in <em>real numbers.</em>
-      </div>
-
-      <p class="section-sub">
-        Lexora Prep does not just show rules. It tracks your recall performance, weak areas, spaced reviews, and study consistency so users can see whether their Black Letter Law memory is improving.
-      </p>
-
-      <div class="analytics-grid">
-        <div class="analytics-card">
-          <div class="analytics-number">82%</div>
-          <h3>Recall score tracking</h3>
-          <p>Users can see how accurately they recall rule statements and whether their wording is improving over time.</p>
-          <div class="analytics-mini-row">
-            <span class="analytics-mini-pill">BLL score</span>
-            <span class="analytics-mini-pill">Rule recall</span>
-          </div>
-        </div>
-
-        <div class="analytics-card">
-          <div class="analytics-number">32</div>
-          <h3>Weak rules identified</h3>
-          <p>Rules with lower recall scores are flagged so users know exactly what needs more practice.</p>
-          <div class="analytics-mini-row">
-            <span class="analytics-mini-pill">Weak areas</span>
-            <span class="analytics-mini-pill">Focused review</span>
-          </div>
-        </div>
-
-        <div class="analytics-card">
-          <div class="analytics-number">97</div>
-          <h3>Spaced reviews due</h3>
-          <p>Rules return at planned intervals so users keep reviewing before memory fades.</p>
-          <div class="analytics-mini-row">
-            <span class="analytics-mini-pill">Spaced repetition</span>
-            <span class="analytics-mini-pill">Daily plan</span>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -4152,33 +4717,29 @@ select {
       <p>Black Letter Law rule training for bar exam candidates. More than 1,000 rule statements. Structured recall practice.</p>
     </div>
 
+    
     <div class="footer-col">
       <h4>Product</h4>
       <a href="#features">BLL rule training</a>
       <a href="#howitworks">How it works</a>
       <a href="#pricing">Pricing</a>
-      <a href="/faq">FAQ</a>
-    <a href="/contact">Contact</a>
-      <a href="/refund">Refund policy</a>
     </div>
 
+    
     <div class="footer-col">
       <h4>Support</h4>
-      <a href="/faq">Help Center</a>
-      <a href="mailto:support@lexoraprep.com">Contact us</a>
-      <a href="/terms">Legal disclaimers</a>
-      <a href="/privacy">Privacy</a>
-      <button class="footer-cookie-btn" type="button" onclick="openCookieSettings()">Cookie Preferences</button>
+      <a href="/contact">Contact us</a>
+      <a href="/faq">FAQ</a>
+      <button type="button" class="footer-cookie-btn" onclick="openCookiePreferences()">Cookie preferences</button>
     </div>
 
+    
     <div class="footer-col">
       <h4>Legal</h4>
       <a href="/terms">Terms and Conditions</a>
       <a href="/privacy">Privacy Policy</a>
       <a href="/refund">Refund Policy</a>
       <a href="/cookies">Cookie Policy</a>
-      <a href="/faq">FAQ</a>
-    <a href="/contact">Contact</a>
     </div>
   </div>
 
@@ -4195,7 +4756,7 @@ select {
       <a href="/refund">Refund</a>
       <a href="/cookies">Cookies</a>
       <a href="/faq">FAQ</a>
-    <a href="/contact">Contact</a>
+      <a href="/contact">Contact</a>
     </div>
   </div>
 </footer>
