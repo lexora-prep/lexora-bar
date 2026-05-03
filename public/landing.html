@@ -5917,5 +5917,428 @@ select {
 })();
 </script>
 
+
+<style id="lexora-narrow-how-links-footer-style">
+  .lexora-fixed-how-section {
+    padding: 70px 32px !important;
+    background: #ffffff !important;
+    border-top: 1px solid #E2E8F0 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+  }
+
+  .lexora-fixed-how-inner {
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+
+  .lexora-fixed-how-title {
+    font-family: "DM Serif Display", serif;
+    font-size: clamp(30px, 3vw, 44px);
+    line-height: 1.08;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    color: #0E1B35;
+    margin: 0 0 12px;
+  }
+
+  .lexora-fixed-how-title em {
+    color: #7C3AED;
+    font-style: italic;
+  }
+
+  .lexora-fixed-how-copy {
+    max-width: 720px;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #475569;
+    margin: 0 0 24px;
+  }
+
+  .lexora-fixed-window {
+    position: relative;
+    border-radius: 24px;
+    border: 1px solid #DCE3EF;
+    background: #FFFFFF;
+    box-shadow: 0 22px 60px rgba(14, 27, 53, 0.08);
+    overflow: visible;
+  }
+
+  .lexora-fixed-window-inner {
+    overflow: hidden;
+    border-radius: 24px;
+  }
+
+  .lexora-fixed-windowbar {
+    height: 40px;
+    background: #F1F5FB;
+    border-bottom: 1px solid #DCE3EF;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+  }
+
+  .lexora-fixed-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .lexora-fixed-url {
+    margin-left: 8px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 800;
+    color: #94A3B8;
+  }
+
+  .lexora-fixed-body {
+    padding: 22px;
+    background: #F8FAFF;
+  }
+
+  .lexora-fixed-rulebox {
+    border: 1px solid rgba(124, 58, 237, 0.22);
+    border-radius: 20px;
+    background: #FFFFFF;
+    padding: 20px;
+  }
+
+  .lexora-fixed-pill {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #F3F0FF;
+    color: #7C3AED;
+    border: 1px solid #DDD6FE;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .lexora-fixed-question {
+    color: #0E1B35;
+    font-size: 20px;
+    line-height: 1.45;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+  }
+
+  .lexora-fixed-model {
+    display: none;
+    font-family: "DM Serif Display", serif;
+    color: #0E1B35;
+    font-size: 21px;
+    line-height: 1.7;
+  }
+
+  .lexora-fixed-highlight {
+    color: #7C3AED;
+    background: #F3F0FF;
+    border-bottom: 2px solid #A78BFA;
+    border-radius: 4px;
+    padding: 0 3px;
+    font-style: italic;
+  }
+
+  .lexora-fixed-helper {
+    margin-top: 10px;
+    color: #5B21B6;
+    font-size: 12.5px;
+    font-weight: 850;
+    line-height: 1.65;
+  }
+
+  .lexora-fixed-answerbox {
+    margin-top: 14px;
+    border: 1px solid #DCE3EF;
+    border-radius: 18px;
+    background: #FFFFFF;
+    padding: 16px;
+  }
+
+  .lexora-fixed-label {
+    margin-bottom: 9px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #94A3B8;
+  }
+
+  .lexora-fixed-answer {
+    min-height: 96px;
+    color: #0E1B35;
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 700;
+  }
+
+  .lexora-fixed-answer::after {
+    content: "";
+    display: inline-block;
+    width: 2px;
+    height: 15px;
+    margin-left: 2px;
+    transform: translateY(3px);
+    background: #7C3AED;
+    animation: lexoraFixedCaret 0.8s steps(1) infinite;
+  }
+
+  .lexora-fixed-actions {
+    margin-top: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .lexora-fixed-submit {
+    height: 40px;
+    border: 0;
+    border-radius: 13px;
+    background: #0E1B35;
+    color: #FFFFFF;
+    padding: 0 18px;
+    font-size: 13px;
+    font-weight: 900;
+    box-shadow: 0 8px 20px rgba(14, 27, 53, 0.18);
+    cursor: pointer;
+  }
+
+  .lexora-fixed-status {
+    font-size: 12px;
+    font-weight: 850;
+    color: #64748B;
+  }
+
+  .lexora-fixed-result {
+    display: none;
+    margin-top: 14px;
+    border-radius: 16px;
+    border: 1px solid #DDD6FE;
+    background: #F3F0FF;
+    color: #0E1B35;
+    padding: 14px;
+    font-size: 13.5px;
+    line-height: 1.7;
+  }
+
+  .lexora-fixed-result.show {
+    display: block;
+  }
+
+  .lexora-fixed-badge {
+    position: absolute;
+    right: -34px;
+    top: -42px;
+    width: 112px;
+    height: 112px;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    color: #FFFFFF;
+    font-size: 15px;
+    line-height: 1.05;
+    font-weight: 950;
+    text-align: center;
+    text-transform: uppercase;
+    transform: rotate(-10deg);
+    filter: drop-shadow(0 18px 32px rgba(91, 33, 182, 0.28));
+    animation: lexoraFixedBadgeFloat 3.6s ease-in-out infinite;
+  }
+
+  .lexora-fixed-badge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(from 0deg, #7C3AED, #4F46E5, #A78BFA, #7C3AED);
+    clip-path: polygon(50% 0%,60% 17%,79% 9%,81% 30%,100% 35%,86% 50%,100% 65%,81% 70%,79% 91%,60% 83%,50% 100%,40% 83%,21% 91%,19% 70%,0% 65%,14% 50%,0% 35%,19% 30%,21% 9%,40% 17%);
+    border: 5px solid #F59E0B;
+  }
+
+  .lexora-fixed-badge span {
+    position: relative;
+    z-index: 3;
+  }
+
+  footer .footer-links {
+    display: none !important;
+  }
+
+  @keyframes lexoraFixedCaret {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes lexoraFixedBadgeFloat {
+    0%, 100% { transform: translateY(0) rotate(-10deg) scale(1); }
+    50% { transform: translateY(-8px) rotate(-7deg) scale(1.03); }
+  }
+
+  @media (max-width: 800px) {
+    .lexora-fixed-badge {
+      right: -8px;
+      top: -36px;
+      width: 88px;
+      height: 88px;
+      font-size: 12px;
+    }
+
+    .lexora-fixed-how-section {
+      padding: 56px 18px !important;
+    }
+  }
+</style>
+
+
+<script id="lexora-narrow-how-links-footer-script">
+(function () {
+  function textOf(el) {
+    return (el && el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  function fixLinksOnly() {
+    Array.prototype.slice.call(document.querySelectorAll("a, button")).forEach(function (el) {
+      var t = textOf(el);
+
+      if (
+        t.indexOf("start training free") !== -1 ||
+        t.indexOf("start free") !== -1 ||
+        t.indexOf("try free") !== -1
+      ) {
+        if (el.tagName.toLowerCase() === "a") {
+          el.setAttribute("href", "/register");
+        } else {
+          el.onclick = function () {
+            window.location.href = "/register";
+          };
+        }
+      }
+
+      if (
+        t.indexOf("choose monthly") !== -1 ||
+        t.indexOf("bll monthly") !== -1
+      ) {
+        if (el.tagName.toLowerCase() === "a") {
+          el.setAttribute("href", "/register?plan=bll-monthly&next=checkout");
+        }
+      }
+
+      if (
+        t.indexOf("choose premium") !== -1 ||
+        (t.indexOf("premium") !== -1 && t.indexOf("choose") !== -1)
+      ) {
+        if (el.tagName.toLowerCase() === "a") {
+          el.setAttribute("href", "/register?plan=premium&next=checkout");
+        }
+      }
+    });
+  }
+
+  function howHtml() {
+    return '\
+      <section class="lexora-fixed-how-section" id="howitworks">\
+        <div class="lexora-fixed-how-inner">\
+          <h2 class="lexora-fixed-how-title">Read. Recall. <em>See your gaps.</em></h2>\
+          <p class="lexora-fixed-how-copy">Lexora asks for the rule first. Type the rule from memory. After 10 seconds, the model rule appears in the same rule box so you can compare before submitting.</p>\
+          <div class="lexora-fixed-window">\
+            <div class="lexora-fixed-badge"><span>Try<br>it now</span></div>\
+            <div class="lexora-fixed-window-inner">\
+              <div class="lexora-fixed-windowbar">\
+                <span class="lexora-fixed-dot" style="background:#FF5F56"></span>\
+                <span class="lexora-fixed-dot" style="background:#FFBD2E"></span>\
+                <span class="lexora-fixed-dot" style="background:#27C93F"></span>\
+                <span class="lexora-fixed-url">lexora prep · rule recall</span>\
+              </div>\
+              <div class="lexora-fixed-body">\
+                <div class="lexora-fixed-rulebox">\
+                  <div class="lexora-fixed-pill">Property</div>\
+                  <div class="lexora-fixed-question" id="lexoraFixedQuestion">What are the elements required to establish adverse possession?</div>\
+                  <div class="lexora-fixed-model" id="lexoraFixedModel">Adverse possession generally requires <span class="lexora-fixed-highlight">actual</span>, <span class="lexora-fixed-highlight">open and notorious</span>, <span class="lexora-fixed-highlight">exclusive</span>, <span class="lexora-fixed-highlight">hostile</span>, and <span class="lexora-fixed-highlight">continuous possession</span> for the statutory period.</div>\
+                  <div class="lexora-fixed-helper" id="lexoraFixedHelper">Type your answer from memory first. The model rule statement will appear here in 10 seconds.</div>\
+                </div>\
+                <div class="lexora-fixed-answerbox">\
+                  <div class="lexora-fixed-label">Your answer</div>\
+                  <div class="lexora-fixed-answer" id="lexoraFixedAnswer">Adverse possession generally requires actual, open and notorious, exclusive, and continuous possession for the statutory period.</div>\
+                  <div class="lexora-fixed-actions">\
+                    <button class="lexora-fixed-submit" type="button" id="lexoraFixedSubmit">Submit answer</button>\
+                    <div class="lexora-fixed-status" id="lexoraFixedStatus">Model rule appears in 10 seconds</div>\
+                  </div>\
+                  <div class="lexora-fixed-result" id="lexoraFixedResult"><strong>Result:</strong> Strong recall. You caught actual, open and notorious, exclusive, and continuous possession. Review the missing hostile element.</div>\
+                </div>\
+              </div>\
+            </div>\
+          </div>\
+        </div>\
+      </section>';
+  }
+
+  function replaceHowOnly() {
+    var existing = document.getElementById("howitworks");
+
+    if (!existing) {
+      existing = Array.prototype.slice.call(document.querySelectorAll("section, div")).find(function (el) {
+        var t = textOf(el);
+        return t.indexOf("read. recall") !== -1 && t.indexOf("see your gaps") !== -1;
+      });
+    }
+
+    if (!existing) return;
+    if (existing.classList && existing.classList.contains("lexora-fixed-how-section")) return;
+
+    var wrapper = document.createElement("div");
+    wrapper.innerHTML = howHtml();
+    existing.replaceWith(wrapper.firstElementChild);
+
+    window.setTimeout(function () {
+      var q = document.getElementById("lexoraFixedQuestion");
+      var m = document.getElementById("lexoraFixedModel");
+      var h = document.getElementById("lexoraFixedHelper");
+      var st = document.getElementById("lexoraFixedStatus");
+
+      if (q) q.style.display = "none";
+      if (m) m.style.display = "block";
+      if (h) h.textContent = "Compare the model rule with your answer, then submit to see what you missed.";
+      if (st) st.textContent = "Model rule revealed";
+    }, 10000);
+
+    var btn = document.getElementById("lexoraFixedSubmit");
+    var result = document.getElementById("lexoraFixedResult");
+    var st = document.getElementById("lexoraFixedStatus");
+
+    if (btn && result) {
+      btn.addEventListener("click", function () {
+        result.classList.add("show");
+        if (st) st.textContent = "Result generated";
+      });
+    }
+  }
+
+  function removeBottomFooterLineOnly() {
+    var footer = document.querySelector("footer");
+    if (!footer) return;
+    var bottom = footer.querySelector(".footer-links");
+    if (bottom) bottom.remove();
+  }
+
+  function run() {
+    fixLinksOnly();
+    replaceHowOnly();
+    removeBottomFooterLineOnly();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
+</script>
+
 </body>
 </html>
