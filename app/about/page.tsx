@@ -2,9 +2,9 @@ import Link from "next/link"
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-[#F7F8FC] px-5 py-6 text-[#0E1B35]">
-      <div className="mx-auto max-w-4xl">
-        <nav className="mb-6 flex h-12 items-center justify-between">
+    <main className="min-h-screen bg-[#F7F8FC] text-[#0E1B35]">
+      <header className="border-b border-[#E2E8F0] bg-[#F7F8FC]/95">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="inline-flex items-center gap-3 text-base font-black">
             <img
               src="/icon.png"
@@ -22,45 +22,69 @@ export default function AboutPage() {
           >
             ← Back to main page
           </Link>
-        </nav>
+        </div>
+      </header>
 
-        <article className="rounded-[30px] border border-[#D8E0EF] bg-white p-7 shadow-[0_18px_55px_rgba(14,27,53,0.07)] md:p-10">
-          <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-[#7C3AED]">
-            About
+      <section className="mx-auto max-w-4xl px-5 py-14 md:py-16">
+        <p className="mb-4 text-[11px] font-black uppercase tracking-[0.22em] text-[#7C3AED]">
+          About Lexora Prep
+        </p>
+
+        <h1 className="max-w-3xl font-serif text-[34px] font-semibold leading-[1.08] tracking-[-0.035em] text-[#0E1B35] md:text-[44px]">
+          Built to make Black Letter Law easier to recall.
+        </h1>
+
+        <div className="mt-8 space-y-5 text-[16px] leading-8 text-[#475569]">
+          <p>
+            Lexora Prep was created from a simple problem: bar candidates often understand the rule when they read it, but struggle to recall it clearly when they need to write it from memory.
           </p>
 
-          <h1 className="font-serif text-[46px] font-semibold leading-[1.02] tracking-[-0.045em] md:text-[58px]">
-            Built for the part of bar prep students quietly struggle with.
-          </h1>
+          <p>
+            That problem matters most in essay practice. For the MEE, knowing the law is not enough. You need to remember the rule, organize it quickly, and notice which legal elements you missed.
+          </p>
 
-          <div className="mt-6 space-y-5 text-[16px] leading-8 text-[#475569]">
-            <p>
-              Lexora Prep was created from a simple problem: memorizing Black Letter Law is not just about reading rules. For essay practice, especially the MEE, you need to recall the rule clearly, write it from memory, and notice which legal elements you missed.
+          <p>
+            I built Lexora Prep because I experienced that same struggle while preparing for the bar exam. Reading outlines helped, but it did not fully train active recall. The harder part was repeating the rule, comparing it against a model answer, and reviewing the weak parts until the language became natural.
+          </p>
+
+          <p>
+            Lexora Prep focuses on that exact skill. The platform helps users practice Black Letter Law recall through structured rule training, flashcards, spaced review, weak-area targeting, and simple study analytics.
+          </p>
+
+          <p>
+            Lexora Prep is not a replacement for a full bar course and does not guarantee exam success. It is a focused educational tool designed to help bar candidates build rule memory with more structure and less chaos.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-5 border-t border-[#E2E8F0] pt-8 md:grid-cols-3">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">
+              Read
             </p>
-
-            <p>
-              I built Lexora Prep because I experienced that struggle myself while preparing for the bar exam. Reading outlines was not enough. The harder part was forcing myself to recite the rule, compare it against the model rule, and repeat the weak parts until the language became natural.
-            </p>
-
-            <p>
-              Lexora Prep is designed to help bar candidates train that exact skill. The platform focuses on structured Black Letter Law recall, rule memorization, weak area review, spaced repetition, and simple analytics that show what you remembered and what you missed.
-            </p>
-
-            <p>
-              The goal is not to replace a full bar course or guarantee exam success. The goal is to give students a focused tool for building rule memory in good faith, with a practical system that makes daily recall training easier to repeat.
+            <p className="mt-2 text-sm leading-6 text-[#475569]">
+              Review the rule statement and understand the legal elements.
             </p>
           </div>
 
-          <div className="mt-8 rounded-[24px] border border-[#DDD6FE] bg-[#F8F5FF] p-5">
-            <p className="text-lg font-black tracking-[-0.02em] text-[#0E1B35]">
-              The mission
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">
+              Recall
             </p>
-            <p className="mt-2 text-[15px] leading-7 text-[#475569]">
-              Help bar candidates read, recall, review, and retain the rules they need with more confidence and less chaos.
+            <p className="mt-2 text-sm leading-6 text-[#475569]">
+              Type the rule from memory instead of passively rereading it.
             </p>
           </div>
-        </article>
-      </div>
+
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">
+              Retain
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[#475569]">
+              Repeat weak rules through focused review and spaced practice.
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
   )
 }
