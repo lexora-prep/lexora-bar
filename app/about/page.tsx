@@ -7,7 +7,7 @@ export default function AboutPage() {
         <nav className="mb-6 flex h-12 items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-3 text-base font-black">
             <img
-              src="/lexora-icon-transparent.png"
+              src="/icon.png"
               alt="Lexora Prep"
               className="h-9 w-9 rounded-xl bg-white object-contain p-1 shadow-sm"
             />

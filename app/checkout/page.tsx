@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
-type PlanKey = "bll-monthly" | "premium"
+type PlanKey = "free" | "bll-monthly" | "premium"
 
 type Plan = {
   key: PlanKey
@@ -11,17 +11,33 @@ type Plan = {
   eyebrow: string
   price: string
   short: string
+  registerUrl: string
   checkoutUrl?: string
   features: string[]
 }
 
 const plans: Record<PlanKey, Plan> = {
+  free: {
+    key: "free",
+    name: "Free",
+    eyebrow: "Demo access",
+    price: "$0",
+    short: "Start with limited access and see how Lexora Prep rule recall works.",
+    registerUrl: "/register?plan=free",
+    features: [
+      "Create a Lexora Prep account",
+      "Limited rule training access",
+      "Basic recall practice",
+      "No credit card required",
+    ],
+  },
   "bll-monthly": {
     key: "bll-monthly",
     name: "BLL Monthly",
     eyebrow: "Core memorization",
     price: "$19.99/mo",
-    short: "Rule recall, flashcards, weak areas, study planning, and analytics.",
+    short: "Full Black Letter Law rule training with structured recall and analytics.",
+    registerUrl: "/register?plan=bll-monthly&next=checkout",
     checkoutUrl: process.env.NEXT_PUBLIC_PADDLE_BLL_MONTHLY_CHECKOUT_URL,
     features: [
       "Full Black Letter Law rule access",
@@ -36,7 +52,8 @@ const plans: Record<PlanKey, Plan> = {
     name: "Premium",
     eyebrow: "Advanced training",
     price: "$24.99/mo",
-    short: "Everything in BLL Monthly plus Golden Rules and priority training tools.",
+    short: "Advanced training tools for stronger rule memory and focused review.",
+    registerUrl: "/register?plan=premium&next=checkout",
     checkoutUrl: process.env.NEXT_PUBLIC_PADDLE_PREMIUM_CHECKOUT_URL,
     features: [
       "Everything in BLL Monthly",
@@ -50,20 +67,22 @@ const plans: Record<PlanKey, Plan> = {
 }
 
 function getInitialPlan(): PlanKey {
-  if (typeof window === "undefined") return "bll-monthly"
+  if (typeof window === "undefined") return "free"
   const params = new URLSearchParams(window.location.search)
-  return params.get("plan") === "premium" ? "premium" : "bll-monthly"
+  const plan = params.get("plan")
+  if (plan === "premium") return "premium"
+  if (plan === "bll-monthly") return "bll-monthly"
+  return "free"
 }
 
 export default function CheckoutPage() {
-  const [selectedPlanKey, setSelectedPlanKey] = useState<PlanKey>("bll-monthly")
+  const [selectedPlanKey, setSelectedPlanKey] = useState<PlanKey>("free")
 
   useEffect(() => {
     setSelectedPlanKey(getInitialPlan())
   }, [])
 
   const selectedPlan = useMemo(() => plans[selectedPlanKey], [selectedPlanKey])
-  const checkoutReady = Boolean(selectedPlan.checkoutUrl)
 
   function selectPlan(planKey: PlanKey) {
     setSelectedPlanKey(planKey)
@@ -72,18 +91,13 @@ export default function CheckoutPage() {
     window.history.replaceState(null, "", url.toString())
   }
 
-  function continueToPaddle() {
-    if (!selectedPlan.checkoutUrl) return
-    window.location.href = selectedPlan.checkoutUrl
-  }
-
   return (
     <main className="min-h-screen bg-[#F7F8FC] px-5 py-5 text-[#0E1B35]">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <nav className="mb-5 flex h-12 items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-3 text-base font-black">
             <img
-              src="/lexora-icon-transparent.png"
+              src="/icon.png"
               alt="Lexora Prep"
               className="h-9 w-9 rounded-xl bg-white object-contain p-1 shadow-sm"
             />
@@ -100,22 +114,22 @@ export default function CheckoutPage() {
           </Link>
         </nav>
 
-        <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="grid gap-5 lg:grid-cols-[1fr_1fr]">
           <div className="rounded-[26px] border border-[#D8E0EF] bg-white p-6 shadow-[0_18px_55px_rgba(14,27,53,0.07)]">
             <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-[#7C3AED]">
-              Secure checkout
+              Choose access
             </p>
 
-            <h1 className="font-serif text-[42px] font-semibold leading-[1.02] tracking-[-0.045em]">
-              Choose your plan.
+            <h1 className="font-serif text-[40px] font-semibold leading-[1.02] tracking-[-0.045em]">
+              Choose your Lexora Prep plan.
             </h1>
 
             <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#475569]">
-              Select a Lexora Prep subscription. Payment, invoices, taxes, cancellation, and refund processing are handled by Paddle as Merchant of Record.
+              Pick Free, BLL Monthly, or Premium. New users create an account first, then paid plans continue to Paddle checkout.
             </p>
 
             <div className="mt-6 grid gap-3">
-              {(["bll-monthly", "premium"] as PlanKey[]).map((planKey) => {
+              {(["free", "bll-monthly", "premium"] as PlanKey[]).map((planKey) => {
                 const plan = plans[planKey]
                 const active = selectedPlanKey === planKey
 
@@ -150,21 +164,6 @@ export default function CheckoutPage() {
                 )
               })}
             </div>
-
-            <div className="mt-5 rounded-[18px] border border-[#DDD6FE] bg-[#FBF8FF] p-4">
-              <p className="text-sm font-black text-[#0E1B35]">
-                New user flow
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[#475569]">
-                If you came from pricing before creating an account, register first. Lexora Prep can then continue the selected plan checkout flow.
-              </p>
-              <Link
-                href={`/register?plan=${selectedPlan.key}&next=checkout`}
-                className="mt-3 inline-flex rounded-2xl bg-[#0E1B35] px-4 py-2.5 text-sm font-black text-white shadow-sm"
-              >
-                Create account with this plan →
-              </Link>
-            </div>
           </div>
 
           <aside className="rounded-[26px] border border-[#D8E0EF] bg-white p-6 shadow-[0_18px_55px_rgba(14,27,53,0.07)]">
@@ -179,7 +178,7 @@ export default function CheckoutPage() {
                     {selectedPlan.name}
                   </h2>
                   <p className="mt-1.5 text-sm text-white/72">
-                    Lexora Prep subscription
+                    Lexora Prep access
                   </p>
                 </div>
                 <p className="text-3xl font-black tracking-[-0.04em]">
@@ -207,22 +206,16 @@ export default function CheckoutPage() {
 
             <div className="mt-4 rounded-[20px] border border-[#E2E8F0] bg-white p-4">
               <p className="text-sm leading-6 text-[#475569]">
-                Lexora Prep is a digital educational service. Access to digital content begins immediately after purchase. Where permitted by applicable law, using or accessing the platform may affect refund or withdrawal rights.
+                Lexora Prep is a digital educational service. Paid access begins after registration and Paddle checkout. Free access does not require payment.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={continueToPaddle}
-              disabled={!checkoutReady}
-              className={`mt-5 w-full rounded-2xl px-5 py-3.5 text-sm font-black shadow-xl transition ${
-                checkoutReady
-                  ? "bg-[#0E1B35] text-white hover:bg-[#162B55]"
-                  : "cursor-not-allowed bg-[#CBD5E1] text-[#64748B]"
-              }`}
+            <Link
+              href={selectedPlan.registerUrl}
+              className="mt-5 flex w-full items-center justify-center rounded-2xl bg-[#0E1B35] px-5 py-3.5 text-sm font-black text-white shadow-xl transition hover:bg-[#162B55]"
             >
-              {checkoutReady ? "Continue to secure checkout →" : "Checkout is not available yet"}
-            </button>
+              {selectedPlan.key === "free" ? "Continue with free access →" : "Create account and continue →"}
+            </Link>
 
             <p className="mt-4 text-center text-xs leading-6 text-[#64748B]">
               By continuing, you agree to Lexora Prep&apos;s{" "}

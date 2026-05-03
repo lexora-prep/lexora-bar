@@ -1,112 +1,106 @@
 "use client"
 
-import { useState } from "react"
+import { FormEvent, useState } from "react"
 import Link from "next/link"
-import { createClient } from "@/utils/supabase/client"
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://lexoraprep.com"
 
 export default function ForgotPasswordPage() {
-  const supabase = createClient()
-
   const [email, setEmail] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
+  const [status, setStatus] = useState("")
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError("")
-    setSuccess("")
-
-    const normalizedEmail = email.trim()
-
-    if (!normalizedEmail) {
-      setError("Please enter your email.")
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: `${SITE_URL}/auth/confirm?next=/reset-password`,
-      })
-
-      if (error) {
-        setError(error.message)
-        return
-      }
-
-      setSuccess("Password reset email has been sent. Please check your inbox.")
-      setEmail("")
-    } catch {
-      setError("Something went wrong. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setStatus("If this email is registered, password reset instructions will be sent.")
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Forgot password
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Enter your email address and we will send you a password reset link.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              Email address
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-              disabled={loading}
+    <main className="min-h-screen bg-[#F7F8FC] px-5 py-5 text-[#0E1B35]">
+      <div className="mx-auto max-w-5xl">
+        <nav className="mb-8 flex h-12 items-center justify-between">
+          <Link href="/" className="inline-flex items-center gap-3 text-base font-black">
+            <img
+              src="/icon.png"
+              alt="Lexora Prep"
+              className="h-9 w-9 rounded-xl bg-white object-contain p-1 shadow-sm"
             />
+            <span>
+              Lexora <span className="text-[#7C3AED]">Prep</span>
+            </span>
+          </Link>
+
+          <Link
+            href="/login"
+            className="rounded-2xl border border-[#CBD5E1] bg-white px-4 py-2.5 text-sm font-black shadow-sm transition hover:border-[#7C3AED] hover:text-[#7C3AED]"
+          >
+            Back to log in
+          </Link>
+        </nav>
+
+        <section className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <p className="mb-3 inline-flex rounded-full border border-[#DDD6FE] bg-[#F3F0FF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#7C3AED]">
+              Account access
+            </p>
+
+            <h1 className="font-serif text-[44px] font-semibold leading-[1.04] tracking-[-0.045em] md:text-[54px]">
+              Reset your Lexora Prep password.
+            </h1>
+
+            <p className="mt-4 max-w-lg text-[15px] leading-7 text-[#475569]">
+              Enter the email linked to your account. If it exists in the system, you will receive reset instructions.
+            </p>
           </div>
 
-          {error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          ) : null}
-
-          {success ? (
-            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-              {success}
-            </div>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-[28px] border border-[#D8E0EF] bg-white p-6 shadow-[0_18px_55px_rgba(14,27,53,0.07)]"
           >
-            {loading ? "Sending..." : "Send reset link"}
-          </button>
-        </form>
+            <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF] text-2xl text-[#7C3AED]">
+              🔐
+            </div>
 
-        <div className="mt-6 text-sm text-slate-600">
-          <Link href="/login" className="font-medium text-slate-900 hover:underline">
-            Back to login
-          </Link>
-        </div>
+            <h2 className="text-center font-serif text-3xl font-semibold tracking-[-0.04em]">
+              Forgot password?
+            </h2>
+
+            <p className="mx-auto mt-2 max-w-sm text-center text-sm leading-6 text-[#64748B]">
+              We will send reset instructions if this email is connected to a Lexora Prep account.
+            </p>
+
+            <label className="mt-6 grid gap-2">
+              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">
+                Email
+              </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="h-12 rounded-2xl border border-[#D8E0EF] bg-[#F8FAFF] px-4 text-sm font-bold outline-none transition focus:border-[#7C3AED]"
+                placeholder="you@example.com"
+              />
+            </label>
+
+            <button
+              type="submit"
+              className="mt-5 w-full rounded-2xl bg-[#0E1B35] px-5 py-3.5 text-sm font-black text-white shadow-xl transition hover:bg-[#162B55]"
+            >
+              Send reset instructions
+            </button>
+
+            {status && (
+              <p className="mt-4 rounded-2xl border border-[#DDD6FE] bg-[#F8F5FF] p-4 text-sm font-bold leading-6 text-[#5B21B6]">
+                {status}
+              </p>
+            )}
+
+            <Link
+              href="/login"
+              className="mt-5 block text-center text-sm font-black text-[#64748B] hover:text-[#7C3AED]"
+            >
+              ← Return to log in
+            </Link>
+          </form>
+        </section>
       </div>
-    </div>
+    </main>
   )
 }
