@@ -4520,5 +4520,803 @@ select {
 })();
 </script>
 
+
+<style id="lexora-safe-animation-style">
+  .lexora-safe-hero-wrap {
+    width: min(760px, 100%);
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  .lexora-safe-panel {
+    overflow: hidden;
+    border-radius: 30px;
+    border: 1px solid rgba(203, 213, 225, 0.95);
+    background: #ffffff;
+    box-shadow: 0 34px 90px rgba(14, 27, 53, 0.14), 0 0 70px rgba(124, 58, 237, 0.10);
+  }
+
+  .lexora-safe-windowbar {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+    background: #f1f5fb;
+    border-bottom: 1px solid #dce3ef;
+  }
+
+  .lexora-safe-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .lexora-safe-url {
+    margin-left: 8px;
+    font-family: "JetBrains Mono", monospace;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .lexora-safe-body {
+    padding: 18px;
+    background: linear-gradient(180deg, #ffffff, #f8faff);
+  }
+
+  .lexora-safe-analytics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .lexora-safe-kpi {
+    min-height: 98px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 15px;
+  }
+
+  .lexora-safe-kpi.dark {
+    background: linear-gradient(135deg, #0e1b35, #162b55 55%, #5b21b6);
+    border-color: rgba(124, 58, 237, 0.35);
+  }
+
+  .lexora-safe-label {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .lexora-safe-value {
+    color: #0e1b35;
+    font-size: 27px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+  }
+
+  .lexora-safe-kpi.dark .lexora-safe-value {
+    color: #ffffff;
+  }
+
+  .lexora-safe-sub {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 850;
+    margin-top: 8px;
+  }
+
+  .lexora-safe-good {
+    color: #059669;
+  }
+
+  .lexora-safe-line {
+    height: 5px;
+    margin-top: 12px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .lexora-safe-line span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  }
+
+  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-line span {
+    animation: lexoraSafeWidth 1.15s ease forwards;
+  }
+
+  .lexora-safe-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .lexora-safe-card {
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 15px;
+  }
+
+  .lexora-safe-title {
+    color: #0e1b35;
+    font-size: 13px;
+    font-weight: 950;
+    margin-bottom: 12px;
+  }
+
+  .lexora-safe-row {
+    display: grid;
+    grid-template-columns: 1fr 54px 92px;
+    gap: 9px;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid #eef2f7;
+  }
+
+  .lexora-safe-row:first-of-type {
+    border-top: 0;
+  }
+
+  .lexora-safe-subject {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #0e1b35;
+    font-size: 12.5px;
+    font-weight: 900;
+  }
+
+  .lexora-safe-subject-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  .lexora-safe-count {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 850;
+    text-align: right;
+  }
+
+  .lexora-safe-count strong {
+    color: #7c3aed;
+  }
+
+  .lexora-safe-rowbar {
+    height: 5px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .lexora-safe-rowbar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-rowbar span {
+    animation: lexoraSafeWidth 1.1s ease forwards;
+  }
+
+  .lexora-safe-svg {
+    width: 100%;
+    height: 116px;
+  }
+
+  .lexora-safe-score-line {
+    stroke-dasharray: 440;
+    stroke-dashoffset: 440;
+  }
+
+  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-score-line {
+    animation: lexoraSafeDraw 1.7s ease forwards, lexoraSafeGlow 3s ease-in-out 2s infinite;
+  }
+
+  .lexora-safe-rule {
+    border-radius: 22px;
+    border: 1px solid rgba(124, 58, 237, 0.18);
+    background: #ffffff;
+    padding: 18px;
+  }
+
+  .lexora-safe-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #f3f0ff;
+    color: #7c3aed;
+    border: 1px solid #ddd6fe;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .lexora-safe-pill::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #7c3aed;
+  }
+
+  .lexora-safe-question {
+    color: #0e1b35;
+    font-size: 19px;
+    line-height: 1.45;
+    font-weight: 950;
+    letter-spacing: -0.03em;
+  }
+
+  .lexora-safe-helper {
+    margin-top: 10px;
+    color: #5b21b6;
+    font-size: 12px;
+    line-height: 1.55;
+    font-weight: 850;
+  }
+
+  .lexora-safe-answer {
+    margin-top: 14px;
+    border-radius: 18px;
+    border: 1px solid #dce3ef;
+    background: #f8faff;
+    padding: 15px;
+  }
+
+  .lexora-safe-answer-label {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+  }
+
+  .lexora-safe-typing {
+    min-height: 68px;
+    color: #0e1b35;
+    font-size: 13.5px;
+    line-height: 1.7;
+    font-weight: 700;
+  }
+
+  .lexora-safe-typing::after {
+    content: "";
+    display: inline-block;
+    width: 2px;
+    height: 15px;
+    margin-left: 2px;
+    transform: translateY(3px);
+    background: #7c3aed;
+    animation: lexoraSafeCaret 0.8s steps(1) infinite;
+  }
+
+  .lexora-safe-actions {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .lexora-safe-submit {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 14px;
+    border: 0;
+    background: #0e1b35;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 950;
+    box-shadow: 0 14px 24px rgba(14, 27, 53, 0.22);
+  }
+
+  .lexora-safe-submit.submitting {
+    animation: lexoraSafeSubmit 0.7s ease both;
+  }
+
+  .lexora-safe-status {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .lexora-safe-how {
+    padding: 96px 52px;
+    background: #ffffff;
+    border-top: 1px solid #e2e6f0;
+    border-bottom: 1px solid #e2e6f0;
+  }
+
+  .lexora-safe-how-inner {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+  }
+
+  .lexora-safe-how-title {
+    font-family: "DM Serif Display", serif;
+    color: #0e1b35;
+    font-size: clamp(42px, 5vw, 72px);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+    font-weight: 400;
+    margin-bottom: 18px;
+  }
+
+  .lexora-safe-how-title em {
+    color: #7c3aed;
+    font-style: italic;
+  }
+
+  .lexora-safe-how-copy {
+    max-width: 760px;
+    color: #475569;
+    font-size: 18px;
+    line-height: 1.75;
+    margin-bottom: 34px;
+  }
+
+  .lexora-safe-how-demo {
+    overflow: hidden;
+    border-radius: 28px;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    background: #ffffff;
+    box-shadow: 0 26px 74px rgba(14, 27, 53, 0.10);
+  }
+
+  .lexora-safe-how-body {
+    padding: 22px;
+    background: linear-gradient(180deg, #ffffff, #f8faff);
+  }
+
+  .lexora-safe-model-rule {
+    display: none;
+    color: #0e1b35;
+    font-family: "DM Serif Display", serif;
+    font-size: 22px;
+    line-height: 1.72;
+    animation: lexoraSafeReveal 0.45s ease both;
+  }
+
+  .lexora-safe-model-rule mark {
+    background: rgba(124, 58, 237, 0.10);
+    color: #5b21b6;
+    border-bottom: 2px solid rgba(124, 58, 237, 0.34);
+    border-radius: 4px;
+    padding: 0 3px;
+    font-style: italic;
+  }
+
+  .lexora-safe-how-result {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .lexora-safe-how-result-card {
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 16px;
+  }
+
+  .lexora-safe-how-result-value {
+    color: #7c3aed;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 950;
+  }
+
+  .lexora-safe-how-result-value.green {
+    color: #059669;
+  }
+
+  @keyframes lexoraSafeCaret {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes lexoraSafeSubmit {
+    0% { transform: translateY(0) scale(1); }
+    45% { transform: translateY(-1px) scale(0.98); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  @keyframes lexoraSafeWidth {
+    from { width: 0; }
+    to { width: var(--w); }
+  }
+
+  @keyframes lexoraSafeDraw {
+    to { stroke-dashoffset: 0; }
+  }
+
+  @keyframes lexoraSafeGlow {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(124, 58, 237, 0)); }
+    50% { filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.45)); }
+  }
+
+  @keyframes lexoraSafeReveal {
+    from { opacity: 0; transform: translateY(8px); filter: blur(2px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  @media (max-width: 1100px) {
+    .lexora-safe-analytics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lexora-safe-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .lexora-safe-analytics,
+    .lexora-safe-how-result {
+      grid-template-columns: 1fr;
+    }
+
+    .lexora-safe-how {
+      padding: 64px 22px;
+    }
+  }
+</style>
+
+
+<script id="lexora-safe-animation-script">
+(function () {
+  function byText(selector, text) {
+    var nodes = Array.prototype.slice.call(document.querySelectorAll(selector));
+    return nodes.find(function (node) {
+      return node && node.textContent && node.textContent.indexOf(text) !== -1;
+    });
+  }
+
+  function findHeroTarget() {
+    var headline = byText("h1, h2, div, section", "Memorize the rules");
+    if (!headline) return null;
+
+    var current = headline;
+    for (var i = 0; i < 6 && current; i++) {
+      if (current.tagName && current.tagName.toLowerCase() === "section") return current;
+      current = current.parentElement;
+    }
+
+    return headline.closest("section") || headline.parentElement;
+  }
+
+  function buildHeroDemo() {
+    var wrap = document.createElement("div");
+    wrap.id = "lexoraSafeHero";
+    wrap.className = "lexora-safe-hero-wrap";
+    wrap.innerHTML = `
+      <div class="lexora-safe-panel">
+        <div class="lexora-safe-body">
+          <div class="lexora-safe-analytics">
+            <div class="lexora-safe-kpi">
+              <div class="lexora-safe-label">BLL Score</div>
+              <div id="lexoraSafeScore" class="lexora-safe-value">41%</div>
+              <div id="lexoraSafeScoreSub" class="lexora-safe-sub lexora-safe-good">Awaiting analysis</div>
+              <div class="lexora-safe-line"><span style="--w:82%;background:#10B981"></span></div>
+            </div>
+
+            <div class="lexora-safe-kpi">
+              <div class="lexora-safe-label">Keywords</div>
+              <div id="lexoraSafeKeywords" class="lexora-safe-value">0/6</div>
+              <div class="lexora-safe-sub">Elements detected</div>
+              <div class="lexora-safe-line"><span style="--w:66%"></span></div>
+            </div>
+
+            <div class="lexora-safe-kpi">
+              <div class="lexora-safe-label">Nationwide</div>
+              <div id="lexoraSafeRank" class="lexora-safe-value">Top 78%</div>
+              <div class="lexora-safe-sub">Based on BLL score</div>
+              <div class="lexora-safe-line"><span style="--w:47%"></span></div>
+            </div>
+
+            <div class="lexora-safe-kpi dark">
+              <div class="lexora-safe-label">This Week</div>
+              <div id="lexoraSafeWeek" class="lexora-safe-value">16</div>
+              <div class="lexora-safe-sub">rules done · 32 weak areas</div>
+            </div>
+          </div>
+
+          <div class="lexora-safe-grid">
+            <div class="lexora-safe-card">
+              <div class="lexora-safe-title">Performance Analytics</div>
+
+              <div class="lexora-safe-row">
+                <div class="lexora-safe-subject"><span class="lexora-safe-subject-dot" style="background:#F59E0B"></span>Contracts</div>
+                <div class="lexora-safe-count"><strong id="lexoraSafeContracts">10</strong>/213</div>
+                <div class="lexora-safe-rowbar"><span style="--w:42%;background:#F59E0B"></span></div>
+              </div>
+
+              <div class="lexora-safe-row">
+                <div class="lexora-safe-subject"><span class="lexora-safe-subject-dot" style="background:#4F46E5"></span>Torts</div>
+                <div class="lexora-safe-count"><strong>7</strong>/234</div>
+                <div class="lexora-safe-rowbar"><span style="--w:36%;background:#4F46E5"></span></div>
+              </div>
+
+              <div class="lexora-safe-row">
+                <div class="lexora-safe-subject"><span class="lexora-safe-subject-dot" style="background:#10B981"></span>Evidence</div>
+                <div class="lexora-safe-count"><strong>13</strong>/211</div>
+                <div class="lexora-safe-rowbar"><span style="--w:68%;background:#10B981"></span></div>
+              </div>
+
+              <div class="lexora-safe-row">
+                <div class="lexora-safe-subject"><span class="lexora-safe-subject-dot" style="background:#F59E0B"></span>Civil Procedure</div>
+                <div class="lexora-safe-count"><strong>31</strong>/224</div>
+                <div class="lexora-safe-rowbar"><span style="--w:52%;background:#F59E0B"></span></div>
+              </div>
+            </div>
+
+            <div class="lexora-safe-card">
+              <div class="lexora-safe-title">Score trend · 30D</div>
+              <svg class="lexora-safe-svg" viewBox="0 0 320 120" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="lexoraSafeTrendFill" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#7C3AED" stop-opacity=".26"/>
+                    <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,92 L24,84 L45,92 L72,72 L94,60 L116,70 L140,54 L164,45 L186,58 L208,50 L230,62 L252,86 L276,72 L298,58 L320,42 L320,120 L0,120 Z" fill="url(#lexoraSafeTrendFill)"/>
+                <path class="lexora-safe-score-line" d="M0,92 L24,84 L45,92 L72,72 L94,60 L116,70 L140,54 L164,45 L186,58 L208,50 L230,62 L252,86 L276,72 L298,58 L320,42" fill="none" stroke="#7C3AED" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="320" cy="42" r="6" fill="#7C3AED"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="lexora-safe-rule">
+            <div class="lexora-safe-windowbar" style="margin:-18px -18px 18px -18px;border-radius:0">
+              <span class="lexora-safe-dot" style="background:#FF5F56"></span>
+              <span class="lexora-safe-dot" style="background:#FFBD2E"></span>
+              <span class="lexora-safe-dot" style="background:#27C93F"></span>
+              <span class="lexora-safe-url">lexora prep · live rule recall</span>
+            </div>
+
+            <div class="lexora-safe-pill">Property</div>
+            <div class="lexora-safe-question">What are the elements required to establish adverse possession?</div>
+            <div class="lexora-safe-helper">The user types the rule from memory. Lexora submits, records, analyzes, and updates the analytics above.</div>
+
+            <div class="lexora-safe-answer">
+              <div class="lexora-safe-answer-label">Your answer</div>
+              <div id="lexoraSafeTyping" class="lexora-safe-typing"></div>
+
+              <div class="lexora-safe-actions">
+                <button id="lexoraSafeSubmit" class="lexora-safe-submit" type="button">Submit answer</button>
+                <div id="lexoraSafeStatus" class="lexora-safe-status">Typing answer...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    return wrap;
+  }
+
+  function placeHeroDemo() {
+    if (document.getElementById("lexoraSafeHero")) return;
+
+    var hero = findHeroTarget();
+    if (!hero) return;
+
+    var oldSelectors = [
+      ".hero-stat",
+      ".hero-stats",
+      ".stat-card",
+      ".floating-stat",
+      ".recall-score-card",
+      ".keywords-card",
+      ".metric-card",
+      ".demo-metric-card",
+      ".hero-floating-card",
+      ".floating-metric"
+    ];
+
+    oldSelectors.forEach(function (selector) {
+      document.querySelectorAll(selector).forEach(function (node) {
+        node.style.display = "none";
+      });
+    });
+
+    var demo = buildHeroDemo();
+
+    var possibleRight = hero.querySelector(".hero-visual, .hero-right, .hero-demo-area, .demo-side, .hero-art");
+    if (possibleRight) {
+      possibleRight.innerHTML = "";
+      possibleRight.appendChild(demo);
+      return;
+    }
+
+    hero.appendChild(demo);
+  }
+
+  function runHeroAnimation() {
+    var wrap = document.getElementById("lexoraSafeHero");
+    var typing = document.getElementById("lexoraSafeTyping");
+    var submit = document.getElementById("lexoraSafeSubmit");
+    var status = document.getElementById("lexoraSafeStatus");
+
+    if (!wrap || !typing || !submit || !status) return;
+
+    var score = document.getElementById("lexoraSafeScore");
+    var scoreSub = document.getElementById("lexoraSafeScoreSub");
+    var keywords = document.getElementById("lexoraSafeKeywords");
+    var rank = document.getElementById("lexoraSafeRank");
+    var week = document.getElementById("lexoraSafeWeek");
+    var contracts = document.getElementById("lexoraSafeContracts");
+
+    var answer = "Adverse possession generally requires actual, open and notorious, exclusive, hostile, and continuous possession for the statutory period.";
+    var i = 0;
+
+    function typeAnswer() {
+      if (i <= answer.length) {
+        typing.textContent = answer.slice(0, i);
+        i += 1;
+        window.setTimeout(typeAnswer, 24);
+        return;
+      }
+
+      status.textContent = "Ready to submit";
+
+      window.setTimeout(function () {
+        submit.classList.add("submitting");
+        status.textContent = "Submitting answer...";
+
+        window.setTimeout(function () {
+          status.textContent = "Recording attempt...";
+
+          window.setTimeout(function () {
+            status.textContent = "Analyzing rule coverage...";
+
+            if (score) score.textContent = "82%";
+            if (scoreSub) scoreSub.textContent = "↑ +29% improved";
+            if (keywords) keywords.textContent = "4/6";
+            if (rank) rank.textContent = "Top 47%";
+            if (week) week.textContent = "17";
+            if (contracts) contracts.textContent = "11";
+
+            wrap.classList.add("is-analyzed");
+
+            window.setTimeout(function () {
+              status.textContent = "Answer analyzed";
+            }, 900);
+          }, 700);
+        }, 700);
+      }, 650);
+    }
+
+    typeAnswer();
+  }
+
+  function buildHowSection() {
+    var section = document.createElement("section");
+    section.id = "howitworks";
+    section.className = "lexora-safe-how";
+    section.innerHTML = `
+      <div class="lexora-safe-how-inner">
+        <h2 class="lexora-safe-how-title">Read. Recall. <em>See your gaps.</em></h2>
+        <p class="lexora-safe-how-copy">
+          Lexora shows a rule recall question first. You type the full rule from memory, then the model rule appears so you can compare your answer. After submission, Lexora shows keyword coverage, recall accuracy, and missed rule elements.
+        </p>
+
+        <div class="lexora-safe-how-demo">
+          <div class="lexora-safe-windowbar">
+            <span class="lexora-safe-dot" style="background:#FF5F56"></span>
+            <span class="lexora-safe-dot" style="background:#FFBD2E"></span>
+            <span class="lexora-safe-dot" style="background:#27C93F"></span>
+            <span class="lexora-safe-url">lexora prep · rule recall</span>
+          </div>
+
+          <div class="lexora-safe-how-body">
+            <div class="lexora-safe-rule">
+              <div class="lexora-safe-pill">Property</div>
+
+              <div id="lexoraSafeHowQuestion" class="lexora-safe-question">
+                What are the elements required to establish adverse possession?
+              </div>
+
+              <div id="lexoraSafeHowHelper" class="lexora-safe-helper">
+                Type the full rule from memory. The model rule statement appears in 10 seconds so you can compare before submitting.
+              </div>
+
+              <div id="lexoraSafeHowModel" class="lexora-safe-model-rule">
+                Adverse possession generally requires <mark>actual</mark>, <mark>open and notorious</mark>, <mark>exclusive</mark>, <mark>hostile</mark>, and <mark>continuous possession</mark> for the statutory period.
+              </div>
+            </div>
+
+            <div class="lexora-safe-answer">
+              <div class="lexora-safe-answer-label">Your answer</div>
+              <div class="lexora-safe-typing" style="min-height:82px">
+                Adverse possession generally requires actual, open and notorious, exclusive, hostile, and continuous possession for the statutory period.
+              </div>
+            </div>
+
+            <div class="lexora-safe-how-result">
+              <div class="lexora-safe-how-result-card">
+                <div class="lexora-safe-label">Recall score</div>
+                <div class="lexora-safe-how-result-value green">82%</div>
+              </div>
+              <div class="lexora-safe-how-result-card">
+                <div class="lexora-safe-label">Keywords found</div>
+                <div class="lexora-safe-how-result-value">4/6</div>
+              </div>
+              <div class="lexora-safe-how-result-card">
+                <div class="lexora-safe-label">Missed element</div>
+                <div class="lexora-safe-how-result-value">Hostile</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    return section;
+  }
+
+  function replaceBrokenHowSection() {
+    var existing = document.getElementById("howitworks");
+
+    if (!existing) {
+      var readNode = byText("section, div", "Read. Recall.");
+      if (readNode) {
+        existing = readNode.closest("section") || readNode;
+      }
+    }
+
+    if (!existing) return;
+
+    var replacement = buildHowSection();
+    existing.replaceWith(replacement);
+
+    window.setTimeout(function () {
+      var q = document.getElementById("lexoraSafeHowQuestion");
+      var h = document.getElementById("lexoraSafeHowHelper");
+      var r = document.getElementById("lexoraSafeHowModel");
+
+      if (q) q.style.display = "none";
+      if (h) h.style.display = "none";
+      if (r) r.style.display = "block";
+    }, 10000);
+  }
+
+  function run() {
+    placeHeroDemo();
+    replaceBrokenHowSection();
+    runHeroAnimation();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
+</script>
+
 </body>
 </html>
