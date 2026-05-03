@@ -1,8 +1,44 @@
+"use client"
+
+import { useEffect } from "react"
 import Link from "next/link"
 
 export default function AboutPage() {
+  useEffect(() => {
+    const blockContextMenu = (event: MouseEvent) => {
+      event.preventDefault()
+    }
+
+    const blockCopyKeys = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase()
+      const blocked =
+        (event.ctrlKey || event.metaKey) &&
+        ["c", "x", "a", "s", "p", "u"].includes(key)
+
+      if (blocked) {
+        event.preventDefault()
+      }
+    }
+
+    const blockCopy = (event: ClipboardEvent) => {
+      event.preventDefault()
+    }
+
+    document.addEventListener("contextmenu", blockContextMenu)
+    document.addEventListener("keydown", blockCopyKeys)
+    document.addEventListener("copy", blockCopy)
+    document.addEventListener("cut", blockCopy)
+
+    return () => {
+      document.removeEventListener("contextmenu", blockContextMenu)
+      document.removeEventListener("keydown", blockCopyKeys)
+      document.removeEventListener("copy", blockCopy)
+      document.removeEventListener("cut", blockCopy)
+    }
+  }, [])
+
   return (
-    <main className="min-h-screen bg-[#F7F8FC] text-[#0E1B35]">
+    <main className="min-h-screen select-none bg-[#F7F8FC] text-[#0E1B35]" onCopy={(event) => event.preventDefault()} onCut={(event) => event.preventDefault()} onContextMenu={(event) => event.preventDefault()} draggable={false}>
       <header className="border-b border-[#E2E8F0] bg-[#F7F8FC]/95">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="inline-flex items-center gap-3 text-base font-black">
