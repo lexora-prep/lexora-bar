@@ -2991,6 +2991,90 @@ select {
   box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
 }
 
+
+/* Homepage statistics snapshot */
+.analytics-showcase{
+  padding:100px 52px;
+  background:var(--white);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+
+.analytics-grid{
+  max-width:1200px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+}
+
+.analytics-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--rl);
+  padding:26px;
+  transition:.22s;
+  position:relative;
+  overflow:hidden;
+}
+
+.analytics-card:hover{
+  box-shadow:var(--sh-lg);
+  transform:translateY(-2px);
+}
+
+.analytics-number{
+  font-size:42px;
+  font-weight:800;
+  letter-spacing:-1.5px;
+  color:var(--purple-2);
+  margin-bottom:8px;
+}
+
+.analytics-card h3{
+  font-size:16px;
+  font-weight:700;
+  color:var(--navy);
+  margin-bottom:8px;
+}
+
+.analytics-card p{
+  font-size:13.5px;
+  color:var(--text-3);
+  line-height:1.75;
+}
+
+.analytics-mini-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+
+.analytics-mini-pill{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  border:1px solid var(--purple-mid);
+  background:var(--purple-dim);
+  color:var(--purple-2);
+  padding:5px 11px;
+  font-size:11px;
+  font-weight:700;
+}
+
+@media(max-width:1060px){
+  .analytics-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:768px){
+  .analytics-showcase{
+    padding:64px 20px;
+  }
+}
+
 </style>
 </head>
 
@@ -3413,6 +3497,57 @@ select {
       </div>
     </div>
   </div>
+
+  
+  <div class="analytics-showcase" id="analytics">
+    <div class="demo-inner">
+      <div class="section-eyebrow">
+        <div class="section-eyebrow-line"></div>
+        Progress snapshot
+      </div>
+
+      <div class="section-title" style="max-width:640px">
+        See your rule memory in <em>real numbers.</em>
+      </div>
+
+      <p class="section-sub">
+        Lexora Prep does not just show rules. It tracks your recall performance, weak areas, spaced reviews, and study consistency so users can see whether their Black Letter Law memory is improving.
+      </p>
+
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <div class="analytics-number">82%</div>
+          <h3>Recall score tracking</h3>
+          <p>Users can see how accurately they recall rule statements and whether their wording is improving over time.</p>
+          <div class="analytics-mini-row">
+            <span class="analytics-mini-pill">BLL score</span>
+            <span class="analytics-mini-pill">Rule recall</span>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-number">32</div>
+          <h3>Weak rules identified</h3>
+          <p>Rules with lower recall scores are flagged so users know exactly what needs more practice.</p>
+          <div class="analytics-mini-row">
+            <span class="analytics-mini-pill">Weak areas</span>
+            <span class="analytics-mini-pill">Focused review</span>
+          </div>
+        </div>
+
+        <div class="analytics-card">
+          <div class="analytics-number">97</div>
+          <h3>Spaced reviews due</h3>
+          <p>Rules return at planned intervals so users keep reviewing before memory fades.</p>
+          <div class="analytics-mini-row">
+            <span class="analytics-mini-pill">Spaced repetition</span>
+            <span class="analytics-mini-pill">Daily plan</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <div class="how-section">
     <div class="how-inner">
