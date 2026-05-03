@@ -5318,5 +5318,52 @@ select {
 })();
 </script>
 
+
+<script id="lexora-checkout-link-script">
+(function () {
+  function normalizeText(value) {
+    return (value || "").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  function wirePricingButtons() {
+    var links = Array.prototype.slice.call(document.querySelectorAll("a, button"));
+
+    links.forEach(function (el) {
+      var text = normalizeText(el.textContent);
+
+      var isBll =
+        text.indexOf("start training") !== -1 ||
+        text.indexOf("choose bll") !== -1 ||
+        text.indexOf("bll monthly") !== -1 ||
+        text.indexOf("start bll") !== -1;
+
+      var isPremium =
+        text.indexOf("choose premium") !== -1 ||
+        text.indexOf("premium") !== -1;
+
+      if (!isBll && !isPremium) return;
+
+      var target = isPremium ? "/checkout?plan=premium" : "/checkout?plan=bll-monthly";
+
+      if (el.tagName.toLowerCase() === "a") {
+        el.setAttribute("href", target);
+        return;
+      }
+
+      el.addEventListener("click", function (event) {
+        event.preventDefault();
+        window.location.href = target;
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", wirePricingButtons);
+  } else {
+    wirePricingButtons();
+  }
+})();
+</script>
+
 </body>
 </html>
