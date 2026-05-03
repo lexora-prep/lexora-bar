@@ -2665,121 +2665,7 @@ footer{
   }
 }
 
-/* NAVBAR FINAL ALIGNMENT FIX */
-nav{
-  height:72px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:space-between !important;
-  padding:0 56px !important;
-  position:sticky !important;
-  top:0 !important;
-}
 
-.nav-logo{
-  height:72px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:flex-start !important;
-  gap:10px !important;
-  flex:0 0 240px !important;
-  line-height:1 !important;
-  position:relative !important;
-  top:0 !important;
-  margin:0 !important;
-  padding:0 !important;
-}
-
-.logo-mark{
-  width:38px !important;
-  height:38px !important;
-  display:block !important;
-  object-fit:contain !important;
-  margin:0 !important;
-  padding:0 !important;
-  flex-shrink:0 !important;
-}
-
-.nav-links{
-  position:absolute !important;
-  left:50% !important;
-  top:50% !important;
-  transform:translate(-50%,-50%) !important;
-  height:72px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:18px !important;
-  background:transparent !important;
-  border:none !important;
-  box-shadow:none !important;
-  padding:0 !important;
-  margin:0 !important;
-}
-
-.nav-links a{
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  height:40px !important;
-  padding:0 4px !important;
-  margin:0 !important;
-  line-height:1 !important;
-  font-size:13.5px !important;
-  font-weight:650 !important;
-  border-radius:8px !important;
-}
-
-.nav-cta{
-  height:72px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:flex-end !important;
-  gap:10px !important;
-  flex:0 0 240px !important;
-  margin:0 !important;
-  padding:0 !important;
-  position:relative !important;
-  top:0 !important;
-}
-
-.btn-ghost,
-.btn-primary{
-  height:40px !important;
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  margin:0 !important;
-  line-height:1 !important;
-  white-space:nowrap !important;
-}
-
-@media(max-width:768px){
-  nav{
-    height:66px !important;
-    padding:0 18px !important;
-  }
-
-  .nav-logo,
-  .nav-cta{
-    height:66px !important;
-    flex:0 0 auto !important;
-  }
-
-  .nav-links{
-    display:none !important;
-  }
-
-  .btn-ghost,
-  .btn-primary{
-    height:36px !important;
-    padding:0 13px !important;
-    font-size:12.5px !important;
-  }
-}
-
-
-/* === LEXORA PUBLIC POLISH PATCH === */
 body,
 nav,
 main,
@@ -2914,10 +2800,10 @@ button {
     font-size:10px !important;
   }
 }
-/* === END LEXORA PUBLIC POLISH PATCH === */
 
 
-/* FINAL LEXORA LANDING FIXES */
+
+
 html,
 body,
 main,
@@ -2945,264 +2831,9 @@ select {
   user-select: text;
 }
 
-/* Remove the rotating/diamond/square background behind the pricing card */
-.price-card.featured::before,
-.price-card.featured::after {
-  content: none !important;
-  display: none !important;
-  animation: none !important;
-  transform: none !important;
-  opacity: 0 !important;
-}
-
-/* Keep the Most popular label visible and clean */
-.popular-badge {
-  z-index: 5 !important;
-  overflow: visible !important;
-  white-space: nowrap !important;
-}
-
-/* Footer readability fix */
-.footer-legal,
-.footer-legal *,
-.footer-bottom,
-.footer-bottom *,
-.footer-col a,
-.footer-cookie-btn,
-.footer-brand p {
-  color: rgba(255,255,255,0.62) !important;
-}
-
-.footer-links a {
-  color: rgba(255,255,255,0.72) !important;
-}
-
-.footer-links a:hover,
-.footer-col a:hover,
-.footer-cookie-btn:hover {
-  color: #ffffff !important;
-}
-
-/* Logo visibility in dark footer */
-.footer-brand-logo img {
-  background: rgba(255,255,255,0.96) !important;
-  border-radius: 999px !important;
-  padding: 3px !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
-}
-
-
-/* Homepage statistics snapshot */
-.analytics-showcase{
-  padding:100px 52px;
-  background:var(--white);
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-}
-
-.analytics-grid{
-  max-width:1200px;
-  margin:0 auto;
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:16px;
-}
-
-.analytics-card{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:var(--rl);
-  padding:26px;
-  transition:.22s;
-  position:relative;
-  overflow:hidden;
-}
-
-.analytics-card:hover{
-  box-shadow:var(--sh-lg);
-  transform:translateY(-2px);
-}
-
-.analytics-number{
-  font-size:42px;
-  font-weight:800;
-  letter-spacing:-1.5px;
-  color:var(--purple-2);
-  margin-bottom:8px;
-}
-
-.analytics-card h3{
-  font-size:16px;
-  font-weight:700;
-  color:var(--navy);
-  margin-bottom:8px;
-}
-
-.analytics-card p{
-  font-size:13.5px;
-  color:var(--text-3);
-  line-height:1.75;
-}
-
-.analytics-mini-row{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:16px;
-}
-
-.analytics-mini-pill{
-  display:inline-flex;
-  align-items:center;
-  border-radius:999px;
-  border:1px solid var(--purple-mid);
-  background:var(--purple-dim);
-  color:var(--purple-2);
-  padding:5px 11px;
-  font-size:11px;
-  font-weight:700;
-}
-
-@media(max-width:1060px){
-  .analytics-grid{
-    grid-template-columns:1fr;
-  }
-}
-
-@media(max-width:768px){
-  .analytics-showcase{
-    padding:64px 20px;
-  }
-}
-
-
-/* Rule recall delayed reveal demo */
-.recall-question-inline{
-  margin-bottom:14px;
-  border:1px solid rgba(124,58,237,.22);
-  background:linear-gradient(180deg,#FFFFFF,#F8FAFF);
-  border-radius:18px;
-  padding:18px 20px;
-}
-
-.recall-question-label{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-bottom:8px;
-  color:var(--purple-2);
-  font-size:11px;
-  font-weight:900;
-  letter-spacing:.16em;
-  text-transform:uppercase;
-}
-
-.recall-question-dot{
-  width:9px;
-  height:9px;
-  border-radius:999px;
-  background:var(--purple-2);
-  box-shadow:0 0 0 5px rgba(124,58,237,.12);
-}
-
-.recall-question-text{
-  color:var(--navy);
-  font-size:20px;
-  line-height:1.45;
-  font-weight:800;
-  letter-spacing:-.02em;
-}
-
-.rule-memory-instruction{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
-  margin:12px 0 0;
-  border:1px solid rgba(124,58,237,.2);
-  background:#F5F1FF;
-  border-radius:999px;
-  padding:9px 13px 9px 14px;
-  color:#5B21B6;
-  font-size:12px;
-  font-weight:800;
-}
-
-.rule-memory-countdown{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-width:36px;
-  height:26px;
-  border-radius:999px;
-  background:#FFFFFF;
-  color:#7C3AED;
-  box-shadow:inset 0 0 0 1px rgba(124,58,237,.18);
-  font-family:"JetBrains Mono",monospace;
-  font-size:12px;
-  font-weight:900;
-}
-
-.rule-hidden-state{
-  min-height:96px;
-  display:flex;
-  align-items:center;
-  border-radius:18px;
-  background:
-    linear-gradient(90deg, rgba(124,58,237,.10), rgba(14,27,53,.04), rgba(124,58,237,.10));
-  background-size:220% 100%;
-  animation:lexoraRuleWait 2.2s ease-in-out infinite;
-  padding:22px;
-  color:#5B21B6;
-  font-size:17px;
-  line-height:1.65;
-  font-weight:800;
-}
-
-.rule-hidden-state strong{
-  color:var(--navy);
-}
-
-.rule-answer-revealed{
-  animation:lexoraRuleReveal .45s ease both;
-}
-
-@keyframes lexoraRuleWait{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
-}
-
-@keyframes lexoraRuleReveal{
-  from{opacity:0;transform:translateY(8px)}
-  to{opacity:1;transform:translateY(0)}
-}
 
 
 
-/* =========================================================
-   LEXORA FINAL HOMEPAGE PATCH:
-   sticky nav, animated analytics snapshot, pricing cleanup,
-   footer link cleanup support.
-   ========================================================= */
-
-/* Stable sticky nav. Prevents page text from blending into menu while scrolling. */
-nav,
-.lexora-nav,
-.site-nav,
-.main-nav {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 99999 !important;
-  min-height: 72px !important;
-  background: rgba(247, 248, 252, 0.98) !important;
-  backdrop-filter: blur(18px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
-  border-bottom: 1px solid rgba(203, 213, 225, 0.75) !important;
-  box-shadow: 0 10px 34px rgba(14, 27, 53, 0.08) !important;
-}
-
-/* Keep nav children visually aligned in one straight row. */
 nav .nav-logo,
 nav .nav-links,
 nav .nav-cta {
@@ -3790,6 +3421,536 @@ nav .nav-cta {
   }
 }
 
+
+
+nav,
+.lexora-nav,
+.site-nav,
+.main-nav{
+  position:sticky!important;
+  top:0!important;
+  z-index:99999!important;
+  min-height:76px!important;
+  background:rgba(247,248,252,.985)!important;
+  backdrop-filter:blur(18px) saturate(140%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(140%)!important;
+  border-bottom:1px solid rgba(203,213,225,.82)!important;
+  box-shadow:0 10px 34px rgba(14,27,53,.08)!important;
+}
+
+nav .nav-inner,
+.lexora-nav .nav-inner,
+.site-nav .nav-inner,
+.main-nav .nav-inner{
+  width:100%!important;
+  max-width:none!important;
+  min-height:76px!important;
+  display:grid!important;
+  grid-template-columns:minmax(210px,280px) minmax(420px,1fr) minmax(240px,320px)!important;
+  align-items:center!important;
+  column-gap:24px!important;
+  padding-left:clamp(24px,3vw,52px)!important;
+  padding-right:clamp(24px,3vw,52px)!important;
+}
+
+nav .nav-logo,
+.lexora-nav .nav-logo,
+.site-nav .nav-logo,
+.main-nav .nav-logo{
+  grid-column:1!important;
+  justify-self:start!important;
+  position:static!important;
+  transform:none!important;
+}
+
+nav .nav-links,
+.lexora-nav .nav-links,
+.site-nav .nav-links,
+.main-nav .nav-links{
+  grid-column:2!important;
+  justify-self:center!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:clamp(22px,2vw,36px)!important;
+  width:auto!important;
+  max-width:100%!important;
+  white-space:nowrap!important;
+  position:static!important;
+  left:auto!important;
+  right:auto!important;
+  top:auto!important;
+  transform:none!important;
+  margin:0!important;
+}
+
+nav .nav-cta,
+.lexora-nav .nav-cta,
+.site-nav .nav-cta,
+.main-nav .nav-cta{
+  grid-column:3!important;
+  justify-self:end!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:12px!important;
+  position:static!important;
+  transform:none!important;
+  margin:0!important;
+}
+
+.hero-stat,
+.hero-stats,
+.stat-card,
+.floating-stat,
+.recall-score-card,
+.keywords-card,
+.metric-card,
+.demo-metric-card{
+  display:none!important;
+}
+
+.lexora-live-system{
+  width:min(760px,100%);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:16px;
+}
+
+.lexora-live-card{
+  overflow:hidden;
+  border-radius:26px;
+  background:#fff;
+  border:1px solid rgba(203,213,225,.9);
+  box-shadow:0 28px 80px rgba(14,27,53,.12),0 0 70px rgba(124,58,237,.08);
+}
+
+.lexora-live-bar{
+  height:40px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 16px;
+  background:#F1F5FB;
+  border-bottom:1px solid #DCE3EF;
+}
+
+.lexora-live-dot{
+  width:10px;
+  height:10px;
+  border-radius:999px;
+}
+
+.lexora-live-url{
+  margin-left:8px;
+  font-family:"JetBrains Mono",monospace;
+  color:#94A3B8;
+  font-size:12px;
+  font-weight:700;
+}
+
+.lexora-live-body{
+  padding:18px;
+  background:linear-gradient(180deg,#FFFFFF,#F8FAFF);
+}
+
+.lexora-live-rule{
+  border-radius:20px;
+  border:1px solid rgba(124,58,237,.18);
+  background:#fff;
+  padding:18px;
+}
+
+.lexora-live-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  height:28px;
+  padding:0 12px;
+  border-radius:999px;
+  background:#F3F0FF;
+  color:#7C3AED;
+  border:1px solid #DDD6FE;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+
+.lexora-live-pill::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#7C3AED;
+}
+
+.lexora-live-question{
+  color:#0E1B35;
+  font-size:19px;
+  line-height:1.45;
+  font-weight:900;
+  letter-spacing:-.03em;
+}
+
+.lexora-live-small{
+  margin-top:10px;
+  color:#5B21B6;
+  font-size:12px;
+  line-height:1.55;
+  font-weight:800;
+}
+
+.lexora-live-answer-box{
+  margin-top:14px;
+  border-radius:18px;
+  border:1px solid #DCE3EF;
+  background:#F8FAFF;
+  padding:15px;
+}
+
+.lexora-live-answer-label{
+  color:#94A3B8;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  margin-bottom:9px;
+}
+
+.lexora-live-typing{
+  min-height:68px;
+  color:#0E1B35;
+  font-size:13.5px;
+  line-height:1.7;
+  font-weight:650;
+}
+
+.lexora-live-typing::after{
+  content:"";
+  display:inline-block;
+  width:2px;
+  height:15px;
+  margin-left:2px;
+  transform:translateY(3px);
+  background:#7C3AED;
+  animation:lexoraCaret .8s steps(1) infinite;
+}
+
+.lexora-live-actions{
+  margin-top:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.lexora-live-submit{
+  height:40px;
+  padding:0 18px;
+  border-radius:14px;
+  border:0;
+  background:#0E1B35;
+  color:#fff;
+  font-size:13px;
+  font-weight:900;
+  box-shadow:0 14px 24px rgba(14,27,53,.22);
+}
+
+.lexora-live-submit.submitting{
+  animation:lexoraSubmitPulse .7s ease both;
+}
+
+.lexora-live-status{
+  color:#64748B;
+  font-size:12px;
+  font-weight:800;
+}
+
+.lexora-live-analytics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+.lexora-live-kpi{
+  border-radius:18px;
+  border:1px solid #E2E8F0;
+  background:#fff;
+  padding:14px;
+  min-height:96px;
+}
+
+.lexora-live-kpi.dark{
+  background:linear-gradient(135deg,#0E1B35,#162B55 55%,#5B21B6);
+  border-color:rgba(124,58,237,.35);
+}
+
+.lexora-live-kpi-label{
+  color:#94A3B8;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+
+.lexora-live-kpi-value{
+  color:#0E1B35;
+  font-size:27px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:-.05em;
+}
+
+.lexora-live-kpi.dark .lexora-live-kpi-value{
+  color:#fff;
+}
+
+.lexora-live-kpi-sub{
+  color:#94A3B8;
+  font-size:11px;
+  font-weight:800;
+  margin-top:8px;
+}
+
+.lexora-live-kpi-good{
+  color:#059669;
+}
+
+.lexora-live-kpi-bad{
+  color:#DC2626;
+}
+
+.lexora-live-line{
+  height:5px;
+  border-radius:999px;
+  background:#E2E8F0;
+  overflow:hidden;
+  margin-top:12px;
+}
+
+.lexora-live-line span{
+  display:block;
+  height:100%;
+  width:0;
+  border-radius:999px;
+  background:linear-gradient(90deg,#7C3AED,#A78BFA);
+}
+
+.lexora-live-system.analyzed .lexora-live-line span{
+  animation:lexoraWidthFill 1.2s ease forwards;
+}
+
+.lexora-live-bottom{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:10px;
+}
+
+.lexora-live-table,
+.lexora-live-chart{
+  border-radius:18px;
+  border:1px solid #E2E8F0;
+  background:#fff;
+  padding:14px;
+}
+
+.lexora-live-section-title{
+  color:#0E1B35;
+  font-size:13px;
+  font-weight:900;
+  margin-bottom:12px;
+}
+
+.lexora-live-row{
+  display:grid;
+  grid-template-columns:1fr 56px 94px;
+  gap:9px;
+  align-items:center;
+  padding:8px 0;
+  border-top:1px solid #EEF2F7;
+}
+
+.lexora-live-row:first-of-type{
+  border-top:0;
+}
+
+.lexora-live-subject{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#0E1B35;
+  font-size:12.5px;
+  font-weight:900;
+}
+
+.lexora-live-subject-dot{
+  width:7px;
+  height:7px;
+  border-radius:999px;
+}
+
+.lexora-live-count{
+  color:#94A3B8;
+  font-size:12px;
+  font-weight:800;
+  text-align:right;
+}
+
+.lexora-live-count strong{
+  color:#7C3AED;
+}
+
+.lexora-live-rowbar{
+  height:5px;
+  border-radius:999px;
+  background:#E2E8F0;
+  overflow:hidden;
+}
+
+.lexora-live-rowbar span{
+  display:block;
+  height:100%;
+  width:0;
+  border-radius:999px;
+  background:linear-gradient(90deg,#7C3AED,#A78BFA);
+}
+
+.lexora-live-system.analyzed .lexora-live-rowbar span{
+  animation:lexoraWidthFill 1.1s ease forwards;
+}
+
+.lexora-live-svg{
+  width:100%;
+  height:112px;
+}
+
+.lexora-live-score-line{
+  stroke-dasharray:440;
+  stroke-dashoffset:440;
+}
+
+.lexora-live-system.analyzed .lexora-live-score-line{
+  animation:lexoraDrawLine 1.8s ease forwards, lexoraPulseLine 3s ease-in-out 2s infinite;
+}
+
+.lexora-demo-rule-only{
+  border-radius:22px;
+  border:1px solid rgba(124,58,237,.18);
+  background:#fff;
+  padding:20px;
+  box-shadow:0 18px 34px rgba(14,27,53,.07);
+}
+
+.lexora-demo-question{
+  color:#0E1B35;
+  font-size:20px;
+  line-height:1.45;
+  font-weight:900;
+  letter-spacing:-.03em;
+}
+
+.lexora-demo-helper{
+  margin-top:10px;
+  color:#5B21B6;
+  font-size:12px;
+  line-height:1.55;
+  font-weight:800;
+}
+
+.lexora-demo-model-rule{
+  display:none;
+  color:#0E1B35;
+  font-family:"DM Serif Display",serif;
+  font-size:20px;
+  line-height:1.72;
+  animation:lexoraRevealRule .45s ease both;
+}
+
+.lexora-demo-model-rule mark{
+  background:rgba(124,58,237,.10);
+  color:#5B21B6;
+  border-bottom:2px solid rgba(124,58,237,.34);
+  border-radius:4px;
+  padding:0 3px;
+  font-style:italic;
+}
+
+@keyframes lexoraCaret{
+  0%,49%{opacity:1}
+  50%,100%{opacity:0}
+}
+
+@keyframes lexoraSubmitPulse{
+  0%{transform:translateY(0) scale(1)}
+  45%{transform:translateY(-1px) scale(.98)}
+  100%{transform:translateY(0) scale(1)}
+}
+
+@keyframes lexoraWidthFill{
+  from{width:0}
+  to{width:var(--w)}
+}
+
+@keyframes lexoraDrawLine{
+  to{stroke-dashoffset:0}
+}
+
+@keyframes lexoraPulseLine{
+  0%,100%{filter:drop-shadow(0 0 0 rgba(124,58,237,0))}
+  50%{filter:drop-shadow(0 0 8px rgba(124,58,237,.45))}
+}
+
+@keyframes lexoraRevealRule{
+  from{opacity:0;transform:translateY(8px);filter:blur(2px)}
+  to{opacity:1;transform:translateY(0);filter:blur(0)}
+}
+
+@media(max-width:1100px){
+  .lexora-live-analytics{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .lexora-live-bottom{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:980px){
+  nav .nav-inner,
+  .lexora-nav .nav-inner,
+  .site-nav .nav-inner,
+  .main-nav .nav-inner{
+    display:flex!important;
+    justify-content:space-between!important;
+  }
+
+  nav .nav-links,
+  .lexora-nav .nav-links,
+  .site-nav .nav-links,
+  .main-nav .nav-links{
+    position:static!important;
+    transform:none!important;
+  }
+}
+
+@media(max-width:760px){
+  nav .nav-links,
+  .lexora-nav .nav-links,
+  .site-nav .nav-links,
+  .main-nav .nav-links{
+    display:none!important;
+  }
+
+  .lexora-live-analytics{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 
@@ -3893,36 +4054,114 @@ nav .nav-cta {
         </div>
       </div>
 
-      <div class="hero-right">
-        <div class="mock-chip mock-chip-1">
-          <div class="mock-chip-dot" style="background:var(--green);animation:pulseDot 2s infinite"></div>
-          Rule recalled correctly
-        </div>
+      
+              <div id="lexoraLiveSystem" class="lexora-live-system">
+                <div class="lexora-live-card">
+                  <div class="lexora-live-bar">
+                    <span class="lexora-live-dot" style="background:#FF5F56"></span>
+                    <span class="lexora-live-dot" style="background:#FFBD2E"></span>
+                    <span class="lexora-live-dot" style="background:#27C93F"></span>
+                    <span class="lexora-live-url">lexora prep · live rule recall</span>
+                  </div>
 
-        <div class="mock-chip mock-chip-2">
-          <div class="mock-chip-dot" style="background:var(--purple-2)"></div>
-          Weak area flagged
-        </div>
+                  <div class="lexora-live-body">
+                    <div class="lexora-live-rule">
+                      <div class="lexora-live-pill">Property</div>
+                      <div class="lexora-live-question">What are the elements required to establish adverse possession?</div>
+                      <div class="lexora-live-small">Lexora asks for the rule first. The user types from memory, submits, and the system analyzes the answer.</div>
+                    </div>
 
-        <div class="hero-mockup">
-          <div class="mock-rule-card">
-            <div class="mock-rule-subject">
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="var(--purple-2)"><circle cx="5" cy="5" r="4"/></svg>
-              Contracts
-            </div>
+                    <div class="lexora-live-answer-box">
+                      <div class="lexora-live-answer-label">Your answer</div>
+                      <div id="lexoraLiveTyping" class="lexora-live-typing"></div>
 
-            <div class="mock-rule-label">Rule statement</div>
+                      <div class="lexora-live-actions">
+                        <button id="lexoraLiveSubmit" class="lexora-live-submit" type="button">Submit answer</button>
+                        <div id="lexoraLiveStatus" class="lexora-live-status">Typing answer...</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            <div class="mock-rule-text">
-              An <span class="kw">offer</span> is a <span class="kw">manifestation of willingness</span> to enter into a bargain, so made as to justify another person in understanding that <span class="kw">assent is invited</span> and will conclude the bargain.
-            </div>
+                <div class="lexora-live-card">
+                  <div class="lexora-live-body">
+                    <div class="lexora-live-analytics">
+                      <div class="lexora-live-kpi">
+                        <div class="lexora-live-kpi-label">BLL Score</div>
+                        <div id="lexoraLiveScore" class="lexora-live-kpi-value">41%</div>
+                        <div id="lexoraLiveScoreSub" class="lexora-live-kpi-sub lexora-live-kpi-good">Awaiting analysis</div>
+                        <div class="lexora-live-line"><span style="--w:82%;background:#10B981"></span></div>
+                      </div>
 
-            <div class="mock-tags">
-              <span class="mock-tag">Formation</span>
-              <span class="mock-tag">Offer</span>
-              <span class="mock-tag">Assent</span>
-            </div>
-          </div>
+                      <div class="lexora-live-kpi">
+                        <div class="lexora-live-kpi-label">Keywords</div>
+                        <div id="lexoraLiveKeywords" class="lexora-live-kpi-value">0/6</div>
+                        <div class="lexora-live-kpi-sub">Elements detected</div>
+                        <div class="lexora-live-line"><span style="--w:66%"></span></div>
+                      </div>
+
+                      <div class="lexora-live-kpi">
+                        <div class="lexora-live-kpi-label">Nationwide</div>
+                        <div id="lexoraLiveRank" class="lexora-live-kpi-value">Top 78%</div>
+                        <div class="lexora-live-kpi-sub">Based on BLL score</div>
+                        <div class="lexora-live-line"><span style="--w:47%"></span></div>
+                      </div>
+
+                      <div class="lexora-live-kpi dark">
+                        <div class="lexora-live-kpi-label">This Week</div>
+                        <div id="lexoraLiveWeek" class="lexora-live-kpi-value">16</div>
+                        <div class="lexora-live-kpi-sub">rules done · 32 weak areas</div>
+                      </div>
+                    </div>
+
+                    <div class="lexora-live-bottom">
+                      <div class="lexora-live-table">
+                        <div class="lexora-live-section-title">Performance Analytics</div>
+
+                        <div class="lexora-live-row">
+                          <div class="lexora-live-subject"><span class="lexora-live-subject-dot" style="background:#F59E0B"></span>Contracts</div>
+                          <div class="lexora-live-count"><strong id="lexoraContractsCount">10</strong>/213</div>
+                          <div class="lexora-live-rowbar"><span style="--w:42%;background:#F59E0B"></span></div>
+                        </div>
+
+                        <div class="lexora-live-row">
+                          <div class="lexora-live-subject"><span class="lexora-live-subject-dot" style="background:#4F46E5"></span>Torts</div>
+                          <div class="lexora-live-count"><strong>7</strong>/234</div>
+                          <div class="lexora-live-rowbar"><span style="--w:36%;background:#4F46E5"></span></div>
+                        </div>
+
+                        <div class="lexora-live-row">
+                          <div class="lexora-live-subject"><span class="lexora-live-subject-dot" style="background:#10B981"></span>Evidence</div>
+                          <div class="lexora-live-count"><strong>13</strong>/211</div>
+                          <div class="lexora-live-rowbar"><span style="--w:68%;background:#10B981"></span></div>
+                        </div>
+
+                        <div class="lexora-live-row">
+                          <div class="lexora-live-subject"><span class="lexora-live-subject-dot" style="background:#F59E0B"></span>Civil Procedure</div>
+                          <div class="lexora-live-count"><strong>31</strong>/224</div>
+                          <div class="lexora-live-rowbar"><span style="--w:52%;background:#F59E0B"></span></div>
+                        </div>
+                      </div>
+
+                      <div class="lexora-live-chart">
+                        <div class="lexora-live-section-title">Score trend · 30D</div>
+                        <svg class="lexora-live-svg" viewBox="0 0 320 120" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="lexoraLiveTrendFill" x1="0" x2="0" y1="0" y2="1">
+                              <stop offset="0%" stop-color="#7C3AED" stop-opacity=".26"/>
+                              <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+                            </linearGradient>
+                          </defs>
+                          <path d="M0,92 L24,84 L45,92 L72,72 L94,60 L116,70 L140,54 L164,45 L186,58 L208,50 L230,62 L252,86 L276,72 L298,58 L320,42 L320,120 L0,120 Z" fill="url(#lexoraLiveTrendFill)"/>
+                          <path class="lexora-live-score-line" d="M0,92 L24,84 L45,92 L72,72 L94,60 L116,70 L140,54 L164,45 L186,58 L208,50 L230,62 L252,86 L276,72 L298,58 L320,42" fill="none" stroke="#7C3AED" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                          <circle cx="320" cy="42" r="6" fill="#7C3AED"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
 
           <div class="mock-score-row">
             <div class="mock-score-card">
@@ -4076,793 +4315,23 @@ nav .nav-cta {
               <div class="prompt-hint">Read the prompt, then type the rule from memory</div>
             </div>
 
-            <div class="demo-rule-text" id="rc-text"><span class="rule-cursor"></span></div>
-            <div class="demo-footer-inline" id="rc-tags"></div>
-          </div>
+            
+                <div id="lexoraDemoRuleOnly" class="lexora-demo-rule-only">
+                  <div class="lexora-live-pill">Property</div>
 
-          <div class="answer-stage">
-            <div class="answer-card">
-              <div class="practice-label">Your answer</div>
-
-              <textarea class="answer-input" id="demoAnswer" placeholder="Retype the rule statement from memory..."></textarea>
-
-              <div class="answer-helper">
-                Lexora checks keyword coverage and text similarity. Missing rule elements are highlighted after submission.
-              </div>
-
-              <div class="practice-actions">
-                <button class="ghost-mini-btn" id="fillSampleBtn" type="button">Use sample answer</button>
-                <button class="submit-btn" id="showResultBtn" type="button">Submit →</button>
-              </div>
-            </div>
-
-            <div class="floating-result" id="resultPanel">
-              <div class="result-head">
-                <div class="score-ring-wrap">
-                  <svg class="score-ring-svg" viewBox="0 0 70 70">
-                    <circle class="score-ring-bg" cx="35" cy="35" r="28"/>
-                    <circle class="score-ring-fill" id="scoreRingFill" cx="35" cy="35" r="28"/>
-                  </svg>
-                  <div class="score-ring-num" id="resultScore">—</div>
-                </div>
-
-                <div class="result-meta">
-                  <div class="result-status" id="resultStatus">Submit to see results</div>
-                  <div class="result-sub" id="resultSubStatus">Your recall analytics will appear here</div>
-                  <div class="kw-badge" id="keywordCount">— keywords</div>
-                </div>
-              </div>
-
-              <div class="analytics-block">
-                <div class="analytics-title">Performance breakdown</div>
-
-                <div class="analytics-bars">
-                  <div class="abar-row">
-                    <div class="abar-label">Keyword recall</div>
-                    <div class="abar-track"><div class="abar-fill navy" id="barKeyword"></div></div>
-                    <div class="abar-pct" id="pctKeyword">—</div>
+                  <div id="lexoraDemoQuestion" class="lexora-demo-question">
+                    What are the elements required to establish adverse possession?
                   </div>
 
-                  <div class="abar-row">
-                    <div class="abar-label">Text similarity</div>
-                    <div class="abar-track"><div class="abar-fill gold" id="barSimilarity"></div></div>
-                    <div class="abar-pct" id="pctSimilarity">—</div>
+                  <div id="lexoraDemoHelper" class="lexora-demo-helper">
+                    Type the full rule from memory. The model rule statement appears in 10 seconds so you can compare before submitting.
                   </div>
 
-                  <div class="abar-row">
-                    <div class="abar-label">Overall score</div>
-                    <div class="abar-track"><div class="abar-fill blue" id="barOverall"></div></div>
-                    <div class="abar-pct" id="pctOverall">—</div>
+                  <div id="lexoraDemoModelRule" class="lexora-demo-model-rule">
+                    Adverse possession generally requires <mark>actual</mark>, <mark>open and notorious</mark>, <mark>exclusive</mark>, <mark>hostile</mark>, and <mark>continuous possession</mark> for the statutory period.
                   </div>
                 </div>
-              </div>
 
-              <div class="donut-row">
-                <svg width="52" height="52" viewBox="0 0 52 52" style="flex-shrink:0">
-                  <circle cx="26" cy="26" r="18" fill="none" stroke="var(--border)" stroke-width="9"/>
-                  <circle id="donutFound" cx="26" cy="26" r="18" fill="none" stroke="var(--navy)" stroke-width="9" stroke-dasharray="113" stroke-dashoffset="113" transform="rotate(-90 26 26)" style="transition:stroke-dashoffset 1s ease;stroke-linecap:round"/>
-                  <circle id="donutMissed" cx="26" cy="26" r="18" fill="none" stroke="var(--purple-2)" stroke-width="9" stroke-dasharray="113" stroke-dashoffset="113" transform="rotate(-90 26 26)" style="transition:stroke-dashoffset 1s .2s ease;stroke-linecap:round"/>
-                </svg>
-
-                <div class="donut-labels">
-                  <div class="donut-label"><div class="donut-dot" style="background:var(--navy)"></div><span id="donutFoundLabel">Matched: —</span></div>
-                  <div class="donut-label"><div class="donut-dot" style="background:var(--purple)"></div><span id="donutMissedLabel">Missed: —</span></div>
-                  <div class="donut-label"><div class="donut-dot" style="background:var(--border-2)"></div><span id="donutTotalLabel">Total: — keywords</span></div>
-                </div>
-              </div>
-
-              <div class="result-section">
-                <div class="result-title">Matched keywords</div>
-                <div class="keyword-row" id="keywordsFound"></div>
-              </div>
-
-              <div class="result-section">
-                <div class="result-title">Missed keywords</div>
-                <div class="keyword-row" id="keywordsMissing"></div>
-              </div>
-
-              <div class="correct-rule-box">
-                <div class="result-title">Rule statement · missed terms highlighted</div>
-                <div class="correct-rule" id="correctRuleText"></div>
-              </div>
-
-              <div class="result-actions">
-                <button class="outline-action" id="tryAgainBtn" type="button">Try Again</button>
-                <button class="primary-navy" id="nextDemoRuleBtn" type="button">Next Rule →</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <div class="analytics-showcase">
-    <div class="demo-inner">
-      <div class="section-eyebrow">
-        <div class="section-eyebrow-line"></div>
-        Performance analytics
-      </div>
-
-      <div class="section-title" style="max-width:560px">Not just practice. <em>Measurable progress.</em></div>
-
-      <p class="section-sub">
-        Every rule you train builds a data record. Lexora tracks recall accuracy, weak subjects, spaced review, and study consistency.
-      </p>
-
-      <div class="analytics-grid">
-        <div class="analytics-card">
-          <div class="analytics-number">53%</div>
-          <h3>BLL score tracking</h3>
-          <p>Watch your rule recall performance improve over time with measurable score trends.</p>
-        </div>
-
-        <div class="analytics-card">
-          <div class="analytics-number">32</div>
-          <h3>Weak rules found</h3>
-          <p>Identify rules that need more repetition and route them into focused review sessions.</p>
-        </div>
-
-        <div class="analytics-card">
-          <div class="analytics-number">97</div>
-          <h3>Spaced reviews due</h3>
-          <p>Return to rules at the right interval so memory gets stronger instead of fading.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-    </div>
-  </div>
-
-
-  <div class="how-section">
-    <div class="how-inner">
-      <div class="section-eyebrow">
-        <div class="section-eyebrow-line"></div>
-        How Lexora helps
-      </div>
-
-      <div class="section-title">Structured training for <em>rule memory.</em></div>
-
-      <p class="section-sub">
-        Bar essays reward candidates who can state the correct rule precisely. Lexora Prep builds that muscle through deliberate, repeatable practice.
-      </p>
-
-      <div class="how-grid">
-        <div class="how-card">
-          <div class="how-num">01</div>
-          <h3>Read the rule statement</h3>
-          <p>Each rule is presented in a clean, distraction-free card. Read the full Black Letter Law statement before attempting recall.</p>
-        </div>
-
-        <div class="how-card featured">
-          <div class="how-num">02</div>
-          <h3>Recall from memory</h3>
-          <p>Retype the rule without looking. Lexora checks keyword coverage and highlights every element you missed.</p>
-        </div>
-
-        <div class="how-card">
-          <div class="how-num">03</div>
-          <h3>Focus on weak rules</h3>
-          <p>Lexora tracks lower recall scores and routes more practice time to weak rules through spaced review.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="mee-section">
-    <div class="mee-inner">
-      <div>
-        <div class="section-eyebrow">
-          <div class="section-eyebrow-line"></div>
-          MEE essay preparation
-        </div>
-
-        <div class="section-title">Rule memory is <em>essay performance.</em></div>
-
-        <p class="section-sub" style="margin-bottom:28px">
-          The Multistate Essay Examination rewards candidates who can identify the issue and state the correct legal rule. Lexora Prep is built for exactly that.
-        </p>
-
-        <p style="font-size:14px;color:var(--text-3);line-height:1.75">
-          Lexora Prep is a supplemental rule training tool. It is not a full commercial bar preparation course. Users are responsible for completing full preparation with appropriate resources.
-        </p>
-      </div>
-
-      <div class="mee-right">
-        <div class="mee-card">
-          <div class="mee-card-icon">
-            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><path d="M3 13V9l4-4 4 4 3-5v9"/></svg>
-          </div>
-          <h4>Issue spotting requires rule knowledge</h4>
-          <p>You cannot spot what you do not know. Rule recall helps you identify issues faster under timed conditions.</p>
-        </div>
-
-        <div class="mee-card">
-          <div class="mee-card-icon">
-            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><rect x="2" y="2" width="13" height="13" rx="2"/><path d="M5 8.5h7M5 11h4"/></svg>
-          </div>
-          <h4>Essay graders reward precise rules</h4>
-          <p>Vague or incomplete rules lose points. Lexora trains you to recall exact rule elements.</p>
-        </div>
-
-        <div class="mee-card">
-          <div class="mee-card-icon">
-            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><circle cx="8.5" cy="8.5" r="6.5"/><path d="M8.5 5.5v3l2 2"/></svg>
-          </div>
-          <h4>Spaced recall builds durable memory</h4>
-          <p>Rules studied once fade. Spaced repetition keeps weak rules active until they become stable.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="features-section" id="features">
-    <div class="feat-inner">
-      <div class="section-eyebrow">
-        <div class="section-eyebrow-line"></div>
-        Platform features
-      </div>
-
-      <div class="section-title">Everything built for <em>rule training.</em></div>
-
-      <p class="section-sub">
-        Lexora Prep is purpose-built for Black Letter Law memorization, not a generic study app and not a full bar prep replacement.
-      </p>
-
-      <div class="bento-grid">
-        <div class="bento-card wide">
-          <div class="feat-icon">
-            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><path d="M9.5 2L11.5 7H17.5L12.5 10.5L14.5 16L9.5 12.5L4.5 16L6.5 10.5L1.5 7H7.5Z"/></svg>
-          </div>
-
-          <h3>Rule memorization and structured recall training</h3>
-
-          <p>
-            Study Black Letter Law rules in a clean card format built for repeated reading. Then retype each rule from memory. Lexora checks keyword coverage and text similarity, then highlights missed elements.
-          </p>
-
-          <div class="bento-tag">5 training modes included</div>
-        </div>
-
-        <div class="bento-card">
-          <div class="bento-number">1,000+</div>
-          <h3>BLL rule statements</h3>
-          <p>Organized by subject across all 12 UBE testing areas.</p>
-        </div>
-
-        <div class="bento-card">
-          <div class="feat-icon">
-            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><rect x="2" y="4" width="15" height="12" rx="2"/><path d="M2 8h15"/></svg>
-          </div>
-          <h3>Flashcard trainer</h3>
-          <p>Quick daily rule review sessions in a fast-flip format for short study sprints.</p>
-        </div>
-
-        <div class="bento-card">
-          <div class="feat-icon">
-            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><path d="M3 16V10l4.5-4.5L12 10l4-6v12"/></svg>
-          </div>
-          <h3>Subject analytics</h3>
-          <p>Track recall accuracy by subject and see where your rule memory is strongest or weakest.</p>
-        </div>
-
-        <div class="bento-card">
-          <div class="feat-icon">
-            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><circle cx="9.5" cy="9.5" r="7"/><path d="M9.5 6v3.5l2.5 2.5"/></svg>
-          </div>
-          <h3>Weak rule targeting</h3>
-          <p>Spaced repetition routes more practice toward rules where your recall scores are lowest.</p>
-        </div>
-
-        <div class="bento-card">
-          <div class="feat-icon">
-            <svg width="19" height="19" viewBox="0 0 19 19" fill="none" stroke="var(--purple-2)" stroke-width="1.7"><rect x="3" y="5" width="13" height="10" rx="2"/><path d="M7 5V4a2 2 0 014 0v1"/></svg>
-          </div>
-          <h3>Smart study plan</h3>
-          <p>Build a structured rule training schedule based on progress, weak areas, and preparation time.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="pricing-section" id="pricing">
-    <div class="pricing-inner">
-      <div class="section-eyebrow">
-        <div class="section-eyebrow-line"></div>
-        Pricing
-      </div>
-
-      <div class="section-title">Simple plans for <em>focused preparation.</em></div>
-
-      <p class="section-sub">
-        Cancel anytime. No surprise charges. Demo access requires no payment.
-      </p>
-
-      <div class="pricing-grid">
-        <div class="price-card">
-          <div class="price-tier gray">Demo</div>
-          <div class="price-amount">Free</div>
-          <div class="price-desc">Try Lexora Prep with limited sample rule access.</div>
-          <div class="price-divider"></div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Limited sample BLL rules</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Platform preview access</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>No payment required</span>
-          </div>
-
-          <a href="/register" target="_top"><button class="price-btn-inner outline">Start free</button></a>
-        </div>
-
-        <div class="price-card featured">
-          <div class="popular-badge">Most popular</div>
-          <div class="price-tier navy">BLL Monthly</div>
-          <div class="price-amount">$19<span class="mo">.99/mo</span></div>
-          <div class="price-desc">Full Black Letter Law rule training access.</div>
-          <div class="price-divider"></div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Full BLL rule access</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Spaced repetition and flashcards</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Smart study plan</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Weak rule targeting</span>
-          </div>
-
-          <a href="/register" target="_top"><button class="price-btn-inner solid">Start training →</button></a>
-        </div>
-
-        <div class="price-card">
-          <div class="price-tier gold">Premium</div>
-          <div class="price-amount">$24<span class="mo">.99/mo</span></div>
-          <div class="price-desc">Advanced rule sets and priority training tools.</div>
-          <div class="price-divider"></div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Everything in BLL Monthly</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>120 Golden Rules</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>120 Golden Flashcards</span>
-          </div>
-
-          <div class="price-feat">
-            <div class="chk"><svg viewBox="0 0 9 9" fill="none"><polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="var(--purple-2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <span>Priority support</span>
-          </div>
-
-          <a href="/register" target="_top"><button class="price-btn-inner outline">Choose Premium</button></a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="cta-section">
-    <div class="cta-band">
-      <h2>Build the rule memory<br><em>your essays demand.</em></h2>
-      <p>More than 1,000 Black Letter Law rule statements. Structured recall training. Start free.</p>
-      <button onclick="window.location.href='/register'" class="cta-btn">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7.5h9M8 3.5l4 4-4 4"/></svg>
-        Start training free
-      </button>
-    </div>
-  </div>
-</section>
-
-<section id="page-faq" class="page">
-  <div class="legal-page-wrap">
-    <div class="legal-card">
-      <div class="legal-eyebrow">Help Center</div>
-      <h1>Frequently Asked Questions</h1>
-      <div class="legal-updated">Last updated: April 29, 2026</div>
-
-      <h2>What is Lexora Prep?</h2>
-      <p>Lexora Prep is a Black Letter Law memorization and rule training platform for bar exam candidates. It helps users read, recall, and practice legal rule statements through structured repetition, flashcards, weak-rule targeting, and study planning.</p>
-
-      <h2>Is Lexora Prep a full bar prep course?</h2>
-      <p>No. Lexora Prep is not a full commercial bar preparation course and should not be used as your only study resource. It is a supplemental study tool focused on Black Letter Law rule memorization and recall training.</p>
-
-      <h2>Who is Lexora Prep designed for?</h2>
-      <p>Lexora Prep is designed for bar exam candidates who want to strengthen their Black Letter Law rule memory, particularly for the MEE essay portion, where recalling precise rule statements is critical.</p>
-
-      <h2>What is included in the Premium plan?</h2>
-      <p>The Premium plan is $24.99 per month and includes everything in BLL Monthly, plus 120 Golden Rules, 120 Golden Flashcards, and priority support.</p>
-
-      <h2>How does Lexora Prep help with the MEE?</h2>
-      <p>MEE essay performance depends heavily on recognizing the issue and stating the correct legal rule precisely. Lexora Prep trains users to recall and recite Black Letter Law rule statements through structured practice.</p>
-
-      <h2>Does Lexora Prep guarantee bar exam success?</h2>
-      <p>No. Lexora Prep does not guarantee that you will pass the bar exam, receive a particular score, improve your score, or be admitted to practice law.</p>
-
-      <h2>Are the rules accurate?</h2>
-      <p>Lexora Prep aims to provide accurate and useful educational summaries of Black Letter Law. Legal rules can vary by jurisdiction and may change over time. Users should verify important rules with official sources, licensed bar preparation materials, or applicable primary law when necessary.</p>
-
-      <h2>What happens if I find an error?</h2>
-      <p>If you believe you found an error, contact support. If the report helps us improve the platform, Lexora Prep may, at its discretion, provide a discount, voucher, or account credit. Such credits are not guaranteed.</p>
-
-      <h2>Can I share my account?</h2>
-      <p>No. Each account is for one individual user only. Password sharing, shared access, resale, copying, or redistribution of materials is not allowed.</p>
-
-      <h2>How are payments processed?</h2>
-      <p>Payments are processed through Paddle. Lexora Prep does not store full credit card numbers on its own servers.</p>
-
-      <h2>How do refunds work?</h2>
-      <p>A full refund may be available within 14 calendar days of purchase only if within 14 calendar days of paid materials have been accessed. Refunds are not automatic and are handled according to the Refund Policy.</p>
-
-      <div class="legal-note">For support, contact: support@lexoraprep.com</div>
-    </div>
-  </div>
-</section>
-
-<section id="page-terms" class="page">
-  <div class="legal-page-wrap">
-    <div class="legal-card">
-      <div class="legal-eyebrow">Legal</div>
-      <h1>Terms and Conditions</h1>
-      <div class="legal-updated">Last updated: April 29, 2026</div>
-
-      <p>These Terms and Conditions govern your access to and use of Lexora Prep, including the website, platform, software, study tools, rules, flashcards, analytics, and related services. By creating an account, purchasing a subscription, or using Lexora Prep, you agree to these Terms.</p>
-
-      <h2>1. Educational Purpose Only</h2>
-      <p>Lexora Prep is an educational technology platform designed to support Black Letter Law memorization and rule training. It is not a law firm, legal advisor, law school, licensed bar preparation company, or official bar examination authority.</p>
-
-      <h2>2. Supplemental Study Tool</h2>
-      <p>Lexora Prep is intended only as a supplemental study aid. It should not be used as your only source of preparation for any bar examination.</p>
-
-      <h2>3. No Guarantee of Results</h2>
-      <p>Lexora Prep does not guarantee that you will pass any bar exam, receive a particular score, improve your score, be admitted to practice law, or achieve any academic, professional, or licensing outcome.</p>
-
-      <h2>4. User Responsibility</h2>
-      <p>You are solely responsible for your own preparation, study decisions, use of the platform, and reliance on any educational content.</p>
-
-      <h2>5. Account Use and Security</h2>
-      <p>You must provide accurate account information and keep your login credentials secure. Each account is for one individual user only. You may not share your password, sell access, or allow another person to use your account.</p>
-
-      <h2>6. Prohibited Conduct</h2>
-      <ul>
-        <li>Copying, scraping, downloading, reproducing, publishing, selling, or redistributing Lexora Prep content without permission.</li>
-        <li>Sharing your account, password, paid access, screenshots, rule banks, flashcards, or premium materials with others.</li>
-        <li>Using bots, crawlers, automation tools, or unauthorized scripts to access the platform.</li>
-        <li>Attempting to bypass payment, access controls, subscription limits, or security features.</li>
-        <li>Using the platform for unlawful, abusive, fraudulent, or harmful purposes.</li>
-      </ul>
-
-      <h2>7. Intellectual Property</h2>
-      <p>All Lexora Prep materials are owned by Lexora Prep or its licensors and are protected by applicable laws. You receive a limited, revocable, non-transferable license to use the platform for personal study only.</p>
-
-      <h2>8. Subscriptions and Payments</h2>
-      <p>Paid subscriptions are billed according to the plan selected at checkout. Payments are processed through Paddle. Lexora Prep does not store full credit card numbers on its own servers.</p>
-
-      <h2>9. Cancellation</h2>
-      <p>You may cancel your subscription at any time. Cancellation stops future renewal charges but does not automatically create a refund unless the refund requirements in the Refund Policy are satisfied.</p>
-
-      <h2>10. Refunds</h2>
-      <p>Refunds are governed by the Refund Policy. A full refund may be available within 14 calendar days of purchase only if within 14 calendar days of paid materials have been accessed.</p>
-
-      <h2>11. Content Accuracy</h2>
-      <p>Legal rules may vary by jurisdiction, change over time, or require more detailed analysis than a memorization tool can provide. We do not warrant that all content is complete, current, or error free.</p>
-
-      <h2>12. Beta and Coming Soon Features</h2>
-      <p>Some features may be labeled beta, preview, or coming soon. These features may change, be delayed, or be removed.</p>
-
-      <h2>13. Suspension or Termination</h2>
-      <p>We may suspend or terminate your account if you violate these Terms, misuse the platform, or engage in conduct that may harm Lexora Prep, users, or third parties.</p>
-
-      <h2>14. Disclaimers</h2>
-      <p>Lexora Prep is provided on an as is and as available basis. To the fullest extent permitted by law, we disclaim all warranties, express or implied.</p>
-
-      <h2>15. Limitation of Liability</h2>
-      <p>To the fullest extent permitted by law, Lexora Prep and its affiliates will not be liable for indirect, incidental, consequential, or exemplary damages. Our total liability will not exceed the amount you paid during the one month period before the claim arose.</p>
-
-      <h2>16. Contact</h2>
-      <p>For questions: support@lexoraprep.com</p>
-
-      <div class="legal-note">Lexora Prep is a supplemental rule training tool. It is not a substitute for full bar preparation and does not guarantee exam success.</div>
-    </div>
-  </div>
-</section>
-
-<section id="page-privacy" class="page">
-  <div class="legal-page-wrap">
-    <div class="legal-card">
-      <div class="legal-eyebrow">Legal</div>
-      <h1>Privacy Policy</h1>
-      <div class="legal-updated">Last updated: April 29, 2026</div>
-
-      <p>This Privacy Policy explains how Lexora Prep collects, uses, stores, and protects information when you use our website, platform, and related services.</p>
-
-      <h2>1. Information We Collect</h2>
-      <p>We may collect information you provide directly, including your name, email address, account credentials, subscription status, support messages, feedback, and other information you choose to submit.</p>
-
-      <h2>2. Study and Platform Data</h2>
-      <p>We may collect study related data, including subjects reviewed, rules accessed, flashcard progress, completion status, weak areas, study plan settings, and platform usage data.</p>
-
-      <h2>3. Payment Information</h2>
-      <p>Payments are processed through Paddle. Lexora Prep does not store full credit card numbers or payment card information on its own servers.</p>
-
-      <h2>4. How We Use Information</h2>
-      <p>We use information to create and manage accounts, provide platform features, process billing through Paddle, respond to support requests, improve the platform, prevent fraud, and comply with legal obligations.</p>
-
-      <h2>5. We Do Not Sell Personal Data</h2>
-      <p>Lexora Prep does not sell your personal data or provide it to third parties for their independent advertising purposes.</p>
-
-      <h2>6. Cookies and Similar Technologies</h2>
-      <p>We may use cookies and similar technologies to keep users logged in, remember preferences, support security, and analyze usage. See our Cookie Policy for more information.</p>
-
-      <h2>7. Data Security</h2>
-      <p>We use reasonable technical and organizational safeguards to protect user information. No internet based service can guarantee complete security.</p>
-
-      <h2>8. User Choices</h2>
-      <p>You may request access, correction, deletion, or account closure by contacting support.</p>
-
-      <h2>9. Contact</h2>
-      <p>For privacy questions: support@lexoraprep.com</p>
-
-      <div class="legal-note">Lexora Prep does not store full card details. Payment processing is handled through Paddle.</div>
-    </div>
-  </div>
-</section>
-
-<section id="page-refund" class="page">
-  <div class="legal-page-wrap">
-    <div class="legal-card">
-      <div class="legal-eyebrow">Legal</div>
-      <h1>Refund Policy</h1>
-      <div class="legal-updated">Last updated: April 29, 2026</div>
-
-      <p>This Refund Policy explains when users may request a refund for Lexora Prep paid subscriptions or premium access.</p>
-
-      <h2>1. Fourteen Day Refund Window</h2>
-      <p>You may request a full refund within 14 calendar days of your initial purchase if you meet the usage requirement below.</p>
-
-      <h2>2. Usage Requirement</h2>
-      <p>To qualify for a full refund, you must have accessed within 14 calendar days of the paid materials available under your plan. If outside the 14 calendar day refund window of paid materials have been used, Lexora Prep may deny the refund request.</p>
-
-      <h2>3. Non Refundable Situations</h2>
-      <p>Refunds are generally not available if the request is late, outside the 14 calendar day refund window of materials were used, the account violated the Terms, or the user forgot to cancel before renewal.</p>
-
-      <h2>4. Subscription Cancellation</h2>
-      <p>You may cancel your subscription to stop future billing. Cancellation does not automatically create a refund unless the refund request satisfies this Refund Policy.</p>
-
-      <h2>5. Payment Processor</h2>
-      <p>Refunds are processed through Paddle.</p>
-
-      <h2>6. How to Request a Refund</h2>
-      <p>Contact support@lexoraprep.com within the applicable refund window. Include the email used for purchase, the date of purchase, and the reason for the request.</p>
-
-      <div class="legal-note">Full refund may be available within 14 calendar days only if within 14 calendar days of paid materials were used.</div>
-    </div>
-  </div>
-</section>
-
-<section id="page-cookies" class="page">
-  <div class="legal-page-wrap">
-    <div class="legal-card">
-      <div class="legal-eyebrow">Legal</div>
-      <h1>Cookie Policy</h1>
-      <div class="legal-updated">Last updated: April 29, 2026</div>
-
-      <p>This Cookie Policy explains how Lexora Prep uses cookies and similar technologies on our website and platform.</p>
-
-      <h2>1. What Are Cookies?</h2>
-      <p>Cookies are small text files placed on your device when you visit a website.</p>
-
-      <h2>2. Strictly Necessary Cookies</h2>
-      <p>Required for login, account security, session management, checkout, and basic functionality. These cannot be turned off.</p>
-
-      <h2>3. Preference Cookies</h2>
-      <p>Remember your display settings, saved preferences, and cookie consent choices.</p>
-
-      <h2>4. Analytics Cookies</h2>
-      <p>Help us understand how visitors use Lexora Prep and which features are used most.</p>
-
-      <h2>5. Marketing Cookies</h2>
-      <p>May help measure advertising performance. Not enabled without your consent where legally required.</p>
-
-      <h2>6. Paddle and Payment Cookies</h2>
-      <p>Paddle may use its own cookies for checkout, fraud prevention, and subscription management. Lexora Prep does not control all cookies set by Paddle during checkout.</p>
-
-      <h2>7. Consent and Preferences</h2>
-      <p>You can accept all cookies, reject non-essential cookies, or manage your preferences. Update choices anytime via Cookie Preferences in the footer.</p>
-
-      <h2>8. Contact</h2>
-      <p>For questions: support@lexoraprep.com</p>
-
-      <div class="legal-note">You can update your cookie choices anytime by clicking Cookie Preferences in the footer.</div>
-    </div>
-  </div>
-</section>
-
-</main>
-
-<footer>
-  <div class="footer-top">
-    <div class="footer-brand">
-      <div class="footer-brand-logo">
-        <img src="/lexora-icon-transparent.png" alt="Lexora Prep logo"/>
-        <div class="fname">Lexora <span>Prep</span></div>
-      </div>
-
-      <p>Black Letter Law rule training for bar exam candidates. More than 1,000 rule statements. Structured recall practice.</p>
-    </div>
-
-    
-    <div class="footer-col">
-      <h4>Product</h4>
-      <a href="#features">BLL rule training</a>
-      <a href="#howitworks">How it works</a>
-      <a href="#pricing">Pricing</a>
-    </div>
-
-    
-    <div class="footer-col">
-      <h4>Support</h4>
-      <a href="/contact">Contact us</a>
-      <a href="/faq">FAQ</a>
-      <button type="button" class="footer-cookie-btn" onclick="openCookiePreferences()">Cookie preferences</button>
-    </div>
-
-    
-    <div class="footer-col">
-      <h4>Legal</h4>
-      <a href="/terms">Terms and Conditions</a>
-      <a href="/privacy">Privacy Policy</a>
-      <a href="/refund">Refund Policy</a>
-      <a href="/cookies">Cookie Policy</a>
-    </div>
-  </div>
-
-  <div class="footer-bottom">
-    <div class="footer-legal">
-      Copyright &copy; 2026 Lexora Prep LLC. All Rights Reserved.<br>
-      Test names and other trademarks are the property of their respective trademark holders. None of the trademark holders are affiliated with Lexora Prep LLC or this website.<br>
-      Lexora Prep LLC is not affiliated with the National Conference of Bar Examiners, NCBE, or any state board of bar examiners. Lexora Prep is a supplemental educational tool and does not guarantee bar exam success.
-    </div>
-
-    <div class="footer-links">
-      <a href="/terms">Terms</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/refund">Refund</a>
-      <a href="/cookies">Cookies</a>
-      <a href="/faq">FAQ</a>
-      <a href="/contact">Contact</a>
-    </div>
-  </div>
-</footer>
-
-<div class="cookie-banner" id="cookieBanner">
-  <h3>We use cookies</h3>
-  <p>Lexora Prep uses necessary cookies to operate the website. With your permission, we may also use preference, analytics, and marketing cookies to improve the platform.</p>
-
-  <div class="cookie-actions">
-    <button class="cookie-btn primary" type="button" onclick="acceptAllCookies()">Accept all</button>
-    <button class="cookie-btn" type="button" onclick="rejectAllCookies()">Reject non-essential</button>
-    <button class="cookie-btn" type="button" onclick="openCookieSettings()">Manage preferences</button>
-    <a class="cookie-btn" href="/cookies">Cookie Policy</a>
-  </div>
-</div>
-
-<div class="cookie-modal-backdrop" id="cookieModal">
-  <div class="cookie-modal">
-    <div class="cookie-modal-header">
-      <h2>Cookie preferences</h2>
-      <p>Manage how Lexora Prep uses cookies. Necessary cookies are always on because they are required for login, security, and basic website functionality.</p>
-    </div>
-
-    <div class="cookie-options">
-      <div class="cookie-option">
-        <div>
-          <h4>Strictly necessary</h4>
-          <p>Required for login, security, checkout, and basic platform functions.</p>
-        </div>
-        <button class="cookie-switch on locked" type="button"></button>
-      </div>
-
-      <div class="cookie-option">
-        <div>
-          <h4>Preferences</h4>
-          <p>Remember your display settings, saved preferences, and cookie choices.</p>
-        </div>
-        <button class="cookie-switch" id="prefSwitch" type="button" onclick="toggleCookieSwitch('preferences')"></button>
-      </div>
-
-      <div class="cookie-option">
-        <div>
-          <h4>Analytics</h4>
-          <p>Help us understand website usage and which features users interact with.</p>
-        </div>
-        <button class="cookie-switch" id="analyticsSwitch" type="button" onclick="toggleCookieSwitch('analytics')"></button>
-      </div>
-
-      <div class="cookie-option">
-        <div>
-          <h4>Marketing</h4>
-          <p>Support referral tracking and future advertising features.</p>
-        </div>
-        <button class="cookie-switch" id="marketingSwitch" type="button" onclick="toggleCookieSwitch('marketing')"></button>
-      </div>
-    </div>
-
-    <div class="cookie-modal-actions">
-      <button class="cookie-btn" type="button" onclick="rejectAllCookies()">Reject non-essential</button>
-      <button class="cookie-btn" type="button" onclick="closeCookieSettings()">Cancel</button>
-      <button class="cookie-btn primary" type="button" onclick="saveCookiePreferences()">Save preferences</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(function(){
-  var pages={
-    home:document.getElementById("page-home"),
-    faq:document.getElementById("page-faq"),
-    terms:document.getElementById("page-terms"),
-    privacy:document.getElementById("page-privacy"),
-    refund:document.getElementById("page-refund"),
-    cookies:document.getElementById("page-cookies")
-  };
-
-  function showPage(){
-    var hash=window.location.hash.replace("#","")||"home";
-
-    if(hash==="features"||hash==="pricing"||hash==="howitworks"){
-      Object.keys(pages).forEach(function(k){pages[k].classList.remove("active")});
-      pages.home.classList.add("active");
-      setTimeout(function(){
-        var t=document.getElementById(hash);
-        if(t)t.scrollIntoView({behavior:"smooth",block:"start"});
-      },50);
-      return;
-    }
-
-    if(!pages[hash])hash="home";
-
-    Object.keys(pages).forEach(function(k){pages[k].classList.remove("active")});
-    pages[hash].classList.add("active");
-    window.scrollTo({top:0,behavior:"smooth"});
-  }
-
-  window.addEventListener("hashchange",showPage);
-  showPage();
-
-  var rules=[
-    {
-      subject:"Property",
-      question:"What are the elements required to establish adverse possession?",
-      text:"<div class="rule-hidden-state" id="ruleHiddenState">
-                  <span><strong>Your turn:</strong> type the full adverse possession rule from memory before the answer appears.</span>
-                </div>
                 <div class="rule-answer-revealed" id="delayedRuleReveal" hidden>
                   Adverse possession generally requires actual, open and notorious, exclusive, hostile, and continuous possession for the statutory period.
                 </div>",
@@ -5321,6 +4790,86 @@ nav .nav-cta {
   document.addEventListener("copy", function(e){
     if(!isEditable(e.target)) e.preventDefault();
   });
+})();
+</script>
+
+
+
+<script id="lexora_live_system_script">
+(function(){
+  function runLiveSystem(){
+    var system = document.getElementById("lexoraLiveSystem");
+    var typing = document.getElementById("lexoraLiveTyping");
+    var submit = document.getElementById("lexoraLiveSubmit");
+    var status = document.getElementById("lexoraLiveStatus");
+    var score = document.getElementById("lexoraLiveScore");
+    var scoreSub = document.getElementById("lexoraLiveScoreSub");
+    var keywords = document.getElementById("lexoraLiveKeywords");
+    var rank = document.getElementById("lexoraLiveRank");
+    var week = document.getElementById("lexoraLiveWeek");
+    var contracts = document.getElementById("lexoraContractsCount");
+
+    if(!system || !typing || !submit || !status) return;
+
+    var answer = "Adverse possession generally requires actual, open and notorious, exclusive, hostile, and continuous possession for the statutory period.";
+    var i = 0;
+
+    function typeAnswer(){
+      if(i <= answer.length){
+        typing.textContent = answer.slice(0, i);
+        i += 1;
+        window.setTimeout(typeAnswer, 24);
+      } else {
+        status.textContent = "Ready to submit";
+        window.setTimeout(function(){
+          submit.classList.add("submitting");
+          status.textContent = "Submitting answer...";
+          window.setTimeout(function(){
+            status.textContent = "Recording attempt...";
+            window.setTimeout(function(){
+              status.textContent = "Analyzing rule coverage...";
+              if(score) score.textContent = "82%";
+              if(scoreSub) scoreSub.textContent = "↑ +29% improved";
+              if(keywords) keywords.textContent = "4/6";
+              if(rank) rank.textContent = "Top 47%";
+              if(week) week.textContent = "17";
+              if(contracts) contracts.textContent = "11";
+              system.classList.add("analyzed");
+              window.setTimeout(function(){
+                status.textContent = "Answer analyzed";
+              }, 900);
+            }, 700);
+          }, 700);
+        }, 650);
+      }
+    }
+
+    typeAnswer();
+  }
+
+  function runLowerDemo(){
+    var q = document.getElementById("lexoraDemoQuestion");
+    var h = document.getElementById("lexoraDemoHelper");
+    var r = document.getElementById("lexoraDemoModelRule");
+
+    if(!q || !h || !r) return;
+
+    window.setTimeout(function(){
+      q.style.display = "none";
+      h.style.display = "none";
+      r.style.display = "block";
+    }, 10000);
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", function(){
+      runLiveSystem();
+      runLowerDemo();
+    });
+  } else {
+    runLiveSystem();
+    runLowerDemo();
+  }
 })();
 </script>
 
