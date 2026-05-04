@@ -107,8 +107,8 @@ button{
 }
 
 @keyframes marquee{
-  0%{transform:translateX(0)}
-  100%{transform:translateX(-50%)}
+  0%{transform:translate3d(0,0,0)}
+  100%{transform:translate3d(-50%,0,0)}
 }
 
 @keyframes float{
@@ -706,17 +706,21 @@ nav{
 
 .marquee-inner{
   display:flex;
+  width:max-content;
+  min-width:200%;
   white-space:nowrap;
-  animation:marquee 30s linear infinite;
+  will-change:transform;
+  animation:marquee 24s linear infinite;
 }
 
 .marquee-item{
   display:inline-flex;
   align-items:center;
   gap:12px;
-  padding:0 28px;
+  padding:0 30px;
   font-size:12px;
-  font-weight:600;
+  font-weight:500;
+  letter-spacing:.02em;
   color:var(--text-3);
 }
 
@@ -3600,7 +3604,7 @@ select {
             <span>No payment required</span>
           </div>
 
-          <a href="/register" target="_top"><button class="price-btn-inner outline">Start free</button></a>
+          <a href="/register?plan=free" target="_top"><button class="price-btn-inner outline">Start free</button></a>
         </div>
 
         <div class="price-card featured">
@@ -3630,7 +3634,7 @@ select {
             <span>Weak rule targeting</span>
           </div>
 
-          <a href="/register" target="_top"><button class="price-btn-inner solid">Start training →</button></a>
+          <a href="/register?plan=bll-monthly" target="_top"><button class="price-btn-inner solid">Start training →</button></a>
         </div>
 
         <div class="price-card">
@@ -3659,7 +3663,7 @@ select {
             <span>Priority support</span>
           </div>
 
-          <a href="/register" target="_top"><button class="price-btn-inner outline">Choose Premium</button></a>
+          <a href="/register?plan=premium" target="_top"><button class="price-btn-inner outline">Choose Premium</button></a>
         </div>
       </div>
     </div>
