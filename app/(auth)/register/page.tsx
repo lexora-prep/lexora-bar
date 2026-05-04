@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useMemo, useState } from "react"
+import { FormEvent, useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -8,15 +8,15 @@ import {
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
+  CreditCard,
   Eye,
   EyeOff,
-  GraduationCap,
   Loader2,
   LockKeyhole,
   Mail,
   MapPin,
   School,
-  ShieldCheck,
+  ShoppingCart,
   User,
   UserPlus,
 } from "lucide-react"
@@ -81,9 +81,71 @@ const JURISDICTIONS = [
   "Wyoming",
 ]
 
+const PLANS = {
+  free: {
+    id: "free",
+    label: "Free",
+    eyebrow: "Demo Access",
+    price: "$0",
+    billing: "",
+    description: "Try Lexora Prep with limited rule recall access.",
+    buttonText: "Create account and start free",
+    nextStep: "Dashboard access after registration.",
+    features: [
+      "Limited BLL rule access",
+      "Basic recall practice",
+      "No credit card required",
+    ],
+  },
+  "bll-monthly": {
+    id: "bll-monthly",
+    label: "BLL Monthly",
+    eyebrow: "Core Memorization",
+    price: "$19.99",
+    billing: "/mo",
+    description: "Full Black Letter Law rule training access.",
+    buttonText: "Create account and continue",
+    nextStep: "Paddle checkout after registration.",
+    features: [
+      "Full BLL rule access",
+      "Spaced repetition and flashcards",
+      "Smart study plan",
+      "Weak rule targeting",
+      "Performance analytics",
+    ],
+  },
+  premium: {
+    id: "premium",
+    label: "Premium",
+    eyebrow: "Advanced Training",
+    price: "$24.99",
+    billing: "/mo",
+    description: "Advanced tools for stronger rule memory and focused review.",
+    buttonText: "Create account and continue",
+    nextStep: "Paddle checkout after registration.",
+    features: [
+      "Everything in BLL Monthly",
+      "120 Golden Rules",
+      "120 Golden Flashcards",
+      "Advanced rule sets",
+      "Priority training tools",
+      "Performance analytics",
+    ],
+  },
+} as const
+
+type PlanId = keyof typeof PLANS
+
+function isPlanId(value: string | null): value is PlanId {
+  return value === "free" || value === "bll-monthly" || value === "premium"
+}
+
 export default function RegisterPage() {
   const router = useRouter()
   const supabase = createClient()
+
+  const [selectedPlanId, setSelectedPlanId] = useState<PlanId>("free")
+  const selectedPlan = PLANS[selectedPlanId]
 
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
@@ -93,8 +155,34 @@ export default function RegisterPage() {
   const [examMonth, setExamMonth] = useState("")
   const [examYear, setExamYear] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const planFromUrl = params.get("plan")
+
+    if (isPlanId(planFromUrl)) {
+      setSelectedPlanId(planFromUrl)
+      window.localStorage.setItem("lexora_selected_plan", planFromUrl)
+      return
+    }
+
+    const storedPlan = window.localStorage.getItem("lexora_selected_plan")
+    if (isPlanId(storedPlan)) {
+      setSelectedPlanId(storedPlan)
+    }
+  }, [])
+
+  function updateSelectedPlan(planId: PlanId) {
+    setSelectedPlanId(planId)
+    window.localStorage.setItem("lexora_selected_plan", planId)
+
+    const url = new URL(window.location.href)
+    url.searchParams.set("plan", planId)
+    window.history.replaceState({}, "", url.toString())
+  }
 
   const passwordChecks = useMemo(() => {
     return {
@@ -141,6 +229,13 @@ export default function RegisterPage() {
 
       if (!jurisdiction.trim()) {
         setError("Please select your jurisdiction.")
+        return
+      }
+
+      if (!acceptedTerms) {
+        setError(
+          "Please confirm that you agree to the Terms and Conditions, Privacy Policy, Refund Policy, and platform use rules."
+        )
         return
       }
 
@@ -210,6 +305,7 @@ export default function RegisterPage() {
           jurisdiction: jurisdiction.trim(),
           examMonth: monthNumber,
           examYear: yearNumber,
+          selectedPlan: selectedPlanId,
         }),
       })
 
@@ -220,7 +316,57 @@ export default function RegisterPage() {
         return
       }
 
-      router.push("/dashboard")
+      window.localStorage.setItem("lexora_selected_plan", selectedPlanId)
+      window.localStorage.setItem("lexora_first_dashboard_animation", "true")
+
+      const legalAcceptanceRes = await fetch("/api/legal-acceptances", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: data.user.id,
+          email: normalizedEmail,
+          selectedPlan: selectedPlanId,
+          registrationMode: inviteData?.mode || "private_beta",
+          termsAccepted: true,
+          privacyAccepted: true,
+          refundAccepted: true,
+          platformRulesAccepted: true,
+        }),
+      })
+
+      const legalAcceptanceData = await legalAcceptanceRes.json().catch(() => null)
+
+      if (!legalAcceptanceRes.ok) {
+        setError(
+          legalAcceptanceData?.error ||
+            "Account created, but legal acceptance could not be recorded. Please contact support."
+        )
+        return
+      }
+
+      fetch("/api/welcome-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          fullName: fullName.trim(),
+          selectedPlan: selectedPlan.label,
+        }),
+      }).catch(() => {
+        console.warn("Welcome email request failed.")
+      })
+
+      if (selectedPlanId === "free") {
+        router.push("/dashboard")
+        router.refresh()
+        return
+      }
+
+      router.push(`/checkout?plan=${selectedPlanId}&registered=1`)
       router.refresh()
     } catch (err) {
       console.error("REGISTER ERROR:", err)
@@ -231,7 +377,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#F7F8FC] text-[#0E1B35]">
+    <main
+      className="min-h-screen overflow-hidden bg-[#F7F8FC] text-[#0E1B35] selection:bg-transparent"
+      onCopy={(event) => {
+        const target = event.target as HTMLElement | null
+        const tagName = target?.tagName?.toLowerCase()
+
+        if (
+          tagName !== "input" &&
+          tagName !== "textarea" &&
+          tagName !== "select"
+        ) {
+          event.preventDefault()
+        }
+      }}
+    >
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className="absolute right-[-120px] top-[-160px] h-[520px] w-[520px] rounded-full bg-[#7C3AED]/10 blur-[120px]" />
         <div className="absolute bottom-[-180px] left-[-120px] h-[420px] w-[420px] rounded-full bg-[#0E1B35]/[0.06] blur-[120px]" />
@@ -242,63 +402,147 @@ export default function RegisterPage() {
         <header className="sticky top-0 z-20 flex h-[66px] items-center justify-between border-b border-[#E2E6F0] bg-[#F7F8FC]/95 px-5 backdrop-blur-xl md:px-12">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/lexora-logo-transparent.png"
+              src="/icon.png"
               alt="Lexora Prep logo"
               width={40}
               height={40}
               className="h-9 w-9 object-contain"
               priority
             />
-            <div className="text-[17px] font-bold tracking-[-0.03em] text-[#0E1B35]">
+            <div className="text-[17px] font-extrabold tracking-[-0.03em] text-[#0E1B35]">
               Lexora <span className="text-[#7C3AED]">Prep</span>
             </div>
           </Link>
 
           <Link
             href="/"
-            className="group inline-flex items-center gap-2 rounded-[10px] border border-[#CDD3E6] bg-white px-4 py-2 text-sm font-semibold text-[#1E293B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
+            className="group inline-flex items-center gap-2 rounded-[12px] border border-[#CDD3E6] bg-white px-4 py-2 text-sm font-bold text-[#1E293B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
           >
             <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
             Back to main page
           </Link>
         </header>
 
-        <section className="flex flex-1 items-center justify-center px-5 py-12 md:py-16">
-          <div className="grid w-full max-w-6xl gap-10 lg:grid-cols-[1fr_520px] lg:items-start">
-            <div className="hidden lg:flex lg:flex-col lg:justify-center lg:self-start lg:pt-24">
-              <h1 className="max-w-2xl font-serif text-[48px] font-normal leading-[1.08] tracking-[-0.03em] text-[#0E1B35] xl:text-[54px]">
-                Create your{" "}
-                <span className="italic text-[#5B21B6]">Lexora Prep</span>{" "}
-                account.
-              </h1>
+        <section className="flex flex-1 justify-center px-5 py-8 md:py-10">
+          <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-[420px_1fr] lg:items-start">
+            <aside className="lg:sticky lg:top-[92px]">
+              <div className="rounded-[28px] border border-[#E2E6F0] bg-white/95 p-6 shadow-[0_22px_55px_rgba(14,27,53,0.10)] backdrop-blur">
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF]">
+                    <ShoppingCart className="h-5 w-5 text-[#7C3AED]" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.17em] text-[#7C3AED]">
+                      Selected plan
+                    </div>
+                    <div className="mt-0.5 text-lg font-black tracking-[-0.03em] text-[#0E1B35]">
+                      {selectedPlan.label}
+                    </div>
+                  </div>
+                </div>
 
-              <p className="mt-5 max-w-xl text-[16px] leading-8 text-[#475569]">
-                Start training black letter law recall with focused rule review,
-                flashcards, weak-area tracking, and clean study analytics.
-              </p>
+                <div className="rounded-[24px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#6D28D9] p-5 text-white shadow-[0_18px_45px_rgba(14,27,53,0.18)]">
+                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#C4B5FD]">
+                    {selectedPlan.eyebrow}
+                  </div>
 
-              <div className="mt-8 grid max-w-xl gap-4">
-                <InfoCard
-                  icon={<GraduationCap className="h-5 w-5 text-[#7C3AED]" />}
-                  title="Built for bar candidates"
-                  body="Designed for students preparing for UBE-style subjects and MEE rule recitation."
-                />
+                  <div className="mt-3 flex items-end gap-1">
+                    <div className="text-[42px] font-black leading-none tracking-[-0.08em]">
+                      {selectedPlan.price}
+                    </div>
+                    {selectedPlan.billing ? (
+                      <div className="pb-1 text-lg font-black text-white/65">
+                        {selectedPlan.billing}
+                      </div>
+                    ) : null}
+                  </div>
 
-                <InfoCard
-                  icon={<ShieldCheck className="h-5 w-5 text-[#7C3AED]" />}
-                  title="Supplemental study tool"
-                  body="Lexora Prep helps with memorization and recall. It does not replace a full bar prep course."
-                />
+                  <p className="mt-4 max-w-[280px] text-sm leading-6 text-white/72">
+                    {selectedPlan.description}
+                  </p>
+                </div>
 
-                <InfoCard
-                  icon={<UserPlus className="h-5 w-5 text-[#7C3AED]" />}
-                  title="Simple account setup"
-                  body="Create your account, enter your study details, and continue directly to your dashboard."
-                />
+                <div className="mt-6">
+                  <div className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">
+                    Change plan
+                  </div>
+
+                  <div className="grid gap-2">
+                    {(Object.keys(PLANS) as PlanId[]).map((planId) => {
+                      const plan = PLANS[planId]
+                      const active = selectedPlanId === planId
+
+                      return (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => updateSelectedPlan(planId)}
+                          className={
+                            active
+                              ? "flex items-center justify-between rounded-2xl border border-[#7C3AED] bg-[#F3F0FF] px-4 py-3 text-left shadow-[0_10px_24px_rgba(124,58,237,0.10)]"
+                              : "flex items-center justify-between rounded-2xl border border-[#E2E6F0] bg-white px-4 py-3 text-left transition hover:border-[#C4B5FD] hover:bg-[#FBFAFF]"
+                          }
+                        >
+                          <div>
+                            <div className="text-sm font-black text-[#0E1B35]">
+                              {plan.label}
+                            </div>
+                            <div className="mt-0.5 text-[10px] font-black uppercase tracking-[0.13em] text-[#94A3B8]">
+                              {plan.eyebrow}
+                            </div>
+                          </div>
+
+                          <div className="text-sm font-black text-[#0E1B35]">
+                            {plan.price}
+                            <span className="text-xs text-[#94A3B8]">
+                              {plan.billing}
+                            </span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="mt-6 border-t border-[#E2E6F0] pt-5">
+                  <div className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">
+                    Included
+                  </div>
+
+                  <div className="grid gap-2">
+                    {selectedPlan.features.map((feature) => (
+                      <div
+                        key={feature}
+                        className="flex items-start gap-2 text-sm font-bold leading-6 text-[#334155]"
+                      >
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#7C3AED]" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="mt-5 text-xs font-semibold leading-5 text-[#64748B]">
+                  {selectedPlan.nextStep} Paid access begins only after
+                  successful checkout.
+                </p>
               </div>
-            </div>
+            </aside>
 
-            <div className="mx-auto w-full max-w-[520px]">
+            <div className="mx-auto w-full max-w-[560px]">
+              <div className="mb-7 text-center lg:text-left">
+                <h1 className="font-serif text-[40px] font-normal leading-[1.08] tracking-[-0.035em] text-[#0E1B35] md:text-[48px]">
+                  Create your{" "}
+                  <span className="italic text-[#5B21B6]">Lexora Prep</span>{" "}
+                  account.
+                </h1>
+
+                <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#475569]">
+                  Start rule recall training with focused review, spaced
+                  repetition, weak-area tracking, and clean study analytics.
+                </p>
+              </div>
+
               <div className="rounded-[28px] border border-[#E2E6F0] bg-white p-6 shadow-[0_24px_60px_rgba(14,27,53,0.12),0_8px_20px_rgba(14,27,53,0.06)] md:p-8">
                 <div className="mb-8 text-center">
                   <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF]">
@@ -527,6 +771,61 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] p-4 text-left">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-[#CBD5E1] accent-[#7C3AED]"
+                    />
+
+                    <span className="text-xs leading-5 text-[#64748B]">
+                      I agree to Lexora Prep&apos;s{" "}
+                      <Link
+                        href={`/terms?returnTo=${encodeURIComponent(
+                          `/register?plan=${selectedPlanId}`
+                        )}`}
+                        className="font-black text-[#7C3AED] hover:text-[#5B21B6]"
+                      >
+                        Terms and Conditions
+                      </Link>
+                      ,{" "}
+                      <Link
+                        href={`/privacy?returnTo=${encodeURIComponent(
+                          `/register?plan=${selectedPlanId}`
+                        )}`}
+                        className="font-black text-[#7C3AED] hover:text-[#5B21B6]"
+                      >
+                        Privacy Policy
+                      </Link>
+                      , and{" "}
+                      <Link
+                        href={`/refund?returnTo=${encodeURIComponent(
+                          `/register?plan=${selectedPlanId}`
+                        )}`}
+                        className="font-black text-[#7C3AED] hover:text-[#5B21B6]"
+                      >
+                        Refund Policy
+                      </Link>
+                      . I understand that Lexora Prep is a supplemental
+                      educational tool, does not guarantee bar exam passage, and
+                      may not be abused, copied, scraped, resold, or used to
+                      extract protected platform content.
+                    </span>
+                  </label>
+
+                  {selectedPlanId !== "free" ? (
+                    <div className="flex items-start gap-3 rounded-2xl bg-[#F3F0FF] p-4 text-xs leading-5 text-[#5B21B6]">
+                      <CreditCard className="mt-0.5 h-4 w-4 shrink-0" />
+                      <div>
+                        After registration, you will continue to Paddle checkout
+                        for the selected paid plan. Payment, taxes, invoices,
+                        cancellations, and refund processing are handled by
+                        Paddle as Merchant of Record.
+                      </div>
+                    </div>
+                  ) : null}
+
                   {error ? (
                     <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
                       {error}
@@ -544,7 +843,7 @@ export default function RegisterPage() {
                         Creating account...
                       </>
                     ) : (
-                      "Create account"
+                      selectedPlan.buttonText
                     )}
                   </button>
                 </form>
@@ -572,36 +871,15 @@ export default function RegisterPage() {
 
               <p className="mt-5 text-center text-xs leading-5 text-[#94A3B8]">
                 Lexora Prep is a supplemental educational tool and does not
-                guarantee bar exam success. Users should verify jurisdiction-specific
-                requirements and rules with the applicable bar admission authority.
+                guarantee bar exam success. Users should verify
+                jurisdiction-specific requirements and rules with the applicable
+                bar admission authority.
               </p>
             </div>
           </div>
         </section>
       </div>
     </main>
-  )
-}
-
-function InfoCard({
-  icon,
-  title,
-  body,
-}: {
-  icon: React.ReactNode
-  title: string
-  body: string
-}) {
-  return (
-    <div className="flex items-start gap-4 rounded-[20px] border border-[#E2E6F0] bg-white p-5 shadow-[0_4px_16px_rgba(14,27,53,0.08)]">
-      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DDD6FE] bg-[#F3F0FF]">
-        {icon}
-      </div>
-      <div>
-        <div className="text-sm font-bold text-[#0E1B35]">{title}</div>
-        <div className="mt-1 text-sm leading-6 text-[#64748B]">{body}</div>
-      </div>
-    </div>
   )
 }
 
