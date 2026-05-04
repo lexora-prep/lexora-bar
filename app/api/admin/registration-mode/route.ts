@@ -22,6 +22,23 @@ function getAdminClient() {
 function normalizeRegistrationMode(value: unknown): RegistrationMode {
   if (value === "public") return "public"
   if (value === "closed") return "closed"
+  if (value === "private_beta") return "private_beta"
+
+  if (typeof value === "string") {
+    const cleaned = value.replace(/^"+|"+$/g, "")
+
+    if (cleaned === "public") return "public"
+    if (cleaned === "closed") return "closed"
+    if (cleaned === "private_beta") return "private_beta"
+
+    try {
+      const parsed = JSON.parse(value)
+      return normalizeRegistrationMode(parsed)
+    } catch {
+      return "private_beta"
+    }
+  }
+
   return "private_beta"
 }
 
@@ -38,13 +55,17 @@ export async function GET() {
     if (error) {
       console.error("GET REGISTRATION MODE ERROR:", error)
       return NextResponse.json(
-        { error: "Failed to load registration mode." },
+        {
+          error: "Failed to load registration mode.",
+          detail: error.message,
+        },
         { status: 500 }
       )
     }
 
     return NextResponse.json({
       mode: normalizeRegistrationMode(data?.value),
+      rawValue: data?.value ?? null,
     })
   } catch (error) {
     console.error("GET REGISTRATION MODE API ERROR:", error)
@@ -61,6 +82,7 @@ export async function POST(req: Request) {
     const mode = normalizeRegistrationMode(body?.mode)
 
     const supabase = getAdminClient()
+    const now = new Date().toISOString()
 
     const { error } = await supabase.from("feature_flags").upsert(
       {
@@ -68,7 +90,8 @@ export async function POST(req: Request) {
         value: mode,
         description:
           "Controls account registration. Allowed values: private_beta, public, closed.",
-        updated_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
       },
       { onConflict: "key" }
     )
@@ -76,7 +99,10 @@ export async function POST(req: Request) {
     if (error) {
       console.error("UPDATE REGISTRATION MODE ERROR:", error)
       return NextResponse.json(
-        { error: "Failed to update registration mode." },
+        {
+          error: "Failed to update registration mode.",
+          detail: error.message,
+        },
         { status: 500 }
       )
     }

@@ -22,6 +22,23 @@ function getAdminClient() {
 function normalizeRegistrationMode(value: unknown): RegistrationMode {
   if (value === "public") return "public"
   if (value === "closed") return "closed"
+  if (value === "private_beta") return "private_beta"
+
+  if (typeof value === "string") {
+    const cleaned = value.replace(/^"+|"+$/g, "")
+
+    if (cleaned === "public") return "public"
+    if (cleaned === "closed") return "closed"
+    if (cleaned === "private_beta") return "private_beta"
+
+    try {
+      const parsed = JSON.parse(value)
+      return normalizeRegistrationMode(parsed)
+    } catch {
+      return "private_beta"
+    }
+  }
+
   return "private_beta"
 }
 

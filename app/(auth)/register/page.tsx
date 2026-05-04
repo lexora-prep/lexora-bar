@@ -150,6 +150,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [lawSchool, setLawSchool] = useState("")
   const [jurisdiction, setJurisdiction] = useState("")
   const [examMonth, setExamMonth] = useState("")
@@ -222,6 +223,11 @@ export default function RegisterPage() {
         return
       }
 
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.")
+        return
+      }
+
       if (!lawSchool.trim()) {
         setError("Law school is required.")
         return
@@ -258,6 +264,19 @@ export default function RegisterPage() {
         return
       }
 
+      if (monthNumber !== null && yearNumber !== null) {
+        const now = new Date()
+        const examDate = new Date(yearNumber, monthNumber - 1, 1)
+        const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+        if (examDate < currentMonth) {
+          setError(
+            "This exam date has already passed. Please select a future bar exam month and year."
+          )
+          return
+        }
+      }
+
       const normalizedEmail = email.trim().toLowerCase()
 
       const inviteCheck = await fetch("/api/beta-invite-check", {
@@ -272,7 +291,8 @@ export default function RegisterPage() {
 
       if (!inviteCheck.ok || !inviteData?.allowed) {
         setError(
-          "Lexora Prep is currently in private beta. Your email is not approved yet."
+          inviteData?.reason ||
+            "Registration is not available for this email right now."
         )
         return
       }
@@ -658,6 +678,33 @@ export default function RegisterPage() {
                       <PasswordRequirement
                         valid={passwordChecks.hasSpecial}
                         label="Includes at least one special symbol"
+                      />
+                      <PasswordRequirement
+                        valid={confirmPassword.length > 0 && password === confirmPassword}
+                        label="Passwords match"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                    >
+                      Confirm password
+                    </label>
+
+                    <div className="relative">
+                      <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm your password"
+                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       />
                     </div>
                   </div>

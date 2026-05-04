@@ -57,6 +57,7 @@ const MODE_OPTIONS: {
 
 export default function AdminRegistrationPage() {
   const [mode, setMode] = useState<RegistrationMode>("private_beta")
+  const [pendingMode, setPendingMode] = useState<RegistrationMode>("private_beta")
   const [records, setRecords] = useState<LegalAcceptanceRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,8 +65,8 @@ export default function AdminRegistrationPage() {
   const [error, setError] = useState("")
 
   const currentModeInfo = useMemo(() => {
-    return MODE_OPTIONS.find((item) => item.value === mode) || MODE_OPTIONS[0]
-  }, [mode])
+    return MODE_OPTIONS.find((item) => item.value === pendingMode) || MODE_OPTIONS[0]
+  }, [pendingMode])
 
   async function loadData() {
     setLoading(true)
@@ -97,6 +98,7 @@ export default function AdminRegistrationPage() {
         modeData?.mode === "closed"
       ) {
         setMode(modeData.mode)
+        setPendingMode(modeData.mode)
       }
 
       setRecords(recordsData?.records || [])
@@ -108,7 +110,21 @@ export default function AdminRegistrationPage() {
     }
   }
 
-  async function updateMode(nextMode: RegistrationMode) {
+  async function saveModeChange() {
+    if (pendingMode === mode) {
+      setMessage("No registration mode change to save.")
+      setError("")
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to change registration mode from "${mode}" to "${pendingMode}"?`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
     setSaving(true)
     setError("")
     setMessage("")
@@ -119,7 +135,7 @@ export default function AdminRegistrationPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ mode: nextMode }),
+        body: JSON.stringify({ mode: pendingMode }),
       })
 
       const data = await res.json().catch(() => null)
@@ -128,8 +144,8 @@ export default function AdminRegistrationPage() {
         throw new Error(data?.error || "Failed to update registration mode.")
       }
 
-      setMode(nextMode)
-      setMessage(`Registration mode updated to ${nextMode}.`)
+      setMode(pendingMode)
+      setMessage(`Registration mode saved: ${pendingMode}.`)
     } catch (err) {
       console.error(err)
       setError(err instanceof Error ? err.message : "Something went wrong.")
@@ -207,13 +223,14 @@ export default function AdminRegistrationPage() {
 
           <div className="grid gap-4 md:grid-cols-3">
             {MODE_OPTIONS.map((option) => {
-              const active = option.value === mode
+              const active = option.value === pendingMode
+              const saved = option.value === mode
 
               return (
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => updateMode(option.value)}
+                  onClick={() => setPendingMode(option.value)}
                   disabled={saving}
                   className={
                     active
@@ -233,9 +250,36 @@ export default function AdminRegistrationPage() {
                   <p className="text-sm leading-6 text-[#64748B]">
                     {option.description}
                   </p>
+
+                  {saved ? (
+                    <div className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.13em] text-[#64748B]">
+                      Currently saved
+                    </div>
+                  ) : null}
                 </button>
               )
             })}
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 border-t border-[#E2E6F0] pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm leading-6 text-[#64748B]">
+              Saved mode: <span className="font-black text-[#0E1B35]">{mode}</span>
+              {pendingMode !== mode ? (
+                <>
+                  {" "}→ pending change:{" "}
+                  <span className="font-black text-[#7C3AED]">{pendingMode}</span>
+                </>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              onClick={saveModeChange}
+              disabled={saving || pendingMode === mode}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#0E1B35] px-5 text-sm font-black text-white shadow-[0_10px_24px_rgba(14,27,53,0.18)] transition hover:bg-[#162B55] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save registration mode"}
+            </button>
           </div>
         </section>
 
