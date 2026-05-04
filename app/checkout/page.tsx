@@ -12,7 +12,7 @@ import {
   Sparkles,
 } from "lucide-react"
 
-type PlanKey = "free" | "bll-monthly" | "premium"
+type PlanKey = "bll-monthly" | "premium"
 
 type Plan = {
   id: PlanKey
@@ -22,45 +22,25 @@ type Plan = {
   billing: string
   description: string
   features: string[]
-  nextStep: string
   buttonText: string
-  tone: "free" | "core" | "premium"
 }
 
 const PLANS: Record<PlanKey, Plan> = {
-  free: {
-    id: "free",
-    label: "Free",
-    eyebrow: "Demo access",
-    price: "$0",
-    billing: "",
-    description: "Limited access for trying Lexora Prep before upgrading.",
-    features: [
-      "Limited sample BLL rule access",
-      "Basic rule recall preview",
-      "No payment required",
-      "Upgrade anytime from your account",
-    ],
-    nextStep: "Free users do not need Paddle checkout.",
-    buttonText: "Go to dashboard",
-    tone: "free",
-  },
   "bll-monthly": {
     id: "bll-monthly",
     label: "BLL Monthly",
     eyebrow: "Core memorization",
     price: "$19.99",
     billing: "/mo",
-    description: "Full Black Letter Law rule training access for focused bar preparation.",
+    description:
+      "Full Black Letter Law rule training access for focused bar preparation.",
     features: [
       "Full BLL rule access",
       "Spaced repetition and flashcards",
       "Weak rule targeting",
       "Smart study plan and analytics",
     ],
-    nextStep: "Complete payment through Paddle to activate paid access.",
     buttonText: "Continue to secure payment",
-    tone: "core",
   },
   premium: {
     id: "premium",
@@ -68,54 +48,71 @@ const PLANS: Record<PlanKey, Plan> = {
     eyebrow: "Advanced training",
     price: "$24.99",
     billing: "/mo",
-    description: "Advanced rule memory tools, premium rule sets, and priority training features.",
+    description:
+      "Advanced rule memory tools, premium rule sets, and priority training features.",
     features: [
       "Everything in BLL Monthly",
       "120 Golden Rules",
       "120 Golden Flashcards",
       "Priority training tools",
     ],
-    nextStep: "Complete payment through Paddle to activate premium access.",
     buttonText: "Continue to secure payment",
-    tone: "premium",
   },
 }
 
-function normalizePlan(value: string | null): PlanKey {
+function normalizePaidPlan(value: string | null): PlanKey {
   if (value === "premium") return "premium"
-  if (value === "bll-monthly" || value === "monthly") return "bll-monthly"
-  if (value === "free") return "free"
   return "bll-monthly"
 }
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
 
-  const selectedPlanId = normalizePlan(searchParams.get("plan"))
+  const rawPlan = searchParams.get("plan")
   const registered = searchParams.get("registered") === "1"
+  const selectedPlanId = normalizePaidPlan(rawPlan)
 
   const selectedPlan = useMemo(() => PLANS[selectedPlanId], [selectedPlanId])
 
-  const isFree = selectedPlan.id === "free"
+  const freePlanRequested = rawPlan === "free"
 
   function handlePaymentClick() {
-    if (isFree) {
-      window.location.href = "/dashboard"
-      return
-    }
-
-    /*
-      Paddle integration point.
-
-      When Paddle products/prices are ready, replace this placeholder with
-      your Paddle checkout call or your own API route, for example:
-
-      window.location.href = `/api/billing/checkout?plan=${selectedPlan.id}`
-
-      Do not put secret Paddle keys in this client file.
-    */
     window.alert(
       "Paddle checkout is not connected yet. Next step: connect this button to your Paddle checkout link or billing API route."
+    )
+  }
+
+  if (freePlanRequested) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#F7F8FC] px-5 text-[#0E1B35]">
+        <div className="w-full max-w-xl rounded-[30px] border border-[#E2E6F0] bg-white p-8 text-center shadow-[0_24px_60px_rgba(14,27,53,0.12)]">
+          <img
+            src="/icon.png"
+            alt="Lexora Prep logo"
+            className="mx-auto mb-5 h-12 w-12 object-contain"
+          />
+
+          <div className="mb-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#7C3AED]">
+            Registration required
+          </div>
+
+          <h1 className="font-serif text-[38px] font-normal tracking-[-0.04em] text-[#0E1B35]">
+            Free access starts with an account.
+          </h1>
+
+          <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-[#64748B]">
+            Free users must register first. After account creation, the free plan
+            opens the dashboard without Paddle payment.
+          </p>
+
+          <Link
+            href="/register?plan=free"
+            className="mt-7 inline-flex h-12 items-center justify-center rounded-2xl bg-[#0E1B35] px-6 text-sm font-extrabold text-white shadow-[0_12px_30px_rgba(14,27,53,0.22)] transition hover:bg-[#162B55]"
+          >
+            Go to free registration
+          </Link>
+        </div>
+      </main>
     )
   }
 
@@ -135,12 +132,6 @@ function CheckoutContent() {
         }
       }}
     >
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute right-[-130px] top-[-170px] h-[520px] w-[520px] rounded-full bg-[#7C3AED]/10 blur-[120px]" />
-        <div className="absolute bottom-[-180px] left-[-130px] h-[440px] w-[440px] rounded-full bg-[#0E1B35]/[0.06] blur-[120px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_10%,rgba(124,58,237,0.045),transparent_55%),radial-gradient(ellipse_at_20%_80%,rgba(14,27,53,0.04),transparent_55%)]" />
-      </div>
-
       <header className="sticky top-0 z-20 flex h-[66px] items-center justify-between border-b border-[#E2E6F0] bg-[#F7F8FC]/95 px-5 backdrop-blur-xl md:px-12">
         <Link href="/" className="flex items-center gap-3">
           <img
@@ -166,21 +157,29 @@ function CheckoutContent() {
         <div>
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#DDD6FE] bg-[#F3F0FF] px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#7C3AED]">
             <Sparkles className="h-4 w-4" />
-            Final step
+            Final payment step
           </div>
 
           <h1 className="font-serif text-[44px] font-normal leading-[1.04] tracking-[-0.04em] text-[#0E1B35] md:text-[62px]">
-            {registered ? "Account created." : "Checkout step."}{" "}
+            {registered ? "Account created." : "Registration comes first."}{" "}
             <span className="italic text-[#5B21B6]">
-              Complete your access.
+              Complete paid access.
             </span>
           </h1>
 
           <p className="mt-5 max-w-2xl text-[16px] leading-8 text-[#475569]">
-            Your selected plan is saved below. Free users can enter the platform
-            directly. Paid users continue to secure Paddle checkout before paid
-            access is activated.
+            This page is only the payment step for paid plans after registration.
+            Plan selection happens on the homepage and inside the registration
+            cart. It is not a second pricing page.
           </p>
+
+          {!registered ? (
+            <div className="mt-6 rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF] p-4 text-sm font-semibold leading-6 text-[#5B21B6]">
+              New users should create an account first. Use the registration
+              page so the selected plan is attached to the user profile before
+              payment.
+            </div>
+          ) : null}
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <div className="rounded-[24px] border border-[#E2E6F0] bg-white/90 p-5 shadow-[0_12px_34px_rgba(14,27,53,0.06)]">
@@ -188,11 +187,11 @@ function CheckoutContent() {
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div className="text-sm font-black text-[#0E1B35]">
-                Account first
+                Registration first
               </div>
               <p className="mt-2 text-xs leading-5 text-[#64748B]">
-                Registration happens before payment so the selected plan stays
-                tied to the account.
+                Every user, including free users, must create an account before
+                entering the platform.
               </p>
             </div>
 
@@ -201,11 +200,10 @@ function CheckoutContent() {
                 <CreditCard className="h-5 w-5" />
               </div>
               <div className="text-sm font-black text-[#0E1B35]">
-                Paddle payment
+                Paid users only
               </div>
               <p className="mt-2 text-xs leading-5 text-[#64748B]">
-                Taxes, invoices, cancellations, and payment processing are
-                handled through Paddle.
+                Only BLL Monthly and Premium users continue to Paddle checkout.
               </p>
             </div>
 
@@ -217,8 +215,8 @@ function CheckoutContent() {
                 Protected use
               </div>
               <p className="mt-2 text-xs leading-5 text-[#64748B]">
-                Lexora Prep is a supplemental educational tool and does not
-                guarantee bar exam passage.
+                Lexora Prep is supplemental and does not guarantee bar exam
+                passage.
               </p>
             </div>
           </div>
@@ -228,7 +226,7 @@ function CheckoutContent() {
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#7C3AED]">
-                Selected plan
+                Selected paid plan
               </div>
               <div className="mt-1 text-2xl font-black tracking-[-0.04em] text-[#0E1B35]">
                 {selectedPlan.label}
@@ -239,19 +237,11 @@ function CheckoutContent() {
               href={`/register?plan=${selectedPlan.id}`}
               className="rounded-full border border-[#E2E6F0] bg-[#F7F8FC] px-3 py-1.5 text-xs font-black text-[#64748B] transition hover:border-[#7C3AED] hover:text-[#7C3AED]"
             >
-              Change
+              Change plan
             </Link>
           </div>
 
-          <div
-            className={
-              selectedPlan.tone === "premium"
-                ? "rounded-[26px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#F59E0B] p-5 text-white shadow-[0_18px_45px_rgba(14,27,53,0.20)]"
-                : selectedPlan.tone === "core"
-                  ? "rounded-[26px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#6D28D9] p-5 text-white shadow-[0_18px_45px_rgba(14,27,53,0.20)]"
-                  : "rounded-[26px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#475569] p-5 text-white shadow-[0_18px_45px_rgba(14,27,53,0.20)]"
-            }
-          >
+          <div className="rounded-[26px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#6D28D9] p-5 text-white shadow-[0_18px_45px_rgba(14,27,53,0.20)]">
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">
               {selectedPlan.eyebrow}
             </div>
@@ -260,11 +250,9 @@ function CheckoutContent() {
               <div className="text-[50px] font-black leading-none tracking-[-0.08em]">
                 {selectedPlan.price}
               </div>
-              {selectedPlan.billing ? (
-                <div className="pb-1 text-lg font-black text-white/65">
-                  {selectedPlan.billing}
-                </div>
-              ) : null}
+              <div className="pb-1 text-lg font-black text-white/65">
+                {selectedPlan.billing}
+              </div>
             </div>
 
             <p className="mt-4 text-sm leading-6 text-white/75">
@@ -284,32 +272,17 @@ function CheckoutContent() {
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF] p-4 text-sm leading-6 text-[#5B21B6]">
-            {selectedPlan.nextStep}
-          </div>
-
           <button
             type="button"
             onClick={handlePaymentClick}
-            className="mt-5 flex h-[54px] w-full items-center justify-center rounded-2xl bg-[#0E1B35] px-5 text-sm font-extrabold text-white shadow-[0_12px_30px_rgba(14,27,53,0.24)] transition hover:-translate-y-0.5 hover:bg-[#162B55]"
+            className="mt-6 flex h-[54px] w-full items-center justify-center rounded-2xl bg-[#0E1B35] px-5 text-sm font-extrabold text-white shadow-[0_12px_30px_rgba(14,27,53,0.24)] transition hover:-translate-y-0.5 hover:bg-[#162B55]"
           >
             {selectedPlan.buttonText}
           </button>
 
           <p className="mt-5 text-center text-xs font-semibold leading-5 text-[#94A3B8]">
-            By continuing, you agree to Lexora Prep&apos;s{" "}
-            <Link href="/terms" className="font-black text-[#7C3AED]">
-              Terms
-            </Link>
-            ,{" "}
-            <Link href="/privacy" className="font-black text-[#7C3AED]">
-              Privacy Policy
-            </Link>
-            , and{" "}
-            <Link href="/refund" className="font-black text-[#7C3AED]">
-              Refund Policy
-            </Link>
-            .
+            Payment, taxes, invoices, cancellations, and refund processing are
+            handled by Paddle as Merchant of Record.
           </p>
         </aside>
       </section>
