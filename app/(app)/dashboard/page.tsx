@@ -858,7 +858,7 @@ export default function Dashboard() {
         goalBLL: safeDailyRules,
       }))
     } catch (err) {
-      console.error("GENERATE PLAN ERROR:", err)
+      console.error("CREATE PLAN ERROR:", err)
       alert("Something went wrong while generating the plan.")
     }
   }
