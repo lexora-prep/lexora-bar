@@ -19,7 +19,7 @@ const sections = [
     title: "How We Use Information",
     body: [
       "Information is used to provide the platform, manage accounts, operate study tools, show analytics, improve product performance, process subscriptions, prevent abuse, provide support, and comply with legal obligations.",
-      "Study activity may be used to generate progress indicators, weak area reports, recall scores, and personalized study recommendations."
+      "Study activity may be used to create progress indicators, weak area reports, recall scores, and study progress summaries."
     ]
   },
   {

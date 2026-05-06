@@ -26,7 +26,7 @@ const sections = [
     title: "No Guarantee of Results",
     body: [
       "Lexora Prep does not guarantee that any user will pass any bar exam, receive a particular score, improve a score, be admitted to practice law, or achieve any academic, professional, or licensing outcome.",
-      "Performance analytics, recall scores, keyword matching, weak area indicators, and study plans are educational estimates only. They are not official predictions of bar exam performance."
+      "Performance analytics, recall scores, keyword matching, weak area indicators, and study plans are educational displays only. They are not official study indicators of bar exam performance."
     ]
   },
   {

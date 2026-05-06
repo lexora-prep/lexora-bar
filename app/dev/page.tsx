@@ -2,11 +2,11 @@
 
 export default function DevPanel() {
 
-  async function generateData() {
-    await fetch("/api/dev/generate-test-data", {
+  async function createData() {
+    await fetch("/api/dev/create-test-data", {
       method: "POST"
     })
-    alert("Test data generated")
+    alert("Test data shown")
   }
 
   async function resetData() {
@@ -38,10 +38,10 @@ export default function DevPanel() {
       <div className="space-y-4">
 
         <button
-          onClick={generateData}
+          onClick={createData}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          Generate Test Attempts
+          Create Test Attempts
         </button>
 
         <button

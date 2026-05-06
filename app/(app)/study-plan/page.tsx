@@ -290,7 +290,7 @@ export default function StudyPlanPage() {
             </div>
 
             <div className="mb-4 text-sm leading-6 text-slate-500">
-              You have not created a study plan yet. Go to your dashboard and set your exam date to generate your daily schedule.
+              You have not created a study plan yet. Go to your dashboard and set your exam date to create your daily schedule.
             </div>
 
             <button

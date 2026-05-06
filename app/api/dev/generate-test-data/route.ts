@@ -33,7 +33,7 @@ export async function GET() {
       })
     }
 
-    // generate MBE attempts
+    // create MBE attempts
     for (let i = 0; i < 50; i++) {
       const correct = Math.random() > 0.35
 
@@ -48,7 +48,7 @@ export async function GET() {
       })
     }
 
-    // generate rule attempts
+    // create rule attempts
     for (let i = 0; i < 40; i++) {
       const correct = Math.random() > 0.4
 

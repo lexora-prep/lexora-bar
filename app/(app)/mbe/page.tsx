@@ -792,13 +792,13 @@ export default function MBEPage() {
                       const topicIds = selectedTopics[subject.id] || []
                       const style = getSubjectStyle(subject.name)
 
-                      const estimatedMastery =
+                      const displayedMastery =
                         subject.questionCount > 0
                           ? Math.min(100, Math.round((subject.topics.reduce((sum, t) => sum + t.solvedCount, 0) / Math.max(subject.questionCount, 1)) * 100))
                           : 0
 
-                      const estimatedAccuracy =
-                        estimatedMastery === 0 ? 0 : Math.min(100, estimatedMastery + 18)
+                      const displayedAccuracy =
+                        displayedMastery === 0 ? 0 : Math.min(100, displayedMastery + 18)
 
                       const selectedTopicCount = topicIds.length
                       const dueCount =
@@ -844,7 +844,7 @@ export default function MBEPage() {
                           <div className="mt-5 h-2 rounded-full bg-slate-100 overflow-hidden">
                             <div
                               className={`h-2 rounded-full ${style.accent}`}
-                              style={{ width: `${estimatedMastery}%` }}
+                              style={{ width: `${displayedMastery}%` }}
                             />
                           </div>
 
@@ -854,10 +854,10 @@ export default function MBEPage() {
                                 <span className="font-semibold text-slate-800">{subject.questionCount}</span> cards
                               </span>
                               <span className="text-slate-500">
-                                <span className="font-semibold text-slate-800">{estimatedMastery}%</span> mastered
+                                <span className="font-semibold text-slate-800">{displayedMastery}%</span> mastered
                               </span>
                               <span className="text-slate-500">
-                                <span className="font-semibold text-slate-800">{estimatedAccuracy}%</span> accuracy
+                                <span className="font-semibold text-slate-800">{displayedAccuracy}%</span> accuracy
                               </span>
                             </div>
 

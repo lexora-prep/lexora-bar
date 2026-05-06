@@ -380,7 +380,7 @@ export default function FlashcardsPage() {
       })
   }, [subjects, selectedSubjects, selectedTopics])
 
-  const estimatedRulePool = useMemo(() => {
+  const displayedRulePool = useMemo(() => {
     if (deckType === "golden120") return 120
 
     if (selectedTopicCount > 0) {
@@ -997,7 +997,7 @@ export default function FlashcardsPage() {
                     <BookmarkItem label="Deck" value={deckType === "golden120" ? "Golden 120" : deckType === "smart_prep" ? "Smart Prep" : "Custom"} />
                     <BookmarkItem label="Mode" value={mode === "study" ? "Study" : "Quiz"} />
                     <BookmarkItem label="Cards" value={String(cardCount)} />
-                    <BookmarkItem label="Pool" value={estimatedRulePool > 0 ? String(estimatedRulePool) : "Pending"} />
+                    <BookmarkItem label="Pool" value={displayedRulePool > 0 ? String(displayedRulePool) : "Pending"} />
                     <BookmarkItem label="Timed" value={timed ? `${timePerCard}s` : "No"} />
                     <BookmarkItem label="Subjects" value={deckType === "golden120" ? "All" : String(selectedSubjects.length)} />
                     <BookmarkItem label="Topics" value={deckType === "golden120" ? "Auto" : String(selectedTopicCount)} />

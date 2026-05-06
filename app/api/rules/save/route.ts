@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-function generateFillBlank(ruleText: string) {
+function createFillBlank(ruleText: string) {
   const words = ruleText.split(" ")
 
   if (words.length < 6) {
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
   const { userId, subject, topic, ruleText, sourceQuestionId } = body
 
-  const drillData = generateFillBlank(ruleText)
+  const drillData = createFillBlank(ruleText)
 
   const drill =
     typeof drillData === "string" ? drillData : drillData.drill

@@ -154,7 +154,7 @@ export default function Dashboard() {
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([])
   const [calendarMonth, setCalendarMonth] = useState<Date | null>(null)
   const [savedOffMap, setSavedOffMap] = useState<Record<string, boolean>>({})
-  const [hasGeneratedPlanThisSession, setHasGeneratedPlanThisSession] =
+  const [hasShownPlanThisSession, setHasShownPlanThisSession] =
     useState(false)
 
   const [analyticsRange, setAnalyticsRange] = useState<AnalyticsRange>("30d")
@@ -253,7 +253,7 @@ export default function Dashboard() {
         setStartDate("")
         setExamDate("")
         setStudyWeekends(true)
-        setHasGeneratedPlanThisSession(false)
+        setHasShownPlanThisSession(false)
         return
       }
 
@@ -293,7 +293,7 @@ export default function Dashboard() {
         rulesByDate: distributedRules,
       })
 
-      setHasGeneratedPlanThisSession(true)
+      setHasShownPlanThisSession(true)
 
       if (start && exam) {
         const month = new Date(start)
@@ -766,7 +766,7 @@ export default function Dashboard() {
     setResetConfirmOpen(false)
   }
 
-  async function generatePlan() {
+  async function createPlan() {
     if (!currentUserId) return
 
     try {
@@ -809,7 +809,7 @@ export default function Dashboard() {
       const data = await res.json()
 
       if (!res.ok || data?.error) {
-        alert(data?.error || "Failed to generate study plan.")
+        alert(data?.error || "Failed to create study plan.")
         return
       }
 
@@ -851,7 +851,7 @@ export default function Dashboard() {
       setPlanData(nextPlanData)
       setCalendarMonth(viewMonth)
       setCalendarDays(days)
-      setHasGeneratedPlanThisSession(true)
+      setHasShownPlanThisSession(true)
 
       setDashboard((prev: any) => ({
         ...prev,
@@ -953,7 +953,7 @@ export default function Dashboard() {
       setExamDate("")
       setStudyWeekends(true)
       setSavedOffMap({})
-      setHasGeneratedPlanThisSession(false)
+      setHasShownPlanThisSession(false)
       setResetConfirmOpen(false)
       closeStudyPlanModal()
       setStudyPlanLoaded(true)
@@ -1108,7 +1108,7 @@ export default function Dashboard() {
     !!planData &&
     !!startDate &&
     !!examDate &&
-    hasGeneratedPlanThisSession
+    hasShownPlanThisSession
 
   if (!authReady || !coreLoaded) {
     return (
@@ -1836,7 +1836,7 @@ export default function Dashboard() {
 
                   {calendarDays.length === 0 ? (
                     <div className="flex h-[520px] items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm text-slate-400">
-                      Select your start date and exam date, then click Generate
+                      Select your start date and exam date, then click Create
                       Plan.
                     </div>
                   ) : (
@@ -2094,10 +2094,10 @@ export default function Dashboard() {
 
                   <div className="grid grid-cols-3 gap-2">
                     <button
-                      onClick={generatePlan}
+                      onClick={createPlan}
                       className="rounded-2xl bg-[linear-gradient(135deg,#6f84ea_0%,#9f7bea_100%)] px-3 py-2.5 text-[13px] font-semibold text-white shadow transition hover:opacity-95"
                     >
-                      Generate
+                      Create
                     </button>
 
                     <button
