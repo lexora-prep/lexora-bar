@@ -57,7 +57,7 @@ export default function LoginPage() {
         <header className="sticky top-0 z-20 flex h-[66px] items-center justify-between border-b border-[#E2E6F0] bg-[#F7F8FC]/95 px-5 backdrop-blur-xl md:px-12">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/lexora-logo-transparent.png"
+              src="/icon.png"
               alt="Lexora Prep logo"
               width={40}
               height={40}
