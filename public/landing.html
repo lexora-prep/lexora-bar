@@ -10,6 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
+
+
+/* ===== CONSOLIDATED LEXORA LANDING STYLES ===== */
 :root{
   --ivory:#F7F8FC;
   --ivory-2:#F0F2F8;
@@ -2995,6 +2998,1194 @@ select {
   box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
 }
 
+/* ===== NEXT STYLE BLOCK ===== */
+.lexora-safe-hero-wrap {
+    width: min(760px, 100%);
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  .lexora-safe-panel {
+    overflow: hidden;
+    border-radius: 30px;
+    border: 1px solid rgba(203, 213, 225, 0.95);
+    background: #ffffff;
+    box-shadow: 0 34px 90px rgba(14, 27, 53, 0.14), 0 0 70px rgba(124, 58, 237, 0.10);
+  }
+
+  .lexora-safe-windowbar {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+    background: #f1f5fb;
+    border-bottom: 1px solid #dce3ef;
+  }
+
+  .lexora-safe-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .lexora-safe-url {
+    margin-left: 8px;
+    font-family: "JetBrains Mono", monospace;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .lexora-safe-body {
+    padding: 18px;
+    background: linear-gradient(180deg, #ffffff, #f8faff);
+  }
+
+  .lexora-safe-analytics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .lexora-safe-kpi {
+    min-height: 98px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 15px;
+  }
+
+  .lexora-safe-kpi.dark {
+    background: linear-gradient(135deg, #0e1b35, #162b55 55%, #5b21b6);
+    border-color: rgba(124, 58, 237, 0.35);
+  }
+
+  .lexora-safe-label {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .lexora-safe-value {
+    color: #0e1b35;
+    font-size: 27px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -0.05em;
+  }
+
+  .lexora-safe-kpi.dark .lexora-safe-value {
+    color: #ffffff;
+  }
+
+  .lexora-safe-sub {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 850;
+    margin-top: 8px;
+  }
+
+  .lexora-safe-good {
+    color: #059669;
+  }
+
+  .lexora-safe-line {
+    height: 5px;
+    margin-top: 12px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .lexora-safe-line span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  }
+
+  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-line span {
+    animation: lexoraSafeWidth 1.15s ease forwards;
+  }
+
+  .lexora-safe-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .lexora-safe-card {
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 15px;
+  }
+
+  .lexora-safe-title {
+    color: #0e1b35;
+    font-size: 13px;
+    font-weight: 950;
+    margin-bottom: 12px;
+  }
+
+  .lexora-safe-row {
+    display: grid;
+    grid-template-columns: 1fr 54px 92px;
+    gap: 9px;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid #eef2f7;
+  }
+
+  .lexora-safe-row:first-of-type {
+    border-top: 0;
+  }
+
+  .lexora-safe-subject {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #0e1b35;
+    font-size: 12.5px;
+    font-weight: 900;
+  }
+
+  .lexora-safe-subject-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+  }
+
+  .lexora-safe-count {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 850;
+    text-align: right;
+  }
+
+  .lexora-safe-count strong {
+    color: #7c3aed;
+  }
+
+  .lexora-safe-rowbar {
+    height: 5px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .lexora-safe-rowbar span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-rowbar span {
+    animation: lexoraSafeWidth 1.1s ease forwards;
+  }
+
+  .lexora-safe-svg {
+    width: 100%;
+    height: 116px;
+  }
+
+  .lexora-safe-score-line {
+    stroke-dasharray: 440;
+    stroke-dashoffset: 440;
+  }
+
+  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-score-line {
+    animation: lexoraSafeDraw 1.7s ease forwards, lexoraSafeGlow 3s ease-in-out 2s infinite;
+  }
+
+  .lexora-safe-rule {
+    border-radius: 22px;
+    border: 1px solid rgba(124, 58, 237, 0.18);
+    background: #ffffff;
+    padding: 18px;
+  }
+
+  .lexora-safe-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #f3f0ff;
+    color: #7c3aed;
+    border: 1px solid #ddd6fe;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .lexora-safe-pill::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #7c3aed;
+  }
+
+  .lexora-safe-question {
+    color: #0e1b35;
+    font-size: 19px;
+    line-height: 1.45;
+    font-weight: 950;
+    letter-spacing: -0.03em;
+  }
+
+  .lexora-safe-helper {
+    margin-top: 10px;
+    color: #5b21b6;
+    font-size: 12px;
+    line-height: 1.55;
+    font-weight: 850;
+  }
+
+  .lexora-safe-answer {
+    margin-top: 14px;
+    border-radius: 18px;
+    border: 1px solid #dce3ef;
+    background: #f8faff;
+    padding: 15px;
+  }
+
+  .lexora-safe-answer-label {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+  }
+
+  .lexora-safe-typing {
+    min-height: 68px;
+    color: #0e1b35;
+    font-size: 13.5px;
+    line-height: 1.7;
+    font-weight: 700;
+  }
+
+  .lexora-safe-typing::after {
+    content: "";
+    display: inline-block;
+    width: 2px;
+    height: 15px;
+    margin-left: 2px;
+    transform: translateY(3px);
+    background: #7c3aed;
+    animation: lexoraSafeCaret 0.8s steps(1) infinite;
+  }
+
+  .lexora-safe-actions {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .lexora-safe-submit {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 14px;
+    border: 0;
+    background: #0e1b35;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 950;
+    box-shadow: 0 14px 24px rgba(14, 27, 53, 0.22);
+  }
+
+  .lexora-safe-submit.submitting {
+    animation: lexoraSafeSubmit 0.7s ease both;
+  }
+
+  .lexora-safe-status {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .lexora-safe-how {
+    padding: 96px 52px;
+    background: #ffffff;
+    border-top: 1px solid #e2e6f0;
+    border-bottom: 1px solid #e2e6f0;
+  }
+
+  .lexora-safe-how-inner {
+    width: min(1180px, 100%);
+    margin: 0 auto;
+  }
+
+  .lexora-safe-how-title {
+    font-family: "DM Serif Display", serif;
+    color: #0e1b35;
+    font-size: clamp(42px, 5vw, 72px);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+    font-weight: 400;
+    margin-bottom: 18px;
+  }
+
+  .lexora-safe-how-title em {
+    color: #7c3aed;
+    font-style: italic;
+  }
+
+  .lexora-safe-how-copy {
+    max-width: 760px;
+    color: #475569;
+    font-size: 18px;
+    line-height: 1.75;
+    margin-bottom: 34px;
+  }
+
+  .lexora-safe-how-demo {
+    overflow: hidden;
+    border-radius: 28px;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    background: #ffffff;
+    box-shadow: 0 26px 74px rgba(14, 27, 53, 0.10);
+  }
+
+  .lexora-safe-how-body {
+    padding: 22px;
+    background: linear-gradient(180deg, #ffffff, #f8faff);
+  }
+
+  .lexora-safe-model-rule {
+    display: none;
+    color: #0e1b35;
+    font-family: "DM Serif Display", serif;
+    font-size: 22px;
+    line-height: 1.72;
+    animation: lexoraSafeReveal 0.45s ease both;
+  }
+
+  .lexora-safe-model-rule mark {
+    background: rgba(124, 58, 237, 0.10);
+    color: #5b21b6;
+    border-bottom: 2px solid rgba(124, 58, 237, 0.34);
+    border-radius: 4px;
+    padding: 0 3px;
+    font-style: italic;
+  }
+
+  .lexora-safe-how-result {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .lexora-safe-how-result-card {
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 16px;
+  }
+
+  .lexora-safe-how-result-value {
+    color: #7c3aed;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 950;
+  }
+
+  .lexora-safe-how-result-value.green {
+    color: #059669;
+  }
+
+  @keyframes lexoraSafeCaret {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes lexoraSafeSubmit {
+    0% { transform: translateY(0) scale(1); }
+    45% { transform: translateY(-1px) scale(0.98); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  @keyframes lexoraSafeWidth {
+    from { width: 0; }
+    to { width: var(--w); }
+  }
+
+  @keyframes lexoraSafeDraw {
+    to { stroke-dashoffset: 0; }
+  }
+
+  @keyframes lexoraSafeGlow {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(124, 58, 237, 0)); }
+    50% { filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.45)); }
+  }
+
+  @keyframes lexoraSafeReveal {
+    from { opacity: 0; transform: translateY(8px); filter: blur(2px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  @media (max-width: 1100px) {
+    .lexora-safe-analytics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lexora-safe-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .lexora-safe-analytics,
+    .lexora-safe-how-result {
+      grid-template-columns: 1fr;
+    }
+
+    .lexora-safe-how {
+      padding: 64px 22px;
+    }
+  }
+
+/* ===== NEXT STYLE BLOCK ===== */
+nav, .lexora-nav, .site-nav, .main-nav {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 99999 !important;
+    min-height: 74px !important;
+    background: rgba(247, 248, 252, 0.98) !important;
+    backdrop-filter: blur(18px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.86) !important;
+    box-shadow: 0 10px 34px rgba(14, 27, 53, 0.08) !important;
+  }
+
+  nav .nav-inner, .lexora-nav .nav-inner, .site-nav .nav-inner, .main-nav .nav-inner, .nav-inner {
+    min-height: 74px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 22px !important;
+  }
+
+  .nav-logo, nav .nav-logo {
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  .nav-links, nav .nav-links {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: clamp(18px, 2vw, 30px) !important;
+    margin: 0 auto !important;
+  }
+
+  .nav-cta, nav .nav-cta {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .hero-stat, .hero-stats, .stat-card, .floating-stat, .recall-score-card, .keywords-card, .metric-card, .demo-metric-card, .hero-floating-card, .floating-metric {
+    display: none !important;
+  }
+
+  .lexora-safe-hero {
+    width: min(760px, 100%);
+    margin: 0 auto;
+    display: grid;
+    gap: 14px;
+  }
+
+  .lexora-safe-card {
+    border-radius: 26px;
+    border: 1px solid rgba(203, 213, 225, 0.95);
+    background: #fff;
+    box-shadow: 0 24px 70px rgba(14, 27, 53, 0.11);
+    overflow: hidden;
+  }
+
+  .lexora-safe-body {
+    padding: 16px;
+    background: linear-gradient(180deg, #fff, #F8FAFF);
+  }
+
+  .lexora-safe-analytics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .lexora-safe-kpi {
+    min-height: 88px;
+    border-radius: 18px;
+    border: 1px solid #E2E8F0;
+    background: #fff;
+    padding: 13px;
+  }
+
+  .lexora-safe-kpi.dark {
+    background: linear-gradient(135deg, #0E1B35, #162B55 55%, #5B21B6);
+  }
+
+  .lexora-safe-label {
+    color: #94A3B8;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+
+  .lexora-safe-value {
+    color: #0E1B35;
+    font-size: 25px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -.04em;
+  }
+
+  .lexora-safe-kpi.dark .lexora-safe-value {
+    color: #fff;
+  }
+
+  .lexora-safe-sub {
+    color: #94A3B8;
+    font-size: 11px;
+    font-weight: 800;
+    margin-top: 7px;
+  }
+
+  .lexora-safe-line {
+    height: 5px;
+    margin-top: 10px;
+    border-radius: 999px;
+    background: #E2E8F0;
+    overflow: hidden;
+  }
+
+  .lexora-safe-line span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7C3AED, #A78BFA);
+  }
+
+  .lexora-safe-hero.is-analyzed .lexora-safe-line span {
+    animation: lexoraSafeWidth 1.15s ease forwards;
+  }
+
+  .lexora-safe-rule {
+    border-radius: 22px;
+    border: 1px solid rgba(124, 58, 237, .18);
+    background: #fff;
+    padding: 16px;
+  }
+
+  .lexora-safe-windowbar {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    background: #F1F5FB;
+    border-bottom: 1px solid #DCE3EF;
+  }
+
+  .lexora-safe-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .lexora-safe-url {
+    margin-left: 8px;
+    font-family: "JetBrains Mono", monospace;
+    color: #94A3B8;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .lexora-safe-pill {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: #F3F0FF;
+    color: #7C3AED;
+    border: 1px solid #DDD6FE;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .lexora-safe-question {
+    color: #0E1B35;
+    font-size: 18px;
+    line-height: 1.45;
+    font-weight: 900;
+    letter-spacing: -.03em;
+  }
+
+  .lexora-safe-helper {
+    margin-top: 8px;
+    color: #5B21B6;
+    font-size: 12px;
+    line-height: 1.55;
+    font-weight: 800;
+  }
+
+  .lexora-safe-answer {
+    margin-top: 12px;
+    border-radius: 16px;
+    border: 1px solid #DCE3EF;
+    background: #F8FAFF;
+    padding: 14px;
+  }
+
+  .lexora-safe-typing {
+    min-height: 62px;
+    color: #0E1B35;
+    font-size: 13.5px;
+    line-height: 1.7;
+    font-weight: 650;
+  }
+
+  .lexora-safe-typing::after {
+    content: "";
+    display: inline-block;
+    width: 2px;
+    height: 15px;
+    margin-left: 2px;
+    transform: translateY(3px);
+    background: #7C3AED;
+    animation: lexoraSafeCaret .8s steps(1) infinite;
+  }
+
+  .lexora-safe-actions {
+    margin-top: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .lexora-safe-submit {
+    height: 38px;
+    padding: 0 17px;
+    border-radius: 13px;
+    border: 0;
+    background: #0E1B35;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .lexora-safe-status {
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .lexora-safe-how {
+    padding: 72px 32px;
+    background: #fff;
+    border-top: 1px solid #E2E6F0;
+    border-bottom: 1px solid #E2E6F0;
+  }
+
+  .lexora-safe-how-inner {
+    width: min(980px, 100%);
+    margin: 0 auto;
+  }
+
+  .lexora-safe-how-title {
+    font-family: "DM Serif Display", serif;
+    color: #0E1B35;
+    font-size: clamp(34px, 4vw, 52px);
+    line-height: 1.05;
+    letter-spacing: -.04em;
+    font-weight: 400;
+    margin-bottom: 14px;
+  }
+
+  .lexora-safe-how-title em {
+    color: #7C3AED;
+    font-style: italic;
+  }
+
+  .lexora-safe-how-copy {
+    max-width: 720px;
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.75;
+    margin-bottom: 24px;
+  }
+
+  .lexora-safe-how-result {
+    display: none;
+    margin-top: 14px;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    background: #fff;
+    padding: 14px;
+    color: #0E1B35;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .lexora-safe-how-result.show {
+    display: block;
+  }
+
+  @keyframes lexoraSafeCaret {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes lexoraSafeWidth {
+    from { width: 0; }
+    to { width: var(--w); }
+  }
+
+  @media (max-width: 900px) {
+    .lexora-safe-analytics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .lexora-safe-analytics {
+      grid-template-columns: 1fr;
+    }
+  }
+
+/* ===== NEXT STYLE BLOCK ===== */
+footer .footer-links {
+    display: none !important;
+  }
+
+  footer .lexora-social-row,
+  footer .lexora-founder-link {
+    display: none !important;
+  }
+
+  .lexora-recall-section {
+    padding: 72px 32px !important;
+    background: #FFFFFF !important;
+    border-top: 1px solid #E2E8F0 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+  }
+
+  .lexora-recall-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .lexora-recall-title {
+    font-family: "DM Serif Display", serif;
+    font-size: clamp(30px, 3.2vw, 46px);
+    line-height: 1.06;
+    font-weight: 400;
+    letter-spacing: -0.045em;
+    color: #0E1B35;
+    margin: 0 0 12px;
+  }
+
+  .lexora-recall-title em {
+    color: #7C3AED;
+    font-style: italic;
+  }
+
+  .lexora-recall-copy {
+    max-width: 740px;
+    margin: 0 0 26px;
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .lexora-demo-shell {
+    position: relative;
+    border-radius: 28px;
+    border: 1px solid #DCE3EF;
+    background: #FFFFFF;
+    box-shadow: 0 24px 70px rgba(14,27,53,0.08);
+    overflow: visible;
+  }
+
+  .lexora-demo-window {
+    border-radius: 28px;
+    overflow: hidden;
+  }
+
+  .lexora-windowbar {
+    height: 42px;
+    background: #F1F5FB;
+    border-bottom: 1px solid #DCE3EF;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+  }
+
+  .lexora-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .lexora-url {
+    margin-left: 8px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 800;
+    color: #94A3B8;
+  }
+
+  .lexora-demo-body {
+    background: #F8FAFF;
+    padding: 24px;
+  }
+
+  .lexora-rule-card {
+    border: 1px solid rgba(124,58,237,0.22);
+    border-radius: 22px;
+    background: #FFFFFF;
+    padding: 22px;
+  }
+
+  .lexora-pill {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #F3F0FF;
+    color: #7C3AED;
+    border: 1px solid #DDD6FE;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .lexora-rule-question {
+    color: #0E1B35;
+    font-size: clamp(18px, 1.7vw, 23px);
+    line-height: 1.45;
+    font-weight: 950;
+    letter-spacing: -0.035em;
+  }
+
+  .lexora-rule-model {
+    display: none;
+    margin-top: 14px;
+    font-family: "DM Serif Display", serif;
+    color: #0E1B35;
+    font-size: clamp(20px, 1.9vw, 26px);
+    line-height: 1.65;
+    letter-spacing: -0.02em;
+  }
+
+  .lexora-rule-model.show {
+    display: block;
+    animation: lexoraResultIn 320ms ease both;
+  }
+
+  .lexora-highlight {
+    color: #7C3AED;
+    background: #F3F0FF;
+    border-bottom: 2px solid #A78BFA;
+    border-radius: 4px;
+    padding: 0 3px;
+    font-style: italic;
+  }
+
+  .lexora-helper {
+    margin-top: 10px;
+    color: #5B21B6;
+    font-size: 12.5px;
+    font-weight: 850;
+    line-height: 1.65;
+  }
+
+  .lexora-answer-grid {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .lexora-answer-card,
+  .lexora-result-card {
+    border: 1px solid #DCE3EF;
+    border-radius: 20px;
+    background: #FFFFFF;
+    padding: 18px;
+    box-shadow: 0 10px 28px rgba(14,27,53,0.04);
+  }
+
+  .lexora-result-card {
+    display: none;
+  }
+
+  .lexora-result-card.show {
+    display: block;
+    animation: lexoraResultIn 360ms ease both;
+  }
+
+  .lexora-small-label {
+    margin-bottom: 10px;
+    color: #94A3B8;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .lexora-answer-textarea {
+    width: 100%;
+    min-height: 128px;
+    resize: vertical;
+    border: 1px solid #DCE3EF;
+    border-radius: 16px;
+    background: #F8FAFF;
+    color: #0E1B35;
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 750;
+    padding: 14px;
+    outline: none;
+  }
+
+  .lexora-answer-textarea:focus {
+    border-color: #7C3AED;
+    box-shadow: 0 0 0 4px rgba(124,58,237,0.10);
+  }
+
+  .lexora-actions {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .lexora-submit {
+    height: 42px;
+    border: 0;
+    border-radius: 14px;
+    background: #0E1B35;
+    color: #FFFFFF;
+    padding: 0 20px;
+    font-size: 13px;
+    font-weight: 950;
+    box-shadow: 0 10px 24px rgba(14,27,53,0.18);
+    cursor: pointer;
+  }
+
+  .lexora-status {
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .lexora-result-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lexora-score-ring {
+    width: 66px;
+    height: 66px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at center, #FFFFFF 54%, transparent 56%),
+      conic-gradient(#10B981 0deg 300deg, #E2E8F0 300deg 360deg);
+    color: #0E1B35;
+    font-size: 17px;
+    font-weight: 950;
+  }
+
+  .lexora-result-title {
+    font-size: 16px;
+    font-weight: 950;
+    color: #0E1B35;
+    letter-spacing: -0.02em;
+  }
+
+  .lexora-result-sub {
+    margin-top: 3px;
+    color: #64748B;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .lexora-result-divider {
+    height: 1px;
+    background: #E2E8F0;
+    margin: 16px 0;
+  }
+
+  .lexora-meter-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 42px;
+    align-items: center;
+    gap: 8px;
+    margin-top: 9px;
+    font-size: 11px;
+    font-weight: 850;
+    color: #475569;
+  }
+
+  .lexora-meter {
+    height: 7px;
+    border-radius: 999px;
+    background: #E2E8F0;
+    overflow: hidden;
+  }
+
+  .lexora-meter span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7C3AED, #10B981);
+  }
+
+  .lexora-result-card.show .lexora-meter span {
+    animation: lexoraMeterFill 800ms ease forwards;
+  }
+
+  .lexora-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 9px;
+  }
+
+  .lexora-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #F3F0FF;
+    border: 1px solid #DDD6FE;
+    color: #5B21B6;
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .lexora-missed {
+    margin-top: 13px;
+    padding: 12px;
+    border-radius: 14px;
+    background: #FBFCFF;
+    border: 1px solid #E2E8F0;
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .lexora-try-badge {
+    position: absolute;
+    right: -28px;
+    top: -42px;
+    width: 112px;
+    height: 112px;
+    z-index: 30;
+    display: grid;
+    place-items: center;
+    color: #FFFFFF;
+    font-size: 15px;
+    line-height: 1.05;
+    font-weight: 950;
+    text-align: center;
+    text-transform: uppercase;
+    transform: rotate(-10deg);
+    filter: drop-shadow(0 18px 32px rgba(91,33,182,0.28));
+    animation: lexoraBadgeFloat 3.6s ease-in-out infinite;
+  }
+
+  .lexora-try-badge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(from 0deg, #7C3AED, #4F46E5, #A78BFA, #7C3AED);
+    clip-path: polygon(50% 0%,60% 17%,79% 9%,81% 30%,100% 35%,86% 50%,100% 65%,81% 70%,79% 91%,60% 83%,50% 100%,40% 83%,21% 91%,19% 70%,0% 65%,14% 50%,0% 35%,19% 30%,21% 9%,40% 17%);
+    border: 5px solid #F59E0B;
+  }
+
+  .lexora-try-badge span {
+    position: relative;
+    z-index: 3;
+  }
+
+  @keyframes lexoraBadgeFloat {
+    0%,100% { transform: translateY(0) rotate(-10deg) scale(1); }
+    50% { transform: translateY(-8px) rotate(-7deg) scale(1.03); }
+  }
+
+  @keyframes lexoraMeterFill {
+    to { width: var(--fill); }
+  }
+
+  @keyframes lexoraResultIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 980px) {
+    .lexora-answer-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .lexora-try-badge {
+      right: -8px;
+      top: -36px;
+      width: 88px;
+      height: 88px;
+      font-size: 12px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .lexora-recall-section {
+      padding: 56px 18px !important;
+    }
+
+    .lexora-demo-body {
+      padding: 16px;
+    }
+  }
 </style>
 </head>
 
@@ -4028,6 +5219,9 @@ select {
 </div>
 
 <script>
+
+
+/* ===== CONSOLIDATED LEXORA LANDING SCRIPTS ===== */
 (function(){
   var pages={
     home:document.getElementById("page-home"),
@@ -4499,10 +5693,8 @@ select {
   setTimeout(typeRule,800);
   initCookies();
 })();
-</script>
 
-
-<script>
+/* ===== NEXT SCRIPT BLOCK ===== */
 (function(){
   function isEditable(el){
     if(!el) return false;
@@ -4522,477 +5714,8 @@ select {
     if(!isEditable(e.target)) e.preventDefault();
   });
 })();
-</script>
 
-
-<style id="lexora-safe-animation-style">
-  .lexora-safe-hero-wrap {
-    width: min(760px, 100%);
-    margin: 0 auto;
-    position: relative;
-    z-index: 2;
-  }
-
-  .lexora-safe-panel {
-    overflow: hidden;
-    border-radius: 30px;
-    border: 1px solid rgba(203, 213, 225, 0.95);
-    background: #ffffff;
-    box-shadow: 0 34px 90px rgba(14, 27, 53, 0.14), 0 0 70px rgba(124, 58, 237, 0.10);
-  }
-
-  .lexora-safe-windowbar {
-    height: 42px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 18px;
-    background: #f1f5fb;
-    border-bottom: 1px solid #dce3ef;
-  }
-
-  .lexora-safe-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-  }
-
-  .lexora-safe-url {
-    margin-left: 8px;
-    font-family: "JetBrains Mono", monospace;
-    color: #94a3b8;
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-  .lexora-safe-body {
-    padding: 18px;
-    background: linear-gradient(180deg, #ffffff, #f8faff);
-  }
-
-  .lexora-safe-analytics {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-
-  .lexora-safe-kpi {
-    min-height: 98px;
-    border-radius: 20px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    padding: 15px;
-  }
-
-  .lexora-safe-kpi.dark {
-    background: linear-gradient(135deg, #0e1b35, #162b55 55%, #5b21b6);
-    border-color: rgba(124, 58, 237, 0.35);
-  }
-
-  .lexora-safe-label {
-    color: #94a3b8;
-    font-size: 10px;
-    font-weight: 950;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .lexora-safe-value {
-    color: #0e1b35;
-    font-size: 27px;
-    line-height: 1;
-    font-weight: 950;
-    letter-spacing: -0.05em;
-  }
-
-  .lexora-safe-kpi.dark .lexora-safe-value {
-    color: #ffffff;
-  }
-
-  .lexora-safe-sub {
-    color: #94a3b8;
-    font-size: 11px;
-    font-weight: 850;
-    margin-top: 8px;
-  }
-
-  .lexora-safe-good {
-    color: #059669;
-  }
-
-  .lexora-safe-line {
-    height: 5px;
-    margin-top: 12px;
-    border-radius: 999px;
-    background: #e2e8f0;
-    overflow: hidden;
-  }
-
-  .lexora-safe-line span {
-    display: block;
-    width: 0;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #7c3aed, #a78bfa);
-  }
-
-  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-line span {
-    animation: lexoraSafeWidth 1.15s ease forwards;
-  }
-
-  .lexora-safe-grid {
-    display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .lexora-safe-card {
-    border-radius: 20px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    padding: 15px;
-  }
-
-  .lexora-safe-title {
-    color: #0e1b35;
-    font-size: 13px;
-    font-weight: 950;
-    margin-bottom: 12px;
-  }
-
-  .lexora-safe-row {
-    display: grid;
-    grid-template-columns: 1fr 54px 92px;
-    gap: 9px;
-    align-items: center;
-    padding: 8px 0;
-    border-top: 1px solid #eef2f7;
-  }
-
-  .lexora-safe-row:first-of-type {
-    border-top: 0;
-  }
-
-  .lexora-safe-subject {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #0e1b35;
-    font-size: 12.5px;
-    font-weight: 900;
-  }
-
-  .lexora-safe-subject-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-  }
-
-  .lexora-safe-count {
-    color: #94a3b8;
-    font-size: 12px;
-    font-weight: 850;
-    text-align: right;
-  }
-
-  .lexora-safe-count strong {
-    color: #7c3aed;
-  }
-
-  .lexora-safe-rowbar {
-    height: 5px;
-    border-radius: 999px;
-    background: #e2e8f0;
-    overflow: hidden;
-  }
-
-  .lexora-safe-rowbar span {
-    display: block;
-    width: 0;
-    height: 100%;
-    border-radius: inherit;
-  }
-
-  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-rowbar span {
-    animation: lexoraSafeWidth 1.1s ease forwards;
-  }
-
-  .lexora-safe-svg {
-    width: 100%;
-    height: 116px;
-  }
-
-  .lexora-safe-score-line {
-    stroke-dasharray: 440;
-    stroke-dashoffset: 440;
-  }
-
-  .lexora-safe-hero-wrap.is-analyzed .lexora-safe-score-line {
-    animation: lexoraSafeDraw 1.7s ease forwards, lexoraSafeGlow 3s ease-in-out 2s infinite;
-  }
-
-  .lexora-safe-rule {
-    border-radius: 22px;
-    border: 1px solid rgba(124, 58, 237, 0.18);
-    background: #ffffff;
-    padding: 18px;
-  }
-
-  .lexora-safe-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    height: 28px;
-    padding: 0 12px;
-    border-radius: 999px;
-    background: #f3f0ff;
-    color: #7c3aed;
-    border: 1px solid #ddd6fe;
-    font-size: 11px;
-    font-weight: 950;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  .lexora-safe-pill::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: #7c3aed;
-  }
-
-  .lexora-safe-question {
-    color: #0e1b35;
-    font-size: 19px;
-    line-height: 1.45;
-    font-weight: 950;
-    letter-spacing: -0.03em;
-  }
-
-  .lexora-safe-helper {
-    margin-top: 10px;
-    color: #5b21b6;
-    font-size: 12px;
-    line-height: 1.55;
-    font-weight: 850;
-  }
-
-  .lexora-safe-answer {
-    margin-top: 14px;
-    border-radius: 18px;
-    border: 1px solid #dce3ef;
-    background: #f8faff;
-    padding: 15px;
-  }
-
-  .lexora-safe-answer-label {
-    color: #94a3b8;
-    font-size: 10px;
-    font-weight: 950;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    margin-bottom: 9px;
-  }
-
-  .lexora-safe-typing {
-    min-height: 68px;
-    color: #0e1b35;
-    font-size: 13.5px;
-    line-height: 1.7;
-    font-weight: 700;
-  }
-
-  .lexora-safe-typing::after {
-    content: "";
-    display: inline-block;
-    width: 2px;
-    height: 15px;
-    margin-left: 2px;
-    transform: translateY(3px);
-    background: #7c3aed;
-    animation: lexoraSafeCaret 0.8s steps(1) infinite;
-  }
-
-  .lexora-safe-actions {
-    margin-top: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .lexora-safe-submit {
-    height: 40px;
-    padding: 0 18px;
-    border-radius: 14px;
-    border: 0;
-    background: #0e1b35;
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 950;
-    box-shadow: 0 14px 24px rgba(14, 27, 53, 0.22);
-  }
-
-  .lexora-safe-submit.submitting {
-    animation: lexoraSafeSubmit 0.7s ease both;
-  }
-
-  .lexora-safe-status {
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 850;
-  }
-
-  .lexora-safe-how {
-    padding: 96px 52px;
-    background: #ffffff;
-    border-top: 1px solid #e2e6f0;
-    border-bottom: 1px solid #e2e6f0;
-  }
-
-  .lexora-safe-how-inner {
-    width: min(1180px, 100%);
-    margin: 0 auto;
-  }
-
-  .lexora-safe-how-title {
-    font-family: "DM Serif Display", serif;
-    color: #0e1b35;
-    font-size: clamp(42px, 5vw, 72px);
-    line-height: 1.02;
-    letter-spacing: -0.05em;
-    font-weight: 400;
-    margin-bottom: 18px;
-  }
-
-  .lexora-safe-how-title em {
-    color: #7c3aed;
-    font-style: italic;
-  }
-
-  .lexora-safe-how-copy {
-    max-width: 760px;
-    color: #475569;
-    font-size: 18px;
-    line-height: 1.75;
-    margin-bottom: 34px;
-  }
-
-  .lexora-safe-how-demo {
-    overflow: hidden;
-    border-radius: 28px;
-    border: 1px solid rgba(203, 213, 225, 0.9);
-    background: #ffffff;
-    box-shadow: 0 26px 74px rgba(14, 27, 53, 0.10);
-  }
-
-  .lexora-safe-how-body {
-    padding: 22px;
-    background: linear-gradient(180deg, #ffffff, #f8faff);
-  }
-
-  .lexora-safe-model-rule {
-    display: none;
-    color: #0e1b35;
-    font-family: "DM Serif Display", serif;
-    font-size: 22px;
-    line-height: 1.72;
-    animation: lexoraSafeReveal 0.45s ease both;
-  }
-
-  .lexora-safe-model-rule mark {
-    background: rgba(124, 58, 237, 0.10);
-    color: #5b21b6;
-    border-bottom: 2px solid rgba(124, 58, 237, 0.34);
-    border-radius: 4px;
-    padding: 0 3px;
-    font-style: italic;
-  }
-
-  .lexora-safe-how-result {
-    margin-top: 18px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-
-  .lexora-safe-how-result-card {
-    border-radius: 18px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    padding: 16px;
-  }
-
-  .lexora-safe-how-result-value {
-    color: #7c3aed;
-    font-size: 28px;
-    line-height: 1;
-    font-weight: 950;
-  }
-
-  .lexora-safe-how-result-value.green {
-    color: #059669;
-  }
-
-  @keyframes lexoraSafeCaret {
-    0%, 49% { opacity: 1; }
-    50%, 100% { opacity: 0; }
-  }
-
-  @keyframes lexoraSafeSubmit {
-    0% { transform: translateY(0) scale(1); }
-    45% { transform: translateY(-1px) scale(0.98); }
-    100% { transform: translateY(0) scale(1); }
-  }
-
-  @keyframes lexoraSafeWidth {
-    from { width: 0; }
-    to { width: var(--w); }
-  }
-
-  @keyframes lexoraSafeDraw {
-    to { stroke-dashoffset: 0; }
-  }
-
-  @keyframes lexoraSafeGlow {
-    0%, 100% { filter: drop-shadow(0 0 0 rgba(124, 58, 237, 0)); }
-    50% { filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.45)); }
-  }
-
-  @keyframes lexoraSafeReveal {
-    from { opacity: 0; transform: translateY(8px); filter: blur(2px); }
-    to { opacity: 1; transform: translateY(0); filter: blur(0); }
-  }
-
-  @media (max-width: 1100px) {
-    .lexora-safe-analytics {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .lexora-safe-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 760px) {
-    .lexora-safe-analytics,
-    .lexora-safe-how-result {
-      grid-template-columns: 1fr;
-    }
-
-    .lexora-safe-how {
-      padding: 64px 22px;
-    }
-  }
-</style>
-
-
-<script id="lexora-safe-animation-script">
+/* ===== NEXT SCRIPT BLOCK ===== */
 (function () {
   function byText(selector, text) {
     var nodes = Array.prototype.slice.call(document.querySelectorAll(selector));
@@ -5320,10 +6043,8 @@ select {
     run();
   }
 })();
-</script>
 
-
-<script id="lexora-checkout-link-script">
+/* ===== NEXT SCRIPT BLOCK ===== */
 (function () {
   function normalizeText(value) {
     return (value || "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -5367,330 +6088,8 @@ select {
     wirePricingButtons();
   }
 })();
-</script>
 
-
-<style id="lexora-safe-final-ui-style">
-  nav, .lexora-nav, .site-nav, .main-nav {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 99999 !important;
-    min-height: 74px !important;
-    background: rgba(247, 248, 252, 0.98) !important;
-    backdrop-filter: blur(18px) saturate(140%) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
-    border-bottom: 1px solid rgba(203, 213, 225, 0.86) !important;
-    box-shadow: 0 10px 34px rgba(14, 27, 53, 0.08) !important;
-  }
-
-  nav .nav-inner, .lexora-nav .nav-inner, .site-nav .nav-inner, .main-nav .nav-inner, .nav-inner {
-    min-height: 74px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 22px !important;
-  }
-
-  .nav-logo, nav .nav-logo {
-    display: inline-flex !important;
-    align-items: center !important;
-  }
-
-  .nav-links, nav .nav-links {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: clamp(18px, 2vw, 30px) !important;
-    margin: 0 auto !important;
-  }
-
-  .nav-cta, nav .nav-cta {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-  }
-
-  .hero-stat, .hero-stats, .stat-card, .floating-stat, .recall-score-card, .keywords-card, .metric-card, .demo-metric-card, .hero-floating-card, .floating-metric {
-    display: none !important;
-  }
-
-  .lexora-safe-hero {
-    width: min(760px, 100%);
-    margin: 0 auto;
-    display: grid;
-    gap: 14px;
-  }
-
-  .lexora-safe-card {
-    border-radius: 26px;
-    border: 1px solid rgba(203, 213, 225, 0.95);
-    background: #fff;
-    box-shadow: 0 24px 70px rgba(14, 27, 53, 0.11);
-    overflow: hidden;
-  }
-
-  .lexora-safe-body {
-    padding: 16px;
-    background: linear-gradient(180deg, #fff, #F8FAFF);
-  }
-
-  .lexora-safe-analytics {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .lexora-safe-kpi {
-    min-height: 88px;
-    border-radius: 18px;
-    border: 1px solid #E2E8F0;
-    background: #fff;
-    padding: 13px;
-  }
-
-  .lexora-safe-kpi.dark {
-    background: linear-gradient(135deg, #0E1B35, #162B55 55%, #5B21B6);
-  }
-
-  .lexora-safe-label {
-    color: #94A3B8;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    margin-bottom: 7px;
-  }
-
-  .lexora-safe-value {
-    color: #0E1B35;
-    font-size: 25px;
-    line-height: 1;
-    font-weight: 950;
-    letter-spacing: -.04em;
-  }
-
-  .lexora-safe-kpi.dark .lexora-safe-value {
-    color: #fff;
-  }
-
-  .lexora-safe-sub {
-    color: #94A3B8;
-    font-size: 11px;
-    font-weight: 800;
-    margin-top: 7px;
-  }
-
-  .lexora-safe-line {
-    height: 5px;
-    margin-top: 10px;
-    border-radius: 999px;
-    background: #E2E8F0;
-    overflow: hidden;
-  }
-
-  .lexora-safe-line span {
-    display: block;
-    width: 0;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #7C3AED, #A78BFA);
-  }
-
-  .lexora-safe-hero.is-analyzed .lexora-safe-line span {
-    animation: lexoraSafeWidth 1.15s ease forwards;
-  }
-
-  .lexora-safe-rule {
-    border-radius: 22px;
-    border: 1px solid rgba(124, 58, 237, .18);
-    background: #fff;
-    padding: 16px;
-  }
-
-  .lexora-safe-windowbar {
-    height: 38px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 16px;
-    background: #F1F5FB;
-    border-bottom: 1px solid #DCE3EF;
-  }
-
-  .lexora-safe-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-  }
-
-  .lexora-safe-url {
-    margin-left: 8px;
-    font-family: "JetBrains Mono", monospace;
-    color: #94A3B8;
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-  .lexora-safe-pill {
-    display: inline-flex;
-    align-items: center;
-    height: 26px;
-    padding: 0 11px;
-    border-radius: 999px;
-    background: #F3F0FF;
-    color: #7C3AED;
-    border: 1px solid #DDD6FE;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-
-  .lexora-safe-question {
-    color: #0E1B35;
-    font-size: 18px;
-    line-height: 1.45;
-    font-weight: 900;
-    letter-spacing: -.03em;
-  }
-
-  .lexora-safe-helper {
-    margin-top: 8px;
-    color: #5B21B6;
-    font-size: 12px;
-    line-height: 1.55;
-    font-weight: 800;
-  }
-
-  .lexora-safe-answer {
-    margin-top: 12px;
-    border-radius: 16px;
-    border: 1px solid #DCE3EF;
-    background: #F8FAFF;
-    padding: 14px;
-  }
-
-  .lexora-safe-typing {
-    min-height: 62px;
-    color: #0E1B35;
-    font-size: 13.5px;
-    line-height: 1.7;
-    font-weight: 650;
-  }
-
-  .lexora-safe-typing::after {
-    content: "";
-    display: inline-block;
-    width: 2px;
-    height: 15px;
-    margin-left: 2px;
-    transform: translateY(3px);
-    background: #7C3AED;
-    animation: lexoraSafeCaret .8s steps(1) infinite;
-  }
-
-  .lexora-safe-actions {
-    margin-top: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .lexora-safe-submit {
-    height: 38px;
-    padding: 0 17px;
-    border-radius: 13px;
-    border: 0;
-    background: #0E1B35;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 900;
-  }
-
-  .lexora-safe-status {
-    color: #64748B;
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-  .lexora-safe-how {
-    padding: 72px 32px;
-    background: #fff;
-    border-top: 1px solid #E2E6F0;
-    border-bottom: 1px solid #E2E6F0;
-  }
-
-  .lexora-safe-how-inner {
-    width: min(980px, 100%);
-    margin: 0 auto;
-  }
-
-  .lexora-safe-how-title {
-    font-family: "DM Serif Display", serif;
-    color: #0E1B35;
-    font-size: clamp(34px, 4vw, 52px);
-    line-height: 1.05;
-    letter-spacing: -.04em;
-    font-weight: 400;
-    margin-bottom: 14px;
-  }
-
-  .lexora-safe-how-title em {
-    color: #7C3AED;
-    font-style: italic;
-  }
-
-  .lexora-safe-how-copy {
-    max-width: 720px;
-    color: #475569;
-    font-size: 15px;
-    line-height: 1.75;
-    margin-bottom: 24px;
-  }
-
-  .lexora-safe-how-result {
-    display: none;
-    margin-top: 14px;
-    border-radius: 16px;
-    border: 1px solid #E2E8F0;
-    background: #fff;
-    padding: 14px;
-    color: #0E1B35;
-    font-size: 14px;
-    line-height: 1.7;
-  }
-
-  .lexora-safe-how-result.show {
-    display: block;
-  }
-
-  @keyframes lexoraSafeCaret {
-    0%, 49% { opacity: 1; }
-    50%, 100% { opacity: 0; }
-  }
-
-  @keyframes lexoraSafeWidth {
-    from { width: 0; }
-    to { width: var(--w); }
-  }
-
-  @media (max-width: 900px) {
-    .lexora-safe-analytics {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 640px) {
-    .lexora-safe-analytics {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
-
-
-<script id="lexora-safe-final-ui-script">
+/* ===== NEXT SCRIPT BLOCK ===== */
 (function () {
   function textOf(el) {
     return (el && el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -5919,418 +6318,8 @@ select {
     run();
   }
 })();
-</script>
 
-
-<style id="lexora-plan-auth-recall-footer-style">
-  footer .footer-links {
-    display: none !important;
-  }
-
-  footer .lexora-social-row,
-  footer .lexora-founder-link {
-    display: none !important;
-  }
-
-  .lexora-recall-section {
-    padding: 72px 32px !important;
-    background: #FFFFFF !important;
-    border-top: 1px solid #E2E8F0 !important;
-    border-bottom: 1px solid #E2E8F0 !important;
-  }
-
-  .lexora-recall-inner {
-    max-width: 1120px;
-    margin: 0 auto;
-  }
-
-  .lexora-recall-title {
-    font-family: "DM Serif Display", serif;
-    font-size: clamp(30px, 3.2vw, 46px);
-    line-height: 1.06;
-    font-weight: 400;
-    letter-spacing: -0.045em;
-    color: #0E1B35;
-    margin: 0 0 12px;
-  }
-
-  .lexora-recall-title em {
-    color: #7C3AED;
-    font-style: italic;
-  }
-
-  .lexora-recall-copy {
-    max-width: 740px;
-    margin: 0 0 26px;
-    color: #475569;
-    font-size: 15px;
-    line-height: 1.75;
-  }
-
-  .lexora-demo-shell {
-    position: relative;
-    border-radius: 28px;
-    border: 1px solid #DCE3EF;
-    background: #FFFFFF;
-    box-shadow: 0 24px 70px rgba(14,27,53,0.08);
-    overflow: visible;
-  }
-
-  .lexora-demo-window {
-    border-radius: 28px;
-    overflow: hidden;
-  }
-
-  .lexora-windowbar {
-    height: 42px;
-    background: #F1F5FB;
-    border-bottom: 1px solid #DCE3EF;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 18px;
-  }
-
-  .lexora-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-  }
-
-  .lexora-url {
-    margin-left: 8px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    font-weight: 800;
-    color: #94A3B8;
-  }
-
-  .lexora-demo-body {
-    background: #F8FAFF;
-    padding: 24px;
-  }
-
-  .lexora-rule-card {
-    border: 1px solid rgba(124,58,237,0.22);
-    border-radius: 22px;
-    background: #FFFFFF;
-    padding: 22px;
-  }
-
-  .lexora-pill {
-    display: inline-flex;
-    align-items: center;
-    height: 26px;
-    padding: 0 12px;
-    border-radius: 999px;
-    background: #F3F0FF;
-    color: #7C3AED;
-    border: 1px solid #DDD6FE;
-    font-size: 10px;
-    font-weight: 950;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  .lexora-rule-question {
-    color: #0E1B35;
-    font-size: clamp(18px, 1.7vw, 23px);
-    line-height: 1.45;
-    font-weight: 950;
-    letter-spacing: -0.035em;
-  }
-
-  .lexora-rule-model {
-    display: none;
-    margin-top: 14px;
-    font-family: "DM Serif Display", serif;
-    color: #0E1B35;
-    font-size: clamp(20px, 1.9vw, 26px);
-    line-height: 1.65;
-    letter-spacing: -0.02em;
-  }
-
-  .lexora-rule-model.show {
-    display: block;
-    animation: lexoraResultIn 320ms ease both;
-  }
-
-  .lexora-highlight {
-    color: #7C3AED;
-    background: #F3F0FF;
-    border-bottom: 2px solid #A78BFA;
-    border-radius: 4px;
-    padding: 0 3px;
-    font-style: italic;
-  }
-
-  .lexora-helper {
-    margin-top: 10px;
-    color: #5B21B6;
-    font-size: 12.5px;
-    font-weight: 850;
-    line-height: 1.65;
-  }
-
-  .lexora-answer-grid {
-    margin-top: 16px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 16px;
-    align-items: stretch;
-  }
-
-  .lexora-answer-card,
-  .lexora-result-card {
-    border: 1px solid #DCE3EF;
-    border-radius: 20px;
-    background: #FFFFFF;
-    padding: 18px;
-    box-shadow: 0 10px 28px rgba(14,27,53,0.04);
-  }
-
-  .lexora-result-card {
-    display: none;
-  }
-
-  .lexora-result-card.show {
-    display: block;
-    animation: lexoraResultIn 360ms ease both;
-  }
-
-  .lexora-small-label {
-    margin-bottom: 10px;
-    color: #94A3B8;
-    font-size: 10px;
-    font-weight: 950;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .lexora-answer-textarea {
-    width: 100%;
-    min-height: 128px;
-    resize: vertical;
-    border: 1px solid #DCE3EF;
-    border-radius: 16px;
-    background: #F8FAFF;
-    color: #0E1B35;
-    font-size: 14px;
-    line-height: 1.7;
-    font-weight: 750;
-    padding: 14px;
-    outline: none;
-  }
-
-  .lexora-answer-textarea:focus {
-    border-color: #7C3AED;
-    box-shadow: 0 0 0 4px rgba(124,58,237,0.10);
-  }
-
-  .lexora-actions {
-    margin-top: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .lexora-submit {
-    height: 42px;
-    border: 0;
-    border-radius: 14px;
-    background: #0E1B35;
-    color: #FFFFFF;
-    padding: 0 20px;
-    font-size: 13px;
-    font-weight: 950;
-    box-shadow: 0 10px 24px rgba(14,27,53,0.18);
-    cursor: pointer;
-  }
-
-  .lexora-status {
-    color: #64748B;
-    font-size: 12px;
-    font-weight: 850;
-  }
-
-  .lexora-result-top {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .lexora-score-ring {
-    width: 66px;
-    height: 66px;
-    border-radius: 999px;
-    display: grid;
-    place-items: center;
-    background:
-      radial-gradient(circle at center, #FFFFFF 54%, transparent 56%),
-      conic-gradient(#10B981 0deg 300deg, #E2E8F0 300deg 360deg);
-    color: #0E1B35;
-    font-size: 17px;
-    font-weight: 950;
-  }
-
-  .lexora-result-title {
-    font-size: 16px;
-    font-weight: 950;
-    color: #0E1B35;
-    letter-spacing: -0.02em;
-  }
-
-  .lexora-result-sub {
-    margin-top: 3px;
-    color: #64748B;
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-  .lexora-result-divider {
-    height: 1px;
-    background: #E2E8F0;
-    margin: 16px 0;
-  }
-
-  .lexora-meter-row {
-    display: grid;
-    grid-template-columns: 90px 1fr 42px;
-    align-items: center;
-    gap: 8px;
-    margin-top: 9px;
-    font-size: 11px;
-    font-weight: 850;
-    color: #475569;
-  }
-
-  .lexora-meter {
-    height: 7px;
-    border-radius: 999px;
-    background: #E2E8F0;
-    overflow: hidden;
-  }
-
-  .lexora-meter span {
-    display: block;
-    height: 100%;
-    width: 0%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #7C3AED, #10B981);
-  }
-
-  .lexora-result-card.show .lexora-meter span {
-    animation: lexoraMeterFill 800ms ease forwards;
-  }
-
-  .lexora-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 9px;
-  }
-
-  .lexora-tag {
-    display: inline-flex;
-    align-items: center;
-    min-height: 24px;
-    padding: 0 10px;
-    border-radius: 999px;
-    background: #F3F0FF;
-    border: 1px solid #DDD6FE;
-    color: #5B21B6;
-    font-size: 11px;
-    font-weight: 850;
-  }
-
-  .lexora-missed {
-    margin-top: 13px;
-    padding: 12px;
-    border-radius: 14px;
-    background: #FBFCFF;
-    border: 1px solid #E2E8F0;
-    color: #475569;
-    font-size: 12px;
-    line-height: 1.65;
-  }
-
-  .lexora-try-badge {
-    position: absolute;
-    right: -28px;
-    top: -42px;
-    width: 112px;
-    height: 112px;
-    z-index: 30;
-    display: grid;
-    place-items: center;
-    color: #FFFFFF;
-    font-size: 15px;
-    line-height: 1.05;
-    font-weight: 950;
-    text-align: center;
-    text-transform: uppercase;
-    transform: rotate(-10deg);
-    filter: drop-shadow(0 18px 32px rgba(91,33,182,0.28));
-    animation: lexoraBadgeFloat 3.6s ease-in-out infinite;
-  }
-
-  .lexora-try-badge::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: conic-gradient(from 0deg, #7C3AED, #4F46E5, #A78BFA, #7C3AED);
-    clip-path: polygon(50% 0%,60% 17%,79% 9%,81% 30%,100% 35%,86% 50%,100% 65%,81% 70%,79% 91%,60% 83%,50% 100%,40% 83%,21% 91%,19% 70%,0% 65%,14% 50%,0% 35%,19% 30%,21% 9%,40% 17%);
-    border: 5px solid #F59E0B;
-  }
-
-  .lexora-try-badge span {
-    position: relative;
-    z-index: 3;
-  }
-
-  @keyframes lexoraBadgeFloat {
-    0%,100% { transform: translateY(0) rotate(-10deg) scale(1); }
-    50% { transform: translateY(-8px) rotate(-7deg) scale(1.03); }
-  }
-
-  @keyframes lexoraMeterFill {
-    to { width: var(--fill); }
-  }
-
-  @keyframes lexoraResultIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @media (max-width: 980px) {
-    .lexora-answer-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .lexora-try-badge {
-      right: -8px;
-      top: -36px;
-      width: 88px;
-      height: 88px;
-      font-size: 12px;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .lexora-recall-section {
-      padding: 56px 18px !important;
-    }
-
-    .lexora-demo-body {
-      padding: 16px;
-    }
-  }
-</style>
-
-
-<script id="lexora-plan-auth-recall-footer-script">
+/* ===== NEXT SCRIPT BLOCK ===== */
 (function () {
   function textOf(el) {
     return (el && el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -6589,6 +6578,7 @@ select {
   }
 })();
 </script>
+
 
 </body>
 </html>
