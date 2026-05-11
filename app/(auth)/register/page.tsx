@@ -19,6 +19,7 @@ import {
   ShoppingCart,
   User,
   UserPlus,
+  X,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -135,10 +136,24 @@ const PLANS = {
 } as const
 
 type PlanId = keyof typeof PLANS
+type LegalModalType = "terms" | "privacy" | "refund" | null
+
+type SavedRegisterForm = {
+  selectedPlanId: PlanId
+  fullName: string
+  email: string
+  lawSchool: string
+  jurisdiction: string
+  examMonth: string
+  examYear: string
+  acceptedTerms: boolean
+}
 
 function isPlanId(value: string | null): value is PlanId {
   return value === "free" || value === "bll-monthly" || value === "premium"
 }
+
+const REGISTER_FORM_STORAGE_KEY = "lexora_register_form_draft"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -157,24 +172,97 @@ export default function RegisterPage() {
   const [examYear, setExamYear] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [legalModal, setLegalModal] = useState<LegalModalType>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [draftLoaded, setDraftLoaded] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const planFromUrl = params.get("plan")
 
+    let draft: SavedRegisterForm | null = null
+
+    try {
+      const rawDraft = window.localStorage.getItem(REGISTER_FORM_STORAGE_KEY)
+      draft = rawDraft ? JSON.parse(rawDraft) : null
+    } catch {
+      draft = null
+    }
+
+    if (draft) {
+      if (isPlanId(draft.selectedPlanId)) {
+        setSelectedPlanId(draft.selectedPlanId)
+      }
+
+      setFullName(draft.fullName || "")
+      setEmail(draft.email || "")
+      setLawSchool(draft.lawSchool || "")
+      setJurisdiction(draft.jurisdiction || "")
+      setExamMonth(draft.examMonth || "")
+      setExamYear(draft.examYear || "")
+      setAcceptedTerms(Boolean(draft.acceptedTerms))
+    }
+
     if (isPlanId(planFromUrl)) {
       setSelectedPlanId(planFromUrl)
       window.localStorage.setItem("lexora_selected_plan", planFromUrl)
-      return
+    } else if (!draft) {
+      const storedPlan = window.localStorage.getItem("lexora_selected_plan")
+      if (isPlanId(storedPlan)) {
+        setSelectedPlanId(storedPlan)
+      }
     }
 
-    const storedPlan = window.localStorage.getItem("lexora_selected_plan")
-    if (isPlanId(storedPlan)) {
-      setSelectedPlanId(storedPlan)
-    }
+    setDraftLoaded(true)
   }, [])
+
+  useEffect(() => {
+    if (!draftLoaded) return
+
+    const draft: SavedRegisterForm = {
+      selectedPlanId,
+      fullName,
+      email,
+      lawSchool,
+      jurisdiction,
+      examMonth,
+      examYear,
+      acceptedTerms,
+    }
+
+    window.localStorage.setItem(REGISTER_FORM_STORAGE_KEY, JSON.stringify(draft))
+  }, [
+    draftLoaded,
+    selectedPlanId,
+    fullName,
+    email,
+    lawSchool,
+    jurisdiction,
+    examMonth,
+    examYear,
+    acceptedTerms,
+  ])
+
+  useEffect(() => {
+    if (!legalModal) return
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setLegalModal(null)
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape)
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener("keydown", handleEscape)
+    }
+  }, [legalModal])
 
   function updateSelectedPlan(planId: PlanId) {
     setSelectedPlanId(planId)
@@ -356,7 +444,9 @@ export default function RegisterPage() {
         }),
       })
 
-      const legalAcceptanceData = await legalAcceptanceRes.json().catch(() => null)
+      const legalAcceptanceData = await legalAcceptanceRes
+        .json()
+        .catch(() => null)
 
       if (!legalAcceptanceRes.ok) {
         setError(
@@ -379,6 +469,8 @@ export default function RegisterPage() {
       }).catch(() => {
         console.warn("Welcome email request failed.")
       })
+
+      window.localStorage.removeItem(REGISTER_FORM_STORAGE_KEY)
 
       if (selectedPlanId === "free") {
         router.push("/dashboard")
@@ -419,71 +511,71 @@ export default function RegisterPage() {
       </div>
 
       <div className="relative flex min-h-screen flex-col">
-        <header className="sticky top-0 z-20 flex h-[66px] items-center justify-between border-b border-[#E2E6F0] bg-[#F7F8FC]/95 px-5 backdrop-blur-xl md:px-12">
+        <header className="sticky top-0 z-20 flex h-[62px] items-center justify-between border-b border-[#E2E6F0] bg-[#F7F8FC]/95 px-4 backdrop-blur-xl md:px-10">
           <Link href="/" className="flex items-center gap-3">
             <Image
               src="/icon.png"
               alt="Lexora Prep logo"
               width={40}
               height={40}
-              className="h-9 w-9 object-contain"
+              className="h-8 w-8 object-contain"
               priority
             />
-            <div className="text-[17px] font-extrabold tracking-[-0.03em] text-[#0E1B35]">
+            <div className="text-[16px] font-extrabold tracking-[-0.03em] text-[#0E1B35]">
               Lexora <span className="text-[#7C3AED]">Prep</span>
             </div>
           </Link>
 
           <Link
             href="/"
-            className="group inline-flex items-center gap-2 rounded-[12px] border border-[#CDD3E6] bg-white px-4 py-2 text-sm font-bold text-[#1E293B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
+            className="group inline-flex items-center gap-2 rounded-xl border border-[#CDD3E6] bg-white px-3.5 py-2 text-xs font-bold text-[#1E293B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35] md:text-sm"
           >
             <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
-            Back to main page
+            Back
           </Link>
         </header>
 
-        <section className="flex flex-1 justify-center px-5 py-8 md:py-10">
-          <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-[420px_1fr] lg:items-start">
-            <aside className="lg:sticky lg:top-[92px]">
-              <div className="rounded-[28px] border border-[#E2E6F0] bg-white/95 p-6 shadow-[0_22px_55px_rgba(14,27,53,0.10)] backdrop-blur">
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF]">
+        <section className="flex flex-1 justify-center px-4 py-5 md:px-6 md:py-7">
+          <div className="grid w-full max-w-[1120px] gap-5 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+            <aside className="lg:sticky lg:top-[78px]">
+              <div className="rounded-[24px] border border-[#E2E6F0] bg-white/95 p-4 shadow-[0_18px_44px_rgba(14,27,53,0.10)] backdrop-blur">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF]">
                     <ShoppingCart className="h-5 w-5 text-[#7C3AED]" />
                   </div>
                   <div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.17em] text-[#7C3AED]">
+                    <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[#7C3AED]">
                       Selected plan
                     </div>
-                    <div className="mt-0.5 text-lg font-black tracking-[-0.03em] text-[#0E1B35]">
+                    <div className="text-base font-black tracking-[-0.03em] text-[#0E1B35]">
                       {selectedPlan.label}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-[24px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#6D28D9] p-5 text-white shadow-[0_18px_45px_rgba(14,27,53,0.18)]">
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#C4B5FD]">
+                <div className="rounded-[20px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#6D28D9] p-4 text-white shadow-[0_14px_34px_rgba(14,27,53,0.18)]">
+                  <div className="text-[10px] font-black uppercase tracking-[0.17em] text-[#C4B5FD]">
                     {selectedPlan.eyebrow}
                   </div>
 
-                  <div className="mt-3 flex items-end gap-1">
-                    <div className="text-[42px] font-black leading-none tracking-[-0.08em]">
+                  <div className="mt-2 flex items-end gap-1">
+                    <div className="text-[36px] font-black leading-none tracking-[-0.08em]">
                       {selectedPlan.price}
                     </div>
                     {selectedPlan.billing ? (
-                      <div className="pb-1 text-lg font-black text-white/65">
+                      <div className="pb-1 text-base font-black text-white/65">
                         {selectedPlan.billing}
                       </div>
                     ) : null}
                   </div>
 
-                  <p className="mt-4 max-w-[280px] text-sm leading-6 text-white/72">
+                  <p className="mt-3 text-xs leading-5 text-white/72">
                     {selectedPlan.description}
                   </p>
                 </div>
 
-                <div className="mt-6">
-                  <div className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">
+                <div className="mt-4">
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#94A3B8]">
                     Change plan
                   </div>
 
@@ -499,22 +591,22 @@ export default function RegisterPage() {
                           onClick={() => updateSelectedPlan(planId)}
                           className={
                             active
-                              ? "flex items-center justify-between rounded-2xl border border-[#7C3AED] bg-[#F3F0FF] px-4 py-3 text-left shadow-[0_10px_24px_rgba(124,58,237,0.10)]"
-                              : "flex items-center justify-between rounded-2xl border border-[#E2E6F0] bg-white px-4 py-3 text-left transition hover:border-[#C4B5FD] hover:bg-[#FBFAFF]"
+                              ? "flex items-center justify-between rounded-2xl border border-[#7C3AED] bg-[#F3F0FF] px-3.5 py-2.5 text-left shadow-[0_10px_24px_rgba(124,58,237,0.10)]"
+                              : "flex items-center justify-between rounded-2xl border border-[#E2E6F0] bg-white px-3.5 py-2.5 text-left transition hover:border-[#C4B5FD] hover:bg-[#FBFAFF]"
                           }
                         >
                           <div>
                             <div className="text-sm font-black text-[#0E1B35]">
                               {plan.label}
                             </div>
-                            <div className="mt-0.5 text-[10px] font-black uppercase tracking-[0.13em] text-[#94A3B8]">
+                            <div className="text-[9px] font-black uppercase tracking-[0.13em] text-[#94A3B8]">
                               {plan.eyebrow}
                             </div>
                           </div>
 
                           <div className="text-sm font-black text-[#0E1B35]">
                             {plan.price}
-                            <span className="text-xs text-[#94A3B8]">
+                            <span className="text-[11px] text-[#94A3B8]">
                               {plan.billing}
                             </span>
                           </div>
@@ -524,253 +616,217 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 border-t border-[#E2E6F0] pt-5">
-                  <div className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">
+                <div className="mt-4 border-t border-[#E2E6F0] pt-4">
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#94A3B8]">
                     Included
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid gap-1.5">
                     {selectedPlan.features.map((feature) => (
                       <div
                         key={feature}
-                        className="flex items-start gap-2 text-sm font-bold leading-6 text-[#334155]"
+                        className="flex items-start gap-2 text-xs font-bold leading-5 text-[#334155]"
                       >
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#7C3AED]" />
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#7C3AED]" />
                         <span>{feature}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <p className="mt-5 text-xs font-semibold leading-5 text-[#64748B]">
+                <p className="mt-4 text-[11px] font-semibold leading-5 text-[#64748B]">
                   {selectedPlan.nextStep} Paid access begins only after
                   successful checkout.
                 </p>
               </div>
             </aside>
 
-            <div className="mx-auto w-full max-w-[560px]">
-              <div className="mb-7 text-center lg:text-left">
-                <h1 className="font-serif text-[40px] font-normal leading-[1.08] tracking-[-0.035em] text-[#0E1B35] md:text-[48px]">
-                  Create your{" "}
-                  <span className="italic text-[#5B21B6]">Lexora Prep</span>{" "}
-                  account.
-                </h1>
+            <div className="w-full">
+              <div className="rounded-[24px] border border-[#E2E6F0] bg-white p-5 shadow-[0_22px_54px_rgba(14,27,53,0.11),0_8px_18px_rgba(14,27,53,0.05)] md:p-6">
+                <div className="mb-5 border-b border-[#E2E6F0] pb-5">
+                  <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="max-w-[560px]">
+                      <h1 className="font-serif text-[34px] font-normal leading-[1.05] tracking-[-0.04em] text-[#0E1B35] md:text-[42px]">
+                        Create your{" "}
+                        <span className="italic text-[#5B21B6]">
+                          Lexora Prep
+                        </span>{" "}
+                        account.
+                      </h1>
 
-                <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#475569]">
-                  Start rule recall training with focused review, spaced
-                  repetition, weak-area tracking, and clean study analytics.
-                </p>
-              </div>
+                      <p className="mt-3 text-sm leading-6 text-[#475569]">
+                        Start rule recall training with focused review, spaced
+                        repetition, weak-area tracking, and clean study
+                        analytics.
+                      </p>
+                    </div>
 
-              <div className="rounded-[28px] border border-[#E2E6F0] bg-white p-6 shadow-[0_24px_60px_rgba(14,27,53,0.12),0_8px_20px_rgba(14,27,53,0.06)] md:p-8">
-                <div className="mb-8 text-center">
-                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF]">
-                    <UserPlus className="h-7 w-7 text-[#7C3AED]" />
+                    <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF] px-4 py-3">
+                      <UserPlus className="h-5 w-5 text-[#7C3AED]" />
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[#7C3AED]">
+                          Account setup
+                        </div>
+                        <div className="text-sm font-black text-[#0E1B35]">
+                          {selectedPlan.label}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-
-                  <h2 className="font-serif text-4xl font-normal tracking-[-0.03em] text-[#0E1B35]">
-                    Create account
-                  </h2>
-
-                  <p className="mt-2 text-sm leading-6 text-[#64748B]">
-                    Enter your email and bar exam details.
-                  </p>
                 </div>
 
-                <form onSubmit={handleRegister} className="space-y-5">
-                  <div>
-                    <label
-                      htmlFor="fullName"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
-                    >
-                      Full name
-                    </label>
+                <form onSubmit={handleRegister} className="mx-auto max-w-[620px] space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <CompactInput
+                      id="fullName"
+                      label="Full name"
+                      icon={<User className="h-4.5 w-4.5 text-[#94A3B8]" />}
+                      value={fullName}
+                      onChange={setFullName}
+                      placeholder="Your full name"
+                      autoComplete="name"
+                    />
 
-                    <div className="relative">
-                      <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
-                      <input
-                        id="fullName"
-                        name="fullName"
-                        type="text"
-                        autoComplete="name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Your full name"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
-                      />
-                    </div>
+                    <CompactInput
+                      id="email"
+                      label="Email"
+                      type="email"
+                      icon={<Mail className="h-4.5 w-4.5 text-[#94A3B8]" />}
+                      value={email}
+                      onChange={setEmail}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                    />
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
-                    >
-                      Email
-                    </label>
-
-                    <div className="relative">
-                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
-                    >
-                      Password
-                    </label>
-
-                    <div className="relative">
-                      <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
-                      <input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="new-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Create a password"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-12 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((value) => !value)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] transition hover:text-[#0E1B35]"
-                        aria-label={
-                          showPassword ? "Hide password" : "Show password"
-                        }
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="password"
+                        className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
+                        Password
+                      </label>
+
+                      <div className="relative">
+                        <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#94A3B8]" />
+                        <input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Create a password"
+                          className="h-[48px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-11 pr-11 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((value) => !value)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] transition hover:text-[#0E1B35]"
+                          aria-label={
+                            showPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4.5 w-4.5" />
+                          ) : (
+                            <Eye className="h-4.5 w-4.5" />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="mt-3 grid gap-2 rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] p-4">
-                      <PasswordRequirement
-                        valid={passwordChecks.minLength}
-                        label="At least 8 characters"
-                      />
-                      <PasswordRequirement
-                        valid={passwordChecks.hasLetter}
-                        label="Includes at least one letter"
-                      />
-                      <PasswordRequirement
-                        valid={passwordChecks.hasNumber}
-                        label="Includes at least one number"
-                      />
-                      <PasswordRequirement
-                        valid={passwordChecks.hasSpecial}
-                        label="Includes at least one special symbol"
-                      />
-                      <PasswordRequirement
-                        valid={confirmPassword.length > 0 && password === confirmPassword}
-                        label="Passwords match"
-                      />
-                    </div>
+                    <CompactInput
+                      id="confirmPassword"
+                      label="Confirm password"
+                      type={showPassword ? "text" : "password"}
+                      icon={
+                        <LockKeyhole className="h-4.5 w-4.5 text-[#94A3B8]" />
+                      }
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      placeholder="Confirm password"
+                      autoComplete="new-password"
+                    />
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="confirmPassword"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
-                    >
-                      Confirm password
-                    </label>
-
-                    <div className="relative">
-                      <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
-                      <input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="new-password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm your password"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
-                      />
-                    </div>
+                  <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] p-3 md:grid-cols-2">
+                    <PasswordRequirement
+                      valid={passwordChecks.minLength}
+                      label="At least 8 characters"
+                    />
+                    <PasswordRequirement
+                      valid={passwordChecks.hasLetter}
+                      label="Includes one letter"
+                    />
+                    <PasswordRequirement
+                      valid={passwordChecks.hasNumber}
+                      label="Includes one number"
+                    />
+                    <PasswordRequirement
+                      valid={passwordChecks.hasSpecial}
+                      label="Includes one special symbol"
+                    />
+                    <PasswordRequirement
+                      valid={
+                        confirmPassword.length > 0 &&
+                        password === confirmPassword
+                      }
+                      label="Passwords match"
+                    />
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="lawSchool"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
-                    >
-                      Law school
-                    </label>
+                  <CompactInput
+                    id="lawSchool"
+                    label="Law school"
+                    icon={<School className="h-4.5 w-4.5 text-[#94A3B8]" />}
+                    value={lawSchool}
+                    onChange={setLawSchool}
+                    placeholder="Your law school"
+                    autoComplete="organization"
+                  />
 
-                    <div className="relative">
-                      <School className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
-                      <input
-                        id="lawSchool"
-                        name="lawSchool"
-                        type="text"
-                        autoComplete="organization"
-                        value={lawSchool}
-                        onChange={(e) => setLawSchool(e.target.value)}
-                        placeholder="Your law school"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="jurisdiction"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
-                    >
-                      Jurisdiction
-                    </label>
-
-                    <div className="relative">
-                      <MapPin className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
-                      <select
-                        id="jurisdiction"
-                        name="jurisdiction"
-                        value={jurisdiction}
-                        onChange={(e) => setJurisdiction(e.target.value)}
-                        className="h-[52px] w-full appearance-none rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-12 pr-12 text-sm text-[#0E1B35] outline-none transition focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.3fr_0.85fr_0.85fr]">
+                    <div>
+                      <label
+                        htmlFor="jurisdiction"
+                        className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                       >
-                        <option value="" className="bg-white text-[#0E1B35]">
-                          Select your jurisdiction
-                        </option>
-                        {JURISDICTIONS.map((item) => (
-                          <option
-                            key={item}
-                            value={item}
-                            className="bg-white text-[#0E1B35]"
-                          >
-                            {item}
+                        Jurisdiction
+                      </label>
+
+                      <div className="relative">
+                        <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#94A3B8]" />
+                        <select
+                          id="jurisdiction"
+                          name="jurisdiction"
+                          value={jurisdiction}
+                          onChange={(e) => setJurisdiction(e.target.value)}
+                          className="h-[48px] w-full appearance-none rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-11 pr-10 text-sm text-[#0E1B35] outline-none transition focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        >
+                          <option value="" className="bg-white text-[#0E1B35]">
+                            Select jurisdiction
                           </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                          {JURISDICTIONS.map((item) => (
+                            <option
+                              key={item}
+                              value={item}
+                              className="bg-white text-[#0E1B35]"
+                            >
+                              {item}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#94A3B8]" />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label
                         htmlFor="examMonth"
-                        className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                        className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                       >
                         Exam month
                       </label>
@@ -781,10 +837,10 @@ export default function RegisterPage() {
                           name="examMonth"
                           value={examMonth}
                           onChange={(e) => setExamMonth(e.target.value)}
-                          className="h-[52px] w-full appearance-none rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-4 py-3 pr-12 text-sm text-[#0E1B35] outline-none transition focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                          className="h-[48px] w-full appearance-none rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-3.5 py-3 pr-10 text-sm text-[#0E1B35] outline-none transition focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                         >
                           <option value="" className="bg-white text-[#0E1B35]">
-                            Select month
+                            Month
                           </option>
                           <option value="2" className="bg-white text-[#0E1B35]">
                             February
@@ -794,14 +850,14 @@ export default function RegisterPage() {
                           </option>
                         </select>
 
-                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                        <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[#94A3B8]" />
                       </div>
                     </div>
 
                     <div>
                       <label
                         htmlFor="examYear"
-                        className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                        className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                       >
                         Exam year
                       </label>
@@ -813,12 +869,12 @@ export default function RegisterPage() {
                         value={examYear}
                         onChange={(e) => setExamYear(e.target.value)}
                         placeholder="2026"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-4 py-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        className="h-[48px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-3.5 py-3 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       />
                     </div>
                   </div>
 
-                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] p-4 text-left">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] p-3.5 text-left">
                     <input
                       type="checkbox"
                       checked={acceptedTerms}
@@ -826,34 +882,31 @@ export default function RegisterPage() {
                       className="mt-1 h-4 w-4 rounded border-[#CBD5E1] accent-[#7C3AED]"
                     />
 
-                    <span className="text-xs leading-5 text-[#64748B]">
+                    <span className="text-[11.5px] leading-5 text-[#64748B]">
                       I agree to Lexora Prep&apos;s{" "}
-                      <Link
-                        href={`/terms?returnTo=${encodeURIComponent(
-                          `/register?plan=${selectedPlanId}`
-                        )}`}
-                        className="font-black text-[#7C3AED] hover:text-[#5B21B6]"
+                      <button
+                        type="button"
+                        onClick={() => setLegalModal("terms")}
+                        className="font-black text-[#7C3AED] underline-offset-2 hover:text-[#5B21B6] hover:underline"
                       >
                         Terms and Conditions
-                      </Link>
+                      </button>
                       ,{" "}
-                      <Link
-                        href={`/privacy?returnTo=${encodeURIComponent(
-                          `/register?plan=${selectedPlanId}`
-                        )}`}
-                        className="font-black text-[#7C3AED] hover:text-[#5B21B6]"
+                      <button
+                        type="button"
+                        onClick={() => setLegalModal("privacy")}
+                        className="font-black text-[#7C3AED] underline-offset-2 hover:text-[#5B21B6] hover:underline"
                       >
                         Privacy Policy
-                      </Link>
+                      </button>
                       , and{" "}
-                      <Link
-                        href={`/refund?returnTo=${encodeURIComponent(
-                          `/register?plan=${selectedPlanId}`
-                        )}`}
-                        className="font-black text-[#7C3AED] hover:text-[#5B21B6]"
+                      <button
+                        type="button"
+                        onClick={() => setLegalModal("refund")}
+                        className="font-black text-[#7C3AED] underline-offset-2 hover:text-[#5B21B6] hover:underline"
                       >
                         Refund Policy
-                      </Link>
+                      </button>
                       . I understand that Lexora Prep is a supplemental
                       educational tool, does not guarantee bar exam passage, and
                       may not be abused, copied, scraped, resold, or used to
@@ -862,7 +915,7 @@ export default function RegisterPage() {
                   </label>
 
                   {selectedPlanId !== "free" ? (
-                    <div className="flex items-start gap-3 rounded-2xl bg-[#F3F0FF] p-4 text-xs leading-5 text-[#5B21B6]">
+                    <div className="flex items-start gap-3 rounded-2xl bg-[#F3F0FF] p-3.5 text-[11.5px] leading-5 text-[#5B21B6]">
                       <CreditCard className="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
                         After registration, you will continue to Paddle checkout
@@ -882,7 +935,7 @@ export default function RegisterPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex h-[52px] w-full items-center justify-center rounded-2xl bg-[#0E1B35] px-5 py-4 text-sm font-extrabold text-white shadow-[0_4px_16px_rgba(14,27,53,0.24)] transition hover:-translate-y-0.5 hover:bg-[#162B55] hover:shadow-[0_8px_24px_rgba(14,27,53,0.32)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                    className="flex h-[50px] w-full items-center justify-center rounded-2xl bg-[#0E1B35] px-5 py-3 text-sm font-extrabold text-white shadow-[0_4px_16px_rgba(14,27,53,0.24)] transition hover:-translate-y-0.5 hover:bg-[#162B55] hover:shadow-[0_8px_24px_rgba(14,27,53,0.32)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                   >
                     {loading ? (
                       <>
@@ -895,7 +948,7 @@ export default function RegisterPage() {
                   </button>
                 </form>
 
-                <div className="mt-6 rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-4 py-4 text-center text-sm text-[#64748B]">
+                <div className="mx-auto mt-4 max-w-[620px] rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-4 py-3 text-center text-sm text-[#64748B]">
                   Already have an account?{" "}
                   <Link
                     href="/login"
@@ -904,29 +957,66 @@ export default function RegisterPage() {
                     Log in
                   </Link>
                 </div>
-
-                <div className="mt-5 text-center">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-[#64748B] transition hover:text-[#0E1B35]"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Return to the main website
-                  </Link>
-                </div>
               </div>
 
-              <p className="mt-5 text-center text-xs leading-5 text-[#94A3B8]">
+              <p className="mt-4 text-center text-[11px] leading-5 text-[#94A3B8]">
                 Lexora Prep is a supplemental educational tool and does not
-                guarantee bar exam success. Users should verify
-                jurisdiction-specific requirements and rules with the applicable
-                bar admission authority.
+                guarantee bar exam success.
               </p>
             </div>
           </div>
         </section>
       </div>
+
+      <LegalModal modal={legalModal} onClose={() => setLegalModal(null)} />
     </main>
+  )
+}
+
+function CompactInput({
+  id,
+  label,
+  type = "text",
+  icon,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+}: {
+  id: string
+  label: string
+  type?: string
+  icon: React.ReactNode
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  autoComplete?: string
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+      >
+        {label}
+      </label>
+
+      <div className="relative">
+        <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2">
+          {icon}
+        </div>
+        <input
+          id={id}
+          name={id}
+          type={type}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="h-[48px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-11 pr-3.5 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+        />
+      </div>
+    </div>
   )
 }
 
@@ -938,15 +1028,396 @@ function PasswordRequirement({
   label: string
 }) {
   return (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="flex items-center gap-2 text-[11.5px]">
       <CheckCircle2
         className={
-          valid ? "h-4 w-4 text-emerald-600" : "h-4 w-4 text-[#CBD5E1]"
+          valid ? "h-3.5 w-3.5 text-emerald-600" : "h-3.5 w-3.5 text-[#CBD5E1]"
         }
       />
       <span className={valid ? "text-[#1E293B]" : "text-[#94A3B8]"}>
         {label}
       </span>
+    </div>
+  )
+}
+
+function LegalModal({
+  modal,
+  onClose,
+}: {
+  modal: LegalModalType
+  onClose: () => void
+}) {
+  if (!modal) return null
+
+  const title =
+    modal === "terms"
+      ? "Terms and Conditions"
+      : modal === "privacy"
+        ? "Privacy Policy"
+        : "Refund Policy"
+
+  const eyebrow =
+    modal === "terms"
+      ? "Platform rules"
+      : modal === "privacy"
+        ? "Data protection"
+        : "Billing and refunds"
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0E1B35]/55 px-4 py-6 backdrop-blur-md"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div className="flex max-h-[88vh] w-full max-w-[860px] flex-col overflow-hidden rounded-[28px] border border-white/30 bg-white shadow-[0_30px_90px_rgba(14,27,53,0.35)]">
+        <div className="flex items-start justify-between gap-4 border-b border-[#E2E6F0] bg-[#F7F8FC] px-6 py-5">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.17em] text-[#7C3AED]">
+              {eyebrow}
+            </div>
+            <h2 className="mt-1 font-serif text-[34px] font-normal leading-none tracking-[-0.04em] text-[#0E1B35]">
+              {title}
+            </h2>
+            <p className="mt-2 text-xs font-semibold text-[#94A3B8]">
+              Last updated: April 29, 2026
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#CDD3E6] bg-white text-[#64748B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
+            aria-label="Close legal window"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-6 py-6">
+          {modal === "terms" ? <TermsContent /> : null}
+          {modal === "privacy" ? <PrivacyContent /> : null}
+          {modal === "refund" ? <RefundContent /> : null}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t border-[#E2E6F0] bg-[#F7F8FC] px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-[#CDD3E6] bg-white px-5 py-3 text-sm font-black text-[#1E293B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
+          >
+            Close and continue registration
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LegalSection({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="border-b border-[#E2E6F0] py-5 last:border-b-0">
+      <h3 className="text-base font-black tracking-[-0.02em] text-[#0E1B35]">
+        {title}
+      </h3>
+      <div className="mt-2 space-y-3 text-sm leading-7 text-[#475569]">
+        {children}
+      </div>
+    </section>
+  )
+}
+
+function TermsContent() {
+  return (
+    <div>
+      <div className="rounded-[22px] border border-[#DDD6FE] bg-[#F3F0FF] p-4 text-sm font-semibold leading-7 text-[#5B21B6]">
+        Lexora Prep is a supplemental educational tool for Black Letter Law
+        memorization. It is not a law firm, legal advisor, law school, official
+        bar authority, or guarantee of exam success.
+      </div>
+
+      <LegalSection title="1. Educational purpose only">
+        <p>
+          Lexora Prep is designed to support Black Letter Law memorization and
+          rule training. The platform provides educational study tools, rule
+          recall practice, flashcards, analytics, and related learning features.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. Supplemental study tool">
+        <p>
+          Lexora Prep is not a full commercial bar preparation course and should
+          not be used as your only study resource. You remain responsible for
+          completing full preparation with appropriate materials.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="3. No guarantee of results">
+        <p>
+          Lexora Prep does not guarantee that you will pass any bar examination,
+          receive a particular score, improve your score, be admitted to
+          practice law, or achieve any academic, professional, or licensing
+          result.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="4. User responsibility">
+        <p>
+          You are responsible for your own study decisions, preparation
+          strategy, use of the platform, and reliance on any educational
+          content. Legal rules may vary by jurisdiction and may change over
+          time.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="5. Account use and security">
+        <p>
+          Each account is for one individual user only. You must provide
+          accurate account information and keep your login credentials secure.
+          You may not share, sell, transfer, or permit another person to use
+          your account.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. Prohibited conduct">
+        <ul className="list-disc space-y-2 pl-5">
+          <li>
+            Copying, scraping, downloading, reproducing, publishing, selling, or
+            redistributing Lexora Prep content without permission.
+          </li>
+          <li>
+            Sharing account access, passwords, paid materials, screenshots,
+            rule banks, flashcards, or premium materials with others.
+          </li>
+          <li>
+            Using bots, crawlers, automation tools, or unauthorized scripts to
+            access the platform.
+          </li>
+          <li>
+            Attempting to bypass payment, subscription limits, access controls,
+            or security features.
+          </li>
+          <li>
+            Using the platform for unlawful, abusive, fraudulent, or harmful
+            purposes.
+          </li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection title="7. Intellectual property">
+        <p>
+          All Lexora Prep materials are owned by Lexora Prep or its licensors
+          and are protected by applicable law. You receive a limited, revocable,
+          non-transferable license to use the platform for personal study only.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="8. Subscriptions and payments">
+        <p>
+          Paid subscriptions are billed according to the plan selected at
+          checkout. Payments are processed through Paddle. Lexora Prep does not
+          store full credit card numbers on its own servers.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="9. Cancellation and refunds">
+        <p>
+          You may cancel your subscription at any time. Cancellation stops
+          future renewal charges but does not automatically create a refund.
+          Refunds are handled according to the Refund Policy.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="10. Content accuracy">
+        <p>
+          Lexora Prep aims to provide accurate and useful educational summaries,
+          but we do not warrant that all content is complete, current, or error
+          free. Users should verify important rules with official sources,
+          licensed bar preparation materials, or applicable primary law when
+          necessary.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="11. Platform changes">
+        <p>
+          Lexora Prep may update, improve, modify, suspend, or remove platform
+          features over time to maintain service quality, stability, compliance,
+          and product performance.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="12. Suspension or termination">
+        <p>
+          We may suspend or terminate your account if you violate these Terms,
+          misuse the platform, or engage in conduct that may harm Lexora Prep,
+          users, or third parties.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="13. Disclaimers and limitation of liability">
+        <p>
+          Lexora Prep is provided on an as is and as available basis. To the
+          fullest extent permitted by law, we disclaim all warranties, express or
+          implied. To the fullest extent permitted by law, Lexora Prep and its
+          affiliates will not be liable for indirect, incidental, consequential,
+          or exemplary damages.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="14. Contact">
+        <p>For questions, contact support@lexoraprep.com.</p>
+      </LegalSection>
+    </div>
+  )
+}
+
+function PrivacyContent() {
+  return (
+    <div>
+      <div className="rounded-[22px] border border-[#DDD6FE] bg-[#F3F0FF] p-4 text-sm font-semibold leading-7 text-[#5B21B6]">
+        Lexora Prep does not sell your personal data. Payment processing is
+        handled through Paddle, and Lexora Prep does not store full card
+        details.
+      </div>
+
+      <LegalSection title="1. Information we collect">
+        <p>
+          We may collect information you provide directly, including your name,
+          email address, account credentials, subscription status, support
+          messages, feedback, and other information you choose to submit.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. Study and platform data">
+        <p>
+          We may collect study-related data, including subjects reviewed, rules
+          accessed, flashcard progress, completion status, weak areas, study
+          plan settings, selected plan, and platform usage data.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="3. Payment information">
+        <p>
+          Payments are processed through Paddle. Lexora Prep does not store full
+          credit card numbers or payment card information on its own servers.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="4. How we use information">
+        <p>
+          We use information to create and manage accounts, provide platform
+          features, process billing through Paddle, respond to support requests,
+          improve the platform, prevent fraud, maintain security, and comply
+          with legal obligations.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="5. We do not sell personal data">
+        <p>
+          Lexora Prep does not sell your personal data or provide it to third
+          parties for their independent advertising purposes.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. Cookies and similar technologies">
+        <p>
+          We may use cookies and similar technologies to keep users logged in,
+          remember preferences, support security, and analyze usage. Necessary
+          cookies are required for core platform functionality.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="7. Data security">
+        <p>
+          We use reasonable technical and organizational safeguards to protect
+          user information. No internet-based service can guarantee complete
+          security.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="8. User choices">
+        <p>
+          You may request access, correction, deletion, or account closure by
+          contacting support. Some information may need to be retained where
+          required for legal, billing, fraud prevention, or legitimate business
+          purposes.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="9. Contact">
+        <p>For privacy questions, contact support@lexoraprep.com.</p>
+      </LegalSection>
+    </div>
+  )
+}
+
+function RefundContent() {
+  return (
+    <div>
+      <div className="rounded-[22px] border border-[#DDD6FE] bg-[#F3F0FF] p-4 text-sm font-semibold leading-7 text-[#5B21B6]">
+        Refunds are not automatic. A refund may be available within 14 calendar
+        days of the initial purchase if the account has not substantially used
+        paid materials.
+      </div>
+
+      <LegalSection title="1. Fourteen-day refund window">
+        <p>
+          You may request a refund within 14 calendar days of your initial
+          purchase, subject to the usage requirement and the other conditions in
+          this Refund Policy.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. Usage requirement">
+        <p>
+          To qualify for a refund, the account must not have substantially
+          accessed, used, copied, or consumed paid materials under the selected
+          plan. Lexora Prep may deny refund requests where paid content has been
+          meaningfully used.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="3. Non-refundable situations">
+        <p>Refunds are generally not available when:</p>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>The request is made after the 14 calendar day refund window.</li>
+          <li>Paid materials were substantially accessed or used.</li>
+          <li>The account violated the Terms and Conditions.</li>
+          <li>The user forgot to cancel before renewal.</li>
+          <li>The user copied, scraped, shared, or attempted to extract protected platform content.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection title="4. Subscription cancellation">
+        <p>
+          You may cancel your subscription to stop future billing. Cancellation
+          does not automatically create a refund unless the refund request
+          satisfies this Refund Policy.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="5. Payment processor">
+        <p>
+          Refunds are processed through Paddle. Processing times may depend on
+          Paddle, your bank, card issuer, payment method, or applicable payment
+          network.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. How to request a refund">
+        <p>
+          Contact support@lexoraprep.com within the applicable refund window.
+          Include the email used for purchase, date of purchase, selected plan,
+          and reason for the request.
+        </p>
+      </LegalSection>
     </div>
   )
 }
