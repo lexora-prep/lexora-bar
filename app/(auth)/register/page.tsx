@@ -440,81 +440,81 @@ export default function RegisterPage() {
       }}
     >
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute right-[-120px] top-[-160px] h-[520px] w-[520px] rounded-full bg-[#7C3AED]/10 blur-[120px]" />
-        <div className="absolute bottom-[-180px] left-[-120px] h-[420px] w-[420px] rounded-full bg-[#0E1B35]/[0.06] blur-[120px]" />
+        <div className="absolute right-[-120px] top-[-160px] h-[420px] w-[420px] rounded-full bg-[#7C3AED]/10 blur-[110px]" />
+        <div className="absolute bottom-[-160px] left-[-120px] h-[360px] w-[360px] rounded-full bg-[#0E1B35]/[0.06] blur-[110px]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_10%,rgba(124,58,237,0.04),transparent_55%),radial-gradient(ellipse_at_20%_80%,rgba(14,27,53,0.04),transparent_55%)]" />
       </div>
 
       <div className="relative flex min-h-screen flex-col">
-        <header className="sticky top-0 z-20 flex h-[66px] items-center justify-between border-b border-[#E2E6F0] bg-[#F7F8FC]/95 px-5 backdrop-blur-xl md:px-12">
-          <Link href="/" className="flex items-center gap-3">
+        <header className="sticky top-0 z-20 flex h-[58px] items-center justify-between border-b border-[#E2E6F0] bg-[#F7F8FC]/95 px-4 backdrop-blur-xl md:px-8">
+          <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/icon.png"
               alt="Lexora Prep logo"
-              width={40}
-              height={40}
-              className="h-9 w-9 object-contain"
+              width={36}
+              height={36}
+              className="h-8 w-8 object-contain"
               priority
             />
-            <div className="text-[17px] font-extrabold tracking-[-0.03em] text-[#0E1B35]">
+            <div className="text-[16px] font-extrabold tracking-[-0.03em] text-[#0E1B35]">
               Lexora <span className="text-[#7C3AED]">Prep</span>
             </div>
           </Link>
 
           <Link
             href="/"
-            className="group inline-flex items-center gap-2 rounded-[12px] border border-[#CDD3E6] bg-white px-4 py-2 text-sm font-bold text-[#1E293B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
+            className="group inline-flex items-center gap-2 rounded-xl border border-[#CDD3E6] bg-white px-3.5 py-2 text-xs font-bold text-[#1E293B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
           >
-            <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
+            <ArrowLeft className="h-3.5 w-3.5 transition group-hover:-translate-x-0.5" />
             Back to main page
           </Link>
         </header>
 
-        <section className="flex flex-1 justify-center px-5 py-8 md:py-10">
-          <div className="grid w-full max-w-[1180px] gap-8 lg:grid-cols-[420px_minmax(0,1fr)] lg:items-start">
-            <aside className="lg:sticky lg:top-[92px]">
-              <div className="rounded-[28px] border border-[#E2E6F0] bg-white/95 p-6 shadow-[0_22px_55px_rgba(14,27,53,0.10)] backdrop-blur">
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF]">
-                    <ShoppingCart className="h-5 w-5 text-[#7C3AED]" />
+        <section className="flex flex-1 justify-center px-4 py-5 md:py-6">
+          <div className="grid w-full max-w-[1020px] gap-5 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start">
+            <aside className="lg:sticky lg:top-[76px]">
+              <div className="rounded-[22px] border border-[#E2E6F0] bg-white/95 p-4 shadow-[0_16px_38px_rgba(14,27,53,0.08)] backdrop-blur">
+                <div className="mb-3 flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#DDD6FE] bg-[#F3F0FF]">
+                    <ShoppingCart className="h-4.5 w-4.5 text-[#7C3AED]" />
                   </div>
                   <div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.17em] text-[#7C3AED]">
+                    <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[#7C3AED]">
                       Selected plan
                     </div>
-                    <div className="mt-0.5 text-lg font-black tracking-[-0.03em] text-[#0E1B35]">
+                    <div className="mt-0.5 text-[15px] font-black tracking-[-0.03em] text-[#0E1B35]">
                       {selectedPlan.label}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-[24px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#6D28D9] p-5 text-white shadow-[0_18px_45px_rgba(14,27,53,0.18)]">
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#C4B5FD]">
+                <div className="rounded-[18px] bg-gradient-to-br from-[#0E1B35] via-[#1E2E61] to-[#6D28D9] p-4 text-white shadow-[0_12px_30px_rgba(14,27,53,0.16)]">
+                  <div className="text-[9px] font-black uppercase tracking-[0.17em] text-[#C4B5FD]">
                     {selectedPlan.eyebrow}
                   </div>
 
-                  <div className="mt-3 flex items-end gap-1">
-                    <div className="text-[42px] font-black leading-none tracking-[-0.08em]">
+                  <div className="mt-2 flex items-end gap-1">
+                    <div className="text-[32px] font-black leading-none tracking-[-0.08em]">
                       {selectedPlan.price}
                     </div>
                     {selectedPlan.billing ? (
-                      <div className="pb-1 text-lg font-black text-white/65">
+                      <div className="pb-0.5 text-sm font-black text-white/65">
                         {selectedPlan.billing}
                       </div>
                     ) : null}
                   </div>
 
-                  <p className="mt-4 max-w-[280px] text-sm leading-6 text-white/72">
+                  <p className="mt-2.5 text-xs leading-5 text-white/72">
                     {selectedPlan.description}
                   </p>
                 </div>
 
-                <div className="mt-6">
-                  <div className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">
+                <div className="mt-4">
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#94A3B8]">
                     Change plan
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid gap-1.5">
                     {(Object.keys(PLANS) as PlanId[]).map((planId) => {
                       const plan = PLANS[planId]
                       const active = selectedPlanId === planId
@@ -526,22 +526,22 @@ export default function RegisterPage() {
                           onClick={() => updateSelectedPlan(planId)}
                           className={
                             active
-                              ? "flex items-center justify-between rounded-2xl border border-[#7C3AED] bg-[#F3F0FF] px-4 py-3 text-left shadow-[0_10px_24px_rgba(124,58,237,0.10)]"
-                              : "flex items-center justify-between rounded-2xl border border-[#E2E6F0] bg-white px-4 py-3 text-left transition hover:border-[#C4B5FD] hover:bg-[#FBFAFF]"
+                              ? "flex items-center justify-between rounded-xl border border-[#7C3AED] bg-[#F3F0FF] px-3 py-2 text-left shadow-[0_8px_18px_rgba(124,58,237,0.08)]"
+                              : "flex items-center justify-between rounded-xl border border-[#E2E6F0] bg-white px-3 py-2 text-left transition hover:border-[#C4B5FD] hover:bg-[#FBFAFF]"
                           }
                         >
                           <div>
-                            <div className="text-sm font-black text-[#0E1B35]">
+                            <div className="text-xs font-black text-[#0E1B35]">
                               {plan.label}
                             </div>
-                            <div className="mt-0.5 text-[10px] font-black uppercase tracking-[0.13em] text-[#94A3B8]">
+                            <div className="mt-0.5 text-[8.5px] font-black uppercase tracking-[0.12em] text-[#94A3B8]">
                               {plan.eyebrow}
                             </div>
                           </div>
 
-                          <div className="text-sm font-black text-[#0E1B35]">
+                          <div className="text-xs font-black text-[#0E1B35]">
                             {plan.price}
-                            <span className="text-xs text-[#94A3B8]">
+                            <span className="text-[10px] text-[#94A3B8]">
                               {plan.billing}
                             </span>
                           </div>
@@ -551,25 +551,25 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 border-t border-[#E2E6F0] pt-5">
-                  <div className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-[#94A3B8]">
+                <div className="mt-4 border-t border-[#E2E6F0] pt-4">
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#94A3B8]">
                     Included
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid gap-1.5">
                     {selectedPlan.features.map((feature) => (
                       <div
                         key={feature}
-                        className="flex items-start gap-2 text-sm font-bold leading-6 text-[#334155]"
+                        className="flex items-start gap-2 text-xs font-bold leading-5 text-[#334155]"
                       >
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#7C3AED]" />
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#7C3AED]" />
                         <span>{feature}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <p className="mt-5 text-xs font-semibold leading-5 text-[#64748B]">
+                <p className="mt-4 text-[11px] font-semibold leading-5 text-[#64748B]">
                   {selectedPlan.nextStep} Paid access begins only after
                   successful checkout.
                 </p>
@@ -577,11 +577,11 @@ export default function RegisterPage() {
             </aside>
 
             <div className="w-full">
-              <div className="rounded-[28px] border border-[#E2E6F0] bg-white p-6 shadow-[0_24px_60px_rgba(14,27,53,0.12),0_8px_20px_rgba(14,27,53,0.06)] md:p-8">
-                <div className="mb-8 border-b border-[#E2E6F0] pb-7">
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="max-w-[560px]">
-                      <h1 className="font-serif text-[40px] font-normal leading-[1.08] tracking-[-0.035em] text-[#0E1B35] md:text-[48px]">
+              <div className="rounded-[22px] border border-[#E2E6F0] bg-white p-5 shadow-[0_18px_44px_rgba(14,27,53,0.10),0_6px_16px_rgba(14,27,53,0.04)] md:p-6">
+                <div className="mb-5 border-b border-[#E2E6F0] pb-5">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="max-w-[520px]">
+                      <h1 className="font-serif text-[31px] font-normal leading-[1.05] tracking-[-0.035em] text-[#0E1B35] md:text-[36px]">
                         Create your{" "}
                         <span className="italic text-[#5B21B6]">
                           Lexora Prep
@@ -589,20 +589,20 @@ export default function RegisterPage() {
                         account.
                       </h1>
 
-                      <p className="mt-4 text-[15px] leading-7 text-[#475569]">
+                      <p className="mt-2.5 text-[13px] leading-6 text-[#475569]">
                         Start rule recall training with focused review, spaced
                         repetition, weak-area tracking, and clean study
                         analytics.
                       </p>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF] px-4 py-3">
-                      <UserPlus className="h-5 w-5 text-[#7C3AED]" />
+                    <div className="flex shrink-0 items-center gap-2 rounded-xl border border-[#DDD6FE] bg-[#F3F0FF] px-3 py-2">
+                      <UserPlus className="h-4 w-4 text-[#7C3AED]" />
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-[0.14em] text-[#7C3AED]">
+                        <div className="text-[8.5px] font-black uppercase tracking-[0.13em] text-[#7C3AED]">
                           Account setup
                         </div>
-                        <div className="text-sm font-black text-[#0E1B35]">
+                        <div className="text-xs font-black text-[#0E1B35]">
                           {selectedPlan.label}
                         </div>
                       </div>
@@ -610,34 +610,20 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="mb-8 text-center">
-                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#DDD6FE] bg-[#F3F0FF]">
-                    <UserPlus className="h-7 w-7 text-[#7C3AED]" />
-                  </div>
-
-                  <h2 className="font-serif text-4xl font-normal tracking-[-0.03em] text-[#0E1B35]">
-                    Create account
-                  </h2>
-
-                  <p className="mt-2 text-sm leading-6 text-[#64748B]">
-                    Enter your email and bar exam details.
-                  </p>
-                </div>
-
                 <form
                   onSubmit={handleRegister}
-                  className="mx-auto max-w-[560px] space-y-5"
+                  className="mx-auto max-w-[520px] space-y-3"
                 >
                   <div>
                     <label
                       htmlFor="fullName"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                      className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                     >
                       Full name
                     </label>
 
                     <div className="relative">
-                      <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                      <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                       <input
                         id="fullName"
                         name="fullName"
@@ -646,7 +632,7 @@ export default function RegisterPage() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Your full name"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        className="h-[44px] w-full rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-10 pr-3 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       />
                     </div>
                   </div>
@@ -654,13 +640,13 @@ export default function RegisterPage() {
                   <div>
                     <label
                       htmlFor="email"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                      className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                     >
                       Email
                     </label>
 
                     <div className="relative">
-                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                      <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                       <input
                         id="email"
                         name="email"
@@ -669,7 +655,7 @@ export default function RegisterPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        className="h-[44px] w-full rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-10 pr-3 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       />
                     </div>
                   </div>
@@ -677,13 +663,13 @@ export default function RegisterPage() {
                   <div>
                     <label
                       htmlFor="password"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                      className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                     >
                       Password
                     </label>
 
                     <div className="relative">
-                      <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                      <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                       <input
                         id="password"
                         name="password"
@@ -692,41 +678,41 @@ export default function RegisterPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Create a password"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-12 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        className="h-[44px] w-full rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-10 pr-10 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       />
 
                       <button
                         type="button"
                         onClick={() => setShowPassword((value) => !value)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] transition hover:text-[#0E1B35]"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] transition hover:text-[#0E1B35]"
                         aria-label={
                           showPassword ? "Hide password" : "Show password"
                         }
                       >
                         {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
+                          <EyeOff className="h-4.5 w-4.5" />
                         ) : (
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-4.5 w-4.5" />
                         )}
                       </button>
                     </div>
 
-                    <div className="mt-3 grid gap-2 rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] p-4">
+                    <div className="mt-2 grid gap-x-3 gap-y-1.5 rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] p-3 sm:grid-cols-2">
                       <PasswordRequirement
                         valid={passwordChecks.minLength}
                         label="At least 8 characters"
                       />
                       <PasswordRequirement
                         valid={passwordChecks.hasLetter}
-                        label="Includes at least one letter"
+                        label="Includes one letter"
                       />
                       <PasswordRequirement
                         valid={passwordChecks.hasNumber}
-                        label="Includes at least one number"
+                        label="Includes one number"
                       />
                       <PasswordRequirement
                         valid={passwordChecks.hasSpecial}
-                        label="Includes at least one special symbol"
+                        label="Includes one special symbol"
                       />
                       <PasswordRequirement
                         valid={
@@ -741,13 +727,13 @@ export default function RegisterPage() {
                   <div>
                     <label
                       htmlFor="confirmPassword"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                      className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                     >
                       Confirm password
                     </label>
 
                     <div className="relative">
-                      <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                      <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                       <input
                         id="confirmPassword"
                         name="confirmPassword"
@@ -756,7 +742,7 @@ export default function RegisterPage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirm your password"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        className="h-[44px] w-full rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-10 pr-3 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       />
                     </div>
                   </div>
@@ -764,13 +750,13 @@ export default function RegisterPage() {
                   <div>
                     <label
                       htmlFor="lawSchool"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                      className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                     >
                       Law school
                     </label>
 
                     <div className="relative">
-                      <School className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                      <School className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                       <input
                         id="lawSchool"
                         name="lawSchool"
@@ -779,7 +765,7 @@ export default function RegisterPage() {
                         value={lawSchool}
                         onChange={(e) => setLawSchool(e.target.value)}
                         placeholder="Your law school"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-4 pl-12 pr-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        className="h-[44px] w-full rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-10 pr-3 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       />
                     </div>
                   </div>
@@ -787,19 +773,19 @@ export default function RegisterPage() {
                   <div>
                     <label
                       htmlFor="jurisdiction"
-                      className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                      className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                     >
                       Jurisdiction
                     </label>
 
                     <div className="relative">
-                      <MapPin className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                      <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                       <select
                         id="jurisdiction"
                         name="jurisdiction"
                         value={jurisdiction}
                         onChange={(e) => setJurisdiction(e.target.value)}
-                        className="h-[52px] w-full appearance-none rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] py-3 pl-12 pr-12 text-sm text-[#0E1B35] outline-none transition focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        className="h-[44px] w-full appearance-none rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] py-2.5 pl-10 pr-10 text-sm text-[#0E1B35] outline-none transition focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       >
                         <option value="" className="bg-white text-[#0E1B35]">
                           Select your jurisdiction
@@ -814,15 +800,15 @@ export default function RegisterPage() {
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                       <label
                         htmlFor="examMonth"
-                        className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                        className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                       >
                         Exam month
                       </label>
@@ -833,7 +819,7 @@ export default function RegisterPage() {
                           name="examMonth"
                           value={examMonth}
                           onChange={(e) => setExamMonth(e.target.value)}
-                          className="h-[52px] w-full appearance-none rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-4 py-3 pr-12 text-sm text-[#0E1B35] outline-none transition focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                          className="h-[44px] w-full appearance-none rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] px-3 py-2.5 pr-10 text-sm text-[#0E1B35] outline-none transition focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                         >
                           <option value="" className="bg-white text-[#0E1B35]">
                             Select month
@@ -846,14 +832,14 @@ export default function RegisterPage() {
                           </option>
                         </select>
 
-                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#94A3B8]" />
+                        <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
                       </div>
                     </div>
 
                     <div>
                       <label
                         htmlFor="examYear"
-                        className="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
+                        className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#94A3B8]"
                       >
                         Exam year
                       </label>
@@ -865,20 +851,20 @@ export default function RegisterPage() {
                         value={examYear}
                         onChange={(e) => setExamYear(e.target.value)}
                         placeholder="2026"
-                        className="h-[52px] w-full rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-4 py-4 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
+                        className="h-[44px] w-full rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] px-3 py-3 text-sm text-[#0E1B35] outline-none transition placeholder:text-[#94A3B8] focus:border-[#1E3A72] focus:bg-white focus:ring-4 focus:ring-[#0E1B35]/[0.07]"
                       />
                     </div>
                   </div>
 
-                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] p-4 text-left">
+                  <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] p-3 text-left">
                     <input
                       type="checkbox"
                       checked={acceptedTerms}
                       onChange={(e) => setAcceptedTerms(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-[#CBD5E1] accent-[#7C3AED]"
+                      className="mt-0.5 h-4 w-4 rounded border-[#CBD5E1] accent-[#7C3AED]"
                     />
 
-                    <span className="text-xs leading-5 text-[#64748B]">
+                    <span className="text-[11px] leading-5 text-[#64748B]">
                       I agree to Lexora Prep&apos;s{" "}
                       <button
                         type="button"
@@ -903,15 +889,14 @@ export default function RegisterPage() {
                       >
                         Refund Policy
                       </button>
-                      . I understand that Lexora Prep is a supplemental
-                      educational tool, does not guarantee bar exam passage, and
-                      may not be abused, copied, scraped, resold, or used to
-                      extract protected platform content.
+                      . I understand that Lexora Prep is supplemental, does not
+                      guarantee bar exam passage, and may not be abused, copied,
+                      scraped, resold, or used to extract protected content.
                     </span>
                   </label>
 
                   {selectedPlanId !== "free" ? (
-                    <div className="flex items-start gap-3 rounded-2xl bg-[#F3F0FF] p-4 text-xs leading-5 text-[#5B21B6]">
+                    <div className="flex items-start gap-2.5 rounded-xl bg-[#F3F0FF] p-3 text-[11px] leading-5 text-[#5B21B6]">
                       <CreditCard className="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
                         After registration, you will continue to Paddle checkout
@@ -923,7 +908,7 @@ export default function RegisterPage() {
                   ) : null}
 
                   {error ? (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs leading-5 text-red-700">
                       {error}
                     </div>
                   ) : null}
@@ -931,11 +916,11 @@ export default function RegisterPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex h-[52px] w-full items-center justify-center rounded-2xl bg-[#0E1B35] px-5 py-4 text-sm font-extrabold text-white shadow-[0_4px_16px_rgba(14,27,53,0.24)] transition hover:-translate-y-0.5 hover:bg-[#162B55] hover:shadow-[0_8px_24px_rgba(14,27,53,0.32)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                    className="flex h-[46px] w-full items-center justify-center rounded-xl bg-[#0E1B35] px-4 py-3 text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(14,27,53,0.22)] transition hover:-translate-y-0.5 hover:bg-[#162B55] hover:shadow-[0_8px_22px_rgba(14,27,53,0.28)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-2 h-4.5 w-4.5 animate-spin" />
                         Creating account...
                       </>
                     ) : (
@@ -944,7 +929,7 @@ export default function RegisterPage() {
                   </button>
                 </form>
 
-                <div className="mx-auto mt-6 max-w-[560px] rounded-2xl border border-[#E2E6F0] bg-[#F7F8FC] px-4 py-4 text-center text-sm text-[#64748B]">
+                <div className="mx-auto mt-4 max-w-[520px] rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] px-3 py-3 text-center text-xs text-[#64748B]">
                   Already have an account?{" "}
                   <Link
                     href="/login"
@@ -954,18 +939,18 @@ export default function RegisterPage() {
                   </Link>
                 </div>
 
-                <div className="mt-5 text-center">
+                <div className="mt-3 text-center">
                   <Link
                     href="/"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-[#64748B] transition hover:text-[#0E1B35]"
+                    className="inline-flex items-center gap-2 text-xs font-semibold text-[#64748B] transition hover:text-[#0E1B35]"
                   >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-3.5 w-3.5" />
                     Return to the main website
                   </Link>
                 </div>
               </div>
 
-              <p className="mt-5 text-center text-xs leading-5 text-[#94A3B8]">
+              <p className="mt-3 text-center text-[11px] leading-5 text-[#94A3B8]">
                 Lexora Prep is a supplemental educational tool and does not
                 guarantee bar exam success. Users should verify
                 jurisdiction-specific requirements and rules with the applicable
@@ -1039,10 +1024,10 @@ function PasswordRequirement({
   label: string
 }) {
   return (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="flex items-center gap-1.5 text-[10.5px]">
       <CheckCircle2
         className={
-          valid ? "h-4 w-4 text-emerald-600" : "h-4 w-4 text-[#CBD5E1]"
+          valid ? "h-3.5 w-3.5 text-emerald-600" : "h-3.5 w-3.5 text-[#CBD5E1]"
         }
       />
       <span className={valid ? "text-[#1E293B]" : "text-[#94A3B8]"}>
