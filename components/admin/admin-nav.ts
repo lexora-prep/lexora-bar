@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CreditCard,
+  FileCheck2,
   LayoutDashboard,
   Settings,
   Shield,
@@ -80,6 +81,12 @@ export const adminNavGroups: {
     label: "System",
     items: [
       {
+        label: "Legal Acceptances",
+        href: "/admin/legal-acceptances",
+        icon: FileCheck2,
+        permission: "can_view_audit_log",
+      },
+      {
         label: "Settings",
         href: "/admin/settings",
         icon: Settings,
@@ -131,6 +138,11 @@ export const adminPageMeta: Record<
     subtitle: "Channels, shared notes, and direct communication.",
     primaryAction: "New Channel",
     secondaryAction: "Members",
+  },
+  "/admin/legal-acceptances": {
+    title: "Legal Acceptances",
+    subtitle:
+      "Review user consent records, policy versions, IP address, user agent, and acceptance timestamps.",
   },
   "/admin/settings": {
     title: "Settings",
