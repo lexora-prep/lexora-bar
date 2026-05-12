@@ -471,12 +471,12 @@ export default function RegisterPage() {
         </header>
 
         <section className="flex flex-1 justify-center px-4 py-5 md:py-6">
-          <div className="grid w-full max-w-[1020px] gap-5 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start">
-            <aside className="lg:sticky lg:top-[76px]">
+          <div className="flex w-full max-w-[1040px] flex-col gap-5 lg:flex-row lg:items-start">
+            <aside className="w-full lg:sticky lg:top-[76px] lg:w-[305px] lg:shrink-0">
               <div className="rounded-[22px] border border-[#E2E6F0] bg-white/95 p-4 shadow-[0_16px_38px_rgba(14,27,53,0.08)] backdrop-blur">
                 <div className="mb-3 flex items-center gap-2.5">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#DDD6FE] bg-[#F3F0FF]">
-                    <ShoppingCart className="h-4.5 w-4.5 text-[#7C3AED]" />
+                    <ShoppingCart className="h-4 w-4 text-[#7C3AED]" />
                   </div>
                   <div>
                     <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[#7C3AED]">
@@ -494,7 +494,7 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="mt-2 flex items-end gap-1">
-                    <div className="text-[32px] font-black leading-none tracking-[-0.08em]">
+                    <div className="text-[31px] font-black leading-none tracking-[-0.08em]">
                       {selectedPlan.price}
                     </div>
                     {selectedPlan.billing ? (
@@ -576,12 +576,12 @@ export default function RegisterPage() {
               </div>
             </aside>
 
-            <div className="w-full">
+            <div className="min-w-0 flex-1">
               <div className="rounded-[22px] border border-[#E2E6F0] bg-white p-5 shadow-[0_18px_44px_rgba(14,27,53,0.10),0_6px_16px_rgba(14,27,53,0.04)] md:p-6">
                 <div className="mb-5 border-b border-[#E2E6F0] pb-5">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="max-w-[520px]">
-                      <h1 className="font-serif text-[31px] font-normal leading-[1.05] tracking-[-0.035em] text-[#0E1B35] md:text-[36px]">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="max-w-[500px]">
+                      <h1 className="font-serif text-[30px] font-normal leading-[1.05] tracking-[-0.035em] text-[#0E1B35] md:text-[35px]">
                         Create your{" "}
                         <span className="italic text-[#5B21B6]">
                           Lexora Prep
@@ -612,7 +612,7 @@ export default function RegisterPage() {
 
                 <form
                   onSubmit={handleRegister}
-                  className="mx-auto max-w-[520px] space-y-3"
+                  className="mx-auto max-w-[500px] space-y-3"
                 >
                   <div>
                     <label
@@ -690,9 +690,9 @@ export default function RegisterPage() {
                         }
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4.5 w-4.5" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-4.5 w-4.5" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </button>
                     </div>
@@ -712,7 +712,7 @@ export default function RegisterPage() {
                       />
                       <PasswordRequirement
                         valid={passwordChecks.hasSpecial}
-                        label="Includes one special symbol"
+                        label="Includes one symbol"
                       />
                       <PasswordRequirement
                         valid={
@@ -920,7 +920,7 @@ export default function RegisterPage() {
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="mr-2 h-4.5 w-4.5 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Creating account...
                       </>
                     ) : (
@@ -929,7 +929,7 @@ export default function RegisterPage() {
                   </button>
                 </form>
 
-                <div className="mx-auto mt-4 max-w-[520px] rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] px-3 py-3 text-center text-xs text-[#64748B]">
+                <div className="mx-auto mt-4 max-w-[500px] rounded-xl border border-[#E2E6F0] bg-[#F7F8FC] px-3 py-3 text-center text-xs text-[#64748B]">
                   Already have an account?{" "}
                   <Link
                     href="/login"
