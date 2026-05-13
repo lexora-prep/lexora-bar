@@ -24,13 +24,38 @@ export async function GET() {
     const { data, error } = await supabase
       .from("user_legal_acceptances")
       .select(
-        "id, user_id, email, selected_plan, registration_mode, terms_version, privacy_version, refund_version, terms_accepted, privacy_accepted, refund_accepted, platform_rules_accepted, user_agent, ip_address, accepted_at"
+        [
+          "id",
+          "user_id",
+          "email",
+          "selected_plan",
+          "registration_mode",
+          "terms_version",
+          "privacy_version",
+          "refund_version",
+          "terms_accepted",
+          "privacy_accepted",
+          "refund_accepted",
+          "platform_rules_accepted",
+          "user_agent",
+          "ip_address",
+          "ip_country",
+          "ip_region",
+          "ip_city",
+          "ip_timezone",
+          "ip_latitude",
+          "ip_longitude",
+          "ip_lookup_provider",
+          "ip_lookup_at",
+          "accepted_at",
+        ].join(", ")
       )
       .order("accepted_at", { ascending: false })
       .limit(100)
 
     if (error) {
       console.error("LEGAL ACCEPTANCES LIST ERROR:", error)
+
       return NextResponse.json(
         { error: "Failed to load legal acceptance records." },
         { status: 500 }
@@ -40,6 +65,7 @@ export async function GET() {
     return NextResponse.json({ records: data || [] })
   } catch (error) {
     console.error("LEGAL ACCEPTANCES API ERROR:", error)
+
     return NextResponse.json(
       { error: "Something went wrong." },
       { status: 500 }
