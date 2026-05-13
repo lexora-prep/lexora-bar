@@ -8,6 +8,17 @@ const TERMS_VERSION = "2026-05-04"
 const PRIVACY_VERSION = "2026-05-04"
 const REFUND_VERSION = "2026-05-04"
 
+type IpLocation = {
+  ip_country: string | null
+  ip_region: string | null
+  ip_city: string | null
+  ip_timezone: string | null
+  ip_latitude: number | null
+  ip_longitude: number | null
+  ip_lookup_provider: string | null
+  ip_lookup_at: string | null
+}
+
 function getAdminClient() {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     throw new Error("Supabase service role environment variables are missing.")
@@ -21,8 +32,34 @@ function getAdminClient() {
   })
 }
 
+function cleanHeaderValue(value: string | null) {
+  if (!value) return null
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  try {
+    return decodeURIComponent(trimmed)
+  } catch {
+    return trimmed
+  }
+}
+
+function parseCoordinate(value: string | null) {
+  if (!value) return null
+
+  const parsed = Number(value)
+
+  if (Number.isNaN(parsed)) {
+    return null
+  }
+
+  return parsed
+}
+
 function getClientIp(req: Request) {
   const forwardedFor = req.headers.get("x-forwarded-for")
+
   if (forwardedFor) {
     return forwardedFor.split(",")[0]?.trim() || null
   }
@@ -30,8 +67,35 @@ function getClientIp(req: Request) {
   return (
     req.headers.get("x-real-ip") ||
     req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-vercel-forwarded-for") ||
     null
   )
+}
+
+function getIpLocationFromHeaders(req: Request): IpLocation {
+  const country = cleanHeaderValue(req.headers.get("x-vercel-ip-country"))
+  const region = cleanHeaderValue(req.headers.get("x-vercel-ip-country-region"))
+  const city = cleanHeaderValue(req.headers.get("x-vercel-ip-city"))
+  const latitude = parseCoordinate(req.headers.get("x-vercel-ip-latitude"))
+  const longitude = parseCoordinate(req.headers.get("x-vercel-ip-longitude"))
+
+  const hasLocation =
+    Boolean(country) ||
+    Boolean(region) ||
+    Boolean(city) ||
+    latitude !== null ||
+    longitude !== null
+
+  return {
+    ip_country: country,
+    ip_region: region,
+    ip_city: city,
+    ip_timezone: null,
+    ip_latitude: latitude,
+    ip_longitude: longitude,
+    ip_lookup_provider: hasLocation ? "vercel_headers" : null,
+    ip_lookup_at: hasLocation ? new Date().toISOString() : null,
+  }
 }
 
 export async function POST(req: Request) {
@@ -68,6 +132,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = getAdminClient()
+    const ipLocation = getIpLocationFromHeaders(req)
 
     const { error } = await supabase.from("user_legal_acceptances").insert({
       user_id: userId,
@@ -84,6 +149,14 @@ export async function POST(req: Request) {
       user_agent: req.headers.get("user-agent"),
       ip_address: getClientIp(req),
       accepted_at: new Date().toISOString(),
+      ip_country: ipLocation.ip_country,
+      ip_region: ipLocation.ip_region,
+      ip_city: ipLocation.ip_city,
+      ip_timezone: ipLocation.ip_timezone,
+      ip_latitude: ipLocation.ip_latitude,
+      ip_longitude: ipLocation.ip_longitude,
+      ip_lookup_provider: ipLocation.ip_lookup_provider,
+      ip_lookup_at: ipLocation.ip_lookup_at,
     })
 
     if (error) {
