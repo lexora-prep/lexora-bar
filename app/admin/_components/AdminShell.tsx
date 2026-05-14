@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  FileCheck2,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -215,6 +216,12 @@ export default function AdminShell({
           show: p.canManageUsers || currentUser.isSuperAdmin,
         },
         {
+          label: "Legal Records",
+          href: "/admin/legal-acceptances",
+          icon: FileCheck2,
+          show: p.canManageUsers || p.canViewAuditLog || currentUser.isSuperAdmin,
+        },
+        {
           label: "Subscriptions",
           href: "/admin/subscriptions",
           icon: CreditCard,
@@ -289,7 +296,9 @@ export default function AdminShell({
           <div className="flex h-full flex-col">
             <div className="border-b border-[#DDD7CC] px-4 py-4">
               <div
-                className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} gap-3`}
+                className={`flex items-center ${
+                  collapsed ? "justify-center" : "justify-between"
+                } gap-3`}
               >
                 {!collapsed ? (
                   <div className="min-w-0">
@@ -319,17 +328,46 @@ export default function AdminShell({
                   onClick={() => setCollapsed((v) => !v)}
                   className="flex h-8 w-8 items-center justify-center rounded border border-[#DDD7CC] bg-white text-[#6B7280] hover:bg-[#F9F7F2]"
                 >
-                  {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                  {collapsed ? (
+                    <ChevronRight size={14} />
+                  ) : (
+                    <ChevronLeft size={14} />
+                  )}
                 </button>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-0 py-4">
-              <Section title="Overview" items={nav.overview} pathname={pathname} collapsed={collapsed} />
-              <Section title="Content" items={nav.content} pathname={pathname} collapsed={collapsed} />
-              <Section title="Subscribers" items={nav.subscribers} pathname={pathname} collapsed={collapsed} />
-              <Section title="Communications" items={nav.communications} pathname={pathname} collapsed={collapsed} />
-              <Section title="System" items={nav.system} pathname={pathname} collapsed={collapsed} />
+              <Section
+                title="Overview"
+                items={nav.overview}
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <Section
+                title="Content"
+                items={nav.content}
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <Section
+                title="Subscribers"
+                items={nav.subscribers}
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <Section
+                title="Communications"
+                items={nav.communications}
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <Section
+                title="System"
+                items={nav.system}
+                pathname={pathname}
+                collapsed={collapsed}
+              />
             </div>
 
             <div className="border-t border-[#DDD7CC] px-3 py-3">
@@ -352,7 +390,9 @@ export default function AdminShell({
                           {safeName(currentUser.fullName, currentUser.email)}
                         </div>
                         <div className="truncate text-[11px] text-[#8E96A3]">
-                          {currentUser.isSuperAdmin ? "Super Admin" : currentUser.adminRole || currentUser.role}
+                          {currentUser.isSuperAdmin
+                            ? "Super Admin"
+                            : currentUser.adminRole || currentUser.role}
                         </div>
                       </div>
                       <ChevronDown size={14} className="text-[#6B7280]" />
@@ -381,7 +421,8 @@ export default function AdminShell({
                         Team Workspace
                       </Link>
 
-                      {(currentUser.permissions.canManageUsers || currentUser.isSuperAdmin) && (
+                      {(currentUser.permissions.canManageUsers ||
+                        currentUser.isSuperAdmin) && (
                         <Link
                           href="/admin/team"
                           prefetch={false}
@@ -392,7 +433,21 @@ export default function AdminShell({
                         </Link>
                       )}
 
-                      {(currentUser.permissions.canManageSettings || currentUser.isSuperAdmin) && (
+                      {(currentUser.permissions.canManageUsers ||
+                        currentUser.permissions.canViewAuditLog ||
+                        currentUser.isSuperAdmin) && (
+                        <Link
+                          href="/admin/legal-acceptances"
+                          prefetch={false}
+                          onClick={() => setProfileOpen(false)}
+                          className="block px-3 py-2 text-[13px] text-[#374151] hover:bg-[#F9F7F2]"
+                        >
+                          Legal Records
+                        </Link>
+                      )}
+
+                      {(currentUser.permissions.canManageSettings ||
+                        currentUser.isSuperAdmin) && (
                         <Link
                           href="/admin/settings"
                           prefetch={false}
