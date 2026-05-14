@@ -36,10 +36,14 @@ export default function LoginPage() {
     })
 
     if (loginError) {
-      setError(loginError.message || "Unable to sign in. Please check your credentials.")
+      setError(
+        loginError.message || "Unable to sign in. Please check your credentials."
+      )
       setIsLoading(false)
       return
     }
+
+    window.localStorage.setItem("lexora_track_login_after_redirect", "true")
 
     router.push("/dashboard")
     router.refresh()
@@ -206,7 +210,9 @@ export default function LoginPage() {
                         type="button"
                         onClick={() => setShowPassword((value) => !value)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] transition hover:text-[#0E1B35]"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />

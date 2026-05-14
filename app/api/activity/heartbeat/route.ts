@@ -110,33 +110,37 @@ export async function POST(req: Request) {
     } = await authClient.auth.getUser()
 
     if (userError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized." },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
     }
 
     const body = await req.json().catch(() => null)
     const activitySource = String(body?.source || "app").trim() || "app"
 
+    const now = new Date().toISOString()
     const location = getIpLocationFromHeaders(req)
     const adminClient = getAdminClient()
 
+    const updatePayload: Record<string, string | number | null> = {
+      last_active_at: now,
+      last_ip_address: getClientIp(req),
+      last_country: location.last_country,
+      last_region: location.last_region,
+      last_city: location.last_city,
+      last_timezone: location.last_timezone,
+      last_latitude: location.last_latitude,
+      last_longitude: location.last_longitude,
+      last_user_agent: req.headers.get("user-agent"),
+      last_activity_source: activitySource,
+      updated_at: now,
+    }
+
+    if (activitySource === "login") {
+      updatePayload.last_login_at = now
+    }
+
     const { error } = await adminClient
       .from("profiles")
-      .update({
-        last_active_at: new Date().toISOString(),
-        last_ip_address: getClientIp(req),
-        last_country: location.last_country,
-        last_region: location.last_region,
-        last_city: location.last_city,
-        last_timezone: location.last_timezone,
-        last_latitude: location.last_latitude,
-        last_longitude: location.last_longitude,
-        last_user_agent: req.headers.get("user-agent"),
-        last_activity_source: activitySource,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", user.id)
 
     if (error) {
@@ -148,7 +152,7 @@ export async function POST(req: Request) {
       )
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, source: activitySource })
   } catch (error) {
     console.error("HEARTBEAT API ERROR:", error)
 

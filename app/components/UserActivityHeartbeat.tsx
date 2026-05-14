@@ -5,8 +5,19 @@ import { usePathname } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 
 const HEARTBEAT_INTERVAL_MS = 60_000
+const LOGIN_ACTIVITY_FLAG = "lexora_track_login_after_redirect"
 
 function getActivitySource(pathname: string) {
+  if (typeof window !== "undefined") {
+    const shouldTrackLogin =
+      window.localStorage.getItem(LOGIN_ACTIVITY_FLAG) === "true"
+
+    if (shouldTrackLogin) {
+      window.localStorage.removeItem(LOGIN_ACTIVITY_FLAG)
+      return "login"
+    }
+  }
+
   if (pathname.startsWith("/dashboard")) return "dashboard"
   if (pathname.startsWith("/mbe")) return "mbe"
   if (pathname.startsWith("/flashcards")) return "flashcards"
