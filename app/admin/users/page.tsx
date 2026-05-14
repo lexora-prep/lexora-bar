@@ -1,6 +1,13 @@
 "use client"
 
-import { Download, Search, UserPlus } from "lucide-react"
+import {
+  Activity,
+  Download,
+  Globe2,
+  MapPin,
+  Search,
+  UserPlus,
+} from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 type AdminUser = {
@@ -22,7 +29,19 @@ type AdminUser = {
   created_at: string
   updated_at: string
   account_age_days?: number
+
   last_active_at?: string | null
+  last_login_at?: string | null
+  last_ip_address?: string | null
+  last_country?: string | null
+  last_region?: string | null
+  last_city?: string | null
+  last_timezone?: string | null
+  last_latitude?: number | null
+  last_longitude?: number | null
+  last_user_agent?: string | null
+  last_activity_source?: string | null
+  is_online?: boolean
 }
 
 function safeName(fullName: string | null, email: string) {
@@ -31,32 +50,75 @@ function safeName(fullName: string | null, email: string) {
 }
 
 function initials(fullName: string | null, email: string) {
-  return safeName(fullName, email)
-    .split(" ")
-    .filter(Boolean)
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
+  return (
+    safeName(fullName, email)
+      .split(" ")
+      .filter(Boolean)
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "U"
+  )
 }
 
 function avatarStyle(seed: string): React.CSSProperties {
   const map: Record<string, React.CSSProperties> = {
-    MC: { background: "linear-gradient(135deg, #6c72ff, #818cf8)", color: "#ffffff" },
-    SK: { background: "linear-gradient(135deg, #4ade80, #22d3ee)", color: "#052e16" },
-    JP: { background: "linear-gradient(135deg, #f97316, #eab308)", color: "#ffffff" },
-    AL: { background: "linear-gradient(135deg, #e879f9, #a855f7)", color: "#ffffff" },
-    TR: { background: "linear-gradient(135deg, #22d3ee, #6366f1)", color: "#ffffff" },
-    HS: { background: "linear-gradient(135deg, #f472b6, #fb7185)", color: "#ffffff" },
-    CR: { background: "linear-gradient(135deg, #34d399, #10b981)", color: "#ffffff" },
-    VL: { background: "linear-gradient(135deg, #6c72ff, #e879f9)", color: "#ffffff" },
-    A2: { background: "linear-gradient(135deg, #6c72ff, #818cf8)", color: "#ffffff" },
-    AD: { background: "linear-gradient(135deg, #6c72ff, #e879f9)", color: "#ffffff" },
-    VO: { background: "linear-gradient(135deg, #6c72ff, #818cf8)", color: "#ffffff" },
-    VV: { background: "linear-gradient(135deg, #6c72ff, #818cf8)", color: "#ffffff" },
+    MC: {
+      background: "linear-gradient(135deg, #6c72ff, #818cf8)",
+      color: "#ffffff",
+    },
+    SK: {
+      background: "linear-gradient(135deg, #4ade80, #22d3ee)",
+      color: "#052e16",
+    },
+    JP: {
+      background: "linear-gradient(135deg, #f97316, #eab308)",
+      color: "#ffffff",
+    },
+    AL: {
+      background: "linear-gradient(135deg, #e879f9, #a855f7)",
+      color: "#ffffff",
+    },
+    TR: {
+      background: "linear-gradient(135deg, #22d3ee, #6366f1)",
+      color: "#ffffff",
+    },
+    HS: {
+      background: "linear-gradient(135deg, #f472b6, #fb7185)",
+      color: "#ffffff",
+    },
+    CR: {
+      background: "linear-gradient(135deg, #34d399, #10b981)",
+      color: "#ffffff",
+    },
+    VL: {
+      background: "linear-gradient(135deg, #6c72ff, #e879f9)",
+      color: "#ffffff",
+    },
+    A2: {
+      background: "linear-gradient(135deg, #6c72ff, #818cf8)",
+      color: "#ffffff",
+    },
+    AD: {
+      background: "linear-gradient(135deg, #6c72ff, #e879f9)",
+      color: "#ffffff",
+    },
+    VO: {
+      background: "linear-gradient(135deg, #6c72ff, #818cf8)",
+      color: "#ffffff",
+    },
+    VV: {
+      background: "linear-gradient(135deg, #6c72ff, #818cf8)",
+      color: "#ffffff",
+    },
   }
 
-  return map[seed] || { background: "linear-gradient(135deg, #6c72ff, #818cf8)", color: "#ffffff" }
+  return (
+    map[seed] || {
+      background: "linear-gradient(135deg, #6c72ff, #818cf8)",
+      color: "#ffffff",
+    }
+  )
 }
 
 function planStyle(plan: string): React.CSSProperties {
@@ -134,9 +196,15 @@ function getStatus(user: AdminUser) {
   }
 
   if (
-    ["premium", "pro", "pro_monthly", "pro_annual", "monthly", "annual", "enterprise"].includes(
-      plan
-    )
+    [
+      "premium",
+      "pro",
+      "pro_monthly",
+      "pro_annual",
+      "monthly",
+      "annual",
+      "enterprise",
+    ].includes(plan)
   ) {
     return {
       label: "Active",
@@ -160,6 +228,9 @@ function formatRelative(dateString?: string | null) {
   if (!dateString) return "—"
 
   const date = new Date(dateString)
+
+  if (Number.isNaN(date.getTime())) return "—"
+
   const diffMs = Date.now() - date.getTime()
   const mins = Math.floor(diffMs / 60000)
 
@@ -179,12 +250,77 @@ function formatRelative(dateString?: string | null) {
   return `${years} year${years > 1 ? "s" : ""} ago`
 }
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "—"
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) return "—"
+
+  return new Intl.DateTimeFormat("en", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date)
+}
+
+function normalizeSource(value?: string | null) {
+  if (!value) return "—"
+
+  return value
+    .replace(/_/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+function getLocationLabel(user: AdminUser) {
+  const parts = [user.last_city, user.last_region, user.last_country]
+    .filter(Boolean)
+    .map((part) => String(part))
+
+  if (parts.length === 0) return "—"
+
+  return parts.join(", ")
+}
+
+function getOnlineInfo(user: AdminUser) {
+  if (user.is_online) {
+    return {
+      label: "Online",
+      dot: "#22c55e",
+      background: "rgba(34,197,94,0.10)",
+      color: "#16a34a",
+    }
+  }
+
+  if (user.last_active_at) {
+    return {
+      label: "Offline",
+      dot: "#94a3b8",
+      background: "#f3f4f6",
+      color: "#64748b",
+    }
+  }
+
+  return {
+    label: "No activity",
+    dot: "#cbd5e1",
+    background: "#f8fafc",
+    color: "#94a3b8",
+  }
+}
+
 export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState("all")
   const [plan, setPlan] = useState("all")
+  const [sort, setSort] = useState("last_active_desc")
   const [users, setUsers] = useState<AdminUser[]>([])
 
   const queryString = useMemo(() => {
@@ -193,9 +329,10 @@ export default function AdminUsersPage() {
     if (query.trim()) params.set("q", query.trim())
     if (status !== "all") params.set("status", status)
     if (plan !== "all") params.set("plan", plan)
+    if (sort !== "newest") params.set("sort", sort)
 
     return params.toString()
-  }, [query, status, plan])
+  }, [query, status, plan, sort])
 
   useEffect(() => {
     void loadUsers()
@@ -206,9 +343,12 @@ export default function AdminUsersPage() {
       setLoading(true)
       setError("")
 
-      const res = await fetch(`/api/admin/users${queryString ? `?${queryString}` : ""}`, {
-        cache: "no-store",
-      })
+      const res = await fetch(
+        `/api/admin/users${queryString ? `?${queryString}` : ""}`,
+        {
+          cache: "no-store",
+        }
+      )
 
       const data = await res.json().catch(() => null)
 
@@ -232,20 +372,44 @@ export default function AdminUsersPage() {
     if (users.length === 0) return
 
     const rows = [
-      ["name", "email", "plan", "status", "jurisdiction", "law_school", "last_active"],
+      [
+        "name",
+        "email",
+        "plan",
+        "status",
+        "online_status",
+        "jurisdiction",
+        "law_school",
+        "last_login",
+        "last_active",
+        "ip_address",
+        "country",
+        "region",
+        "city",
+        "activity_source",
+      ],
       ...users.map((user) => [
         safeName(user.full_name, user.email),
         user.email,
         user.subscription_tier || "free",
         getStatus(user).label,
+        user.is_online ? "online" : "offline",
         user.jurisdiction || "",
         user.law_school || "",
-        user.last_active_at || user.updated_at || "",
+        user.last_login_at || "",
+        user.last_active_at || "",
+        user.last_ip_address || "",
+        user.last_country || "",
+        user.last_region || "",
+        user.last_city || "",
+        user.last_activity_source || "",
       ]),
     ]
 
     const csv = rows
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      )
       .join("\n")
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
@@ -262,7 +426,9 @@ export default function AdminUsersPage() {
     const active = users.filter((u) => getStatus(u).label === "Active").length
     const trial = users.filter((u) => getStatus(u).label === "Trial").length
     const churned = users.filter((u) => getStatus(u).label === "Churned").length
-    return { all, active, trial, churned }
+    const online = users.filter((u) => u.is_online).length
+
+    return { all, active, trial, churned, online }
   }, [users])
 
   return (
@@ -271,7 +437,7 @@ export default function AdminUsersPage() {
       style={{ background: "#f7f7f5", color: "#111827" }}
     >
       <div
-        className="flex h-14 items-center gap-4 px-6"
+        className="flex min-h-14 flex-wrap items-center gap-4 px-6 py-3"
         style={{
           background: "#f7f7f5",
           borderBottom: "1px solid rgba(15,23,42,0.08)",
@@ -280,11 +446,13 @@ export default function AdminUsersPage() {
         <div>
           <div className="text-[15px] font-semibold">User Management</div>
           <div className="mt-px text-[12px]" style={{ color: "#6b7280" }}>
-            {loading ? "Loading users..." : `${users.length.toLocaleString()} total accounts`}
+            {loading
+              ? "Loading users..."
+              : `${users.length.toLocaleString()} total accounts`}
           </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <div
             className="flex h-11 w-[340px] items-center gap-2 rounded-lg px-3"
             style={{
@@ -296,11 +464,33 @@ export default function AdminUsersPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search users..."
+              placeholder="Search users, IP, country..."
               className="w-full border-0 bg-transparent text-[13px] outline-none"
               style={{ color: "#111827" }}
             />
           </div>
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="h-11 rounded-lg px-3 text-[12.5px] outline-none"
+            style={{
+              color: "#374151",
+              border: "1px solid rgba(15,23,42,0.10)",
+              background: "#ffffff",
+            }}
+          >
+            <option value="last_active_desc">Last active newest</option>
+            <option value="last_active_asc">Last active oldest</option>
+            <option value="last_login_desc">Last login newest</option>
+            <option value="last_login_asc">Last login oldest</option>
+            <option value="newest">Created newest</option>
+            <option value="oldest">Created oldest</option>
+            <option value="name_asc">Name A to Z</option>
+            <option value="name_desc">Name Z to A</option>
+            <option value="country_asc">Country A to Z</option>
+            <option value="country_desc">Country Z to A</option>
+          </select>
 
           <button
             type="button"
@@ -341,9 +531,9 @@ export default function AdminUsersPage() {
           </div>
         ) : null}
 
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <div
-            className="flex gap-[2px] rounded-lg p-[3px]"
+            className="flex flex-wrap gap-[2px] rounded-lg p-[3px]"
             style={{
               background: "#ffffff",
               border: "1px solid rgba(15,23,42,0.08)",
@@ -351,6 +541,7 @@ export default function AdminUsersPage() {
           >
             {[
               { value: "all", label: `All (${counts.all})` },
+              { value: "online", label: `Online (${counts.online})` },
               { value: "active", label: `Active (${counts.active})` },
               { value: "trial", label: `Trial (${counts.trial})` },
               { value: "churned", label: `Churned (${counts.churned})` },
@@ -392,17 +583,26 @@ export default function AdminUsersPage() {
           <div
             className="grid px-5 py-4"
             style={{
-              gridTemplateColumns: "2.4fr 1.4fr 1.3fr 1fr 1.4fr 1fr",
+              gridTemplateColumns: "2.2fr 1.15fr 1.1fr 1.25fr 1.25fr 1.6fr 1fr",
               borderBottom: "1px solid rgba(15,23,42,0.08)",
             }}
           >
-            {["User", "Plan", "Status", "MRR", "Last Active", "Actions"].map((label) => (
+            {[
+              "User",
+              "Plan",
+              "Status",
+              "Last Login",
+              "Last Active",
+              "Location / IP",
+              "Actions",
+            ].map((label) => (
               <div
                 key={label}
                 className="text-[11px] uppercase tracking-[0.5px]"
                 style={{
                   color: "#6b7280",
-                  fontFamily: '"DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+                  fontFamily:
+                    '"DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
                 }}
               >
                 {label}
@@ -425,22 +625,16 @@ export default function AdminUsersPage() {
                 const avatar = initials(user.full_name, user.email)
                 const planValue = user.subscription_tier?.trim() || "free"
                 const statusInfo = getStatus(user)
-
-                const mrrValue =
-                  planValue.toLowerCase() === "enterprise"
-                    ? "$2,400"
-                    : ["pro", "premium", "pro_monthly", "pro_annual", "monthly", "annual"].includes(
-                        planValue.toLowerCase()
-                      )
-                    ? "$149"
-                    : "$0"
+                const onlineInfo = getOnlineInfo(user)
+                const locationLabel = getLocationLabel(user)
 
                 return (
                   <div
                     key={user.id}
                     className="grid items-center px-5 py-[18px] last:border-b-0"
                     style={{
-                      gridTemplateColumns: "2.4fr 1.4fr 1.3fr 1fr 1.4fr 1fr",
+                      gridTemplateColumns:
+                        "2.2fr 1.15fr 1.1fr 1.25fr 1.25fr 1.6fr 1fr",
                       borderBottom: "1px solid rgba(15,23,42,0.08)",
                     }}
                   >
@@ -454,11 +648,24 @@ export default function AdminUsersPage() {
                         </div>
 
                         <div className="min-w-0">
-                          <div className="truncate text-[13px] font-medium" style={{ color: "#111827" }}>
+                          <div
+                            className="truncate text-[13px] font-medium"
+                            style={{ color: "#111827" }}
+                          >
                             {name}
                           </div>
-                          <div className="truncate text-[11.5px]" style={{ color: "#6b7280" }}>
+                          <div
+                            className="truncate text-[11.5px]"
+                            style={{ color: "#6b7280" }}
+                          >
                             {user.email}
+                          </div>
+                          <div
+                            className="mt-1 truncate text-[11px]"
+                            style={{ color: "#9ca3af" }}
+                          >
+                            {user.jurisdiction || "No jurisdiction"} ·{" "}
+                            {user.law_school || "No law school"}
                           </div>
                         </div>
                       </div>
@@ -469,14 +676,15 @@ export default function AdminUsersPage() {
                         className="inline-flex rounded-[4px] px-[7px] py-[2px] text-[10.5px] capitalize"
                         style={{
                           ...planStyle(planValue),
-                          fontFamily: '"DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+                          fontFamily:
+                            '"DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
                         }}
                       >
                         {planValue}
                       </span>
                     </div>
 
-                    <div>
+                    <div className="space-y-1.5">
                       <span
                         className="inline-flex items-center gap-[5px] rounded-[5px] px-[8px] py-[3px] text-[11px] font-medium"
                         style={statusInfo.style}
@@ -484,20 +692,78 @@ export default function AdminUsersPage() {
                         <span className="h-[5px] w-[5px] rounded-full bg-current" />
                         {statusInfo.label}
                       </span>
+
+                      <div>
+                        <span
+                          className="inline-flex items-center gap-[5px] rounded-[5px] px-[8px] py-[3px] text-[11px] font-medium"
+                          style={{
+                            background: onlineInfo.background,
+                            color: onlineInfo.color,
+                          }}
+                        >
+                          <span
+                            className="h-[6px] w-[6px] rounded-full"
+                            style={{ background: onlineInfo.dot }}
+                          />
+                          {onlineInfo.label}
+                        </span>
+                      </div>
                     </div>
 
-                    <div
-                      className="text-[12.5px] font-medium"
-                      style={{
-                        color: "#111827",
-                        fontFamily: '"DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
-                      }}
-                    >
-                      {mrrValue}
+                    <div className="min-w-0 pr-3">
+                      <div
+                        className="truncate text-[12px] font-medium"
+                        style={{ color: "#111827" }}
+                        title={formatDateTime(user.last_login_at)}
+                      >
+                        {formatRelative(user.last_login_at)}
+                      </div>
+                      <div
+                        className="mt-1 truncate text-[11px]"
+                        style={{ color: "#9ca3af" }}
+                      >
+                        {formatDateTime(user.last_login_at)}
+                      </div>
                     </div>
 
-                    <div className="text-[12px]" style={{ color: "#6b7280" }}>
-                      {formatRelative(user.last_active_at || user.updated_at)}
+                    <div className="min-w-0 pr-3">
+                      <div
+                        className="flex items-center gap-1.5 truncate text-[12px] font-medium"
+                        style={{ color: "#111827" }}
+                        title={formatDateTime(user.last_active_at)}
+                      >
+                        <Activity className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">
+                          {formatRelative(user.last_active_at)}
+                        </span>
+                      </div>
+                      <div
+                        className="mt-1 truncate text-[11px]"
+                        style={{ color: "#9ca3af" }}
+                      >
+                        {normalizeSource(user.last_activity_source)}
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 pr-3">
+                      <div
+                        className="flex items-center gap-1.5 truncate text-[12px] font-medium"
+                        style={{ color: "#111827" }}
+                        title={locationLabel}
+                      >
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{locationLabel}</span>
+                      </div>
+                      <div
+                        className="mt-1 flex items-center gap-1.5 truncate text-[11px]"
+                        style={{ color: "#9ca3af" }}
+                        title={user.last_ip_address || "No IP captured"}
+                      >
+                        <Globe2 className="h-3 w-3 shrink-0" />
+                        <span className="truncate">
+                          {user.last_ip_address || "No IP captured"}
+                        </span>
+                      </div>
                     </div>
 
                     <div>
