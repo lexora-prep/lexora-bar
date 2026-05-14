@@ -367,8 +367,18 @@ model profiles {
   can_manage_all_workspace          Boolean @default(false)
 
   workspace_status String    @default("online")
-  last_login_at    DateTime? @db.Timestamptz(6)
-  last_active_at   DateTime? @db.Timestamptz(6)
+
+  last_login_at        DateTime? @db.Timestamptz(6)
+  last_active_at       DateTime? @db.Timestamptz(6)
+  last_ip_address      String?
+  last_country         String?
+  last_region          String?
+  last_city            String?
+  last_timezone        String?
+  last_latitude        Float?
+  last_longitude       Float?
+  last_user_agent      String?
+  last_activity_source String?
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now())

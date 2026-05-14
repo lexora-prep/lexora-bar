@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized" },
+        { status: 401 }
+      )
     }
 
     const me = await prisma.profiles.findUnique({
@@ -30,11 +33,17 @@ export async function GET(req: NextRequest) {
     })
 
     if (!me || me.is_blocked || (!me.is_admin && me.role !== "admin")) {
-      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
+      return NextResponse.json(
+        { ok: false, error: "Forbidden" },
+        { status: 403 }
+      )
     }
 
     if (!me.can_manage_users && me.admin_role !== "super_admin") {
-      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
+      return NextResponse.json(
+        { ok: false, error: "Forbidden" },
+        { status: 403 }
+      )
     }
 
     const sp = req.nextUrl.searchParams
@@ -56,6 +65,10 @@ export async function GET(req: NextRequest) {
         { email: { contains: q, mode: "insensitive" } },
         { law_school: { contains: q, mode: "insensitive" } },
         { jurisdiction: { contains: q, mode: "insensitive" } },
+        { last_ip_address: { contains: q, mode: "insensitive" } },
+        { last_country: { contains: q, mode: "insensitive" } },
+        { last_region: { contains: q, mode: "insensitive" } },
+        { last_city: { contains: q, mode: "insensitive" } },
       ]
     }
 
@@ -75,7 +88,15 @@ export async function GET(req: NextRequest) {
       where.is_blocked = false
       where.pending_deletion = false
       where.subscription_tier = {
-        in: ["premium", "pro", "monthly", "annual", "pro_monthly", "pro_annual", "enterprise"],
+        in: [
+          "premium",
+          "pro",
+          "monthly",
+          "annual",
+          "pro_monthly",
+          "pro_annual",
+          "enterprise",
+        ],
       }
     } else if (status === "trial") {
       where.is_blocked = false
@@ -89,7 +110,22 @@ export async function GET(req: NextRequest) {
       where.is_blocked = false
       where.pending_deletion = false
       where.subscription_tier = {
-        in: ["monthly", "annual", "pro_monthly", "pro_annual", "premium", "pro", "enterprise"],
+        in: [
+          "monthly",
+          "annual",
+          "pro_monthly",
+          "pro_annual",
+          "premium",
+          "pro",
+          "enterprise",
+        ],
+      }
+    } else if (status === "online") {
+      const onlineCutoff = new Date(Date.now() - 5 * 60 * 1000)
+      where.is_blocked = false
+      where.pending_deletion = false
+      where.last_active_at = {
+        gte: onlineCutoff,
       }
     }
 
@@ -105,6 +141,18 @@ export async function GET(req: NextRequest) {
       orderBy = { subscription_tier: "asc" }
     } else if (sort === "plan_desc") {
       orderBy = { subscription_tier: "desc" }
+    } else if (sort === "last_active_desc") {
+      orderBy = { last_active_at: "desc" }
+    } else if (sort === "last_active_asc") {
+      orderBy = { last_active_at: "asc" }
+    } else if (sort === "last_login_desc") {
+      orderBy = { last_login_at: "desc" }
+    } else if (sort === "last_login_asc") {
+      orderBy = { last_login_at: "asc" }
+    } else if (sort === "country_asc") {
+      orderBy = { last_country: "asc" }
+    } else if (sort === "country_desc") {
+      orderBy = { last_country: "desc" }
     }
 
     const users = await prisma.profiles.findMany({
@@ -129,18 +177,38 @@ export async function GET(req: NextRequest) {
         deletion_requested_at: true,
         created_at: true,
         updated_at: true,
+
+        last_active_at: true,
+        last_login_at: true,
+        last_ip_address: true,
+        last_country: true,
+        last_region: true,
+        last_city: true,
+        last_timezone: true,
+        last_latitude: true,
+        last_longitude: true,
+        last_user_agent: true,
+        last_activity_source: true,
       },
     })
 
     const now = new Date()
+    const onlineCutoffMs = 5 * 60 * 1000
 
     return NextResponse.json({
       ok: true,
-      users: users.map((u) => ({
-        ...u,
-        account_age_days: daysBetween(new Date(u.created_at), now),
-        last_active_at: u.updated_at,
-      })),
+      users: users.map((u) => {
+        const lastActiveAt = u.last_active_at ? new Date(u.last_active_at) : null
+        const isOnline = lastActiveAt
+          ? now.getTime() - lastActiveAt.getTime() <= onlineCutoffMs
+          : false
+
+        return {
+          ...u,
+          account_age_days: daysBetween(new Date(u.created_at), now),
+          is_online: isOnline,
+        }
+      }),
     })
   } catch (error) {
     console.error("ADMIN USERS GET ERROR:", error)
