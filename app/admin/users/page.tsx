@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import {
   Activity,
   Download,
@@ -767,9 +768,9 @@ export default function AdminUsersPage() {
                     </div>
 
                     <div>
-                      <button
-                        type="button"
-                        className="rounded-[7px] px-4 py-[7px] text-[11px] transition"
+                      <Link
+                        href={`/admin/users/${user.id}`}
+                        className="inline-flex rounded-[7px] px-4 py-[7px] text-[11px] transition"
                         style={{
                           border: "1px solid rgba(15,23,42,0.10)",
                           background: "#ffffff",
@@ -777,7 +778,7 @@ export default function AdminUsersPage() {
                         }}
                       >
                         View
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 )
