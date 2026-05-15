@@ -1,19 +1,24 @@
 "use client"
 
 import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import {
+  Activity,
   ArrowLeft,
   Ban,
+  CalendarDays,
   CheckCircle2,
   Clock,
+  CreditCard,
+  FileText,
   Globe2,
   Laptop,
-  Mail,
   MapPin,
   Shield,
+  Tag,
   UserCog,
+  Wallet,
 } from "lucide-react"
 
 type AdminUserDetail = {
@@ -81,8 +86,10 @@ type AdminUserDetail = {
   is_online: boolean
 }
 
+type TabKey = "overview" | "billing" | "activity" | "permissions"
+
 function safeName(user: AdminUserDetail) {
-  if (user.full_name && user.full_name.trim()) return user.full_name
+  if (user.full_name && user.full_name.trim()) return user.full_name.trim()
   return user.email.split("@")[0]
 }
 
@@ -102,7 +109,6 @@ function formatRelative(dateString?: string | null) {
   if (!dateString) return "—"
 
   const date = new Date(dateString)
-
   if (Number.isNaN(date.getTime())) return "—"
 
   const diffMs = Date.now() - date.getTime()
@@ -128,7 +134,6 @@ function formatDateTime(value?: string | null) {
   if (!value) return "—"
 
   const date = new Date(value)
-
   if (Number.isNaN(date.getTime())) return "—"
 
   return new Intl.DateTimeFormat("en", {
@@ -157,60 +162,78 @@ function locationLabel(user: AdminUserDetail) {
     .map((part) => String(part))
 
   if (parts.length === 0) return "—"
-
   return parts.join(", ")
 }
 
 function statusLabel(user: AdminUserDetail) {
+  if (user.deleted_at) return "Deleted"
   if (user.is_blocked) return "Blocked"
   if (user.pending_deletion) return "Pending deletion"
-  if (user.deleted_at) return "Deleted"
   return "Active"
 }
+
+function planLabel(user: AdminUserDetail) {
+  return user.subscription_tier?.trim() || "free"
+}
+
+function planTone(user: AdminUserDetail): BadgeTone {
+  const plan = planLabel(user).toLowerCase()
+
+  if (["premium", "pro", "monthly", "annual", "pro_monthly", "pro_annual"].includes(plan)) {
+    return "blue"
+  }
+
+  if (plan === "enterprise") return "purple"
+  if (plan === "trial") return "yellow"
+
+  return "neutral"
+}
+
+type BadgeTone = "neutral" | "green" | "red" | "blue" | "yellow" | "purple"
 
 function Badge({
   children,
   tone = "neutral",
 }: {
   children: React.ReactNode
-  tone?: "neutral" | "green" | "red" | "blue" | "yellow" | "purple"
+  tone?: BadgeTone
 }) {
-  const styles: Record<string, React.CSSProperties> = {
+  const styles: Record<BadgeTone, React.CSSProperties> = {
     neutral: {
-      background: "#f3f4f6",
-      color: "#64748b",
-      border: "1px solid rgba(15,23,42,0.08)",
+      background: "#F4F6FA",
+      color: "#667085",
+      border: "1px solid #E6EAF2",
     },
     green: {
-      background: "rgba(34,197,94,0.10)",
-      color: "#16a34a",
-      border: "1px solid rgba(34,197,94,0.18)",
+      background: "#ECFDF3",
+      color: "#027A48",
+      border: "1px solid #ABEFC6",
     },
     red: {
-      background: "rgba(239,68,68,0.10)",
-      color: "#dc2626",
-      border: "1px solid rgba(239,68,68,0.18)",
+      background: "#FEF3F2",
+      color: "#B42318",
+      border: "1px solid #FECDCA",
     },
     blue: {
-      background: "rgba(79,70,229,0.10)",
-      color: "#4f46e5",
-      border: "1px solid rgba(79,70,229,0.18)",
+      background: "#EEF4FF",
+      color: "#3538CD",
+      border: "1px solid #C7D7FE",
     },
     yellow: {
-      background: "rgba(234,179,8,0.12)",
-      color: "#ca8a04",
-      border: "1px solid rgba(234,179,8,0.22)",
+      background: "#FFFAEB",
+      color: "#B54708",
+      border: "1px solid #FEDF89",
     },
     purple: {
-      background: "rgba(168,85,247,0.10)",
-      color: "#9333ea",
-      border: "1px solid rgba(168,85,247,0.20)",
+      background: "#F4F3FF",
+      color: "#5925DC",
+      border: "1px solid #D9D6FE",
     },
   }
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold"
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
       style={styles[tone]}
     >
       {children}
@@ -218,33 +241,104 @@ function Badge({
   )
 }
 
-function Card({
+function MetricCard({
+  label,
+  value,
+  sub,
+  icon,
+}: {
+  label: string
+  value: React.ReactNode
+  sub?: React.ReactNode
+  icon: React.ReactNode
+}) {
+  return (
+    <div
+      className="rounded-2xl bg-white p-4"
+      style={{
+        border: "1px solid #EAECF0",
+        boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
+      }}
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="text-[12px] font-medium" style={{ color: "#667085" }}>
+          {label}
+        </div>
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-xl"
+          style={{
+            background: "#F8FAFC",
+            color: "#475467",
+            border: "1px solid #EAECF0",
+          }}
+        >
+          {icon}
+        </div>
+      </div>
+
+      <div className="text-[20px] font-semibold tracking-[-0.03em]" style={{ color: "#101828" }}>
+        {value}
+      </div>
+
+      {sub ? (
+        <div className="mt-1 text-[12px] leading-5" style={{ color: "#98A2B3" }}>
+          {sub}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function Panel({
   title,
+  description,
   children,
 }: {
   title: string
+  description?: string
   children: React.ReactNode
 }) {
   return (
     <section
       className="rounded-2xl bg-white"
       style={{
-        border: "1px solid rgba(15,23,42,0.08)",
-        boxShadow: "0 10px 30px rgba(15,23,42,0.04)",
+        border: "1px solid #EAECF0",
+        boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
       }}
     >
-      <div
-        className="px-5 py-4 text-[13px] font-semibold"
-        style={{ borderBottom: "1px solid rgba(15,23,42,0.08)" }}
-      >
-        {title}
+      <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
+        <div>
+          <h2 className="text-[14px] font-semibold tracking-[-0.01em]" style={{ color: "#101828" }}>
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-1 text-[12px] leading-5" style={{ color: "#667085" }}>
+              {description}
+            </p>
+          ) : null}
+        </div>
       </div>
-      <div className="p-5">{children}</div>
+
+      <div style={{ borderTop: "1px solid #EAECF0" }}>{children}</div>
     </section>
   )
 }
 
-function Field({
+function InfoGrid({
+  children,
+  columns = 2,
+}: {
+  children: React.ReactNode
+  columns?: 2 | 3
+}) {
+  return (
+    <div className={`grid gap-px bg-[#EAECF0] ${columns === 3 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+      {children}
+    </div>
+  )
+}
+
+function InfoItem({
   label,
   value,
 }: {
@@ -252,28 +346,53 @@ function Field({
   value: React.ReactNode
 }) {
   return (
-    <div>
-      <div
-        className="mb-1 text-[11px] uppercase tracking-[0.08em]"
-        style={{ color: "#94a3b8" }}
-      >
+    <div className="bg-white px-5 py-4">
+      <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em]" style={{ color: "#98A2B3" }}>
         {label}
       </div>
-      <div className="break-words text-[13px] font-medium" style={{ color: "#111827" }}>
+      <div className="break-words text-[13px] font-medium leading-6" style={{ color: "#101828" }}>
         {value || "—"}
       </div>
     </div>
   )
 }
 
+function EmptyBillingState() {
+  return (
+    <div className="px-5 py-10 text-center">
+      <div
+        className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
+        style={{
+          background: "#F8FAFC",
+          border: "1px solid #EAECF0",
+          color: "#667085",
+        }}
+      >
+        <CreditCard className="h-5 w-5" />
+      </div>
+
+      <h3 className="text-[14px] font-semibold" style={{ color: "#101828" }}>
+        Paddle billing history is not connected yet
+      </h3>
+
+      <p className="mx-auto mt-2 max-w-xl text-[13px] leading-6" style={{ color: "#667085" }}>
+        This page is ready for Paddle subscription, transaction, discount, and invoice data.
+        Right now your database only has the current subscription tier, so paid months,
+        total paid, coupon usage, refunds, and transaction history should remain empty
+        until Paddle webhook tables are added.
+      </p>
+    </div>
+  )
+}
+
 export default function AdminUserDetailPage() {
   const params = useParams<{ id: string }>()
-  const router = useRouter()
 
   const [user, setUser] = useState<AdminUserDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [savingAction, setSavingAction] = useState("")
   const [error, setError] = useState("")
+  const [activeTab, setActiveTab] = useState<TabKey>("overview")
 
   const userId = params?.id
 
@@ -281,24 +400,24 @@ export default function AdminUserDetailPage() {
     if (!user) return []
 
     return [
-      ["Manage questions", user.can_manage_questions],
-      ["Manage rules", user.can_manage_rules],
-      ["Manage users", user.can_manage_users],
-      ["Manage announcements", user.can_manage_announcements],
-      ["View billing", user.can_view_billing],
-      ["Manage coupons", user.can_manage_coupons],
-      ["Manage settings", user.can_manage_settings],
-      ["View audit log", user.can_view_audit_log],
-      ["Manage workspace members", user.can_manage_workspace_members],
-      ["Create workspace channels", user.can_create_workspace_channels],
-      ["Manage workspace channels", user.can_manage_workspace_channels],
-      ["Manage hidden channels", user.can_manage_hidden_channels],
-      ["Manage workspace notes", user.can_manage_workspace_notes],
-      ["Create shared notes", user.can_create_shared_notes],
-      ["Create workspace polls", user.can_create_workspace_polls],
-      ["Send workspace wake alerts", user.can_send_workspace_wake_alerts],
-      ["View workspace member details", user.can_view_workspace_member_details],
-      ["Manage all workspace", user.can_manage_all_workspace],
+      ["Questions", user.can_manage_questions],
+      ["Rules", user.can_manage_rules],
+      ["Users", user.can_manage_users],
+      ["Announcements", user.can_manage_announcements],
+      ["Billing", user.can_view_billing],
+      ["Coupons", user.can_manage_coupons],
+      ["Settings", user.can_manage_settings],
+      ["Audit log", user.can_view_audit_log],
+      ["Workspace members", user.can_manage_workspace_members],
+      ["Create channels", user.can_create_workspace_channels],
+      ["Manage channels", user.can_manage_workspace_channels],
+      ["Hidden channels", user.can_manage_hidden_channels],
+      ["Workspace notes", user.can_manage_workspace_notes],
+      ["Shared notes", user.can_create_shared_notes],
+      ["Polls", user.can_create_workspace_polls],
+      ["Wake alerts", user.can_send_workspace_wake_alerts],
+      ["Member details", user.can_view_workspace_member_details],
+      ["Full workspace", user.can_manage_all_workspace],
     ]
   }, [user])
 
@@ -371,8 +490,14 @@ export default function AdminUserDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-64px)] bg-[#f7f7f5] p-6">
-        <div className="text-[13px]" style={{ color: "#64748b" }}>
+      <div className="min-h-[calc(100vh-64px)] bg-[#F8FAFC] p-6">
+        <div
+          className="rounded-2xl bg-white p-6 text-[13px]"
+          style={{
+            border: "1px solid #EAECF0",
+            color: "#667085",
+          }}
+        >
           Loading user record...
         </div>
       </div>
@@ -381,21 +506,21 @@ export default function AdminUserDetailPage() {
 
   if (error && !user) {
     return (
-      <div className="min-h-[calc(100vh-64px)] bg-[#f7f7f5] p-6">
+      <div className="min-h-[calc(100vh-64px)] bg-[#F8FAFC] p-6">
         <Link
           href="/admin/users"
           className="mb-4 inline-flex items-center gap-2 text-[13px] font-medium"
-          style={{ color: "#4f46e5" }}
+          style={{ color: "#344054" }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to users
         </Link>
 
         <div
-          className="rounded-xl bg-white p-5 text-[13px]"
+          className="rounded-2xl bg-white p-5 text-[13px]"
           style={{
-            border: "1px solid rgba(239,68,68,0.18)",
-            color: "#dc2626",
+            border: "1px solid #FECDCA",
+            color: "#B42318",
           }}
         >
           {error}
@@ -406,52 +531,63 @@ export default function AdminUserDetailPage() {
 
   if (!user) return null
 
-  const onlineTone = user.is_online ? "green" : "neutral"
-  const accountTone = user.is_blocked || user.pending_deletion ? "red" : "green"
+  const accountTone: BadgeTone =
+    user.is_blocked || user.pending_deletion || user.deleted_at ? "red" : "green"
+
+  const tabs: Array<{ key: TabKey; label: string }> = [
+    { key: "overview", label: "Overview" },
+    { key: "billing", label: "Billing" },
+    { key: "activity", label: "Activity" },
+    { key: "permissions", label: "Permissions" },
+  ]
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#f7f7f5] text-[#111827]">
+    <div className="min-h-[calc(100vh-64px)] bg-[#F8FAFC] text-[#101828]">
       <div
-        className="flex flex-wrap items-center gap-3 px-6 py-4"
-        style={{
-          borderBottom: "1px solid rgba(15,23,42,0.08)",
-          background: "#f7f7f5",
-        }}
+        className="sticky top-0 z-20 bg-[#F8FAFC]/95 px-6 py-4 backdrop-blur"
+        style={{ borderBottom: "1px solid #EAECF0" }}
       >
-        <button
-          type="button"
-          onClick={() => router.push("/admin/users")}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-3 text-[12.5px] font-medium"
-          style={{
-            border: "1px solid rgba(15,23,42,0.10)",
-            color: "#374151",
-          }}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </button>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
+          <Link
+            href="/admin/users"
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-white px-3 text-[12.5px] font-medium"
+            style={{
+              border: "1px solid #D0D5DD",
+              color: "#344054",
+              boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Link>
 
-        <div className="ml-0 md:ml-2">
-          <div className="text-[15px] font-semibold">User Record</div>
-          <div className="mt-px text-[12px]" style={{ color: "#64748b" }}>
-            {user.email}
+          <div className="min-w-0">
+            <div className="text-[13px] font-medium" style={{ color: "#101828" }}>
+              User record
+            </div>
+            <div className="truncate text-[12px]" style={{ color: "#667085" }}>
+              {user.email}
+            </div>
           </div>
-        </div>
 
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Badge tone={accountTone}>{statusLabel(user)}</Badge>
-          <Badge tone={onlineTone}>{user.is_online ? "Online" : "Offline"}</Badge>
-          {user.is_admin ? <Badge tone="purple">Admin</Badge> : <Badge>Standard user</Badge>}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Badge tone={accountTone}>{statusLabel(user)}</Badge>
+            <Badge tone={user.is_online ? "green" : "neutral"}>
+              {user.is_online ? "Online" : "Offline"}
+            </Badge>
+            <Badge tone={planTone(user)}>{planLabel(user)}</Badge>
+            {user.is_admin ? <Badge tone="purple">Admin</Badge> : null}
+          </div>
         </div>
       </div>
 
-      <div className="space-y-5 p-5">
+      <main className="mx-auto max-w-7xl space-y-5 p-5 md:p-6">
         {error ? (
           <div
-            className="rounded-xl bg-white px-4 py-3 text-[13px]"
+            className="rounded-2xl bg-white px-4 py-3 text-[13px]"
             style={{
-              border: "1px solid rgba(239,68,68,0.18)",
-              color: "#dc2626",
+              border: "1px solid #FECDCA",
+              color: "#B42318",
             }}
           >
             {error}
@@ -459,121 +595,162 @@ export default function AdminUserDetailPage() {
         ) : null}
 
         <section
-          className="rounded-2xl bg-white p-5"
+          className="overflow-hidden rounded-3xl bg-white"
           style={{
-            border: "1px solid rgba(15,23,42,0.08)",
-            boxShadow: "0 10px 30px rgba(15,23,42,0.04)",
+            border: "1px solid #EAECF0",
+            boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
           }}
         >
-          <div className="flex flex-wrap items-start gap-5">
-            <div
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white"
-              style={{
-                background: "linear-gradient(135deg, #6c72ff, #818cf8)",
-              }}
-            >
-              {initials(user)}
-            </div>
+          <div className="p-6">
+            <div className="flex flex-wrap items-start gap-5">
+              <div
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, #344054, #667085)" }}
+              >
+                {initials(user)}
+              </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-[-0.03em]">
-                  {safeName(user)}
-                </h1>
-                <Badge tone={user.subscription_tier === "free" ? "neutral" : "blue"}>
-                  {user.subscription_tier || "free"}
-                </Badge>
-                {user.mbe_access ? (
-                  <Badge tone="green">MBE access</Badge>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-[26px] font-semibold tracking-[-0.04em]" style={{ color: "#101828" }}>
+                    {safeName(user)}
+                  </h1>
+                  {user.mbe_access ? <Badge tone="green">MBE access</Badge> : <Badge>No MBE access</Badge>}
+                </div>
+
+                <div className="mt-2 grid gap-2 text-[13px] md:grid-cols-3" style={{ color: "#667085" }}>
+                  <div className="truncate">{user.email}</div>
+                  <div>{user.jurisdiction || "No jurisdiction"} · {user.law_school || "No law school"}</div>
+                  <div>Account age: {user.account_age_days} days</div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {user.is_blocked ? (
+                  <button
+                    type="button"
+                    onClick={() => runAction("unblock")}
+                    disabled={savingAction === "unblock"}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[12.5px] font-semibold text-white disabled:opacity-60"
+                    style={{ background: "#039855" }}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Unblock
+                  </button>
                 ) : (
-                  <Badge>No MBE access</Badge>
+                  <button
+                    type="button"
+                    onClick={() => runAction("block")}
+                    disabled={savingAction === "block"}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[12.5px] font-semibold text-white disabled:opacity-60"
+                    style={{ background: "#D92D20" }}
+                  >
+                    <Ban className="h-4 w-4" />
+                    Block
+                  </button>
+                )}
+
+                {user.is_admin ? (
+                  <button
+                    type="button"
+                    onClick={() => runAction("remove_admin")}
+                    disabled={savingAction === "remove_admin"}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[12.5px] font-semibold disabled:opacity-60"
+                    style={{
+                      border: "1px solid #D0D5DD",
+                      color: "#344054",
+                    }}
+                  >
+                    <UserCog className="h-4 w-4" />
+                    Remove admin
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => runAction("make_admin")}
+                    disabled={savingAction === "make_admin"}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[12.5px] font-semibold disabled:opacity-60"
+                    style={{
+                      border: "1px solid #D0D5DD",
+                      color: "#344054",
+                    }}
+                  >
+                    <UserCog className="h-4 w-4" />
+                    Make admin
+                  </button>
                 )}
               </div>
-
-              <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
-                <span className="inline-flex items-center gap-2" style={{ color: "#64748b" }}>
-                  <Mail className="h-4 w-4" />
-                  {user.email}
-                </span>
-                <span className="inline-flex items-center gap-2" style={{ color: "#64748b" }}>
-                  <Shield className="h-4 w-4" />
-                  {user.role || "user"} · {user.admin_role || "user"}
-                </span>
-                <span className="inline-flex items-center gap-2" style={{ color: "#64748b" }}>
-                  <Clock className="h-4 w-4" />
-                  Account age: {user.account_age_days} days
-                </span>
-              </div>
             </div>
+          </div>
 
-            <div className="flex flex-wrap gap-2">
-              {user.is_blocked ? (
-                <button
-                  type="button"
-                  onClick={() => runAction("unblock")}
-                  disabled={savingAction === "unblock"}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-[12.5px] font-semibold text-white disabled:opacity-60"
-                  style={{ background: "#16a34a" }}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Unblock
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => runAction("block")}
-                  disabled={savingAction === "block"}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg px-4 text-[12.5px] font-semibold text-white disabled:opacity-60"
-                  style={{ background: "#dc2626" }}
-                >
-                  <Ban className="h-4 w-4" />
-                  Block
-                </button>
-              )}
-
-              {user.is_admin ? (
-                <button
-                  type="button"
-                  onClick={() => runAction("remove_admin")}
-                  disabled={savingAction === "remove_admin"}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-[12.5px] font-semibold disabled:opacity-60"
-                  style={{
-                    border: "1px solid rgba(15,23,42,0.10)",
-                    color: "#374151",
-                  }}
-                >
-                  <UserCog className="h-4 w-4" />
-                  Remove admin
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => runAction("make_admin")}
-                  disabled={savingAction === "make_admin"}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-[12.5px] font-semibold disabled:opacity-60"
-                  style={{
-                    border: "1px solid rgba(15,23,42,0.10)",
-                    color: "#374151",
-                  }}
-                >
-                  <UserCog className="h-4 w-4" />
-                  Make admin
-                </button>
-              )}
-            </div>
+          <div className="grid gap-px bg-[#EAECF0] md:grid-cols-4">
+            <MetricCard
+              label="Current plan"
+              value={planLabel(user)}
+              sub="From profile subscription tier"
+              icon={<Wallet className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Last active"
+              value={formatRelative(user.last_active_at)}
+              sub={normalizeSource(user.last_activity_source)}
+              icon={<Activity className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Last login"
+              value={formatRelative(user.last_login_at)}
+              sub={formatDateTime(user.last_login_at)}
+              icon={<Clock className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Location"
+              value={user.last_country || "—"}
+              sub={user.last_ip_address || "No IP captured"}
+              icon={<Globe2 className="h-4 w-4" />}
+            />
           </div>
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-5">
-            <Card title="Profile Information">
-              <div className="grid gap-5 md:grid-cols-2">
-                <Field label="Full name" value={user.full_name || "—"} />
-                <Field label="Email" value={user.email} />
-                <Field label="Phone number" value={user.phone_number || "—"} />
-                <Field label="Law school" value={user.law_school || "—"} />
-                <Field label="Jurisdiction" value={user.jurisdiction || "—"} />
-                <Field
+        <div
+          className="inline-flex rounded-2xl bg-white p-1"
+          style={{
+            border: "1px solid #EAECF0",
+            boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
+          }}
+        >
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className="rounded-xl px-4 py-2 text-[13px] font-medium transition"
+              style={
+                activeTab === tab.key
+                  ? {
+                      background: "#101828",
+                      color: "#ffffff",
+                    }
+                  : {
+                      background: "transparent",
+                      color: "#667085",
+                    }
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "overview" ? (
+          <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+            <Panel title="Profile" description="Basic account and bar preparation information.">
+              <InfoGrid>
+                <InfoItem label="Full name" value={user.full_name || "—"} />
+                <InfoItem label="Email" value={user.email} />
+                <InfoItem label="Phone" value={user.phone_number || "—"} />
+                <InfoItem label="Law school" value={user.law_school || "—"} />
+                <InfoItem label="Jurisdiction" value={user.jurisdiction || "—"} />
+                <InfoItem
                   label="Exam date"
                   value={
                     user.exam_month || user.exam_year
@@ -581,92 +758,96 @@ export default function AdminUserDetailPage() {
                       : "—"
                   }
                 />
-              </div>
-            </Card>
+              </InfoGrid>
+            </Panel>
 
-            <Card title="Account and Subscription">
-              <div className="grid gap-5 md:grid-cols-3">
-                <Field label="Subscription tier" value={user.subscription_tier || "free"} />
-                <Field label="MBE access" value={user.mbe_access ? "Enabled" : "Disabled"} />
-                <Field label="Account status" value={statusLabel(user)} />
-                <Field label="Role" value={user.role || "user"} />
-                <Field label="Admin role" value={user.admin_role || "user"} />
-                <Field label="Workspace status" value={user.workspace_status || "—"} />
-                <Field label="Created at" value={formatDateTime(user.created_at)} />
-                <Field label="Updated at" value={formatDateTime(user.updated_at)} />
-                <Field
-                  label="Deletion requested"
-                  value={formatDateTime(user.deletion_requested_at)}
-                />
-              </div>
-            </Card>
-
-            <Card title="Admin Permissions">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {permissionItems.map(([label, enabled]) => (
-                  <div
-                    key={String(label)}
-                    className="flex items-center justify-between rounded-xl px-3 py-2"
-                    style={{
-                      border: "1px solid rgba(15,23,42,0.08)",
-                      background: enabled ? "rgba(34,197,94,0.06)" : "#f8fafc",
-                    }}
-                  >
-                    <span className="text-[12px]" style={{ color: "#374151" }}>
-                      {label}
-                    </span>
-                    <Badge tone={enabled ? "green" : "neutral"}>
-                      {enabled ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            <Panel title="Account" description="Access status and account configuration.">
+              <InfoGrid>
+                <InfoItem label="Status" value={statusLabel(user)} />
+                <InfoItem label="Role" value={`${user.role || "user"} · ${user.admin_role || "user"}`} />
+                <InfoItem label="MBE access" value={user.mbe_access ? "Enabled" : "Disabled"} />
+                <InfoItem label="Workspace status" value={user.workspace_status || "—"} />
+                <InfoItem label="Created" value={formatDateTime(user.created_at)} />
+                <InfoItem label="Updated" value={formatDateTime(user.updated_at)} />
+              </InfoGrid>
+            </Panel>
           </div>
+        ) : null}
 
+        {activeTab === "billing" ? (
           <div className="space-y-5">
-            <Card title="Login and Activity">
-              <div className="space-y-5">
-                <Field
-                  label="Online status"
-                  value={user.is_online ? "Online now" : "Offline"}
-                />
-                <Field
+            <Panel
+              title="Billing & Subscription"
+              description="Paddle-ready billing overview. Full values require Paddle webhook storage tables."
+            >
+              <InfoGrid columns={3}>
+                <InfoItem label="Current plan" value={planLabel(user)} />
+                <InfoItem label="Billing provider" value="Paddle" />
+                <InfoItem label="Subscription status" value="Not connected" />
+                <InfoItem label="Paddle customer ID" value="—" />
+                <InfoItem label="Paddle subscription ID" value="—" />
+                <InfoItem label="Billing interval" value="—" />
+                <InfoItem label="Paid months" value="—" />
+                <InfoItem label="Total paid" value="—" />
+                <InfoItem label="MRR" value="—" />
+                <InfoItem label="First payment" value="—" />
+                <InfoItem label="Last payment" value="—" />
+                <InfoItem label="Next billing date" value="—" />
+              </InfoGrid>
+            </Panel>
+
+            <div className="grid gap-5 xl:grid-cols-2">
+              <Panel title="Discounts & Coupons" description="Coupon and discount history from Paddle transactions.">
+                <InfoGrid>
+                  <InfoItem label="Discount used" value="—" />
+                  <InfoItem label="Coupon code" value="—" />
+                  <InfoItem label="Discount type" value="—" />
+                  <InfoItem label="Discount amount" value="—" />
+                </InfoGrid>
+              </Panel>
+
+              <Panel title="Cancellation & Access" description="Subscription cancellation and access-end information.">
+                <InfoGrid>
+                  <InfoItem label="Cancel at period end" value="—" />
+                  <InfoItem label="Cancelled at" value="—" />
+                  <InfoItem label="Access ends" value="—" />
+                  <InfoItem label="Churned after" value="—" />
+                </InfoGrid>
+              </Panel>
+            </div>
+
+            <Panel title="Payment History" description="Future Paddle transaction history will appear here.">
+              <EmptyBillingState />
+            </Panel>
+          </div>
+        ) : null}
+
+        {activeTab === "activity" ? (
+          <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+            <Panel title="Login & Activity" description="Recent app activity captured by login and heartbeat tracking.">
+              <InfoGrid>
+                <InfoItem label="Online status" value={user.is_online ? "Online now" : "Offline"} />
+                <InfoItem label="Activity source" value={normalizeSource(user.last_activity_source)} />
+                <InfoItem
                   label="Last login"
-                  value={`${formatRelative(user.last_login_at)} · ${formatDateTime(
-                    user.last_login_at
-                  )}`}
+                  value={`${formatRelative(user.last_login_at)} · ${formatDateTime(user.last_login_at)}`}
                 />
-                <Field
+                <InfoItem
                   label="Last active"
-                  value={`${formatRelative(user.last_active_at)} · ${formatDateTime(
-                    user.last_active_at
-                  )}`}
+                  value={`${formatRelative(user.last_active_at)} · ${formatDateTime(user.last_active_at)}`}
                 />
-                <Field
-                  label="Activity source"
-                  value={normalizeSource(user.last_activity_source)}
-                />
-              </div>
-            </Card>
+              </InfoGrid>
+            </Panel>
 
-            <Card title="Location and Device">
-              <div className="space-y-5">
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#64748b" }} />
-                  <Field label="Location" value={locationLabel(user)} />
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Globe2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#64748b" }} />
-                  <Field label="IP address" value={user.last_ip_address || "—"} />
-                </div>
-
-                <Field label="Country" value={user.last_country || "—"} />
-                <Field label="Region" value={user.last_region || "—"} />
-                <Field label="City" value={user.last_city || "—"} />
-                <Field label="Timezone" value={user.last_timezone || "—"} />
-                <Field
+            <Panel title="Location & Device" description="IP, region, device, and browser information from the latest activity.">
+              <InfoGrid>
+                <InfoItem label="Location" value={locationLabel(user)} />
+                <InfoItem label="IP address" value={user.last_ip_address || "—"} />
+                <InfoItem label="Country" value={user.last_country || "—"} />
+                <InfoItem label="Region" value={user.last_region || "—"} />
+                <InfoItem label="City" value={user.last_city || "—"} />
+                <InfoItem label="Timezone" value={user.last_timezone || "—"} />
+                <InfoItem
                   label="Coordinates"
                   value={
                     user.last_latitude || user.last_longitude
@@ -674,37 +855,50 @@ export default function AdminUserDetailPage() {
                       : "—"
                   }
                 />
-
-                <div className="flex items-start gap-3">
-                  <Laptop className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "#64748b" }} />
-                  <Field label="User agent" value={user.last_user_agent || "—"} />
-                </div>
-              </div>
-            </Card>
-
-            <Card title="User Preferences">
-              <div className="grid gap-3">
-                <Field
-                  label="Email announcements"
-                  value={user.email_announcements ? "Enabled" : "Disabled"}
-                />
-                <Field
-                  label="Study reminders"
-                  value={user.study_reminders ? "Enabled" : "Disabled"}
-                />
-                <Field
-                  label="Sound effects"
-                  value={user.sound_effects ? "Enabled" : "Disabled"}
-                />
-                <Field
-                  label="Compact mode"
-                  value={user.compact_mode ? "Enabled" : "Disabled"}
-                />
-              </div>
-            </Card>
+                <InfoItem label="User agent" value={user.last_user_agent || "—"} />
+              </InfoGrid>
+            </Panel>
           </div>
+        ) : null}
+
+        {activeTab === "permissions" ? (
+          <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+            <Panel title="Admin Permissions" description="Permission flags currently stored on the user profile.">
+              <div className="grid gap-px bg-[#EAECF0] md:grid-cols-3">
+                {permissionItems.map(([label, enabled]) => (
+                  <div key={String(label)} className="flex items-center justify-between gap-3 bg-white px-5 py-4">
+                    <span className="text-[13px] font-medium" style={{ color: "#344054" }}>
+                      {label}
+                    </span>
+                    <Badge tone={enabled ? "green" : "neutral"}>{enabled ? "Yes" : "No"}</Badge>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel title="User Preferences" description="Personal app settings configured by the user.">
+              <InfoGrid>
+                <InfoItem label="Email announcements" value={user.email_announcements ? "Enabled" : "Disabled"} />
+                <InfoItem label="Study reminders" value={user.study_reminders ? "Enabled" : "Disabled"} />
+                <InfoItem label="Sound effects" value={user.sound_effects ? "Enabled" : "Disabled"} />
+                <InfoItem label="Compact mode" value={user.compact_mode ? "Enabled" : "Disabled"} />
+              </InfoGrid>
+            </Panel>
+          </div>
+        ) : null}
+
+        <div
+          className="rounded-2xl bg-white px-5 py-4 text-[12px] leading-5"
+          style={{
+            border: "1px solid #EAECF0",
+            color: "#667085",
+          }}
+        >
+          Paddle billing data is intentionally shown as unavailable until Paddle customer,
+          subscription, transaction, discount, and webhook event tables are added to the database.
+          This avoids showing fake revenue or fake paid-month calculations.
         </div>
-      </div>
+      </main>
     </div>
   )
 }
