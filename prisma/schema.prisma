@@ -9,6 +9,40 @@ datasource db {
   schemas   = ["public"]
 }
 
+model user_legal_acceptances {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                 String    @db.Uuid
+  email                   String
+  terms_accepted          Boolean   @default(false)
+  privacy_accepted        Boolean   @default(false)
+  refund_accepted         Boolean   @default(false)
+  platform_rules_accepted Boolean   @default(false)
+  terms_version           String    @default("2026-05-04")
+  privacy_version         String    @default("2026-05-04")
+  refund_version          String    @default("2026-05-04")
+  selected_plan           String?
+  registration_mode       String?
+  user_agent              String?
+  ip_address              String?
+  accepted_at             DateTime  @default(now()) @db.Timestamptz(6)
+  ip_country              String?
+  ip_region               String?
+  ip_city                 String?
+  ip_timezone             String?
+  ip_latitude             Float?
+  ip_longitude            Float?
+  ip_lookup_provider      String?
+  ip_lookup_at            DateTime? @db.Timestamptz(6)
+
+  @@index([accepted_at(sort: Desc)])
+  @@index([email])
+  @@index([ip_city])
+  @@index([ip_country])
+  @@index([ip_lookup_at(sort: Desc)])
+  @@index([user_id])
+  @@schema("public")
+}
+
 enum MBETrack {
   CLASSIC
   NEXTGEN
@@ -42,9 +76,9 @@ model rules {
   prompt_question         String?
   explanation             String?
   application_example     String?
-  how_to_apply           Json?
-  common_traps           Json?
-  exam_tip               String?
+  how_to_apply            Json?
+  common_traps            Json?
+  exam_tip                String?
   common_trap             String?
   priority                String?
   buzzwords               Json?
@@ -184,9 +218,9 @@ model user_rules {
   prompt_question     String?
   explanation         String?
   application_example String?
-  how_to_apply       Json?
-  common_traps       Json?
-  exam_tip           String?
+  how_to_apply        Json?
+  common_traps        Json?
+  exam_tip            String?
   common_trap         String?
   priority            String?
   buzzwords           Json?
@@ -324,16 +358,36 @@ model beta_invites {
 }
 
 model profiles {
-  id                    String    @id @db.Uuid
-  email                 String    @unique
-  full_name             String?
-  law_school            String?
-  jurisdiction          String?
-  exam_month            Int?
-  exam_year             Int?
-  phone_number          String?
-  mbe_access            Boolean   @default(false)
-  subscription_tier     String?   @default("free")
+  id                       String    @id @db.Uuid
+  email                    String    @unique
+  full_name                String?
+  law_school               String?
+  jurisdiction             String?
+  exam_month               Int?
+  exam_year                Int?
+  phone_number             String?
+  mbe_access               Boolean   @default(false)
+  subscription_tier        String?   @default("free")
+  paddle_customer_id       String?
+  paddle_subscription_id   String?
+  paddle_transaction_id    String?
+  paddle_price_id          String?
+  billing_status           String?   @default("free")
+  billing_currency         String?
+  billing_amount_cents     Int?
+  billing_tax_cents        Int?
+  billing_total_cents      Int?
+  billing_interval         String?
+  billing_started_at       DateTime? @db.Timestamptz(6)
+  billing_period_starts_at DateTime? @db.Timestamptz(6)
+  billing_period_ends_at   DateTime? @db.Timestamptz(6)
+  billing_cancelled_at     DateTime? @db.Timestamptz(6)
+  billing_last_paid_at     DateTime? @db.Timestamptz(6)
+  billing_discount_id      String?
+  billing_discount_code    String?
+  billing_discount_amount  String?
+  billing_invoice_url      String?
+
   role                  String    @default("user")
   admin_role            String?   @default("user")
   is_blocked            Boolean   @default(false)
@@ -366,7 +420,7 @@ model profiles {
   can_view_workspace_member_details Boolean @default(false)
   can_manage_all_workspace          Boolean @default(false)
 
-  workspace_status String    @default("online")
+  workspace_status String @default("online")
 
   last_login_at        DateTime? @db.Timestamptz(6)
   last_active_at       DateTime? @db.Timestamptz(6)
@@ -387,6 +441,9 @@ model profiles {
   @@index([role])
   @@index([is_admin])
   @@index([is_blocked])
+  @@index([paddle_customer_id])
+  @@index([paddle_subscription_id])
+  @@index([billing_status])
   @@schema("public")
 }
 

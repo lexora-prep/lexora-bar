@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 
 function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(
     value
   )
 }
@@ -58,6 +58,7 @@ async function getOrCreateProfile(user: { id: string; email?: string | null }) {
       exam_year: null,
       mbe_access: false,
       subscription_tier: "free",
+      billing_status: "free",
       role: "user",
       is_admin: false,
       is_blocked: false,
@@ -91,7 +92,42 @@ export async function GET(req: Request) {
     }
 
     const profile = await getOrCreateProfile(user)
-    return NextResponse.json(profile)
+
+    return NextResponse.json({
+      id: profile.id,
+      email: profile.email,
+      full_name: profile.full_name,
+      law_school: profile.law_school,
+      jurisdiction: profile.jurisdiction,
+      exam_month: profile.exam_month,
+      exam_year: profile.exam_year,
+
+      subscription_tier: profile.subscription_tier || "free",
+
+      paddle_customer_id: profile.paddle_customer_id,
+      paddle_subscription_id: profile.paddle_subscription_id,
+      paddle_transaction_id: profile.paddle_transaction_id,
+      paddle_price_id: profile.paddle_price_id,
+
+      billing_status: profile.billing_status || "free",
+      billing_currency: profile.billing_currency,
+      billing_amount_cents: profile.billing_amount_cents,
+      billing_tax_cents: profile.billing_tax_cents,
+      billing_total_cents: profile.billing_total_cents,
+      billing_interval: profile.billing_interval,
+      billing_started_at: profile.billing_started_at,
+      billing_period_starts_at: profile.billing_period_starts_at,
+      billing_period_ends_at: profile.billing_period_ends_at,
+      billing_cancelled_at: profile.billing_cancelled_at,
+      billing_last_paid_at: profile.billing_last_paid_at,
+      billing_discount_id: profile.billing_discount_id,
+      billing_discount_code: profile.billing_discount_code,
+      billing_discount_amount: profile.billing_discount_amount,
+      billing_invoice_url: profile.billing_invoice_url,
+
+      created_at: profile.created_at,
+      updated_at: profile.updated_at,
+    })
   } catch (err: any) {
     console.error("PROFILE GET ERROR:", err)
     return NextResponse.json(
