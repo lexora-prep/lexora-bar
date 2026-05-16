@@ -243,7 +243,7 @@ export default function SubscriptionPage() {
             <div className="mb-5 flex items-center gap-2 rounded-xl border border-[#D9770633] bg-[#FEF3CD] px-4 py-3 text-[13px] text-[#D97706]">
               <Clock3 className="h-4 w-4 shrink-0" />
               <span>
-                <strong className="font-semibold">Billing sync pending.</strong> Paddle data will appear once your subscription records are connected.
+                <strong className="font-semibold">Billing sync pending.</strong> Paddle data will appear once your subscription records are connected. Taxes/VAT are calculated separately at checkout based on your location.
               </span>
             </div>
 
@@ -541,7 +541,7 @@ export default function SubscriptionPage() {
                             href="/checkout?plan=premium&registered=1"
                             className="flex w-full justify-center rounded-lg border border-white/15 bg-white/[0.07] px-4 py-2 text-[13px] text-white/60 transition hover:bg-white/[0.10]"
                           >
-                            Premium · $24.99/mo
+                            Premium · $24.99/mo + taxes
                           </Link>
                         </div>
                       ) : null}

@@ -507,6 +507,12 @@ export default function RegisterPage() {
                   <p className="mt-2.5 text-xs leading-5 text-white/72">
                     {selectedPlan.description}
                   </p>
+
+                  {selectedPlanId !== "free" ? (
+                    <p className="mt-2 text-[10.5px] font-semibold leading-4 text-white/55">
+                      Taxes/VAT calculated separately at checkout.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="mt-4">
@@ -900,9 +906,9 @@ export default function RegisterPage() {
                       <CreditCard className="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
                         After registration, you will continue to Paddle checkout
-                        for the selected paid plan. Payment, taxes, invoices,
-                        cancellations, and refund processing are handled by
-                        Paddle as Merchant of Record.
+                        for the selected paid plan. Payment, invoices, cancellations, and refund processing are handled by
+                        Paddle as Merchant of Record. Taxes/VAT are calculated separately at
+                        checkout based on your location.
                       </div>
                     </div>
                   ) : null}

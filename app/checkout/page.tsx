@@ -420,6 +420,10 @@ function CheckoutContent() {
               <p className="mt-4 text-sm leading-6 text-white/75">
                 {selectedPlan.description}
               </p>
+
+              <p className="mt-3 text-xs font-semibold leading-5 text-white/55">
+                Taxes/VAT are calculated separately at checkout based on your location.
+              </p>
             </div>
 
             <div className="mt-6 grid gap-3">
@@ -459,8 +463,9 @@ function CheckoutContent() {
             </button>
 
             <p className="mt-5 text-center text-xs font-semibold leading-5 text-[#94A3B8]">
-              Payment, taxes, invoices, cancellations, and refund processing are
-              handled by Paddle as Merchant of Record.
+              Payment, invoices, cancellations, and refund processing are handled by
+              Paddle as Merchant of Record. Taxes/VAT are calculated separately at
+              checkout based on your location.
             </p>
           </aside>
         </section>
