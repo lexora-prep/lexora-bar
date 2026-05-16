@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Script from "next/script"
-import { Suspense, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 
 type PlanKey = "bll-monthly" | "premium"
 
@@ -105,6 +106,7 @@ function getPriceId(planId: PlanKey) {
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
+  const supabase = createClient()
 
   const rawPlan = searchParams.get("plan")
   const registered = searchParams.get("registered") === "1"
@@ -116,6 +118,30 @@ function CheckoutContent() {
   const [paddleReady, setPaddleReady] = useState(false)
   const [openingCheckout, setOpeningCheckout] = useState(false)
   const [checkoutError, setCheckoutError] = useState("")
+  const [userId, setUserId] = useState("")
+  const [userEmail, setUserEmail] = useState("")
+
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (user?.id) {
+          setUserId(user.id)
+        }
+
+        if (user?.email) {
+          setUserEmail(user.email.toLowerCase())
+        }
+      } catch (error) {
+        console.warn("CHECKOUT USER LOAD ERROR:", error)
+      }
+    }
+
+    void loadCurrentUser()
+  }, [supabase])
 
   function initializePaddle() {
     const clientToken = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
@@ -164,8 +190,22 @@ function CheckoutContent() {
       return
     }
 
+    if (!priceId.startsWith("pri_")) {
+      setCheckoutError(
+        "Invalid Paddle price ID. Paddle checkout requires a price ID that starts with pri_."
+      )
+      return
+    }
+
     if (!window.Paddle?.Checkout?.open) {
       setCheckoutError("Paddle checkout is not ready yet. Wait a second and try again.")
+      return
+    }
+
+    if (!userId && !userEmail) {
+      setCheckoutError(
+        "Your account session was not found. Please log in again before continuing to payment."
+      )
       return
     }
 
@@ -180,6 +220,8 @@ function CheckoutContent() {
           },
         ],
         customData: {
+          user_id: userId,
+          email: userEmail,
           plan: selectedPlanId,
           source: "lexora_checkout",
         },
