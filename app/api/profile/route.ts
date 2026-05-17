@@ -75,33 +75,6 @@ export async function GET(req: Request) {
     if (auth.error || !auth.user) return auth.error
 
     const { user } = auth
-    const { searchParams } = new URL(req.url)
-    const requestedUserIdRaw = searchParams.get("userId")
-    const requestedUserId =
-      requestedUserIdRaw &&
-      requestedUserIdRaw.trim() &&
-      requestedUserIdRaw.trim() !== "undefined" &&
-      requestedUserIdRaw.trim() !== "null"
-        ? requestedUserIdRaw.trim()
-        : null
-
-    if (requestedUserId) {
-      if (!isUuid(requestedUserId)) {
-        console.warn("PROFILE GET INVALID USER ID:", {
-          requestedUserId,
-          authenticatedUserId: user.id,
-        })
-
-        return NextResponse.json(
-          { error: "Invalid userId format" },
-          { status: 400 }
-        )
-      }
-
-      if (requestedUserId !== user.id) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-      }
-    }
 
     const profile = await getOrCreateProfile(user)
 

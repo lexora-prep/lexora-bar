@@ -173,7 +173,7 @@ export default function SubscriptionPage() {
         return
       }
 
-      const profileRes = await fetch(`/api/profile?userId=${user.id}`, {
+      const profileRes = await fetch("/api/profile", {
         cache: "no-store",
       })
 
