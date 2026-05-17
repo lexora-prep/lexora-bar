@@ -275,6 +275,46 @@ export async function POST(req: Request) {
       occurred_at: event.occurred_at,
     })
 
+    console.log("PADDLE WEBHOOK DEBUG SAFE:", {
+      event_id: event.event_id,
+      event_type: eventType,
+      data_id: event.data?.id || null,
+      data_status: event.data?.status || null,
+      customer_id: event.data?.customer_id || event.data?.customerId || event.data?.customer?.id || null,
+      subscription_id: event.data?.subscription_id || event.data?.subscriptionId || event.data?.subscription?.id || null,
+      transaction_id: event.data?.transaction_id || event.data?.transactionId || event.data?.transaction?.id || null,
+      price_id:
+        event.data?.items?.[0]?.price?.id ||
+        event.data?.items?.[0]?.price_id ||
+        event.data?.price?.id ||
+        event.data?.price_id ||
+        null,
+      currency:
+        event.data?.currency_code ||
+        event.data?.currencyCode ||
+        event.data?.details?.totals?.currency_code ||
+        event.data?.details?.totals?.currencyCode ||
+        null,
+      totals: event.data?.details?.totals || event.data?.totals || null,
+      billing_period:
+        event.data?.current_billing_period ||
+        event.data?.currentBillingPeriod ||
+        event.data?.billing_period ||
+        event.data?.billingPeriod ||
+        null,
+      custom_data:
+        event.data?.custom_data ||
+        event.data?.customData ||
+        event.data?.transaction?.custom_data ||
+        event.data?.subscription?.custom_data ||
+        null,
+      discount:
+        event.data?.discount ||
+        event.data?.discounts?.[0] ||
+        event.data?.details?.totals?.discount ||
+        null,
+    })
+
     if (
       eventType === "transaction.completed" ||
       eventType === "transaction.paid" ||
