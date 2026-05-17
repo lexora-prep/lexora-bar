@@ -76,10 +76,22 @@ export async function GET(req: Request) {
 
     const { user } = auth
     const { searchParams } = new URL(req.url)
-    const requestedUserId = searchParams.get("userId")
+    const requestedUserIdRaw = searchParams.get("userId")
+    const requestedUserId =
+      requestedUserIdRaw &&
+      requestedUserIdRaw.trim() &&
+      requestedUserIdRaw.trim() !== "undefined" &&
+      requestedUserIdRaw.trim() !== "null"
+        ? requestedUserIdRaw.trim()
+        : null
 
     if (requestedUserId) {
       if (!isUuid(requestedUserId)) {
+        console.warn("PROFILE GET INVALID USER ID:", {
+          requestedUserId,
+          authenticatedUserId: user.id,
+        })
+
         return NextResponse.json(
           { error: "Invalid userId format" },
           { status: 400 }
