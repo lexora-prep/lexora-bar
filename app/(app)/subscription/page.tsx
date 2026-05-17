@@ -245,6 +245,8 @@ export default function SubscriptionPage() {
   }
 
   async function openBillingPortal(action: BillingPortalAction) {
+    const portalWindow = window.open("", "_blank", "noopener,noreferrer")
+
     try {
       const res = await fetch("/api/paddle/customer-portal", {
         method: "POST",
@@ -257,6 +259,7 @@ export default function SubscriptionPage() {
       const data = await res.json().catch(() => null)
 
       if (!res.ok || !data?.url) {
+        portalWindow?.close()
         window.alert(
           data?.error ||
             "Unable to open Paddle billing portal. Please try again or contact billing help.",
@@ -264,9 +267,15 @@ export default function SubscriptionPage() {
         return
       }
 
+      if (portalWindow) {
+        portalWindow.location.href = data.url
+        return
+      }
+
       window.open(data.url, "_blank", "noopener,noreferrer")
     } catch (err) {
       console.error("OPEN BILLING PORTAL ERROR:", err)
+      portalWindow?.close()
       window.alert(
         "Unable to open Paddle billing portal. Please try again or contact billing help.",
       )
