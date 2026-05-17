@@ -419,55 +419,105 @@ export default function SubscriptionPage() {
           </div>
         ) : profile ? (
           <div className="space-y-10">
-            <section>
-              <div className="border-b border-slate-200 pb-4">
+            <section className="overflow-hidden rounded-2xl bg-slate-950 text-white shadow-sm">
+              <div className="px-6 py-5">
                 <div className="flex items-start justify-between gap-8">
                   <div>
-                    <div className="mb-2">
-                      <StatusText active={isPaid} />
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-semibold text-emerald-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      {isPaid ? "Active subscription" : "No active subscription"}
                     </div>
-                    <h2 className="text-[22px] font-semibold tracking-[-0.02em]">
+
+                    <h2 className="text-[24px] font-semibold tracking-[-0.03em]">
                       {plan.label}
                     </h2>
-                    <p className="mt-1 text-[13px] font-medium text-slate-500">
+
+                    <p className="mt-1 text-[13px] font-medium text-slate-300">
                       {plan.note}
                     </p>
                   </div>
 
                   <div className="text-right">
-                    <div className="text-[28px] font-semibold tracking-[-0.04em]">
+                    <div className="text-[30px] font-semibold tracking-[-0.05em]">
                       {plan.price}
                     </div>
-                    <div className="mt-1 text-[12px] font-medium text-slate-500">
+                    <div className="mt-1 text-[12px] font-medium text-slate-400">
                       plus applicable taxes/VAT
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <Row label="Email" value={profile.email} />
-                <Row label="Plan status" value={isPaid ? "Active subscription" : "No active subscription"} />
-                <Row label="Next renewal" value={isPaid ? nextRenewal : "Not active"} />
-                <Row label="Last payment" value={isPaid ? lastPayment : "No payment yet"} />
+                <div className="mt-5 grid grid-cols-4 gap-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+                  <div className="border-r border-white/10 px-4 py-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Email
+                    </div>
+                    <div className="mt-1 truncate text-[13px] font-semibold text-white">
+                      {profile.email}
+                    </div>
+                  </div>
+
+                  <div className="border-r border-white/10 px-4 py-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Next renewal
+                    </div>
+                    <div className="mt-1 text-[13px] font-semibold text-white">
+                      {isPaid ? nextRenewal : "Not active"}
+                    </div>
+                  </div>
+
+                  <div className="border-r border-white/10 px-4 py-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Last payment
+                    </div>
+                    <div className="mt-1 text-[13px] font-semibold text-white">
+                      {isPaid ? lastPayment : "No payment yet"}
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Status
+                    </div>
+                    <div className="mt-1 text-[13px] font-semibold text-white">
+                      {isPaid ? "Active" : "Inactive"}
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
 
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                  Billing summary
-                </h3>
-                <SmallButton onClick={() => openSupport("billing")}>
-                  Billing help
-                </SmallButton>
+            <section className="grid gap-8 md:grid-cols-2">
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                    Billing summary
+                  </h3>
+                  <SmallButton onClick={() => openSupport("billing")}>
+                    Billing help
+                  </SmallButton>
+                </div>
+
+                <div className="border-y border-slate-200">
+                  <Row label="Subtotal" value={subtotal} />
+                  <Row label="Tax/VAT" value={tax} />
+                  <Row label="Amount paid" value={total} />
+                  <Row label="Discount" value={discount} />
+                </div>
               </div>
 
-              <div className="border-y border-slate-200">
-                <Row label="Subtotal" value={subtotal} />
-                <Row label="Tax/VAT" value={tax} />
-                <Row label="Amount paid" value={total} />
-                <Row label="Discount" value={discount} />
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                    Account activity
+                  </h3>
+                </div>
+
+                <div className="border-y border-slate-200">
+                  <Row label="Created" value={accountCreated} />
+                  <Row label="Billing activated" value={isPaid ? billingActivated : "Not active"} />
+                  <Row label="Current plan" value={plan.label} />
+                </div>
               </div>
             </section>
 
@@ -481,7 +531,7 @@ export default function SubscriptionPage() {
                   <button
                     type="button"
                     onClick={() => setInvoiceHistoryOpen(true)}
-                    className="rounded-full border border-slate-200 px-4 py-1.5 text-[12px] font-semibold text-slate-900 hover:bg-white"
+                    className="rounded-md border border-slate-200 px-3 py-1.5 text-[12px] font-semibold text-slate-900 hover:bg-white"
                   >
                     View all
                   </button>
@@ -493,19 +543,26 @@ export default function SubscriptionPage() {
               </div>
 
               <div className="border-y border-slate-200">
+                <div className="grid grid-cols-[1fr_110px_90px_70px] items-center gap-4 border-b border-slate-200 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                  <span>Date</span>
+                  <span>Amount</span>
+                  <span>Status</span>
+                  <span className="text-right">Receipt</span>
+                </div>
+
                 {isPaid ? (
-                  <div className="grid grid-cols-[1fr_100px_90px_70px] items-center gap-4 py-3 text-[13px]">
+                  <div className="grid grid-cols-[1fr_110px_90px_70px] items-center gap-4 py-3 text-[13px]">
                     <span className="font-medium text-slate-900">
                       {profile?.billing_last_paid_at
                         ? formatDate(profile.billing_last_paid_at)
                         : "Latest payment"}
                     </span>
 
-                    <span className="font-medium text-slate-500">
+                    <span className="font-medium text-slate-700">
                       {total}
                     </span>
 
-                    <span className="justify-self-start rounded-md bg-emerald-50 px-2 py-1 text-[12px] font-semibold text-emerald-700">
+                    <span className="font-semibold text-emerald-700">
                       Paid
                     </span>
 
@@ -522,31 +579,6 @@ export default function SubscriptionPage() {
                     No payment history yet.
                   </div>
                 )}
-              </div>
-            </section>
-
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                  Account activity
-                </h3>
-              </div>
-
-              <div className="border-y border-slate-200 py-1">
-                <div className="grid grid-cols-[160px_1fr] gap-4 border-b border-slate-200 py-3 text-[13px]">
-                  <div className="font-medium text-slate-500">Created</div>
-                  <div className="font-semibold text-slate-900">{accountCreated}</div>
-                </div>
-                <div className="grid grid-cols-[160px_1fr] gap-4 border-b border-slate-200 py-3 text-[13px]">
-                  <div className="font-medium text-slate-500">Billing activated</div>
-                  <div className="font-semibold text-slate-900">
-                    {isPaid ? billingActivated : "Not active"}
-                  </div>
-                </div>
-                <div className="grid grid-cols-[160px_1fr] gap-4 py-3 text-[13px]">
-                  <div className="font-medium text-slate-500">Current plan</div>
-                  <div className="font-semibold text-slate-900">{plan.label}</div>
-                </div>
               </div>
             </section>
 
@@ -716,6 +748,13 @@ export default function SubscriptionPage() {
 
             <div className="max-h-[calc(86vh-64px)] overflow-y-auto p-5">
               <div className="border-y border-slate-200">
+                <div className="grid grid-cols-[1fr_110px_90px_70px] items-center gap-4 border-b border-slate-200 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                  <span>Date</span>
+                  <span>Amount</span>
+                  <span>Status</span>
+                  <span className="text-right">Receipt</span>
+                </div>
+
                 {isPaid ? (
                   <div className="grid grid-cols-[1fr_110px_90px_70px] items-center gap-4 py-3 text-[13px]">
                     <span className="font-medium text-slate-900">
@@ -724,11 +763,11 @@ export default function SubscriptionPage() {
                         : "Latest payment"}
                     </span>
 
-                    <span className="font-medium text-slate-500">
+                    <span className="font-medium text-slate-700">
                       {total}
                     </span>
 
-                    <span className="justify-self-start rounded-md bg-emerald-50 px-2 py-1 text-[12px] font-semibold text-emerald-700">
+                    <span className="font-semibold text-emerald-700">
                       Paid
                     </span>
 
