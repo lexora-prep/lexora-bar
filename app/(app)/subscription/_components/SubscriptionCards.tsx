@@ -1,7 +1,7 @@
 "use client"
 
-import { ReactNode } from "react"
-import { Check, CreditCard, FileText, X } from "lucide-react"
+import { ReactNode, useState } from "react"
+import { Check, ChevronDown, CreditCard, FileText, X } from "lucide-react"
 
 const planAccessFeatures = [
   "Full BLL rule access",
@@ -280,6 +280,9 @@ export function PaymentHistoryCard({
   onView: () => void
   onViewAll: () => void
 }) {
+  const [openRecord, setOpenRecord] = useState<string | null>(isPaid ? "latest" : null)
+  const isOpen = openRecord === "latest"
+
   return (
     <Card>
       <SectionHeader
@@ -291,7 +294,7 @@ export function PaymentHistoryCard({
               onClick={onViewAll}
               className="text-[13px] font-medium text-slate-400 hover:text-slate-700"
             >
-              Latest record
+              View all
             </button>
           ) : (
             <span className="text-[13px] font-medium text-slate-400">
@@ -302,31 +305,68 @@ export function PaymentHistoryCard({
       />
 
       {isPaid ? (
-        <div className="grid grid-cols-[40px_1fr_82px_82px_82px_48px] items-center gap-3 px-5 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
-            <CreditCard className="h-4 w-4" />
-          </div>
-
-          <div>
-            <div className="text-[13px] font-semibold text-slate-950">
-              {planLabel}
-            </div>
-            <div className="mt-1 text-[11px] font-medium text-slate-400">
-              Billing period ends {nextRenewal}
-            </div>
-          </div>
-
-          <PaymentCell label="Paid" value={total} />
-          <PaymentCell label="Tax / VAT" value={tax} />
-          <PaymentCell label="Status" value="Active" green />
-
+        <div>
           <button
             type="button"
-            onClick={onView}
-            className="justify-self-end text-[12px] font-semibold text-blue-600 underline underline-offset-2"
+            onClick={() => setOpenRecord(isOpen ? null : "latest")}
+            className="grid w-full grid-cols-[40px_32px_1fr_130px_90px_34px] items-center gap-3 px-5 py-4 text-left hover:bg-slate-50"
           >
-            View
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
+              <CreditCard className="h-4 w-4" />
+            </div>
+
+            <div className="text-[13px] font-bold text-slate-400">
+              1
+            </div>
+
+            <div>
+              <div className="text-[13px] font-semibold text-slate-950">
+                {planLabel}
+              </div>
+              <div className="mt-1 text-[11px] font-medium text-slate-400">
+                Billing period ends {nextRenewal}
+              </div>
+            </div>
+
+            <div className="text-[12px] font-medium text-slate-500">
+              Latest payment
+            </div>
+
+            <div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700">
+                Paid
+              </span>
+            </div>
+
+            <ChevronDown
+              className={`h-4 w-4 justify-self-end text-slate-400 transition-transform ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
           </button>
+
+          {isOpen && (
+            <div className="border-t border-slate-200 bg-slate-50/60 px-5 py-4">
+              <div className="grid gap-3 md:grid-cols-5">
+                <PaymentDetail label="Billing period ends" value={nextRenewal} />
+                <PaymentDetail label="Paid" value={total} />
+                <PaymentDetail label="Tax / VAT" value={tax} />
+                <PaymentDetail label="Status" value="Active" green />
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                    Receipt
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onView}
+                    className="mt-1 text-[12px] font-semibold text-blue-600 underline underline-offset-2"
+                  >
+                    View
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="px-6 py-8 text-center text-[13px] font-medium text-slate-500">
@@ -337,7 +377,7 @@ export function PaymentHistoryCard({
   )
 }
 
-function PaymentCell({
+function PaymentDetail({
   label,
   value,
   green = false,
