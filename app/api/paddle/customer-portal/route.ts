@@ -14,15 +14,15 @@ function getPaddleApiBaseUrl() {
   return env === "sandbox" ? "https://sandbox-api.paddle.com" : "https://api.paddle.com"
 }
 
-function isValidCustomerId(value: string | null | undefined) {
+function isValidCustomerId(value: string | null | undefined): value is string {
   return typeof value === "string" && value.startsWith("ctm_")
 }
 
-function isValidSubscriptionId(value: string | null | undefined) {
+function isValidSubscriptionId(value: string | null | undefined): value is string {
   return typeof value === "string" && value.startsWith("sub_")
 }
 
-function isValidTransactionId(value: string | null | undefined) {
+function isValidTransactionId(value: string | null | undefined): value is string {
   return typeof value === "string" && value.startsWith("txn_")
 }
 
@@ -88,42 +88,46 @@ async function recoverCustomerId({
   return customerId
 }
 
-function pickPortalUrl(data: any, subscriptionId: string | null, action: PortalAction) {
-  const general = data?.urls?.general || {}
-  const subscriptions = Array.isArray(data?.urls?.subscriptions)
-    ? data.urls.subscriptions
-    : []
+async function createGeneralPortalSession({
+  apiKey,
+  customerId,
+}: {
+  apiKey: string
+  customerId: string
+}) {
+  const res = await fetch(
+    `${getPaddleApiBaseUrl()}/customers/${customerId}/portal-sessions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+      cache: "no-store",
+    },
+  )
 
-  const sub =
-    subscriptions.find(
-      (item: any) => item?.id === subscriptionId || item?.subscription_id === subscriptionId,
-    ) ||
-    subscriptions[0] ||
-    {}
+  const json = await res.json().catch(() => null)
 
-  if (action === "cancel_subscription") {
-    return sub.cancel_subscription || sub.cancel || sub.overview || general.overview || null
+  if (!res.ok) {
+    console.error("PADDLE CUSTOMER PORTAL ERROR:", json)
+
+    return {
+      url: null,
+      error:
+        json?.error?.detail ||
+        json?.error?.message ||
+        "Failed to create Paddle customer portal session.",
+      status: res.status,
+    }
   }
 
-  if (action === "update_payment_method") {
-    return (
-      sub.update_payment_method ||
-      sub.payment_method_update ||
-      sub.overview ||
-      general.overview ||
-      null
-    )
+  return {
+    url: json?.data?.urls?.general?.overview || null,
+    error: null,
+    status: 200,
   }
-
-  if (action === "manage_subscription") {
-    return sub.overview || sub.update_subscription || general.overview || null
-  }
-
-  if (action === "invoices") {
-    return general.overview || sub.overview || null
-  }
-
-  return general.overview || sub.overview || null
 }
 
 export async function POST(req: Request) {
@@ -138,6 +142,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient()
+
     const {
       data: { user },
       error: authError,
@@ -190,52 +195,42 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}))
     const action = String(body?.action || "overview") as PortalAction
 
-    const payload: Record<string, unknown> = {}
+    const subscription = isValidSubscriptionId(profile.paddle_subscription_id)
+      ? await fetchPaddleData(apiKey, `/subscriptions/${profile.paddle_subscription_id}`)
+      : null
 
-    if (isValidSubscriptionId(profile.paddle_subscription_id)) {
-      payload.subscription_ids = [profile.paddle_subscription_id]
+    if (action === "update_payment_method") {
+      const url = subscription?.management_urls?.update_payment_method
+
+      if (url) {
+        return NextResponse.json({ ok: true, url })
+      }
     }
 
-    const paddleRes = await fetch(
-      `${getPaddleApiBaseUrl()}/customers/${customerId}/portal-sessions`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-        cache: "no-store",
-      },
-    )
+    if (action === "cancel_subscription") {
+      const url = subscription?.management_urls?.cancel
 
-    const paddleData = await paddleRes.json().catch(() => null)
+      if (url) {
+        return NextResponse.json({ ok: true, url })
+      }
+    }
 
-    if (!paddleRes.ok) {
-      console.error("PADDLE CUSTOMER PORTAL ERROR:", paddleData)
+    const portal = await createGeneralPortalSession({
+      apiKey,
+      customerId,
+    })
 
+    if (!portal.url) {
       return NextResponse.json(
         {
           ok: false,
-          error:
-            paddleData?.error?.detail ||
-            paddleData?.error?.message ||
-            "Failed to create Paddle customer portal session.",
+          error: portal.error || "Paddle did not return a usable portal URL.",
         },
-        { status: paddleRes.status },
+        { status: portal.status || 500 },
       )
     }
 
-    const url = pickPortalUrl(paddleData?.data, profile.paddle_subscription_id, action)
-
-    if (!url) {
-      return NextResponse.json(
-        { ok: false, error: "Paddle did not return a usable portal URL." },
-        { status: 500 },
-      )
-    }
-
-    return NextResponse.json({ ok: true, url })
+    return NextResponse.json({ ok: true, url: portal.url })
   } catch (err: any) {
     console.error("CUSTOMER PORTAL ROUTE ERROR:", err)
 
