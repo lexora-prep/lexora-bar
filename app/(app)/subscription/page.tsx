@@ -179,8 +179,8 @@ function SectionHeader({
   right?: React.ReactNode
 }) {
   return (
-    <div className="flex h-[58px] items-center justify-between border-b border-slate-200 px-6">
-      <h3 className="text-[15px] font-bold uppercase tracking-[0.14em] text-slate-500">
+    <div className="flex h-[46px] items-center justify-between border-b border-slate-200 px-5">
+      <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-slate-500">
         {title}
       </h3>
       {right}
@@ -198,9 +198,9 @@ function SummaryRow({
   valueClassName?: string
 }) {
   return (
-    <div className="grid min-h-[58px] grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-200 px-6 last:border-b-0">
-      <div className="text-[16px] font-medium text-slate-500">{label}</div>
-      <div className={`text-right text-[16px] font-medium text-slate-700 ${valueClassName}`}>
+    <div className="grid min-h-[44px] grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-200 px-5 last:border-b-0">
+      <div className="text-[13px] font-medium text-slate-500">{label}</div>
+      <div className={`text-right text-[13px] font-medium text-slate-700 ${valueClassName}`}>
         {value}
       </div>
     </div>
@@ -224,24 +224,24 @@ function BillingActionRow({
     <button
       type="button"
       onClick={onClick}
-      className={`grid w-full grid-cols-[44px_1fr_auto] items-center gap-4 border-b border-slate-200 px-6 py-4 text-left last:border-b-0 ${
+      className={`grid w-full grid-cols-[36px_1fr_auto] items-center gap-3 border-b border-slate-200 px-5 py-3 text-left last:border-b-0 ${
         danger ? "hover:bg-red-50" : "hover:bg-slate-50"
       }`}
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-400">
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-slate-400">
         {icon}
       </span>
 
       <span>
-        <span className={`block text-[16px] font-semibold ${danger ? "text-red-700" : "text-slate-950"}`}>
+        <span className={`block text-[13px] font-semibold ${danger ? "text-red-700" : "text-slate-950"}`}>
           {title}
         </span>
-        <span className={`mt-1 block text-[15px] font-medium ${danger ? "text-red-400" : "text-slate-400"}`}>
+        <span className={`mt-1 block text-[12px] font-medium ${danger ? "text-red-400" : "text-slate-400"}`}>
           {subtitle}
         </span>
       </span>
 
-      <span className={`text-[18px] font-medium ${danger ? "text-red-300" : "text-slate-300"}`}>
+      <span className={`text-[14px] font-medium ${danger ? "text-red-300" : "text-slate-300"}`}>
         →
       </span>
     </button>
@@ -364,14 +364,14 @@ export default function SubscriptionPage() {
       const data = await res.json().catch(() => null)
 
       if (!res.ok || !data?.url) {
-        setError(data?.error || "Unable to open Paddle billing portal.")
+        window.alert(data?.error || "Unable to open Paddle billing portal. Please try again or contact billing help.")
         return
       }
 
       window.location.href = data.url
     } catch (err) {
       console.error("OPEN BILLING PORTAL ERROR:", err)
-      setError("Unable to open Paddle billing portal.")
+      window.alert("Unable to open Paddle billing portal. Please try again or contact billing help.")
     }
   }
 
@@ -455,8 +455,8 @@ export default function SubscriptionPage() {
   const discountIsNone = discount === "None"
 
   return (
-    <div className="min-h-screen bg-[#F7F6F2] px-8 py-8 text-slate-950">
-      <div className="mx-auto max-w-[980px]">
+    <div className="min-h-screen bg-[#F7F6F2] px-6 py-5 text-slate-950">
+      <div className="mx-auto max-w-[760px]">
         <div className="mb-5 flex items-center justify-between">
           <div>
             <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -495,71 +495,71 @@ export default function SubscriptionPage() {
             </div>
           </Card>
         ) : profile ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <section className="overflow-hidden rounded-2xl bg-[#111420] text-white shadow-sm">
-              <div className="relative px-9 py-9">
+              <div className="relative px-6 py-6">
                 <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
                 <div className="flex items-start justify-between gap-8">
                   <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[16px] font-medium text-emerald-300">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[12px] font-medium text-emerald-300">
                       <span className="flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500/20">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                       </span>
                       {isPaid ? "Active subscription" : "No active subscription"}
                     </div>
 
-                    <h2 className="mt-4 font-serif text-[42px] font-normal leading-none tracking-[-0.04em]">
+                    <h2 className="mt-3 font-serif text-[30px] font-normal leading-none tracking-[-0.04em]">
                       {plan.label}
                     </h2>
 
-                    <p className="mt-4 text-[17px] font-medium text-slate-400">
+                    <p className="mt-3 text-[12px] font-medium text-slate-400">
                       {plan.note}
                     </p>
                   </div>
 
                   <div className="text-right">
-                    <div className="font-serif text-[38px] font-normal leading-none tracking-[-0.05em]">
+                    <div className="font-serif text-[26px] font-normal leading-none tracking-[-0.05em]">
                       {plan.price}
                     </div>
-                    <div className="mt-4 text-[16px] font-medium text-slate-500">
+                    <div className="mt-3 text-[12px] font-medium text-slate-500">
                       plus applicable taxes / VAT
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-9 grid grid-cols-4 overflow-hidden rounded-xl bg-white/10">
-                  <div className="border-r border-slate-950/25 px-5 py-4">
-                    <div className="text-[16px] font-bold uppercase tracking-[0.1em] text-slate-500">
+                <div className="mt-6 grid grid-cols-[1.6fr_1fr_1fr_0.75fr] overflow-hidden rounded-xl bg-white/10">
+                  <div className="border-r border-slate-950/25 px-4 py-3">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
                       Email
                     </div>
-                    <div className="mt-3 truncate text-[16px] font-semibold text-slate-200">
+                    <div className="mt-2 break-all text-[12px] font-semibold leading-4 text-slate-200">
                       {profile.email}
                     </div>
                   </div>
 
-                  <div className="border-r border-slate-950/25 px-5 py-4">
-                    <div className="text-[16px] font-bold uppercase tracking-[0.1em] text-slate-500">
+                  <div className="border-r border-slate-950/25 px-4 py-3">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
                       Next renewal
                     </div>
-                    <div className="mt-3 text-[16px] font-semibold text-slate-200">
+                    <div className="mt-2 text-[12px] font-semibold text-slate-200">
                       {isPaid ? nextRenewal : "Not active"}
                     </div>
                   </div>
 
-                  <div className="border-r border-slate-950/25 px-5 py-4">
-                    <div className="text-[16px] font-bold uppercase tracking-[0.1em] text-slate-500">
+                  <div className="border-r border-slate-950/25 px-4 py-3">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
                       Last payment
                     </div>
-                    <div className="mt-3 text-[16px] font-semibold text-slate-200">
+                    <div className="mt-2 text-[12px] font-semibold text-slate-200">
                       {isPaid ? lastPaymentDate : "No payment yet"}
                     </div>
                   </div>
 
-                  <div className="px-5 py-4">
-                    <div className="text-[16px] font-bold uppercase tracking-[0.1em] text-slate-500">
+                  <div className="px-4 py-3">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
                       Status
                     </div>
-                    <div className="mt-3 text-[16px] font-semibold text-emerald-300">
+                    <div className="mt-2 text-[12px] font-semibold text-emerald-300">
                       {isPaid ? "Active" : "Inactive"}
                     </div>
                   </div>
@@ -585,18 +585,18 @@ export default function SubscriptionPage() {
                     )
                   }
                 />
-                <div className="grid grid-cols-[1fr_auto] items-center gap-4 bg-blue-50/80 px-6 py-4">
+                <div className="grid grid-cols-[1fr_auto] items-center gap-4 bg-blue-50/80 px-5 py-3">
                   <button
                     type="button"
                     onClick={() => openSupport("billing")}
-                    className="text-left text-[16px] font-medium text-blue-600 hover:underline"
+                    className="text-left text-[13px] font-medium text-blue-600 hover:underline"
                   >
                     ⓘ Payment issue?
                   </button>
                   <button
                     type="button"
                     onClick={() => openSupport("billing")}
-                    className="text-[16px] font-semibold text-blue-600 underline underline-offset-2"
+                    className="text-[13px] font-semibold text-blue-600 underline underline-offset-2"
                   >
                     Contact billing help →
                   </button>
@@ -640,43 +640,43 @@ export default function SubscriptionPage() {
               />
 
               {isPaid ? (
-                <div className="grid grid-cols-[52px_1fr_110px_110px_110px_80px] items-center gap-4 px-6 py-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
+                <div className="grid grid-cols-[40px_1fr_82px_82px_82px_48px] items-center gap-3 px-5 py-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
                     <CreditCard className="h-4 w-4" />
                   </div>
 
                   <div>
-                    <div className="text-[17px] font-semibold text-slate-950">
+                    <div className="text-[13px] font-semibold text-slate-950">
                       {plan.label}
                     </div>
-                    <div className="mt-1 text-[15px] font-medium text-slate-400">
+                    <div className="mt-1 text-[11px] font-medium text-slate-400">
                       Billing period ends {isPaid ? nextRenewal : "Not active"}
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-[15px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                       Paid
                     </div>
-                    <div className="mt-1 text-[17px] font-medium text-slate-950">
+                    <div className="mt-1 text-[12px] font-medium text-slate-950">
                       {total}
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-[15px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                       Tax / VAT
                     </div>
-                    <div className="mt-1 text-[17px] font-medium text-slate-950">
+                    <div className="mt-1 text-[12px] font-medium text-slate-950">
                       {tax}
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-[15px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
                       Status
                     </div>
-                    <div className="mt-1 text-[17px] font-semibold text-emerald-700">
+                    <div className="mt-1 text-[12px] font-semibold text-emerald-700">
                       Active
                     </div>
                   </div>
@@ -684,7 +684,7 @@ export default function SubscriptionPage() {
                   <button
                     type="button"
                     onClick={openLatestInvoice}
-                    className="justify-self-end text-[15px] font-semibold text-blue-600 underline underline-offset-2"
+                    className="justify-self-end text-[12px] font-semibold text-blue-600 underline underline-offset-2"
                   >
                     View
                   </button>
@@ -696,17 +696,17 @@ export default function SubscriptionPage() {
               )}
             </Card>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <SectionHeader
-                  title="Plan access"
-                  right={
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700">
-                      All unlocked
-                    </span>
-                  }
-                />
+            <Card>
+              <SectionHeader
+                title="Plan access"
+                right={
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700">
+                    All unlocked
+                  </span>
+                }
+              />
 
+              <div className="grid md:grid-cols-2">
                 {[
                   "Full BLL rule access",
                   "Spaced repetition",
@@ -717,35 +717,18 @@ export default function SubscriptionPage() {
                 ].map((feature) => (
                   <div
                     key={feature}
-                    className="flex min-h-[54px] items-center gap-3 border-b border-slate-200 px-6 last:border-b-0"
+                    className="flex min-h-[42px] items-center gap-3 border-b border-slate-200 px-5 even:md:border-l"
                   >
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50">
-                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50">
+                      <Check className="h-3 w-3 text-emerald-500" />
                     </span>
-                    <span className="text-[16px] font-medium text-slate-600">
+                    <span className="text-[13px] font-medium text-slate-600">
                       {feature}
                     </span>
                   </div>
                 ))}
-              </Card>
-
-              <Card>
-                <SectionHeader title="Support" />
-
-                <button
-                  type="button"
-                  onClick={() => openSupport("billing")}
-                  className="grid min-h-[58px] w-full grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-200 px-6 text-left last:border-b-0 hover:bg-slate-50"
-                >
-                  <span className="text-[16px] font-medium text-slate-700">
-                    Contact support
-                  </span>
-                  <span className="text-[15px] font-medium text-slate-400">
-                    Open →
-                  </span>
-                </button>
-              </Card>
-            </div>
+              </div>
+            </Card>
 
             <Card>
               <SectionHeader
@@ -873,19 +856,19 @@ export default function SubscriptionPage() {
       )}
 
       {supportOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111420] px-7 py-6">
-          <div className="max-h-[88vh] w-full max-w-[1450px] overflow-hidden rounded-[30px] bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-10 py-9">
-              <div className="flex items-center gap-7">
-                <div className="flex h-[58px] w-[58px] items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-6 py-6 backdrop-blur-sm">
+          <div className="max-h-[82vh] w-full max-w-[980px] overflow-hidden rounded-[24px] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <HelpCircle className="h-6 w-6" />
                 </div>
 
                 <div>
-                  <div className="text-[18px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                  <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-slate-400">
                     Support request
                   </div>
-                  <h2 className="font-serif text-[36px] font-normal leading-none tracking-[-0.04em] text-slate-950">
+                  <h2 className="font-serif text-[26px] font-normal leading-none tracking-[-0.04em] text-slate-950">
                     Contact support
                   </h2>
                 </div>
@@ -894,15 +877,15 @@ export default function SubscriptionPage() {
               <button
                 type="button"
                 onClick={() => setSupportOpen(false)}
-                className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-slate-200 text-slate-500 hover:bg-slate-50"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"
               >
                 <X className="h-7 w-7" />
               </button>
             </div>
 
-            <div className="grid max-h-[calc(88vh-150px)] overflow-hidden md:grid-cols-[1fr_1.08fr]">
-              <form onSubmit={submitSupportTicket} className="overflow-y-auto border-r border-slate-200 px-10 py-10">
-                <label className="block text-[18px] font-bold uppercase tracking-[0.14em] text-slate-500">
+            <div className="grid max-h-[calc(82vh-86px)] overflow-hidden md:grid-cols-[0.9fr_1.1fr]">
+              <form onSubmit={submitSupportTicket} className="overflow-y-auto border-r border-slate-200 px-6 py-6">
+                <label className="block text-[12px] font-bold uppercase tracking-[0.14em] text-slate-500">
                   Topic
                 </label>
                 <select
@@ -911,7 +894,7 @@ export default function SubscriptionPage() {
                     setSupportTopic(event.target.value)
                     setSupportSubject(event.target.value === "billing" ? "Billing support request" : topicLabel(event.target.value))
                   }}
-                  className="mt-4 h-[70px] w-full rounded-2xl border border-slate-300 bg-white px-6 text-[23px] font-medium text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="mt-3 h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] font-medium text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 >
                   {supportTopics.map((topic) => (
                     <option key={topic.value} value={topic.value}>
@@ -920,24 +903,24 @@ export default function SubscriptionPage() {
                   ))}
                 </select>
 
-                <label className="mt-8 block text-[18px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                <label className="mt-5 block text-[12px] font-bold uppercase tracking-[0.14em] text-slate-500">
                   Subject
                 </label>
                 <input
                   value={supportSubject}
                   onChange={(event) => setSupportSubject(event.target.value)}
-                  className="mt-4 h-[68px] w-full rounded-2xl border border-slate-300 px-6 text-[23px] font-medium text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="mt-3 h-12 w-full rounded-xl border border-slate-300 px-4 text-[15px] font-medium text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
 
-                <label className="mt-8 block text-[18px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                <label className="mt-5 block text-[12px] font-bold uppercase tracking-[0.14em] text-slate-500">
                   Message
                 </label>
                 <textarea
                   value={supportMessage}
                   onChange={(event) => setSupportMessage(event.target.value)}
-                  rows={7}
+                  rows={5}
                   placeholder="Explain the issue in detail. The more context, the faster we can help."
-                  className="mt-4 w-full resize-none rounded-2xl border border-slate-300 px-6 py-5 text-[23px] font-medium leading-9 text-slate-950 outline-none placeholder:text-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="mt-3 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-[15px] font-medium leading-6 text-slate-950 outline-none placeholder:text-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
 
                 {supportError && (
@@ -949,7 +932,7 @@ export default function SubscriptionPage() {
                 <button
                   type="submit"
                   disabled={supportLoading}
-                  className="mt-8 inline-flex h-[70px] w-full items-center justify-center gap-4 rounded-xl bg-[#101218] px-6 text-[23px] font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                  className="mt-5 inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#101218] px-5 text-[15px] font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
                 >
                   {supportLoading ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
@@ -961,24 +944,24 @@ export default function SubscriptionPage() {
               </form>
 
               <div className="overflow-y-auto bg-[#FAFAF8]">
-                <div className="sticky top-0 z-10 flex h-[78px] items-center justify-between border-b border-slate-200 bg-[#FAFAF8] px-9">
-                  <h3 className="text-[18px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-slate-200 bg-[#FAFAF8] px-6">
+                  <h3 className="text-[12px] font-bold uppercase tracking-[0.14em] text-slate-500">
                     Ticket history
                   </h3>
 
                   <button
                     type="button"
                     onClick={loadTickets}
-                    className="inline-flex items-center gap-2 text-[20px] font-semibold text-slate-500 hover:text-slate-900"
+                    className="inline-flex items-center gap-2 text-[13px] font-semibold text-slate-500 hover:text-slate-900"
                   >
                     <RefreshCcw className="h-5 w-5" />
                     Refresh
                   </button>
                 </div>
 
-                <div className="space-y-4 p-6">
+                <div className="space-y-3 p-4">
                   {tickets.length === 0 ? (
-                    <div className="rounded-2xl border border-slate-200 bg-white px-6 py-8 text-[18px] font-medium text-slate-500">
+                    <div className="rounded-xl border border-slate-200 bg-white px-5 py-6 text-[14px] font-medium text-slate-500">
                       No tickets yet.
                     </div>
                   ) : (
@@ -987,19 +970,19 @@ export default function SubscriptionPage() {
                       const isResolved = normalizedStatus.toLowerCase() === "resolved"
 
                       return (
-                        <div key={ticket.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                          <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+                        <div key={ticket.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                          <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
                             <div>
-                              <div className="text-[22px] font-semibold text-slate-950">
+                              <div className="text-[15px] font-semibold text-slate-950">
                                 {ticket.subject}
                               </div>
-                              <div className="mt-2 text-[17px] font-medium text-slate-400">
+                              <div className="mt-1 text-[12px] font-medium text-slate-400">
                                 {topicLabel(ticket.category)} · {formatDateTime(ticket.created_at)}
                               </div>
                             </div>
 
                             <span
-                              className={`rounded-full px-4 py-2 text-[18px] font-bold ${
+                              className={`rounded-full px-3 py-1.5 text-[13px] font-bold ${
                                 isResolved
                                   ? "bg-emerald-50 text-emerald-700"
                                   : "bg-orange-50 text-orange-700"
@@ -1017,22 +1000,22 @@ export default function SubscriptionPage() {
                               return (
                                 <div
                                   key={message.id}
-                                  className={`border-b border-slate-200 px-6 py-5 last:border-b-0 ${
+                                  className={`border-b border-slate-200 px-5 py-4 last:border-b-0 ${
                                     isSupport ? "bg-blue-50/70" : "bg-white"
                                   }`}
                                 >
                                   <div className="flex items-center justify-between gap-4">
-                                    <div className={`text-[18px] font-bold uppercase tracking-[0.14em] ${
+                                    <div className={`text-[12px] font-bold uppercase tracking-[0.14em] ${
                                       isSupport ? "text-blue-600" : "text-slate-400"
                                     }`}>
                                       {message.sender}
                                     </div>
-                                    <div className="text-[18px] font-medium text-slate-400">
+                                    <div className="text-[12px] font-medium text-slate-400">
                                       {formatDateTime(message.created_at)}
                                     </div>
                                   </div>
 
-                                  <div className="mt-3 text-[22px] font-medium leading-8 text-slate-600">
+                                  <div className="mt-2 text-[15px] font-medium leading-6 text-slate-600">
                                     {message.message}
                                   </div>
                                 </div>
