@@ -181,7 +181,7 @@ export async function POST(req: Request) {
         {
           ok: false,
           error:
-            "Paddle customer ID is missing and could not be recovered from the subscription or transaction. Check the Paddle webhook payload and billing record.",
+            "Paddle customer ID is missing and could not be recovered from the subscription or transaction.",
         },
         { status: 400 },
       )
@@ -190,23 +190,24 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}))
     const action = String(body?.action || "overview") as PortalAction
 
-    const payload: Record<string, unknown> = {
-      customer_id: customerId,
-    }
+    const payload: Record<string, unknown> = {}
 
     if (isValidSubscriptionId(profile.paddle_subscription_id)) {
       payload.subscription_ids = [profile.paddle_subscription_id]
     }
 
-    const paddleRes = await fetch(`${getPaddleApiBaseUrl()}/customer-portal-sessions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const paddleRes = await fetch(
+      `${getPaddleApiBaseUrl()}/customers/${customerId}/portal-sessions`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
       },
-      body: JSON.stringify(payload),
-      cache: "no-store",
-    })
+    )
 
     const paddleData = await paddleRes.json().catch(() => null)
 
