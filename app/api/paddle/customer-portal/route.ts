@@ -14,6 +14,80 @@ function getPaddleApiBaseUrl() {
   return env === "sandbox" ? "https://sandbox-api.paddle.com" : "https://api.paddle.com"
 }
 
+function isValidCustomerId(value: string | null | undefined) {
+  return typeof value === "string" && value.startsWith("ctm_")
+}
+
+function isValidSubscriptionId(value: string | null | undefined) {
+  return typeof value === "string" && value.startsWith("sub_")
+}
+
+function isValidTransactionId(value: string | null | undefined) {
+  return typeof value === "string" && value.startsWith("txn_")
+}
+
+async function fetchPaddleData(apiKey: string, path: string) {
+  const res = await fetch(`${getPaddleApiBaseUrl()}${path}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  })
+
+  const json = await res.json().catch(() => null)
+
+  if (!res.ok) {
+    console.error("PADDLE FETCH ERROR:", {
+      path,
+      status: res.status,
+      response: json,
+    })
+    return null
+  }
+
+  return json?.data || null
+}
+
+async function recoverCustomerId({
+  apiKey,
+  profileId,
+  subscriptionId,
+  transactionId,
+}: {
+  apiKey: string
+  profileId: string
+  subscriptionId: string | null
+  transactionId: string | null
+}) {
+  let customerId: string | null = null
+
+  if (isValidSubscriptionId(subscriptionId)) {
+    const subscription = await fetchPaddleData(apiKey, `/subscriptions/${subscriptionId}`)
+    customerId = subscription?.customer_id || null
+  }
+
+  if (!isValidCustomerId(customerId) && isValidTransactionId(transactionId)) {
+    const transaction = await fetchPaddleData(apiKey, `/transactions/${transactionId}`)
+    customerId = transaction?.customer_id || null
+  }
+
+  if (!isValidCustomerId(customerId)) {
+    return null
+  }
+
+  await prisma.profiles.update({
+    where: { id: profileId },
+    data: {
+      paddle_customer_id: customerId,
+      updated_at: new Date(),
+    },
+  })
+
+  return customerId
+}
+
 function pickPortalUrl(data: any, subscriptionId: string | null, action: PortalAction) {
   const general = data?.urls?.general || {}
   const subscriptions = Array.isArray(data?.urls?.subscriptions)
@@ -22,8 +96,10 @@ function pickPortalUrl(data: any, subscriptionId: string | null, action: PortalA
 
   const sub =
     subscriptions.find(
-      (item: any) => item?.id === subscriptionId || item?.subscription_id === subscriptionId
-    ) || subscriptions[0] || {}
+      (item: any) => item?.id === subscriptionId || item?.subscription_id === subscriptionId,
+    ) ||
+    subscriptions[0] ||
+    {}
 
   if (action === "cancel_subscription") {
     return sub.cancel_subscription || sub.cancel || sub.overview || general.overview || null
@@ -57,7 +133,7 @@ export async function POST(req: Request) {
     if (!apiKey) {
       return NextResponse.json(
         { ok: false, error: "PADDLE_API_KEY is missing." },
-        { status: 500 }
+        { status: 500 },
       )
     }
 
@@ -78,24 +154,36 @@ export async function POST(req: Request) {
         email: true,
         paddle_customer_id: true,
         paddle_subscription_id: true,
+        paddle_transaction_id: true,
       },
     })
 
     if (!profile) {
       return NextResponse.json(
         { ok: false, error: "Profile not found." },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
-    if (!profile.paddle_customer_id || !profile.paddle_customer_id.startsWith("ctm_")) {
+    let customerId = profile.paddle_customer_id
+
+    if (!isValidCustomerId(customerId)) {
+      customerId = await recoverCustomerId({
+        apiKey,
+        profileId: profile.id,
+        subscriptionId: profile.paddle_subscription_id,
+        transactionId: profile.paddle_transaction_id,
+      })
+    }
+
+    if (!isValidCustomerId(customerId)) {
       return NextResponse.json(
         {
           ok: false,
           error:
-            "Paddle customer ID is missing or invalid. Re-sync the subscription or contact support.",
+            "Paddle customer ID is missing and could not be recovered from the subscription or transaction. Check the Paddle webhook payload and billing record.",
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -103,10 +191,10 @@ export async function POST(req: Request) {
     const action = String(body?.action || "overview") as PortalAction
 
     const payload: Record<string, unknown> = {
-      customer_id: profile.paddle_customer_id,
+      customer_id: customerId,
     }
 
-    if (profile.paddle_subscription_id?.startsWith("sub_")) {
+    if (isValidSubscriptionId(profile.paddle_subscription_id)) {
       payload.subscription_ids = [profile.paddle_subscription_id]
     }
 
@@ -133,7 +221,7 @@ export async function POST(req: Request) {
             paddleData?.error?.message ||
             "Failed to create Paddle customer portal session.",
         },
-        { status: paddleRes.status }
+        { status: paddleRes.status },
       )
     }
 
@@ -142,7 +230,7 @@ export async function POST(req: Request) {
     if (!url) {
       return NextResponse.json(
         { ok: false, error: "Paddle did not return a usable portal URL." },
-        { status: 500 }
+        { status: 500 },
       )
     }
 
@@ -152,7 +240,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { ok: false, error: err?.message || "Failed to open billing portal." },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
