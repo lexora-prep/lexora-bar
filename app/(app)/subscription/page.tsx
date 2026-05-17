@@ -271,6 +271,38 @@ export default function SubscriptionPage() {
     setSupportOpen(true)
   }
 
+  async function openBillingPortal(
+    action:
+      | "manage_subscription"
+      | "update_payment_method"
+      | "cancel_subscription"
+      | "invoices"
+  ) {
+    try {
+      setError("")
+
+      const res = await fetch("/api/paddle/customer-portal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action }),
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || !data?.url) {
+        setError(data?.error || "Unable to open Paddle billing portal.")
+        return
+      }
+
+      window.location.href = data.url
+    } catch (err) {
+      console.error("OPEN BILLING PORTAL ERROR:", err)
+      setError("Unable to open Paddle billing portal.")
+    }
+  }
+
   async function submitSupportTicket(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -507,26 +539,115 @@ export default function SubscriptionPage() {
             <section>
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                  Manage billing
+                </h3>
+                <span className="text-[12px] font-medium text-slate-400">
+                  Securely handled by Paddle
+                </span>
+              </div>
+
+              <div className="border-y border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => openBillingPortal("manage_subscription")}
+                  className="grid w-full grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-200 py-3 text-left text-[13px] hover:bg-white"
+                >
+                  <span>
+                    <span className="block font-semibold text-slate-900">
+                      Manage subscription
+                    </span>
+                    <span className="mt-1 block text-[12px] font-medium text-slate-500">
+                      Change, pause, or manage your plan in Paddle.
+                    </span>
+                  </span>
+                  <span className="text-[12px] font-semibold text-slate-500">
+                    Open
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => openBillingPortal("update_payment_method")}
+                  className="grid w-full grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-200 py-3 text-left text-[13px] hover:bg-white"
+                >
+                  <span>
+                    <span className="block font-semibold text-slate-900">
+                      Update payment method
+                    </span>
+                    <span className="mt-1 block text-[12px] font-medium text-slate-500">
+                      Update your card or billing details securely in Paddle.
+                    </span>
+                  </span>
+                  <span className="text-[12px] font-semibold text-slate-500">
+                    Open
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => openBillingPortal("invoices")}
+                  className="grid w-full grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-200 py-3 text-left text-[13px] hover:bg-white"
+                >
+                  <span>
+                    <span className="block font-semibold text-slate-900">
+                      View invoices
+                    </span>
+                    <span className="mt-1 block text-[12px] font-medium text-slate-500">
+                      Open receipts and invoice records in Paddle.
+                    </span>
+                  </span>
+                  <span className="text-[12px] font-semibold text-slate-500">
+                    Open
+                  </span>
+                </button>
+
+                {isPaid && (
+                  <button
+                    type="button"
+                    onClick={() => openBillingPortal("cancel_subscription")}
+                    className="grid w-full grid-cols-[1fr_auto] items-center gap-4 py-3 text-left text-[13px] hover:bg-red-50"
+                  >
+                    <span>
+                      <span className="block font-semibold text-red-700">
+                        Cancel subscription
+                      </span>
+                      <span className="mt-1 block text-[12px] font-medium text-red-400">
+                        Cancel renewal securely through Paddle.
+                      </span>
+                    </span>
+                    <span className="text-[12px] font-semibold text-red-400">
+                      Open
+                    </span>
+                  </button>
+                )}
+              </div>
+            </section>
+
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-slate-400">
                   Support
                 </h3>
               </div>
 
               <div className="border-y border-slate-200">
-                {supportTopics.map((topic) => (
-                  <button
-                    key={topic.value}
-                    type="button"
-                    onClick={() => openSupport(topic.value)}
-                    className="grid w-full grid-cols-[1fr_auto] items-center gap-4 border-b border-slate-200 py-3 text-left text-[13px] last:border-b-0 hover:bg-white"
-                  >
-                    <span className="font-semibold text-slate-900">
-                      {topic.label}
+                <button
+                  type="button"
+                  onClick={() => openSupport("billing")}
+                  className="grid w-full grid-cols-[1fr_auto] items-center gap-4 py-4 text-left text-[13px] hover:bg-white"
+                >
+                  <span>
+                    <span className="block font-semibold text-slate-900">
+                      Contact support
                     </span>
-                    <span className="text-[12px] font-semibold text-slate-500">
-                      Open
+                    <span className="mt-1 block text-[12px] font-medium text-slate-500">
+                      Choose billing, subscription, invoice, technical, account, or other issue.
                     </span>
-                  </button>
-                ))}
+                  </span>
+                  <span className="text-[12px] font-semibold text-slate-500">
+                    Open
+                  </span>
+                </button>
               </div>
             </section>
 
