@@ -153,6 +153,193 @@ function getPlanFromEvent(event: PaddleEvent) {
   )
 }
 
+
+function asDate(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return undefined
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+function asCents(value: unknown) {
+  if (value === null || value === undefined || value === "") return undefined
+  const num = Number(value)
+  return Number.isFinite(num) ? Math.round(num) : undefined
+}
+
+function getCustomerId(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    data.customer_id ||
+    data.customerId ||
+    data.customer?.id ||
+    data.transaction?.customer_id ||
+    data.transaction?.customerId ||
+    data.subscription?.customer_id ||
+    data.subscription?.customerId ||
+    null
+  )
+}
+
+function getSubscriptionId(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    data.subscription_id ||
+    data.subscriptionId ||
+    data.subscription?.id ||
+    data.transaction?.subscription_id ||
+    data.transaction?.subscriptionId ||
+    null
+  )
+}
+
+function getTransactionId(event: PaddleEvent) {
+  const data = event.data || {}
+
+  if (String(event.event_type || "").startsWith("transaction.")) {
+    return data.id || null
+  }
+
+  return (
+    data.transaction_id ||
+    data.transactionId ||
+    data.transaction?.id ||
+    null
+  )
+}
+
+function getPriceId(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    data.items?.[0]?.price?.id ||
+    data.items?.[0]?.price_id ||
+    data.items?.[0]?.priceId ||
+    data.price?.id ||
+    data.price_id ||
+    data.priceId ||
+    data.transaction?.items?.[0]?.price?.id ||
+    data.subscription?.items?.[0]?.price?.id ||
+    null
+  )
+}
+
+function getCurrency(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    data.currency_code ||
+    data.currencyCode ||
+    data.details?.totals?.currency_code ||
+    data.details?.totals?.currencyCode ||
+    data.totals?.currency_code ||
+    data.totals?.currencyCode ||
+    data.items?.[0]?.price?.unit_price?.currency_code ||
+    null
+  )
+}
+
+function getTotals(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return data.details?.totals || data.totals || data.adjusted_totals || null
+}
+
+function getAmountCents(event: PaddleEvent) {
+  const totals = getTotals(event)
+  return asCents(totals?.subtotal)
+}
+
+function getTaxCents(event: PaddleEvent) {
+  const totals = getTotals(event)
+  return asCents(totals?.tax || totals?.grand_total_tax)
+}
+
+function getTotalCents(event: PaddleEvent) {
+  const totals = getTotals(event)
+  return asCents(totals?.total || totals?.grand_total)
+}
+
+function getBillingInterval(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    data.items?.[0]?.price?.billing_cycle?.interval ||
+    data.subscription?.items?.[0]?.price?.billing_cycle?.interval ||
+    data.billing_cycle?.interval ||
+    null
+  )
+}
+
+function getBillingPeriod(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    data.billing_period ||
+    data.billingPeriod ||
+    data.current_billing_period ||
+    data.currentBillingPeriod ||
+    data.subscription?.billing_period ||
+    data.subscription?.current_billing_period ||
+    null
+  )
+}
+
+function getPeriodStartsAt(event: PaddleEvent) {
+  const period = getBillingPeriod(event)
+  return asDate(period?.starts_at || period?.startsAt)
+}
+
+function getPeriodEndsAt(event: PaddleEvent) {
+  const period = getBillingPeriod(event)
+  return asDate(period?.ends_at || period?.endsAt)
+}
+
+function getInvoiceUrl(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    data.invoice_url ||
+    data.invoiceUrl ||
+    data.receipt_url ||
+    data.receiptUrl ||
+    data.checkout?.url ||
+    null
+  )
+}
+
+function getDiscountData(event: PaddleEvent) {
+  const data = event.data || {}
+  const discount =
+    data.discount ||
+    data.discounts?.[0] ||
+    data.discount_id ||
+    data.discountId ||
+    null
+
+  return {
+    id:
+      (typeof discount === "string" ? discount : discount?.id) ||
+      data.discount_id ||
+      data.discountId ||
+      null,
+    code:
+      discount?.code ||
+      discount?.coupon_code ||
+      discount?.couponCode ||
+      data.discount_code ||
+      data.discountCode ||
+      null,
+    amount:
+      discount?.amount ||
+      discount?.amount_off ||
+      discount?.amountOff ||
+      getTotals(event)?.discount ||
+      null,
+  }
+}
+
 async function findProfileForEvent(event: PaddleEvent) {
   const { userId, email } = getUserIdentifier(event)
 
@@ -197,16 +384,46 @@ async function activatePaidAccess(event: PaddleEvent) {
     return
   }
 
+  const now = new Date()
   const plan = getPlanFromEvent(event) || "premium"
+  const discount = getDiscountData(event)
+  const eventType = event.event_type || ""
 
   await prisma.profiles.update({
     where: { id: profile.id },
     data: {
       subscription_tier: plan,
+      billing_status: "active",
+
+      paddle_customer_id: getCustomerId(event) || undefined,
+      paddle_subscription_id: getSubscriptionId(event) || undefined,
+      paddle_transaction_id: getTransactionId(event) || undefined,
+      paddle_price_id: getPriceId(event) || undefined,
+
+      billing_currency: getCurrency(event) || undefined,
+      billing_amount_cents: getAmountCents(event) ?? undefined,
+      billing_tax_cents: getTaxCents(event) ?? undefined,
+      billing_total_cents: getTotalCents(event) ?? undefined,
+      billing_interval: getBillingInterval(event) || undefined,
+
+      billing_started_at: eventType === "subscription.created" ? now : undefined,
+      billing_period_starts_at: getPeriodStartsAt(event) || undefined,
+      billing_period_ends_at: getPeriodEndsAt(event) || undefined,
+      billing_cancelled_at: null,
+      billing_last_paid_at:
+        eventType === "transaction.completed" || eventType === "transaction.paid"
+          ? asDate(event.data?.billed_at) || asDate(event.data?.payments?.[0]?.captured_at) || now
+          : undefined,
+
+      billing_discount_id: discount.id || undefined,
+      billing_discount_code: discount.code || undefined,
+      billing_discount_amount: discount.amount ? String(discount.amount) : undefined,
+      billing_invoice_url: getInvoiceUrl(event) || undefined,
+
       mbe_access: true,
       is_blocked: false,
       pending_deletion: false,
-      updated_at: new Date(),
+      updated_at: now,
     },
   })
 
@@ -216,6 +433,10 @@ async function activatePaidAccess(event: PaddleEvent) {
     profile_id: profile.id,
     email: profile.email,
     plan,
+    customer_id: getCustomerId(event),
+    subscription_id: getSubscriptionId(event),
+    transaction_id: getTransactionId(event),
+    price_id: getPriceId(event),
   })
 }
 
@@ -233,12 +454,21 @@ async function restrictPaidAccess(event: PaddleEvent) {
     return
   }
 
+  const eventType = event.event_type || ""
+  const now = new Date()
+
   await prisma.profiles.update({
     where: { id: profile.id },
     data: {
       subscription_tier: "free",
+      billing_status:
+        eventType === "subscription.past_due" || eventType === "transaction.payment_failed"
+          ? "past_due"
+          : "inactive",
       mbe_access: false,
-      updated_at: new Date(),
+      billing_cancelled_at:
+        eventType === "subscription.canceled" ? now : undefined,
+      updated_at: now,
     },
   })
 
