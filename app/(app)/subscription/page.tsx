@@ -245,16 +245,6 @@ export default function SubscriptionPage() {
   }
 
   async function openBillingPortal(action: BillingPortalAction) {
-    const portalWindow = window.open("about:blank", "_blank")
-
-    if (portalWindow) {
-      portalWindow.document.write(
-        "<!doctype html><html><head><title>Opening Paddle...</title></head><body style='font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; padding: 32px; color: #111827;'><h2 style='margin: 0 0 8px;'>Opening Paddle...</h2><p style='margin: 0; color: #6b7280;'>Please wait while we prepare your secure billing portal.</p></body></html>",
-      )
-      portalWindow.document.close()
-      portalWindow.opener = null
-    }
-
     try {
       const res = await fetch("/api/paddle/customer-portal", {
         method: "POST",
@@ -267,7 +257,6 @@ export default function SubscriptionPage() {
       const data = await res.json().catch(() => null)
 
       if (!res.ok || !data?.url) {
-        portalWindow?.close()
         window.alert(
           data?.error ||
             "Unable to open Paddle billing portal. Please try again or contact billing help.",
@@ -275,15 +264,9 @@ export default function SubscriptionPage() {
         return
       }
 
-      if (portalWindow) {
-        portalWindow.location.href = data.url
-        return
-      }
-
-      window.alert("Please allow pop-ups for Lexora Prep, then try again.")
+      window.open(data.url, "_blank", "noopener,noreferrer")
     } catch (err) {
       console.error("OPEN BILLING PORTAL ERROR:", err)
-      portalWindow?.close()
       window.alert(
         "Unable to open Paddle billing portal. Please try again or contact billing help.",
       )
