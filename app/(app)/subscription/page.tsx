@@ -59,6 +59,7 @@ type SupportTicket = {
 }
 
 type BillingPortalAction =
+  | "overview"
   | "manage_subscription"
   | "update_payment_method"
   | "cancel_subscription"
@@ -263,7 +264,7 @@ export default function SubscriptionPage() {
         return
       }
 
-      window.location.href = data.url
+      window.open(data.url, "_blank", "noopener,noreferrer")
     } catch (err) {
       console.error("OPEN BILLING PORTAL ERROR:", err)
       window.alert(
