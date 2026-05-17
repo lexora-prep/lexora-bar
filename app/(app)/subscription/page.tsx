@@ -1,7 +1,7 @@
 "use client"
 
 import { FormEvent, useEffect, useMemo, useState } from "react"
-import { Check, HelpCircle, Loader2, RefreshCcw, Send, X } from "lucide-react"
+import { Check, ChevronLeft, HelpCircle, Loader2, RefreshCcw, Send, X } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 type ProfileData = {
@@ -192,6 +192,7 @@ export default function SubscriptionPage() {
   const [supportSubject, setSupportSubject] = useState("Billing or payment issue")
   const [supportMessage, setSupportMessage] = useState("")
   const [tickets, setTickets] = useState<SupportTicket[]>([])
+  const [invoiceHistoryOpen, setInvoiceHistoryOpen] = useState(false)
 
   async function loadSubscription(showSpinner = true) {
     try {
@@ -301,6 +302,15 @@ export default function SubscriptionPage() {
       console.error("OPEN BILLING PORTAL ERROR:", err)
       setError("Unable to open Paddle billing portal.")
     }
+  }
+
+  function openLatestInvoice() {
+    if (profile?.billing_invoice_url) {
+      window.open(profile.billing_invoice_url, "_blank", "noopener,noreferrer")
+      return
+    }
+
+    openBillingPortal("invoices")
   }
 
   async function submitSupportTicket(event: FormEvent<HTMLFormElement>) {
@@ -466,45 +476,49 @@ export default function SubscriptionPage() {
                 <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-slate-400">
                   Payment history
                 </h3>
-                <span className="text-[12px] font-medium text-slate-400">
-                  Latest record
-                </span>
+
+                {isPaid ? (
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceHistoryOpen(true)}
+                    className="rounded-full border border-slate-200 px-4 py-1.5 text-[12px] font-semibold text-slate-900 hover:bg-white"
+                  >
+                    View all
+                  </button>
+                ) : (
+                  <span className="text-[12px] font-medium text-slate-400">
+                    No records yet
+                  </span>
+                )}
               </div>
 
               <div className="border-y border-slate-200">
                 {isPaid ? (
-                  <div className="grid grid-cols-[1fr_120px_120px_120px] items-center gap-4 py-3 text-[13px]">
-                    <div>
-                      <div className="font-semibold text-slate-900">
-                        {plan.label}
-                      </div>
-                      <div className="mt-0.5 text-[12px] font-medium text-slate-500">
-                        Billing period ends {nextRenewal}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                        Paid
-                      </div>
-                      <div className="mt-1 font-semibold">{total}</div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                        Tax/VAT
-                      </div>
-                      <div className="mt-1 font-semibold">{tax}</div>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                        Status
-                      </div>
-                      <div className="mt-1">
-                        <StatusText active={true} />
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-[1fr_100px_90px_70px] items-center gap-4 py-3 text-[13px]">
+                    <span className="font-medium text-slate-900">
+                      {profile?.billing_last_paid_at
+                        ? formatDate(profile.billing_last_paid_at)
+                        : "Latest payment"}
+                    </span>
+
+                    <span className="font-medium text-slate-500">
+                      {total}
+                    </span>
+
+                    <span className="justify-self-start rounded-md bg-emerald-50 px-2 py-1 text-[12px] font-semibold text-emerald-700">
+                      Paid
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={openLatestInvoice}
+                      className="justify-self-end text-[13px] font-semibold text-slate-900 underline"
+                    >
+                      View
+                    </button>
                   </div>
                 ) : (
-                  <div className="py-4 text-[13px] font-medium text-slate-500">
+                  <div className="py-5 text-center text-[13px] font-medium text-slate-500">
                     No payment history yet.
                   </div>
                 )}
@@ -680,6 +694,66 @@ export default function SubscriptionPage() {
           </div>
         ) : null}
       </div>
+
+      {invoiceHistoryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6 backdrop-blur-sm">
+          <div className="max-h-[86vh] w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setInvoiceHistoryOpen(false)}
+                  className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+
+                <h2 className="text-[20px] font-semibold tracking-[-0.02em]">
+                  Invoices
+                </h2>
+              </div>
+            </div>
+
+            <div className="max-h-[calc(86vh-64px)] overflow-y-auto p-5">
+              <div className="border-y border-slate-200">
+                {isPaid ? (
+                  <div className="grid grid-cols-[1fr_110px_90px_70px] items-center gap-4 py-3 text-[13px]">
+                    <span className="font-medium text-slate-900">
+                      {profile?.billing_last_paid_at
+                        ? formatDate(profile.billing_last_paid_at)
+                        : "Latest payment"}
+                    </span>
+
+                    <span className="font-medium text-slate-500">
+                      {total}
+                    </span>
+
+                    <span className="justify-self-start rounded-md bg-emerald-50 px-2 py-1 text-[12px] font-semibold text-emerald-700">
+                      Paid
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={openLatestInvoice}
+                      className="justify-self-end text-[13px] font-semibold text-slate-900 underline"
+                    >
+                      View
+                    </button>
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-[13px] font-medium text-slate-500">
+                    No invoices yet.
+                  </div>
+                )}
+              </div>
+
+              <p className="mt-4 text-[12px] font-medium leading-5 text-slate-400">
+                Older invoice records will appear here after each successful Paddle billing event is stored.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {supportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6 backdrop-blur-sm">
