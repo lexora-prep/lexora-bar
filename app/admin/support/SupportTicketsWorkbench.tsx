@@ -3,22 +3,24 @@
 import Link from "next/link"
 import { useMemo, useState, useTransition } from "react"
 import {
-  AlertTriangle,
+  BarChart3,
+  Bell,
   Check,
-  Circle,
+  FileText,
   Filter,
   Grid2X2,
   Inbox,
+  LinkIcon,
   Menu,
   MessageSquare,
   MoreVertical,
   Paperclip,
   Search,
   Send,
-  Settings2,
+  Settings,
   SlidersHorizontal,
-  TrendingUp,
   UserRound,
+  Users,
   X,
 } from "lucide-react"
 
@@ -71,6 +73,7 @@ const priorityOptions = ["normal", "high"]
 
 function formatShortTime(value: string) {
   const date = new Date(value)
+
   if (Number.isNaN(date.getTime())) return ""
 
   return new Intl.DateTimeFormat("en-US", {
@@ -81,6 +84,7 @@ function formatShortTime(value: string) {
 
 function formatDate(value: string) {
   const date = new Date(value)
+
   if (Number.isNaN(date.getTime())) return "Not available"
 
   return new Intl.DateTimeFormat("en-US", {
@@ -92,6 +96,7 @@ function formatDate(value: string) {
 
 function formatDateTime(value: string) {
   const date = new Date(value)
+
   if (Number.isNaN(date.getTime())) return "Not available"
 
   return new Intl.DateTimeFormat("en-US", {
@@ -117,6 +122,10 @@ function normalizeStatus(value: string) {
   return "open"
 }
 
+function normalizePriority(value: string) {
+  return value.toLowerCase() === "high" ? "high" : "normal"
+}
+
 function statusLabel(value: string) {
   const status = normalizeStatus(value)
 
@@ -128,23 +137,7 @@ function statusLabel(value: string) {
 }
 
 function priorityLabel(value: string) {
-  return value.toLowerCase() === "high" ? "High" : "Normal"
-}
-
-function statusBadgeClass(value: string) {
-  const status = normalizeStatus(value)
-
-  if (status === "resolved") return "bg-emerald-50 text-emerald-700"
-  if (status === "closed") return "bg-slate-100 text-slate-500"
-  if (status === "pending") return "bg-amber-50 text-amber-700"
-
-  return "bg-orange-50 text-orange-700"
-}
-
-function priorityBadgeClass(value: string) {
-  return value.toLowerCase() === "high"
-    ? "bg-red-50 text-red-600"
-    : "bg-amber-50 text-amber-700"
+  return normalizePriority(value) === "high" ? "High" : "Normal"
 }
 
 function getPreview(ticket: SupportTicketForWorkbench) {
@@ -157,13 +150,87 @@ function ticketNumber(index: number) {
   return `#TKT-${String(index + 1).padStart(4, "0")}`
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function StatusPill({ status }: { status: string }) {
+  const normalized = normalizeStatus(status)
+
+  if (normalized === "resolved") {
+    return (
+      <span className="inline-flex rounded-full bg-[rgba(13,160,96,0.1)] px-[9px] py-[3px] text-[11px] font-medium text-[#0da060]">
+        Resolved
+      </span>
+    )
+  }
+
+  if (normalized === "closed") {
+    return (
+      <span className="inline-flex rounded-full bg-[rgba(17,19,24,0.06)] px-[9px] py-[3px] text-[11px] font-medium text-[#7f869e]">
+        Closed
+      </span>
+    )
+  }
+
+  if (normalized === "pending") {
+    return (
+      <span className="inline-flex rounded-full bg-[rgba(180,83,9,0.1)] px-[9px] py-[3px] text-[11px] font-medium text-[#b45309]">
+        Pending
+      </span>
+    )
+  }
+
   return (
-    <div>
-      <div className="text-[11px] font-semibold text-[#B8C0D6]">{label}</div>
-      <div className="mt-1 break-words text-xs font-semibold text-slate-700">
+    <span className="inline-flex rounded-full bg-[rgba(180,83,9,0.1)] px-[9px] py-[3px] text-[11px] font-medium text-[#b45309]">
+      Open
+    </span>
+  )
+}
+
+function PriorityPill({ priority }: { priority: string }) {
+  const normalized = normalizePriority(priority)
+
+  if (normalized === "high") {
+    return (
+      <span className="inline-flex rounded-full bg-[rgba(220,38,38,0.09)] px-[9px] py-[3px] text-[11px] font-medium text-[#dc2626]">
+        High
+      </span>
+    )
+  }
+
+  return (
+    <span className="inline-flex rounded-full bg-[rgba(180,83,9,0.1)] px-[9px] py-[3px] text-[11px] font-medium text-[#b45309]">
+      Normal
+    </span>
+  )
+}
+
+function MiniPriorityPill({ priority }: { priority: string }) {
+  const normalized = normalizePriority(priority)
+
+  if (normalized === "high") {
+    return (
+      <span className="rounded-full bg-[rgba(220,38,38,0.18)] px-[6px] py-[1.5px] text-[10px] font-medium text-[#fc9393]">
+        high
+      </span>
+    )
+  }
+
+  return (
+    <span className="rounded-full bg-[rgba(180,83,9,0.18)] px-[6px] py-[1.5px] text-[10px] font-medium text-[#fbbf5a]">
+      normal
+    </span>
+  )
+}
+
+function InfoRow({ label, value, email = false }: { label: string; value: string; email?: boolean }) {
+  return (
+    <div className="mb-[10px] flex flex-col gap-[2px] last:mb-0">
+      <span className="text-[11px] font-normal text-[#b4b9cc]">{label}</span>
+      <span
+        className={`font-medium text-[#42475a] ${
+          email ? "break-all text-[12px] font-normal" : "text-[12.5px]"
+        }`}
+      >
         {value}
-      </div>
+      </span>
     </div>
   )
 }
@@ -247,152 +314,189 @@ export default function SupportTicketsWorkbench({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex overflow-hidden bg-[#F7F7F5] text-slate-950">
-      <aside className="flex w-[48px] shrink-0 flex-col items-center border-r border-[#222733] bg-[#10131A] py-3 text-slate-500">
+    <div className="fixed inset-0 z-[9999] flex h-screen w-screen overflow-hidden bg-[#0f1117] font-sans text-[#111318]">
+      <aside className="z-20 flex h-screen w-[56px] shrink-0 flex-col items-center gap-1 border-r border-white/[0.05] bg-[#0f1117] px-0 pb-5 pt-[14px]">
         <Link
           href="/admin"
           prefetch={false}
           title="Back to Admin Dashboard"
-          className="mb-6 flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-white hover:bg-indigo-400"
+          className="mb-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-[#6c5ce7] text-white transition hover:bg-[#7c6cf3]"
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="h-[15px] w-[15px]" />
         </Link>
 
-        <div className="flex flex-1 flex-col items-center gap-4">
-          <Link
-            href="/admin"
-            prefetch={false}
-            title="Dashboard"
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
-          >
-            <Grid2X2 className="h-4 w-4" />
-          </Link>
+        <Link
+          href="/admin"
+          prefetch={false}
+          title="Dashboard"
+          className="flex h-9 w-9 items-center justify-center rounded-[9px] text-white/30 transition hover:bg-white/[0.06] hover:text-white/70"
+        >
+          <Grid2X2 className="h-4 w-4" />
+        </Link>
 
-          <Link
-            href="/admin/users"
-            prefetch={false}
-            title="Users"
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
-          >
-            <UserRound className="h-4 w-4" />
-          </Link>
+        <Link
+          href="/admin/users"
+          prefetch={false}
+          title="Users"
+          className="flex h-9 w-9 items-center justify-center rounded-[9px] text-white/30 transition hover:bg-white/[0.06] hover:text-white/70"
+        >
+          <Users className="h-4 w-4" />
+        </Link>
 
-          <Link
-            href="/admin/support"
-            prefetch={false}
-            title="Support Tickets"
-            className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white"
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
-          </Link>
+        <Link
+          href="/admin/support"
+          prefetch={false}
+          title="Support"
+          className="relative flex h-9 w-9 items-center justify-center rounded-[9px] bg-white/10 text-white/90 transition"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="absolute right-[5px] top-[5px] h-[7px] w-[7px] rounded-full border-[1.5px] border-[#0f1117] bg-[#dc2626]" />
+        </Link>
 
-          <Link
-            href="/admin/billing"
-            prefetch={false}
-            title="Billing"
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
-          >
-            <Settings2 className="h-4 w-4" />
-          </Link>
+        <Link
+          href="/admin/rules"
+          prefetch={false}
+          title="BLL Rules"
+          className="flex h-9 w-9 items-center justify-center rounded-[9px] text-white/30 transition hover:bg-white/[0.06] hover:text-white/70"
+        >
+          <FileText className="h-4 w-4" />
+        </Link>
 
-          <Link
-            href="/admin/analytics"
-            prefetch={false}
-            title="Analytics"
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
-          >
-            <TrendingUp className="h-4 w-4" />
-          </Link>
+        <Link
+          href="/admin/analytics"
+          prefetch={false}
+          title="Analytics"
+          className="flex h-9 w-9 items-center justify-center rounded-[9px] text-white/30 transition hover:bg-white/[0.06] hover:text-white/70"
+        >
+          <BarChart3 className="h-4 w-4" />
+        </Link>
 
-          <Link
-            href="/admin/settings"
-            prefetch={false}
-            title="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
-          >
-            <AlertTriangle className="h-4 w-4" />
-          </Link>
-        </div>
+        <Link
+          href="/admin/settings"
+          prefetch={false}
+          title="Settings"
+          className="flex h-9 w-9 items-center justify-center rounded-[9px] text-white/30 transition hover:bg-white/[0.06] hover:text-white/70"
+        >
+          <Settings className="h-4 w-4" />
+        </Link>
 
-        <div className="mt-auto flex flex-col items-center gap-4">
-          <Circle className="h-3.5 w-3.5" />
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500 text-xs font-bold text-white">
+        <div className="mt-auto flex flex-col items-center gap-1">
+          <button
+            type="button"
+            title="Notifications"
+            className="flex h-9 w-9 items-center justify-center rounded-[9px] text-white/30 transition hover:bg-white/[0.06] hover:text-white/70"
+          >
+            <Bell className="h-[15px] w-[15px]" />
+          </button>
+
+          <button
+            type="button"
+            title={admin.fullName || admin.email}
+            className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] text-[11px] font-semibold text-white"
+          >
             {admin.fullName ? admin.fullName.slice(0, 1).toUpperCase() : "V"}
-          </div>
+          </button>
         </div>
       </aside>
 
-      <aside className="flex w-[300px] shrink-0 flex-col border-r border-[#252A36] bg-[#171A22] text-white">
-        <div className="flex h-12 items-center justify-between px-4">
-          <div className="font-serif text-[17px] text-white">Tickets</div>
-          <div className="flex items-center gap-3 text-slate-500">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <Filter className="h-3.5 w-3.5" />
-          </div>
-        </div>
+      <aside className="flex h-screen w-[300px] shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-[#161921]">
+        <div className="shrink-0 border-b border-white/[0.06] px-[14px] pb-3 pt-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="font-serif text-[17px] font-normal tracking-[-0.02em] text-white/90">
+              Tickets
+            </span>
 
-        <div className="px-3 pb-3">
-          <div className="flex h-9 items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 text-slate-400">
-            <Search className="h-4 w-4" />
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                title="Sort"
+                className="flex h-[26px] w-[26px] items-center justify-center rounded-md text-white/30 transition hover:bg-white/[0.07] hover:text-white/70"
+              >
+                <SlidersHorizontal className="h-[14px] w-[14px]" />
+              </button>
+
+              <button
+                type="button"
+                title="Filter"
+                className="flex h-[26px] w-[26px] items-center justify-center rounded-md text-white/30 transition hover:bg-white/[0.07] hover:text-white/70"
+              >
+                <Filter className="h-[14px] w-[14px]" />
+              </button>
+            </div>
+          </div>
+
+          <div className="relative mb-[10px]">
+            <Search className="pointer-events-none absolute left-[9px] top-1/2 h-3 w-3 -translate-y-1/2 text-white/20" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search tickets..."
-              className="h-full min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
+              className="h-[34px] w-full rounded-[7px] border border-white/[0.07] bg-white/[0.05] pl-[30px] pr-[10px] text-[12.5px] text-white/75 outline-none transition placeholder:text-white/20 focus:border-white/[0.14] focus:bg-white/[0.07]"
             />
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+          <div className="flex gap-[2px]">
             <button
               type="button"
               onClick={() => setFilter("open")}
-              className={`rounded-md px-2 py-1 ${
-                filter === "open" ? "bg-white/15 text-white" : "text-slate-500"
+              className={`flex flex-1 items-center justify-center gap-[5px] whitespace-nowrap rounded-md px-1 py-[5px] text-[11.5px] font-medium transition ${
+                filter === "open" ? "bg-white/[0.09] text-white/85" : "text-white/30 hover:text-white/60"
               }`}
             >
-              Open <span className="ml-1 rounded-full bg-white/10 px-1">{counts.open}</span>
+              Open
+              <span className="min-w-[18px] rounded-full bg-white/[0.08] px-[5px] py-px text-center text-[10.5px] text-white/40">
+                {counts.open}
+              </span>
             </button>
 
             <button
               type="button"
               onClick={() => setFilter("pending")}
-              className={`rounded-md px-2 py-1 ${
-                filter === "pending" ? "bg-white/15 text-white" : "text-slate-500"
+              className={`flex flex-1 items-center justify-center gap-[5px] whitespace-nowrap rounded-md px-1 py-[5px] text-[11.5px] font-medium transition ${
+                filter === "pending" ? "bg-white/[0.09] text-white/85" : "text-white/30 hover:text-white/60"
               }`}
             >
-              Pending <span className="ml-1 rounded-full bg-white/10 px-1">{counts.pending}</span>
+              Pending
+              <span className="min-w-[18px] rounded-full bg-white/[0.08] px-[5px] py-px text-center text-[10.5px] text-white/40">
+                {counts.pending}
+              </span>
             </button>
 
             <button
               type="button"
               onClick={() => setFilter("resolved")}
-              className={`rounded-md px-2 py-1 ${
-                filter === "resolved" ? "bg-white/15 text-white" : "text-slate-500"
+              className={`flex flex-1 items-center justify-center gap-[5px] whitespace-nowrap rounded-md px-1 py-[5px] text-[11.5px] font-medium transition ${
+                filter === "resolved" ? "bg-white/[0.09] text-white/85" : "text-white/30 hover:text-white/60"
               }`}
             >
-              Resolved <span className="ml-1 rounded-full bg-white/10 px-1">{counts.resolved}</span>
+              Resolved
+              <span className="min-w-[18px] rounded-full bg-white/[0.08] px-[5px] py-px text-center text-[10.5px] text-white/40">
+                {counts.resolved}
+              </span>
             </button>
 
             <button
               type="button"
               onClick={() => setFilter("all")}
-              className={`rounded-md px-2 py-1 ${
-                filter === "all" ? "bg-white/15 text-white" : "text-slate-500"
+              className={`flex flex-1 items-center justify-center gap-[5px] whitespace-nowrap rounded-md px-1 py-[5px] text-[11.5px] font-medium transition ${
+                filter === "all" ? "bg-white/[0.09] text-white/85" : "text-white/30 hover:text-white/60"
               }`}
             >
-              All <span className="ml-1 rounded-full bg-white/10 px-1">{counts.all}</span>
+              All
+              <span className="min-w-[18px] rounded-full bg-white/[0.08] px-[5px] py-px text-center text-[10.5px] text-white/40">
+                {counts.all}
+              </span>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="flex-1 overflow-y-auto px-2 py-[6px]">
           {filteredTickets.length === 0 ? (
-            <div className="px-3 py-8 text-center text-xs text-slate-500">
+            <div className="px-3 py-8 text-center text-[12px] text-white/25">
               No tickets found.
             </div>
           ) : (
-            filteredTickets.map((ticket, index) => {
+            filteredTickets.map((ticket) => {
               const active = selectedTicket?.id === ticket.id
 
               return (
@@ -400,39 +504,40 @@ export default function SupportTicketsWorkbench({
                   key={ticket.id}
                   type="button"
                   onClick={() => setSelectedTicketId(ticket.id)}
-                  className={`mb-2 w-full rounded-lg border px-3 py-3 text-left transition ${
+                  className={`relative mb-[2px] w-full rounded-[9px] border px-[10px] py-[10px] text-left transition ${
                     active
-                      ? "border-white/10 bg-white/10"
-                      : "border-transparent hover:bg-white/5"
+                      ? "border-white/[0.08] bg-white/[0.07]"
+                      : "border-transparent hover:bg-white/[0.04]"
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="truncate text-xs font-semibold text-white">
-                      {ticket.subject}
-                    </div>
-                    <div className="shrink-0 text-[10px] text-slate-500">
-                      {formatShortTime(ticket.updated_at)}
-                    </div>
-                  </div>
+                  {active ? (
+                    <span className="absolute left-[2px] top-[13px] h-[6px] w-[6px] rounded-full bg-[#2563eb]" />
+                  ) : null}
 
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <div className="truncate text-[11px] text-slate-500">
-                      {ticket.email}
-                    </div>
+                  <div className="mb-1 flex items-start justify-between gap-[6px]">
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-[10px] ${priorityBadgeClass(
-                        ticket.priority,
-                      )}`}
+                      className={`flex-1 text-[12.5px] font-medium leading-[1.3] ${
+                        active ? "text-white/95" : "text-white/80"
+                      }`}
                     >
-                      {priorityLabel(ticket.priority).toLowerCase()}
+                      {ticket.subject}
+                    </span>
+
+                    <span className="mt-px shrink-0 text-[10.5px] text-white/20">
+                      {formatShortTime(ticket.updated_at)}
                     </span>
                   </div>
 
-                  <div className="mt-2 line-clamp-1 text-[11px] text-slate-500">
-                    {getPreview(ticket)}
+                  <div className="mb-[5px] flex flex-wrap items-center gap-[5px]">
+                    <span className="text-[11px] font-light text-white/30">
+                      {ticket.email}
+                    </span>
+                    <MiniPriorityPill priority={ticket.priority} />
                   </div>
 
-                  <div className="sr-only">{ticketNumber(index)}</div>
+                  <div className="truncate text-[11.5px] font-light text-white/25">
+                    {getPreview(ticket)}
+                  </div>
                 </button>
               )
             })
@@ -440,38 +545,27 @@ export default function SupportTicketsWorkbench({
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col bg-[#FBFBFA]">
+      <main className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-[#f7f7f5]">
         {selectedTicket ? (
           <>
-            <header className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
-              <div className="flex min-w-0 items-center gap-3">
-                <h1 className="truncate text-sm font-bold text-slate-950">
+            <header className="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[rgba(17,19,24,0.08)] bg-white px-5">
+              <div className="flex min-w-0 items-center gap-[10px]">
+                <div className="truncate text-[14px] font-semibold text-[#111318]">
                   {selectedTicket.subject}
-                </h1>
+                </div>
 
-                <span
-                  className={`rounded-full px-2 py-1 text-[11px] font-semibold ${statusBadgeClass(
-                    selectedTicket.status,
-                  )}`}
-                >
-                  {statusLabel(selectedTicket.status)}
-                </span>
-
-                <span
-                  className={`rounded-full px-2 py-1 text-[11px] font-semibold ${priorityBadgeClass(
-                    selectedTicket.priority,
-                  )}`}
-                >
-                  {priorityLabel(selectedTicket.priority)}
-                </span>
+                <div className="flex shrink-0 items-center gap-[5px]">
+                  <StatusPill status={selectedTicket.status} />
+                  <PriorityPill priority={selectedTicket.priority} />
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-[6px]">
                 <select
                   value={normalizeStatus(selectedTicket.status)}
                   onChange={(event) => updateStatus(event.target.value)}
                   disabled={isPending}
-                  className="h-8 rounded-md border border-orange-200 bg-orange-50 px-3 text-xs font-semibold text-orange-700 outline-none"
+                  className="h-[32px] cursor-pointer appearance-none rounded-[7px] border border-[rgba(180,83,9,0.18)] bg-[rgba(180,83,9,0.1)] bg-[url('data:image/svg+xml,%3Csvg_width=%2210%22_height=%2210%22_viewBox=%220_0_10_10%22_fill=%22none%22_xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cpath_d=%22M2_3.5l3_3_3-3%22_stroke=%22%23b45309%22_stroke-width=%221.4%22_stroke-linecap=%22round%22_stroke-linejoin=%22round%22/%3E%3C/svg%3E')] bg-[right_9px_center] bg-no-repeat px-3 py-[6px] pr-7 text-[12.5px] font-medium text-[#b45309] outline-none"
                 >
                   {statusOptions.map((status) => (
                     <option key={status} value={status}>
@@ -484,115 +578,127 @@ export default function SupportTicketsWorkbench({
                   type="button"
                   onClick={() => updateStatus("resolved")}
                   disabled={isPending}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                  className="inline-flex h-[32px] items-center gap-[6px] rounded-[7px] border border-[rgba(17,19,24,0.12)] bg-white px-[14px] text-[12.5px] font-medium text-[#42475a] transition hover:bg-[#f7f7f5] hover:text-[#111318] disabled:opacity-60"
                 >
-                  <Check className="h-3.5 w-3.5" />
+                  <Check className="h-3 w-3" />
                   Resolve
                 </button>
 
                 <button
                   type="button"
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  className="flex h-[32px] w-[36px] items-center justify-center rounded-[7px] border border-[rgba(17,19,24,0.12)] bg-white text-[#42475a] transition hover:bg-[#f7f7f5] hover:text-[#111318]"
                 >
-                  <MoreVertical className="h-4 w-4" />
+                  <MoreVertical className="h-[14px] w-[14px]" />
                 </button>
               </div>
             </header>
 
-            <div className="flex min-h-0 flex-1">
-              <section className="flex min-w-0 flex-1 flex-col">
-                <div className="flex-1 overflow-y-auto px-6 py-6">
-                  <div className="mb-6 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-slate-200" />
-                    <div className="text-[11px] text-[#8EA0BC]">
-                      {formatDate(selectedTicket.created_at)}
-                    </div>
-                    <div className="h-px flex-1 bg-slate-200" />
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-6 py-5">
+                  <div className="my-1 flex items-center gap-[10px] text-[11.5px] font-normal text-[#b4b9cc]">
+                    <div className="h-px flex-1 bg-[rgba(17,19,24,0.08)]" />
+                    {formatDate(selectedTicket.created_at)}
+                    <div className="h-px flex-1 bg-[rgba(17,19,24,0.08)]" />
                   </div>
 
-                  <div className="space-y-5">
-                    {selectedTicket.messages.map((message) => {
-                      const isSupport = message.sender.toLowerCase() === "support"
+                  {selectedTicket.messages.map((message) => {
+                    const isSupport = message.sender.toLowerCase() === "support"
 
-                      return (
-                        <div key={message.id} className={isSupport ? "flex justify-end" : ""}>
-                          <div className={`max-w-[720px] ${isSupport ? "text-right" : ""}`}>
-                            <div
-                              className={`mb-2 flex items-center gap-2 ${
-                                isSupport ? "justify-end" : ""
-                              }`}
-                            >
-                              {!isSupport ? (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
-                                  {safeInitials(selectedTicket.email)}
-                                </div>
-                              ) : null}
-
-                              <span className="text-xs font-semibold text-slate-700">
-                                {isSupport ? "Support" : selectedTicket.email}
-                              </span>
-
-                              <span className="text-xs text-[#8EA0BC]">
-                                {formatShortTime(message.created_at)}
-                              </span>
-
-                              {isSupport ? (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold text-white">
-                                  S
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div
-                              className={`rounded-lg border px-4 py-3 text-left text-sm leading-6 shadow-sm ${
-                                isSupport
-                                  ? "border-slate-200 bg-slate-900 text-white"
-                                  : "border-slate-200 bg-white text-slate-800"
-                              }`}
-                            >
-                              <div className="whitespace-pre-wrap">{message.message}</div>
-                            </div>
-
-                            {!isSupport ? (
-                              <div className="mt-2 text-xs text-slate-300">
-                                Ticket created · {formatDateTime(selectedTicket.created_at)}
-                              </div>
-                            ) : null}
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex max-w-[680px] flex-col gap-1 ${
+                          isSupport ? "self-end" : ""
+                        }`}
+                      >
+                        <div
+                          className={`flex items-center gap-2 ${
+                            isSupport ? "flex-row-reverse" : ""
+                          }`}
+                        >
+                          <div
+                            className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
+                              isSupport
+                                ? "bg-gradient-to-br from-[#6c5ce7] to-[#a29bfe] text-white"
+                                : "border border-[rgba(37,99,235,0.15)] bg-[rgba(37,99,235,0.09)] text-[#2563eb]"
+                            }`}
+                          >
+                            {isSupport ? "V" : safeInitials(selectedTicket.email)}
                           </div>
+
+                          <span className="text-[11.5px] font-semibold text-[#42475a]">
+                            {isSupport ? `${admin.fullName || "Vladimir"} · Support` : selectedTicket.email}
+                          </span>
+
+                          <span className="text-[11px] font-light text-[#b4b9cc]">
+                            {formatShortTime(message.created_at)}
+                          </span>
                         </div>
-                      )
-                    })}
+
+                        <div
+                          className={`whitespace-pre-wrap px-[14px] py-[11px] text-[13.5px] leading-[1.6] ${
+                            isSupport
+                              ? "rounded-[11px_3px_11px_11px] bg-[#0f1117] font-light text-white/90"
+                              : "rounded-[3px_11px_11px_11px] border border-[rgba(17,19,24,0.08)] bg-white font-normal text-[#111318]"
+                          }`}
+                        >
+                          {message.message}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <div className="flex items-center gap-2 py-[2px] text-[12px] font-normal text-[#b4b9cc]">
+                    <span className="ml-[10px] h-[5px] w-[5px] shrink-0 rounded-full bg-[rgba(17,19,24,0.12)]" />
+                    Ticket created · {formatDateTime(selectedTicket.created_at)}
                   </div>
                 </div>
 
-                <div className="shrink-0 border-t border-slate-200 bg-white px-5 py-4">
-                  <div className="mb-2 flex items-center gap-2">
+                <div className="shrink-0 border-t border-[rgba(17,19,24,0.08)] bg-white px-5 py-4">
+                  <div className="mb-[10px] flex items-center gap-[6px]">
                     <button
                       type="button"
-                      className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white"
+                      className="rounded-md bg-[#0f1117] px-3 py-[5px] text-[12px] font-medium text-white"
                     >
                       Reply
                     </button>
 
                     <button
                       type="button"
-                      className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500"
+                      className="rounded-md border border-[rgba(17,19,24,0.08)] bg-transparent px-3 py-[5px] text-[12px] font-medium text-[#7f869e] transition hover:bg-[#f7f7f5] hover:text-[#42475a]"
                     >
                       Note
                     </button>
 
-                    <div className="h-5 w-px bg-slate-200" />
+                    <div className="mx-[2px] h-[18px] w-px bg-[rgba(17,19,24,0.08)]" />
 
-                    <button type="button" className="text-xs font-bold text-slate-300">
-                      B
+                    <button
+                      type="button"
+                      className="flex h-[26px] w-[26px] items-center justify-center rounded-md text-[11px] text-[#b4b9cc] transition hover:bg-[#f7f7f5] hover:text-[#42475a]"
+                    >
+                      <strong>B</strong>
                     </button>
 
-                    <button type="button" className="text-xs italic text-slate-300">
-                      I
+                    <button
+                      type="button"
+                      className="flex h-[26px] w-[26px] items-center justify-center rounded-md text-[11px] text-[#b4b9cc] transition hover:bg-[#f7f7f5] hover:text-[#42475a]"
+                    >
+                      <em>I</em>
                     </button>
 
-                    <button type="button" className="text-slate-300">
-                      <Paperclip className="h-3.5 w-3.5" />
+                    <button
+                      type="button"
+                      className="flex h-[26px] w-[26px] items-center justify-center rounded-md text-[#b4b9cc] transition hover:bg-[#f7f7f5] hover:text-[#42475a]"
+                    >
+                      <LinkIcon className="h-[13px] w-[13px]" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="flex h-[26px] w-[26px] items-center justify-center rounded-md text-[#b4b9cc] transition hover:bg-[#f7f7f5] hover:text-[#42475a]"
+                    >
+                      <Paperclip className="h-[13px] w-[13px]" />
                     </button>
                   </div>
 
@@ -606,19 +712,19 @@ export default function SupportTicketsWorkbench({
                       }
                     }}
                     placeholder="Write a reply to the user... (⌘ + Enter to send)"
-                    className="h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-300 focus:border-slate-400"
+                    className="h-[88px] w-full resize-none rounded-[9px] border border-[rgba(17,19,24,0.12)] bg-[#fafaf9] px-[14px] py-[11px] text-[13.5px] font-light leading-[1.55] text-[#111318] outline-none transition placeholder:text-[#b4b9cc] focus:border-[#2563eb] focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.08)]"
                   />
 
-                  <div className="mt-3 flex items-center justify-between">
-                    <div className="text-xs text-[#8EA0BC]">
-                      Replying as {admin.fullName || admin.email} · Support
+                  <div className="mt-[10px] flex items-center justify-between">
+                    <div className="text-[11.5px] font-light text-[#b4b9cc]">
+                      Replying as <strong>{admin.fullName || "Vladimir"}</strong> · Support
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-[6px]">
                       <button
                         type="button"
                         onClick={() => setReplyText("")}
-                        className="h-9 rounded-md border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                        className="inline-flex h-[34px] items-center gap-[6px] rounded-[7px] border border-[rgba(17,19,24,0.12)] bg-white px-[14px] text-[12.5px] font-medium text-[#42475a] transition hover:bg-[#f7f7f5] hover:text-[#111318]"
                       >
                         Discard
                       </button>
@@ -627,9 +733,9 @@ export default function SupportTicketsWorkbench({
                         type="button"
                         onClick={submitReply}
                         disabled={isPending || !replyText.trim()}
-                        className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-4 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex h-[34px] items-center gap-[6px] rounded-[7px] border border-transparent bg-[#0f1117] px-[14px] text-[12.5px] font-medium text-white transition hover:bg-[#1d2130] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Send className="h-3.5 w-3.5" />
+                        <Send className="h-3 w-3" />
                         {isPending ? "Sending..." : "Send reply"}
                       </button>
                     </div>
@@ -637,30 +743,28 @@ export default function SupportTicketsWorkbench({
                 </div>
               </section>
 
-              <aside className="hidden w-[230px] shrink-0 border-l border-slate-200 bg-white xl:block">
-                <div className="border-b border-slate-200 px-4 py-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
-                    Ticket Info
+              <aside className="w-[220px] shrink-0 overflow-y-auto border-l border-[rgba(17,19,24,0.08)] bg-white py-5">
+                <div className="mb-4 border-b border-[rgba(17,19,24,0.08)] px-4 pb-4">
+                  <div className="mb-[10px] text-[10px] font-semibold uppercase tracking-[0.09em] text-[#b4b9cc]">
+                    Ticket info
                   </div>
 
-                  <div className="mt-4 space-y-3 text-xs">
-                    <InfoRow label="ID" value={ticketNumber(selectedTicketIndex)} />
-                    <InfoRow label="Category" value={selectedTicket.category} />
-                    <InfoRow label="Created" value={formatDateTime(selectedTicket.created_at)} />
-                    <InfoRow label="Last update" value={formatDateTime(selectedTicket.updated_at)} />
-                  </div>
+                  <InfoRow label="ID" value={ticketNumber(selectedTicketIndex)} />
+                  <InfoRow label="Category" value={selectedTicket.category} />
+                  <InfoRow label="Created" value={formatDateTime(selectedTicket.created_at)} />
+                  <InfoRow label="Last update" value={formatDateTime(selectedTicket.updated_at)} />
                 </div>
 
-                <div className="border-b border-slate-200 px-4 py-4">
-                  <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
+                <div className="mb-4 border-b border-[rgba(17,19,24,0.08)] px-4 pb-4">
+                  <div className="mb-[10px] text-[10px] font-semibold uppercase tracking-[0.09em] text-[#b4b9cc]">
                     Priority
                   </div>
 
                   <select
-                    value={selectedTicket.priority.toLowerCase() === "high" ? "high" : "normal"}
+                    value={normalizePriority(selectedTicket.priority)}
                     onChange={(event) => updatePriority(event.target.value)}
                     disabled={isPending}
-                    className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none"
+                    className="mb-[6px] h-[32px] w-full cursor-pointer appearance-none rounded-md border border-[rgba(17,19,24,0.12)] bg-[#f7f7f5] px-[9px] py-[6px] text-[12px] text-[#111318] outline-none"
                   >
                     {priorityOptions.map((priority) => (
                       <option key={priority} value={priority}>
@@ -669,7 +773,7 @@ export default function SupportTicketsWorkbench({
                     ))}
                   </select>
 
-                  <div className="mb-3 mt-5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
+                  <div className="mb-[10px] mt-[10px] text-[10px] font-semibold uppercase tracking-[0.09em] text-[#b4b9cc]">
                     Status
                   </div>
 
@@ -677,7 +781,7 @@ export default function SupportTicketsWorkbench({
                     value={normalizeStatus(selectedTicket.status)}
                     onChange={(event) => updateStatus(event.target.value)}
                     disabled={isPending}
-                    className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none"
+                    className="mb-[6px] h-[32px] w-full cursor-pointer appearance-none rounded-md border border-[rgba(17,19,24,0.12)] bg-[#f7f7f5] px-[9px] py-[6px] text-[12px] text-[#111318] outline-none"
                   >
                     {statusOptions.map((status) => (
                       <option key={status} value={status}>
@@ -687,62 +791,56 @@ export default function SupportTicketsWorkbench({
                   </select>
                 </div>
 
-                <div className="border-b border-slate-200 px-4 py-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
+                <div className="mb-4 border-b border-[rgba(17,19,24,0.08)] px-4 pb-4">
+                  <div className="mb-[10px] text-[10px] font-semibold uppercase tracking-[0.09em] text-[#b4b9cc]">
                     User
                   </div>
 
-                  <div className="mt-4 space-y-3 text-xs">
-                    <InfoRow label="Email" value={selectedTicket.email} />
-                    <InfoRow label="Plan" value={selectedTicket.userPlan} />
-                    <InfoRow label="Member since" value={selectedTicket.memberSince} />
-                  </div>
+                  <InfoRow label="Email" value={selectedTicket.email} email />
+                  <InfoRow label="Plan" value={selectedTicket.userPlan} />
+                  <InfoRow label="Member since" value={selectedTicket.memberSince} />
                 </div>
 
-                <div className="px-4 py-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
-                    Quick Actions
+                <div className="px-4">
+                  <div className="mb-[10px] text-[10px] font-semibold uppercase tracking-[0.09em] text-[#b4b9cc]">
+                    Quick actions
                   </div>
 
-                  <div className="mt-4 space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => updateStatus("resolved")}
-                      disabled={isPending}
-                      className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Mark resolved
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => updateStatus("resolved")}
+                    disabled={isPending}
+                    className="mb-[6px] inline-flex h-[34px] w-full items-center justify-center gap-[6px] rounded-[7px] border border-[rgba(13,160,96,0.18)] bg-[rgba(13,160,96,0.1)] text-[12px] font-medium text-[#0da060] transition hover:bg-[rgba(13,160,96,0.14)] disabled:opacity-60"
+                  >
+                    <Check className="h-[11px] w-[11px]" />
+                    Mark resolved
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => updateStatus("closed")}
-                      disabled={isPending}
-                      className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-red-50 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-60"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      Close ticket
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateStatus("closed")}
+                    disabled={isPending}
+                    className="inline-flex h-[34px] w-full items-center justify-center gap-[6px] rounded-[7px] border border-[rgba(220,38,38,0.15)] bg-[rgba(220,38,38,0.09)] text-[12px] font-medium text-[#dc2626] transition hover:bg-[rgba(220,38,38,0.14)] disabled:opacity-60"
+                  >
+                    <X className="h-[11px] w-[11px]" />
+                    Close ticket
+                  </button>
                 </div>
               </aside>
             </div>
           </>
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                <Inbox className="h-5 w-5" />
-              </div>
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-[#b4b9cc]">
+            <div className="mb-1 flex h-12 w-12 items-center justify-center rounded-xl border border-[rgba(17,19,24,0.08)] bg-white text-[#b4b9cc]">
+              <Inbox className="h-5 w-5" />
+            </div>
 
-              <div className="mt-3 text-sm font-semibold text-slate-900">
-                No ticket selected
-              </div>
+            <div className="text-[14px] font-medium text-[#7f869e]">
+              No ticket selected
+            </div>
 
-              <div className="mt-1 text-xs text-slate-500">
-                Select a ticket from the left panel.
-              </div>
+            <div className="text-[12.5px] text-[#b4b9cc]">
+              Select a ticket from the left panel.
             </div>
           </div>
         )}
