@@ -489,24 +489,41 @@
 
 .systemEvent {
   align-self: center;
-  max-width: 620px;
-  border: 1px solid #dbe5f2;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #64748b;
-  padding: 7px 12px;
+  max-width: 760px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #7b8ba5;
+  padding: 2px 0;
   text-align: center;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 400;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  line-height: 1.45;
+}
+
+.systemEvent::before,
+.systemEvent::after {
+  content: "";
+  width: 36px;
+  height: 1px;
+  background: #dbe5f2;
+}
+
+.systemEvent span {
+  display: inline;
 }
 
 .systemEvent small {
-  display: block;
-  margin-top: 2px;
-  color: #94a3b8;
-  font-size: 10.5px;
+  display: inline;
+  color: #9aa9bf;
+  font-size: 11.5px;
   font-weight: 400;
+  white-space: nowrap;
+}
+
+.systemEvent small::before {
+  content: "· ";
 }
 
 .messageBlock {
@@ -614,21 +631,20 @@
 }
 
 .closedReplyNotice {
-  border-radius: 12px;
-  border: 1px solid #dbe5f2;
+  border-top: 1px solid #dbe5f2;
   background: #f8fafc;
-  padding: 16px;
+  padding: 12px 4px 2px;
 }
 
 .closedReplyTitle {
-  color: #0f172a;
-  font-size: 13.5px;
-  font-weight: 600;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .closedReplyText {
-  margin-top: 4px;
-  color: #64748b;
+  margin-top: 3px;
+  color: #7b8ba5;
   font-size: 12.5px;
   font-weight: 400;
 }
