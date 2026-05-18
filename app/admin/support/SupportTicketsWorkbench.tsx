@@ -1,18 +1,24 @@
 "use client"
 
+import Link from "next/link"
 import { useMemo, useState, useTransition } from "react"
 import {
   AlertTriangle,
   Check,
   Circle,
   Filter,
+  Grid2X2,
   Inbox,
+  Menu,
   MessageSquare,
   MoreVertical,
   Paperclip,
   Search,
   Send,
+  Settings2,
   SlidersHorizontal,
+  TrendingUp,
+  UserRound,
   X,
 } from "lucide-react"
 
@@ -154,7 +160,7 @@ function ticketNumber(index: number) {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] font-semibold text-slate-300">{label}</div>
+      <div className="text-[11px] font-semibold text-[#B8C0D6]">{label}</div>
       <div className="mt-1 break-words text-xs font-semibold text-slate-700">
         {value}
       </div>
@@ -241,21 +247,92 @@ export default function SupportTicketsWorkbench({
   }
 
   return (
-    <div className="flex h-[calc(100vh-56px)] min-w-0 bg-[#F6F7F9] text-slate-950">
-      <aside className="flex w-[300px] shrink-0 flex-col border-r border-slate-200 bg-[#171A22] text-white">
-        <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-indigo-400" />
-            <div className="text-sm font-semibold">Tickets</div>
-          </div>
+    <div className="fixed inset-0 z-50 flex overflow-hidden bg-[#F7F7F5] text-slate-950">
+      <aside className="flex w-[48px] shrink-0 flex-col items-center border-r border-[#222733] bg-[#10131A] py-3 text-slate-500">
+        <Link
+          href="/admin"
+          prefetch={false}
+          title="Back to Admin Dashboard"
+          className="mb-6 flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-white hover:bg-indigo-400"
+        >
+          <Menu className="h-4 w-4" />
+        </Link>
 
-          <div className="flex items-center gap-2 text-slate-500">
-            <Filter className="h-3.5 w-3.5" />
+        <div className="flex flex-1 flex-col items-center gap-4">
+          <Link
+            href="/admin"
+            prefetch={false}
+            title="Dashboard"
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
+          >
+            <Grid2X2 className="h-4 w-4" />
+          </Link>
+
+          <Link
+            href="/admin/users"
+            prefetch={false}
+            title="Users"
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
+          >
+            <UserRound className="h-4 w-4" />
+          </Link>
+
+          <Link
+            href="/admin/support"
+            prefetch={false}
+            title="Support Tickets"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white"
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
+          </Link>
+
+          <Link
+            href="/admin/billing"
+            prefetch={false}
+            title="Billing"
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
+          >
+            <Settings2 className="h-4 w-4" />
+          </Link>
+
+          <Link
+            href="/admin/analytics"
+            prefetch={false}
+            title="Analytics"
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
+          >
+            <TrendingUp className="h-4 w-4" />
+          </Link>
+
+          <Link
+            href="/admin/settings"
+            prefetch={false}
+            title="Settings"
+            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-white/5 hover:text-white"
+          >
+            <AlertTriangle className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="mt-auto flex flex-col items-center gap-4">
+          <Circle className="h-3.5 w-3.5" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500 text-xs font-bold text-white">
+            {admin.fullName ? admin.fullName.slice(0, 1).toUpperCase() : "V"}
+          </div>
+        </div>
+      </aside>
+
+      <aside className="flex w-[300px] shrink-0 flex-col border-r border-[#252A36] bg-[#171A22] text-white">
+        <div className="flex h-12 items-center justify-between px-4">
+          <div className="font-serif text-[17px] text-white">Tickets</div>
+          <div className="flex items-center gap-3 text-slate-500">
             <SlidersHorizontal className="h-3.5 w-3.5" />
+            <Filter className="h-3.5 w-3.5" />
           </div>
         </div>
 
-        <div className="border-b border-white/10 px-4 py-3">
+        <div className="px-3 pb-3">
           <div className="flex h-9 items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 text-slate-400">
             <Search className="h-4 w-4" />
             <input
@@ -270,8 +347,8 @@ export default function SupportTicketsWorkbench({
             <button
               type="button"
               onClick={() => setFilter("open")}
-              className={`rounded-full px-2 py-1 ${
-                filter === "open" ? "bg-white/15 text-white" : "text-slate-400"
+              className={`rounded-md px-2 py-1 ${
+                filter === "open" ? "bg-white/15 text-white" : "text-slate-500"
               }`}
             >
               Open <span className="ml-1 rounded-full bg-white/10 px-1">{counts.open}</span>
@@ -280,30 +357,28 @@ export default function SupportTicketsWorkbench({
             <button
               type="button"
               onClick={() => setFilter("pending")}
-              className={`rounded-full px-2 py-1 ${
-                filter === "pending" ? "bg-white/15 text-white" : "text-slate-400"
+              className={`rounded-md px-2 py-1 ${
+                filter === "pending" ? "bg-white/15 text-white" : "text-slate-500"
               }`}
             >
-              Pending{" "}
-              <span className="ml-1 rounded-full bg-white/10 px-1">{counts.pending}</span>
+              Pending <span className="ml-1 rounded-full bg-white/10 px-1">{counts.pending}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setFilter("resolved")}
-              className={`rounded-full px-2 py-1 ${
-                filter === "resolved" ? "bg-white/15 text-white" : "text-slate-400"
+              className={`rounded-md px-2 py-1 ${
+                filter === "resolved" ? "bg-white/15 text-white" : "text-slate-500"
               }`}
             >
-              Resolved{" "}
-              <span className="ml-1 rounded-full bg-white/10 px-1">{counts.resolved}</span>
+              Resolved <span className="ml-1 rounded-full bg-white/10 px-1">{counts.resolved}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setFilter("all")}
-              className={`rounded-full px-2 py-1 ${
-                filter === "all" ? "bg-white/15 text-white" : "text-slate-400"
+              className={`rounded-md px-2 py-1 ${
+                filter === "all" ? "bg-white/15 text-white" : "text-slate-500"
               }`}
             >
               All <span className="ml-1 rounded-full bg-white/10 px-1">{counts.all}</span>
@@ -368,7 +443,7 @@ export default function SupportTicketsWorkbench({
       <main className="flex min-w-0 flex-1 flex-col bg-[#FBFBFA]">
         {selectedTicket ? (
           <>
-            <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
+            <header className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
               <div className="flex min-w-0 items-center gap-3">
                 <h1 className="truncate text-sm font-bold text-slate-950">
                   {selectedTicket.subject}
@@ -429,7 +504,7 @@ export default function SupportTicketsWorkbench({
                 <div className="flex-1 overflow-y-auto px-6 py-6">
                   <div className="mb-6 flex items-center gap-3">
                     <div className="h-px flex-1 bg-slate-200" />
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-[#8EA0BC]">
                       {formatDate(selectedTicket.created_at)}
                     </div>
                     <div className="h-px flex-1 bg-slate-200" />
@@ -457,7 +532,7 @@ export default function SupportTicketsWorkbench({
                                 {isSupport ? "Support" : selectedTicket.email}
                               </span>
 
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-[#8EA0BC]">
                                 {formatShortTime(message.created_at)}
                               </span>
 
@@ -535,7 +610,7 @@ export default function SupportTicketsWorkbench({
                   />
 
                   <div className="mt-3 flex items-center justify-between">
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-[#8EA0BC]">
                       Replying as {admin.fullName || admin.email} · Support
                     </div>
 
@@ -564,7 +639,7 @@ export default function SupportTicketsWorkbench({
 
               <aside className="hidden w-[230px] shrink-0 border-l border-slate-200 bg-white xl:block">
                 <div className="border-b border-slate-200 px-4 py-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-300">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
                     Ticket Info
                   </div>
 
@@ -577,7 +652,7 @@ export default function SupportTicketsWorkbench({
                 </div>
 
                 <div className="border-b border-slate-200 px-4 py-4">
-                  <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-300">
+                  <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
                     Priority
                   </div>
 
@@ -594,7 +669,7 @@ export default function SupportTicketsWorkbench({
                     ))}
                   </select>
 
-                  <div className="mb-3 mt-5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-300">
+                  <div className="mb-3 mt-5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
                     Status
                   </div>
 
@@ -613,7 +688,7 @@ export default function SupportTicketsWorkbench({
                 </div>
 
                 <div className="border-b border-slate-200 px-4 py-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-300">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
                     User
                   </div>
 
@@ -625,7 +700,7 @@ export default function SupportTicketsWorkbench({
                 </div>
 
                 <div className="px-4 py-4">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-300">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#B8C0D6]">
                     Quick Actions
                   </div>
 

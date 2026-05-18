@@ -31,7 +31,6 @@ import {
   Shield,
   ShieldAlert,
   Sparkles,
-  TicketPercent,
   Users,
   UserSquare2,
   Workflow,
@@ -153,18 +152,9 @@ function getBreadcrumb(pathname: string) {
 }
 
 function badgeClass(tone: BadgeTone = "blue") {
-  if (tone === "amber") {
-    return "border border-amber-200 bg-amber-50 text-amber-700"
-  }
-
-  if (tone === "red") {
-    return "border border-red-200 bg-red-50 text-red-600"
-  }
-
-  if (tone === "muted") {
-    return "border border-slate-200 bg-slate-100 text-slate-500"
-  }
-
+  if (tone === "amber") return "border border-amber-200 bg-amber-50 text-amber-700"
+  if (tone === "red") return "border border-red-200 bg-red-50 text-red-600"
+  if (tone === "muted") return "border border-slate-200 bg-slate-100 text-slate-500"
   return "bg-blue-600 text-white"
 }
 
@@ -287,24 +277,9 @@ export default function AdminShell({
       {
         title: "Overview",
         items: [
-          {
-            label: "Dashboard",
-            href: "/admin",
-            icon: LayoutDashboard,
-            show: true,
-          },
-          {
-            label: "Analytics",
-            href: "/admin/analytics",
-            icon: BarChart3,
-            show: true,
-          },
-          {
-            label: "Scheduled Jobs",
-            href: "/admin/jobs",
-            icon: Workflow,
-            show: isSuperAdmin,
-          },
+          { label: "Dashboard", href: "/admin", icon: LayoutDashboard, show: true },
+          { label: "Analytics", href: "/admin/analytics", icon: BarChart3, show: true },
+          { label: "Scheduled Jobs", href: "/admin/jobs", icon: Workflow, show: isSuperAdmin },
         ],
       },
       {
@@ -318,18 +293,8 @@ export default function AdminShell({
             badgeTone: "blue",
             show: canSeeUsers,
           },
-          {
-            label: "Roles & Access",
-            href: "/admin/team",
-            icon: Shield,
-            show: canSeeUsers,
-          },
-          {
-            label: "Sessions",
-            href: "/admin/sessions",
-            icon: MonitorCog,
-            show: isSuperAdmin,
-          },
+          { label: "Roles & Access", href: "/admin/team", icon: Shield, show: canSeeUsers },
+          { label: "Sessions", href: "/admin/sessions", icon: MonitorCog, show: isSuperAdmin },
           {
             label: "Privacy Requests",
             href: "/admin/legal-acceptances",
@@ -349,24 +314,9 @@ export default function AdminShell({
             badgeTone: "blue",
             show: canSeeBilling || canSeeUsers,
           },
-          {
-            label: "Billing",
-            href: "/admin/billing",
-            icon: CreditCard,
-            show: canSeeBilling,
-          },
-          {
-            label: "Discounts",
-            href: "/admin/coupons",
-            icon: Percent,
-            show: p.canManageCoupons || canSeeBilling,
-          },
-          {
-            label: "Trial Funnel",
-            href: "/admin/trial-funnel",
-            icon: Gift,
-            show: isSuperAdmin,
-          },
+          { label: "Billing", href: "/admin/billing", icon: CreditCard, show: canSeeBilling },
+          { label: "Discounts", href: "/admin/coupons", icon: Percent, show: p.canManageCoupons || canSeeBilling },
+          { label: "Trial Funnel", href: "/admin/trial-funnel", icon: Gift, show: isSuperAdmin },
         ],
       },
       {
@@ -388,151 +338,58 @@ export default function AdminShell({
             badgeTone: "red",
             show: canSeeContent || canSeeSupport,
           },
-          {
-            label: "Email Delivery",
-            href: "/admin/email-delivery",
-            icon: Mail,
-            show: isSuperAdmin,
-          },
+          { label: "Email Delivery", href: "/admin/email-delivery", icon: Mail, show: isSuperAdmin },
         ],
       },
       {
         title: "Content",
         items: [
-          {
-            label: "BLL Rules",
-            href: "/admin/rules",
-            icon: BookOpen,
-            show: p.canManageRules || isSuperAdmin,
-          },
-          {
-            label: "MBE Questions",
-            href: "/admin/questions",
-            icon: Bell,
-            show: p.canManageQuestions || isSuperAdmin,
-          },
-          {
-            label: "Subjects & Topics",
-            href: "/admin/subjects",
-            icon: FileText,
-            show: canSeeContent,
-          },
+          { label: "BLL Rules", href: "/admin/rules", icon: BookOpen, show: p.canManageRules || isSuperAdmin },
+          { label: "MBE Questions", href: "/admin/questions", icon: Bell, show: p.canManageQuestions || isSuperAdmin },
+          { label: "Subjects & Topics", href: "/admin/subjects", icon: FileText, show: canSeeContent },
         ],
       },
       {
         title: "Communications",
         items: [
-          {
-            label: "Announcements",
-            href: "/admin/announcements",
-            icon: Megaphone,
-            show: canSeeAnnouncements,
-          },
-          {
-            label: "Bulk Messages",
-            href: "/admin/bulk-messages",
-            icon: MessageSquare,
-            show: isSuperAdmin,
-          },
+          { label: "Announcements", href: "/admin/announcements", icon: Megaphone, show: canSeeAnnouncements },
+          { label: "Bulk Messages", href: "/admin/bulk-messages", icon: MessageSquare, show: isSuperAdmin },
         ],
       },
       {
         title: "Website Studio",
         items: [
-          {
-            label: "Theme Settings",
-            href: "/admin/theme",
-            icon: Palette,
-            show: canSeeSettings,
-          },
-          {
-            label: "Homepage Builder",
-            href: "/admin/homepage",
-            icon: Home,
-            show: canSeeSettings,
-          },
-          {
-            label: "Banner Manager",
-            href: "/admin/banners",
-            icon: Flag,
-            show: canSeeSettings,
-          },
-          {
-            label: "Legal Docs",
-            href: "/admin/legal-acceptances",
-            icon: FileCheck2,
-            show: canSeeUsers || canSeeAudit,
-          },
+          { label: "Theme Settings", href: "/admin/theme", icon: Palette, show: canSeeSettings },
+          { label: "Homepage Builder", href: "/admin/homepage", icon: Home, show: canSeeSettings },
+          { label: "Banner Manager", href: "/admin/banners", icon: Flag, show: canSeeSettings },
+          { label: "Legal Docs", href: "/admin/legal-acceptances", icon: FileCheck2, show: canSeeUsers || canSeeAudit },
         ],
       },
       {
         title: "Teams",
         items: [
-          {
-            label: "Teams",
-            href: "/admin/team",
-            icon: UserSquare2,
-            show: canSeeUsers,
-          },
-          {
-            label: "Team Workspace",
-            href: "/admin/workspace",
-            icon: FileText,
-            show: true,
-          },
+          { label: "Teams", href: "/admin/team", icon: UserSquare2, show: canSeeUsers },
+          { label: "Team Workspace", href: "/admin/workspace", icon: FileText, show: true },
         ],
       },
       {
         title: "Configuration",
         items: [
-          {
-            label: "Menu Control",
-            href: "/admin/menu-control",
-            icon: MonitorCog,
-            show: canSeeSettings,
-          },
-          {
-            label: "Design Sandbox",
-            href: "/admin/design-sandbox",
-            icon: Sparkles,
-            show: canSeeSettings,
-          },
+          { label: "Menu Control", href: "/admin/menu-control", icon: MonitorCog, show: canSeeSettings },
+          { label: "Design Sandbox", href: "/admin/design-sandbox", icon: Sparkles, show: canSeeSettings },
         ],
       },
       {
         title: "System",
         items: [
-          {
-            label: "Audit Log",
-            href: "/admin/audit-log",
-            icon: Shield,
-            show: canSeeAudit,
-          },
-          {
-            label: "Abuse Detection",
-            href: "/admin/abuse-detection",
-            icon: AlertTriangle,
-            show: isSuperAdmin,
-          },
-          {
-            label: "Environment",
-            href: "/admin/environment",
-            icon: MonitorCog,
-            show: isSuperAdmin,
-          },
-          {
-            label: "Settings",
-            href: "/admin/settings",
-            icon: Settings,
-            show: canSeeSettings,
-          },
+          { label: "Audit Log", href: "/admin/audit-log", icon: Shield, show: canSeeAudit },
+          { label: "Abuse Detection", href: "/admin/abuse-detection", icon: AlertTriangle, show: isSuperAdmin },
+          { label: "Environment", href: "/admin/environment", icon: MonitorCog, show: isSuperAdmin },
+          { label: "Settings", href: "/admin/settings", icon: Settings, show: canSeeSettings },
         ],
       },
     ]
   }, [currentUser, counts])
-
-  const pageTitle = getPageTitle(pathname)
-  const breadcrumb = getBreadcrumb(pathname)
 
   async function handleLogout() {
     try {
@@ -545,6 +402,13 @@ export default function AdminShell({
       setLoggingOut(false)
     }
   }
+
+  if (pathname === "/admin/support" || pathname.startsWith("/admin/support/")) {
+    return <>{children}</>
+  }
+
+  const pageTitle = getPageTitle(pathname)
+  const breadcrumb = getBreadcrumb(pathname)
 
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-slate-950">
