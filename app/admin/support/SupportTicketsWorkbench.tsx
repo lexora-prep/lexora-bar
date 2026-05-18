@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import {
   Check,
   ChevronDown,
@@ -61,6 +61,7 @@ type Props = {
 
 type StatusFilter = "open" | "pending" | "resolved" | "closed" | "all"
 type PriorityFilter = "all" | "normal" | "high"
+type SortMode = "newest" | "oldest" | "high_priority" | "open_first"
 
 const statusOptions = ["open", "pending", "resolved", "closed"] as const
 const priorityOptions = ["normal", "high"] as const
@@ -132,6 +133,14 @@ function priorityLabel(value: string) {
   return normalizePriority(value) === "high" ? "High" : "Normal"
 }
 
+function sortLabel(value: SortMode) {
+  if (value === "oldest") return "Oldest first"
+  if (value === "high_priority") return "High priority first"
+  if (value === "open_first") return "Open first"
+
+  return "Newest first"
+}
+
 function getPreview(ticket: SupportTicketForWorkbench) {
   const lastHumanMessage = [...ticket.messages]
     .reverse()
@@ -198,10 +207,41 @@ export default function SupportTicketsWorkbench({
   const [filter, setFilter] = useState<StatusFilter>("open")
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [draftPriorityFilter, setDraftPriorityFilter] = useState<PriorityFilter>("all")
+  const [draftCategoryFilter, setDraftCategoryFilter] = useState("all")
+  const [sortMode, setSortMode] = useState<SortMode>("newest")
   const [query, setQuery] = useState("")
   const [replyText, setReplyText] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  const filterRef = useRef<HTMLDivElement | null>(null)
+  const sortRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node
+
+      if (filterRef.current && !filterRef.current.contains(target)) {
+        setFilterOpen(false)
+      }
+
+      if (sortRef.current && !sortRef.current.contains(target)) {
+        setSortOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    if (filterOpen) {
+      setDraftPriorityFilter(priorityFilter)
+      setDraftCategoryFilter(categoryFilter)
+    }
+  }, [filterOpen, priorityFilter, categoryFilter])
 
   const categories = useMemo(() => {
     const values = Array.from(
@@ -211,10 +251,19 @@ export default function SupportTicketsWorkbench({
     return values.length ? values : ["billing"]
   }, [tickets])
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+
+    if (priorityFilter !== "all") count += 1
+    if (categoryFilter !== "all") count += 1
+
+    return count
+  }, [priorityFilter, categoryFilter])
+
   const filteredTickets = useMemo(() => {
     const search = query.trim().toLowerCase()
 
-    return tickets.filter((ticket) => {
+    const filtered = tickets.filter((ticket) => {
       const status = normalizeStatus(ticket.status)
       const priority = normalizePriority(ticket.priority)
 
@@ -233,7 +282,38 @@ export default function SupportTicketsWorkbench({
 
       return matchesStatus && matchesPriority && matchesCategory && matchesSearch
     })
-  }, [tickets, filter, priorityFilter, categoryFilter, query])
+
+    return [...filtered].sort((a, b) => {
+      if (sortMode === "oldest") {
+        return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+      }
+
+      if (sortMode === "high_priority") {
+        const aHigh = normalizePriority(a.priority) === "high" ? 1 : 0
+        const bHigh = normalizePriority(b.priority) === "high" ? 1 : 0
+
+        if (aHigh !== bHigh) return bHigh - aHigh
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      }
+
+      if (sortMode === "open_first") {
+        const statusWeight: Record<string, number> = {
+          open: 4,
+          pending: 3,
+          resolved: 2,
+          closed: 1,
+        }
+
+        const aWeight = statusWeight[normalizeStatus(a.status)] || 0
+        const bWeight = statusWeight[normalizeStatus(b.status)] || 0
+
+        if (aWeight !== bWeight) return bWeight - aWeight
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      }
+
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    })
+  }, [tickets, filter, priorityFilter, categoryFilter, query, sortMode])
 
   const selectedTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ||
@@ -251,6 +331,26 @@ export default function SupportTicketsWorkbench({
 
   const selectedIsClosed = selectedStatus === "closed"
   const selectedIsResolved = selectedStatus === "resolved"
+
+  function applyFilters() {
+    setPriorityFilter(draftPriorityFilter)
+    setCategoryFilter(draftCategoryFilter)
+    setFilterOpen(false)
+  }
+
+  function clearFilters() {
+    setDraftPriorityFilter("all")
+    setDraftCategoryFilter("all")
+    setPriorityFilter("all")
+    setCategoryFilter("all")
+    setFilterOpen(false)
+  }
+
+  function closeFilterMenu() {
+    setDraftPriorityFilter(priorityFilter)
+    setDraftCategoryFilter(categoryFilter)
+    setFilterOpen(false)
+  }
 
   function submitReply() {
     if (!selectedTicket || !replyText.trim() || selectedIsClosed) return
@@ -289,12 +389,6 @@ export default function SupportTicketsWorkbench({
     })
   }
 
-  function resetFilters() {
-    setPriorityFilter("all")
-    setCategoryFilter("all")
-    setQuery("")
-  }
-
   return (
     <div className={styles.shell}>
       <aside className={styles.listPanel}>
@@ -306,36 +400,111 @@ export default function SupportTicketsWorkbench({
             </div>
 
             <div className={styles.listHeaderIcons}>
-              <button type="button" title="Sort" className={styles.smallIconButton}>
-                <SlidersHorizontal size={14} />
-              </button>
-
-              <div className={styles.filterWrap}>
+              <div ref={sortRef} className={styles.filterWrap}>
                 <button
                   type="button"
-                  title="Filter"
-                  onClick={() => setFilterOpen((value) => !value)}
+                  title="Sort tickets"
+                  onClick={() => {
+                    setSortOpen((value) => !value)
+                    setFilterOpen(false)
+                  }}
                   className={`${styles.smallIconButton} ${
-                    filterOpen ||
-                    priorityFilter !== "all" ||
-                    categoryFilter !== "all"
+                    sortOpen || sortMode !== "newest"
+                      ? styles.smallIconButtonActive
+                      : ""
+                  }`}
+                >
+                  <SlidersHorizontal size={14} />
+                </button>
+
+                {sortOpen ? (
+                  <div className={styles.compactMenu}>
+                    <div className={styles.compactMenuHeader}>
+                      <div>
+                        <div className={styles.compactMenuTitle}>Sort tickets</div>
+                        <div className={styles.compactMenuSubtitle}>
+                          Current: {sortLabel(sortMode)}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSortOpen(false)}
+                        className={styles.popoverCloseButton}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+
+                    <div className={styles.sortOptions}>
+                      {(["newest", "oldest", "high_priority", "open_first"] as SortMode[]).map(
+                        (mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => {
+                              setSortMode(mode)
+                              setSortOpen(false)
+                            }}
+                            className={`${styles.sortOption} ${
+                              sortMode === mode ? styles.sortOptionActive : ""
+                            }`}
+                          >
+                            <span>{sortLabel(mode)}</span>
+                            {sortMode === mode ? <Check size={13} /> : null}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div ref={filterRef} className={styles.filterWrap}>
+                <button
+                  type="button"
+                  title="Filter tickets"
+                  onClick={() => {
+                    setFilterOpen((value) => !value)
+                    setSortOpen(false)
+                  }}
+                  className={`${styles.smallIconButton} ${
+                    filterOpen || activeFilterCount > 0
                       ? styles.smallIconButtonActive
                       : ""
                   }`}
                 >
                   <Filter size={14} />
+                  {activeFilterCount > 0 ? (
+                    <span className={styles.filterDot}>{activeFilterCount}</span>
+                  ) : null}
                 </button>
 
                 {filterOpen ? (
                   <div className={styles.filterMenu}>
-                    <div className={styles.filterMenuTitle}>Filter tickets</div>
+                    <div className={styles.compactMenuHeader}>
+                      <div>
+                        <div className={styles.compactMenuTitle}>Filter tickets</div>
+                        <div className={styles.compactMenuSubtitle}>
+                          Choose filters, then apply
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={closeFilterMenu}
+                        className={styles.popoverCloseButton}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
 
                     <label className={styles.filterLabel}>
-                      Priority
+                      <span>Priority</span>
                       <select
-                        value={priorityFilter}
+                        value={draftPriorityFilter}
                         onChange={(event) =>
-                          setPriorityFilter(event.target.value as PriorityFilter)
+                          setDraftPriorityFilter(event.target.value as PriorityFilter)
                         }
                         className={styles.filterSelect}
                       >
@@ -346,10 +515,10 @@ export default function SupportTicketsWorkbench({
                     </label>
 
                     <label className={styles.filterLabel}>
-                      Category
+                      <span>Category</span>
                       <select
-                        value={categoryFilter}
-                        onChange={(event) => setCategoryFilter(event.target.value)}
+                        value={draftCategoryFilter}
+                        onChange={(event) => setDraftCategoryFilter(event.target.value)}
                         className={styles.filterSelect}
                       >
                         <option value="all">All categories</option>
@@ -361,13 +530,33 @@ export default function SupportTicketsWorkbench({
                       </select>
                     </label>
 
-                    <button
-                      type="button"
-                      onClick={resetFilters}
-                      className={styles.clearFiltersButton}
-                    >
-                      Clear filters
-                    </button>
+                    <div className={styles.filterActions}>
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className={styles.clearTextButton}
+                      >
+                        Clear
+                      </button>
+
+                      <div className={styles.filterActionRight}>
+                        <button
+                          type="button"
+                          onClick={closeFilterMenu}
+                          className={styles.cancelButton}
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={applyFilters}
+                          className={styles.applyButton}
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ) : null}
               </div>
