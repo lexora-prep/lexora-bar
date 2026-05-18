@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useEffect, useState } from "react"
+import { ReactNode, useEffect, useRef, useState } from "react"
 import { Check, ChevronDown, CreditCard, FileText, X } from "lucide-react"
 
 export type PaymentHistoryRecord = {
@@ -287,10 +287,16 @@ export function PaymentHistoryCard({
   onViewAll: () => void
 }) {
   const [openRecordId, setOpenRecordId] = useState<string | null>(null)
+  const initializedFirstRecord = useRef(false)
 
   useEffect(() => {
-    if (!openRecordId && records[0]?.id) {
+    if (!initializedFirstRecord.current && records[0]?.id) {
       setOpenRecordId(records[0].id)
+      initializedFirstRecord.current = true
+    }
+
+    if (openRecordId && !records.some((record) => record.id === openRecordId)) {
+      setOpenRecordId(records[0]?.id || null)
     }
   }, [records, openRecordId])
 
