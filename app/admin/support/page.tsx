@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma"
-import { createAdminNotification } from "@/lib/admin-notifications"
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
@@ -10,6 +9,7 @@ import SupportTicketsWorkbench, {
 
 type SupportStatus = "open" | "pending" | "resolved" | "closed"
 type SupportPriority = "normal" | "high" | "urgent"
+type AdminNotificationSeverity = "normal" | "info" | "success" | "warning" | "danger"
 
 const allowedStatuses: SupportStatus[] = ["open", "pending", "resolved", "closed"]
 const allowedPriorities: SupportPriority[] = ["normal", "high", "urgent"]
@@ -30,6 +30,17 @@ type UserTicketCountRow = {
   user_id: string
   total_count: number
   open_count: number
+}
+
+type CreateAdminNotificationInput = {
+  adminId: string
+  actorAdminId: string | null
+  type: string
+  title: string
+  body: string
+  href: string | null
+  metadata: Record<string, unknown>
+  severity?: AdminNotificationSeverity
 }
 
 function cleanString(value: FormDataEntryValue | null) {
@@ -107,6 +118,46 @@ function formatExam(
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null
+}
+
+async function createAdminNotification({
+  adminId,
+  actorAdminId,
+  type,
+  title,
+  body,
+  href,
+  metadata,
+  severity = "normal",
+}: CreateAdminNotificationInput) {
+  if (!adminId) return
+
+  await prisma.$executeRaw`
+    insert into public.admin_notifications (
+      admin_id,
+      actor_admin_id,
+      type,
+      title,
+      body,
+      href,
+      metadata,
+      severity,
+      read_at,
+      created_at
+    )
+    values (
+      ${adminId}::uuid,
+      ${actorAdminId || null}::uuid,
+      ${type},
+      ${title},
+      ${body},
+      ${href},
+      ${JSON.stringify(metadata)}::jsonb,
+      ${severity},
+      null,
+      now()
+    )
+  `
 }
 
 async function getCurrentAdmin() {
@@ -251,10 +302,7 @@ export default async function AdminSupportPage() {
       },
       select: {
         id: true,
-        subject: true,
         status: true,
-        assigned_admin_id: true,
-        priority: true,
       },
     })
 
@@ -327,29 +375,6 @@ export default async function AdminSupportPage() {
       where id = ${ticket.id}::uuid
     `
 
-    const notifyAdminId = ticket.assigned_admin_id
-
-    if (notifyAdminId && notifyAdminId !== currentAdmin.id) {
-      await createAdminNotification({
-        adminId: notifyAdminId,
-        actorAdminId: currentAdmin.id,
-        type: "support_reply",
-        title: "New support reply",
-        body: `${name} replied to: ${ticket.subject}`,
-        href: `/admin/support?ticket=${ticket.id}`,
-        severity: normalizePriority(ticket.priority) === "urgent" ? "urgent" : "normal",
-        metadata: {
-          module: "support",
-          event: "ticket_replied",
-          ticketId: ticket.id,
-          ticketSubject: ticket.subject,
-          ticketStatus: "pending",
-          repliedByAdminId: currentAdmin.id,
-          repliedByName: name,
-        },
-      })
-    }
-
     revalidatePath("/admin/support")
   }
 
@@ -372,10 +397,8 @@ export default async function AdminSupportPage() {
       },
       select: {
         id: true,
-        subject: true,
         status: true,
         priority: true,
-        assigned_admin_id: true,
       },
     })
 
@@ -461,33 +484,6 @@ export default async function AdminSupportPage() {
       where id = ${ticket.id}::uuid
     `
 
-    if (ticket.assigned_admin_id && ticket.assigned_admin_id !== currentAdmin.id) {
-      await createAdminNotification({
-        adminId: ticket.assigned_admin_id,
-        actorAdminId: currentAdmin.id,
-        type: "support_status_change",
-        title: "Support ticket status changed",
-        body: `${name} changed status to ${nextStatus}: ${ticket.subject}`,
-        href: `/admin/support?ticket=${ticket.id}`,
-        severity:
-          nextStatus === "closed" || nextStatus === "resolved"
-            ? "success"
-            : normalizePriority(ticket.priority) === "urgent"
-              ? "urgent"
-              : "normal",
-        metadata: {
-          module: "support",
-          event: "ticket_status_changed",
-          ticketId: ticket.id,
-          ticketSubject: ticket.subject,
-          previousStatus,
-          nextStatus,
-          changedByAdminId: currentAdmin.id,
-          changedByName: name,
-        },
-      })
-    }
-
     revalidatePath("/admin/support")
   }
 
@@ -510,10 +506,8 @@ export default async function AdminSupportPage() {
       },
       select: {
         id: true,
-        subject: true,
         status: true,
         priority: true,
-        assigned_admin_id: true,
       },
     })
 
@@ -560,32 +554,6 @@ export default async function AdminSupportPage() {
         updated_at = ${now}
       where id = ${ticket.id}::uuid
     `
-
-    if (
-      previousPriority !== nextPriority &&
-      ticket.assigned_admin_id &&
-      ticket.assigned_admin_id !== currentAdmin.id
-    ) {
-      await createAdminNotification({
-        adminId: ticket.assigned_admin_id,
-        actorAdminId: currentAdmin.id,
-        type: "support_priority_change",
-        title: "Support ticket priority changed",
-        body: `${name} changed priority to ${nextPriority}: ${ticket.subject}`,
-        href: `/admin/support?ticket=${ticket.id}`,
-        severity: nextPriority === "urgent" ? "urgent" : nextPriority === "high" ? "warning" : "normal",
-        metadata: {
-          module: "support",
-          event: "ticket_priority_changed",
-          ticketId: ticket.id,
-          ticketSubject: ticket.subject,
-          previousPriority,
-          nextPriority,
-          changedByAdminId: currentAdmin.id,
-          changedByName: name,
-        },
-      })
-    }
 
     revalidatePath("/admin/support")
   }
@@ -637,8 +605,6 @@ export default async function AdminSupportPage() {
         email: true,
         user_id: true,
         status: true,
-        priority: true,
-        assigned_admin_id: true,
       },
     })
 
@@ -699,19 +665,17 @@ export default async function AdminSupportPage() {
         title: "New support ticket assignment",
         body: `${changedBy} assigned you: ${ticket.subject}`,
         href: `/admin/support?ticket=${ticket.id}`,
-        severity: normalizePriority(ticket.priority) === "urgent" ? "urgent" : "normal",
+        severity: normalizePriority(ticket.status) === "urgent" ? "warning" : "normal",
         metadata: {
           module: "support",
           event: "ticket_assigned",
           ticketId: ticket.id,
           ticketSubject: ticket.subject,
           ticketStatus: ticket.status,
-          ticketPriority: ticket.priority,
           assignedByAdminId: currentAdmin.id,
           assignedByName: changedBy,
           assignedToAdminId: targetAdmin.id,
           assignedToName: assignedName,
-          previousAssignedAdminId: ticket.assigned_admin_id,
         },
       })
     }
