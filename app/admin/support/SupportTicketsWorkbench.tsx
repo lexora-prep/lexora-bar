@@ -157,9 +157,17 @@ function ticketNumber(index: number) {
 function statusClass(status: string) {
   const normalized = normalizeStatus(status)
 
-  if (normalized === "resolved") return `${styles.statusPill} ${styles.statusResolved}`
-  if (normalized === "closed") return `${styles.statusPill} ${styles.statusClosed}`
-  if (normalized === "pending") return `${styles.statusPill} ${styles.statusPending}`
+  if (normalized === "resolved") {
+    return `${styles.statusPill} ${styles.statusResolved}`
+  }
+
+  if (normalized === "closed") {
+    return `${styles.statusPill} ${styles.statusClosed}`
+  }
+
+  if (normalized === "pending") {
+    return `${styles.statusPill} ${styles.statusPending}`
+  }
 
   return `${styles.statusPill} ${styles.statusOpen}`
 }
@@ -207,7 +215,8 @@ export default function SupportTicketsWorkbench({
   const [filter, setFilter] = useState<StatusFilter>("open")
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
-  const [draftPriorityFilter, setDraftPriorityFilter] = useState<PriorityFilter>("all")
+  const [draftPriorityFilter, setDraftPriorityFilter] =
+    useState<PriorityFilter>("all")
   const [draftCategoryFilter, setDraftCategoryFilter] = useState("all")
   const [sortMode, setSortMode] = useState<SortMode>("newest")
   const [query, setQuery] = useState("")
@@ -260,27 +269,55 @@ export default function SupportTicketsWorkbench({
     return count
   }, [priorityFilter, categoryFilter])
 
-  const filteredTickets = useMemo(() => {
+  function ticketMatchesSearchAndSecondaryFilters(ticket: SupportTicketForWorkbench) {
     const search = query.trim().toLowerCase()
+    const priority = normalizePriority(ticket.priority)
 
-    const filtered = tickets.filter((ticket) => {
+    const matchesPriority =
+      priorityFilter === "all" ? true : priority === priorityFilter
+
+    const matchesCategory =
+      categoryFilter === "all" ? true : ticket.category === categoryFilter
+
+    const matchesSearch = search
+      ? ticket.subject.toLowerCase().includes(search) ||
+        ticket.email.toLowerCase().includes(search) ||
+        ticket.category.toLowerCase().includes(search) ||
+        getPreview(ticket).toLowerCase().includes(search)
+      : true
+
+    return matchesPriority && matchesCategory && matchesSearch
+  }
+
+  const ticketsAfterSearchAndSecondaryFilters = useMemo(() => {
+    return tickets.filter(ticketMatchesSearchAndSecondaryFilters)
+  }, [tickets, query, priorityFilter, categoryFilter])
+
+  const visibleCounts = useMemo(() => {
+    const result = {
+      open: 0,
+      pending: 0,
+      resolved: 0,
+      closed: 0,
+      all: ticketsAfterSearchAndSecondaryFilters.length,
+    }
+
+    ticketsAfterSearchAndSecondaryFilters.forEach((ticket) => {
       const status = normalizeStatus(ticket.status)
-      const priority = normalizePriority(ticket.priority)
 
-      const matchesStatus = filter === "all" ? true : status === filter
-      const matchesPriority =
-        priorityFilter === "all" ? true : priority === priorityFilter
-      const matchesCategory =
-        categoryFilter === "all" ? true : ticket.category === categoryFilter
+      if (status === "open") result.open += 1
+      if (status === "pending") result.pending += 1
+      if (status === "resolved") result.resolved += 1
+      if (status === "closed") result.closed += 1
+    })
 
-      const matchesSearch = search
-        ? ticket.subject.toLowerCase().includes(search) ||
-          ticket.email.toLowerCase().includes(search) ||
-          ticket.category.toLowerCase().includes(search) ||
-          getPreview(ticket).toLowerCase().includes(search)
-        : true
+    return result
+  }, [ticketsAfterSearchAndSecondaryFilters])
 
-      return matchesStatus && matchesPriority && matchesCategory && matchesSearch
+  const filteredTickets = useMemo(() => {
+    const filtered = ticketsAfterSearchAndSecondaryFilters.filter((ticket) => {
+      const status = normalizeStatus(ticket.status)
+      return filter === "all" ? true : status === filter
     })
 
     return [...filtered].sort((a, b) => {
@@ -313,7 +350,19 @@ export default function SupportTicketsWorkbench({
 
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     })
-  }, [tickets, filter, priorityFilter, categoryFilter, query, sortMode])
+  }, [ticketsAfterSearchAndSecondaryFilters, filter, sortMode])
+
+  useEffect(() => {
+    if (filteredTickets.length === 0) return
+
+    const selectedStillVisible = filteredTickets.some(
+      (ticket) => ticket.id === selectedTicketId,
+    )
+
+    if (!selectedStillVisible) {
+      setSelectedTicketId(filteredTickets[0].id)
+    }
+  }, [filteredTickets, selectedTicketId])
 
   const selectedTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ||
@@ -579,7 +628,7 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("open")}
               className={`${styles.tab} ${filter === "open" ? styles.tabActive : ""}`}
             >
-              Open <span>{counts.open}</span>
+              Open <span>{visibleCounts.open}</span>
             </button>
 
             <button
@@ -587,7 +636,7 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("pending")}
               className={`${styles.tab} ${filter === "pending" ? styles.tabActive : ""}`}
             >
-              Pending <span>{counts.pending}</span>
+              Pending <span>{visibleCounts.pending}</span>
             </button>
 
             <button
@@ -595,7 +644,7 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("resolved")}
               className={`${styles.tab} ${filter === "resolved" ? styles.tabActive : ""}`}
             >
-              Resolved <span>{counts.resolved}</span>
+              Resolved <span>{visibleCounts.resolved}</span>
             </button>
 
             <button
@@ -603,7 +652,7 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("closed")}
               className={`${styles.tab} ${filter === "closed" ? styles.tabActive : ""}`}
             >
-              Closed <span>{counts.closed}</span>
+              Closed <span>{visibleCounts.closed}</span>
             </button>
 
             <button
@@ -611,14 +660,18 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("all")}
               className={`${styles.tab} ${filter === "all" ? styles.tabActive : ""}`}
             >
-              All <span>{counts.all}</span>
+              All <span>{visibleCounts.all}</span>
             </button>
           </div>
         </div>
 
         <div className={styles.ticketList}>
           {filteredTickets.length === 0 ? (
-            <div className={styles.emptyList}>No tickets found.</div>
+            <div className={styles.emptyList}>
+              {activeFilterCount > 0 || query.trim()
+                ? "No tickets match these filters."
+                : "No tickets found."}
+            </div>
           ) : (
             filteredTickets.map((ticket) => {
               const active = selectedTicket?.id === ticket.id
