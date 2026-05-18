@@ -543,6 +543,23 @@ export default async function AdminSupportPage() {
       redirect("/admin/support")
     }
 
+    const ticket = await prisma.support_tickets.findUnique({
+      where: {
+        id: ticketId,
+      },
+      select: {
+        id: true,
+        subject: true,
+        email: true,
+        user_id: true,
+        status: true,
+      },
+    })
+
+    if (!ticket) {
+      redirect("/admin/support")
+    }
+
     const targetAdmin = adminId
       ? await prisma.profiles.findFirst({
           where: {
@@ -570,7 +587,7 @@ export default async function AdminSupportPage() {
 
     await prisma.support_ticket_messages.create({
       data: {
-        ticket_id: ticketId,
+        ticket_id: ticket.id,
         sender: "internal",
         message: assignedName
           ? `Ticket assigned to ${assignedName} by ${changedBy}.`
@@ -585,8 +602,41 @@ export default async function AdminSupportPage() {
         assigned_admin_name = ${assignedName},
         last_admin_read_at = ${now},
         updated_at = ${now}
-      where id = ${ticketId}::uuid
+      where id = ${ticket.id}::uuid
     `
+
+    if (targetAdmin && targetAdmin.id !== currentAdmin.id) {
+      await prisma.$executeRaw`
+        insert into public.admin_notifications (
+          admin_id,
+          actor_admin_id,
+          type,
+          title,
+          body,
+          href,
+          metadata,
+          created_at
+        )
+        values (
+          ${targetAdmin.id}::uuid,
+          ${currentAdmin.id}::uuid,
+          'support_assignment',
+          'New support ticket assignment',
+          ${`${changedBy} assigned you: ${ticket.subject}`},
+          ${`/admin/support?ticket=${ticket.id}`},
+          ${JSON.stringify({
+            ticketId: ticket.id,
+            ticketSubject: ticket.subject,
+            ticketStatus: ticket.status,
+            assignedByAdminId: currentAdmin.id,
+            assignedByName: changedBy,
+            assignedToAdminId: targetAdmin.id,
+            assignedToName: assignedName,
+          })}::jsonb,
+          ${now}
+        )
+      `
+    }
 
     revalidatePath("/admin/support")
   }
