@@ -24,6 +24,12 @@ type SupportTicketMetaRow = {
   sla_due_at: Date | null
 }
 
+type UserTicketCountRow = {
+  user_id: string
+  total_count: number
+  open_count: number
+}
+
 function cleanString(value: FormDataEntryValue | null) {
   if (typeof value !== "string") return ""
   return value.trim()
@@ -82,6 +88,19 @@ function formatMonthYear(value: Date | null | undefined) {
     month: "short",
     year: "numeric",
   }).format(value)
+}
+
+function formatExam(valueMonth: number | null | undefined, valueYear: number | null | undefined) {
+  if (!valueMonth || !valueYear) return "Not set"
+
+  const date = new Date(valueYear, valueMonth - 1, 1)
+
+  if (Number.isNaN(date.getTime())) return "Not set"
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(date)
 }
 
 function toIso(value: Date | null | undefined) {
@@ -163,6 +182,22 @@ async function getSupportTicketMeta(ticketIds: string[]) {
   `
 
   return new Map(rows.map((row) => [row.id, row]))
+}
+
+async function getUserTicketCounts(userIds: string[]) {
+  if (userIds.length === 0) return new Map<string, UserTicketCountRow>()
+
+  const rows = await prisma.$queryRaw<UserTicketCountRow[]>`
+    select
+      user_id::text,
+      count(*)::int as total_count,
+      count(*) filter (where status in ('open', 'pending'))::int as open_count
+    from public.support_tickets
+    where user_id = any(${userIds}::uuid[])
+    group by user_id
+  `
+
+  return new Map(rows.map((row) => [row.user_id, row]))
 }
 
 export default async function AdminSupportPage() {
@@ -460,7 +495,7 @@ export default async function AdminSupportPage() {
   const userIds = Array.from(new Set(baseTickets.map((ticket) => ticket.user_id)))
   const ticketIds = baseTickets.map((ticket) => ticket.id)
 
-  const [profiles, metaMap] = await Promise.all([
+  const [profiles, metaMap, userTicketCountMap] = await Promise.all([
     prisma.profiles.findMany({
       where: {
         id: {
@@ -469,11 +504,20 @@ export default async function AdminSupportPage() {
       },
       select: {
         id: true,
+        email: true,
+        full_name: true,
+        jurisdiction: true,
+        exam_month: true,
+        exam_year: true,
         subscription_tier: true,
+        billing_status: true,
+        is_blocked: true,
+        last_active_at: true,
         created_at: true,
       },
     }),
     getSupportTicketMeta(ticketIds),
+    getUserTicketCounts(userIds),
   ])
 
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile]))
@@ -481,10 +525,22 @@ export default async function AdminSupportPage() {
   const tickets: SupportTicketForWorkbench[] = baseTickets.map((ticket) => {
     const profile = profileMap.get(ticket.user_id)
     const meta = metaMap.get(ticket.id)
+    const userTicketCounts = userTicketCountMap.get(ticket.user_id)
 
     return {
       id: ticket.id,
+      userId: ticket.user_id,
       email: ticket.email,
+      userEmail: profile?.email || ticket.email,
+      userName: profile?.full_name || null,
+      userJurisdiction: profile?.jurisdiction || "Not set",
+      userExam: formatExam(profile?.exam_month, profile?.exam_year),
+      userBillingStatus: profile?.billing_status || "free",
+      userIsBlocked: !!profile?.is_blocked,
+      userLastActiveAt: toIso(profile?.last_active_at),
+      userCreatedAt: toIso(profile?.created_at),
+      userTotalTicketCount: userTicketCounts?.total_count || 0,
+      userOpenTicketCount: userTicketCounts?.open_count || 0,
       subject: ticket.subject,
       category: ticket.category,
       status: ticket.status,

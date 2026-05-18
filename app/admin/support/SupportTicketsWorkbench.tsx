@@ -24,7 +24,18 @@ type SupportMessage = {
 
 export type SupportTicketForWorkbench = {
   id: string
+  userId: string
   email: string
+  userEmail: string
+  userName: string | null
+  userJurisdiction: string
+  userExam: string
+  userBillingStatus: string
+  userIsBlocked: boolean
+  userLastActiveAt: string | null
+  userCreatedAt: string | null
+  userTotalTicketCount: number
+  userOpenTicketCount: number
   subject: string
   category: string
   status: string
@@ -71,13 +82,22 @@ type Props = {
 }
 
 type StatusFilter = "open" | "pending" | "resolved" | "closed" | "all"
-type PriorityFilter = "all" | "normal" | "high"
-type SortMode = "newest" | "oldest" | "high_priority" | "open_first"
+type PriorityFilter = "all" | "normal" | "high" | "urgent"
+type SortMode =
+  | "newest"
+  | "oldest"
+  | "high_priority"
+  | "open_first"
+  | "sla_soon"
+  | "unread_first"
+type ViewMode = "inbox" | "list"
 
 const statusOptions = ["open", "pending", "resolved", "closed"] as const
-const priorityOptions = ["normal", "high"] as const
+const priorityOptions = ["normal", "high", "urgent"] as const
 
-function formatShortTime(value: string) {
+function formatShortTime(value: string | null | undefined) {
+  if (!value) return ""
+
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ""
 
@@ -87,7 +107,9 @@ function formatShortTime(value: string) {
   }).format(date)
 }
 
-function formatDate(value: string) {
+function formatDate(value: string | null | undefined) {
+  if (!value) return "Not available"
+
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return "Not available"
 
@@ -98,7 +120,9 @@ function formatDate(value: string) {
   }).format(date)
 }
 
-function formatDateTime(value: string) {
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "Not available"
+
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return "Not available"
 
@@ -111,8 +135,21 @@ function formatDateTime(value: string) {
   }).format(date)
 }
 
-function safeInitials(email: string) {
-  const local = email.split("@")[0] || "U"
+function safeInitials(ticket: SupportTicketForWorkbench) {
+  const name = ticket.userName?.trim()
+
+  if (name) {
+    return (
+      name
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() || "")
+        .join("") || "U"
+    )
+  }
+
+  const local = ticket.userEmail.split("@")[0] || ticket.email.split("@")[0] || "U"
   return local.slice(0, 2).toUpperCase()
 }
 
@@ -127,7 +164,12 @@ function normalizeStatus(value: string) {
 }
 
 function normalizePriority(value: string) {
-  return value.toLowerCase() === "high" ? "high" : "normal"
+  const priority = value.toLowerCase()
+
+  if (priority === "urgent") return "urgent"
+  if (priority === "high") return "high"
+
+  return "normal"
 }
 
 function statusLabel(value: string) {
@@ -141,13 +183,20 @@ function statusLabel(value: string) {
 }
 
 function priorityLabel(value: string) {
-  return normalizePriority(value) === "high" ? "High" : "Normal"
+  const priority = normalizePriority(value)
+
+  if (priority === "urgent") return "Urgent"
+  if (priority === "high") return "High"
+
+  return "Normal"
 }
 
 function sortLabel(value: SortMode) {
   if (value === "oldest") return "Oldest first"
-  if (value === "high_priority") return "High priority first"
+  if (value === "high_priority") return "Priority first"
   if (value === "open_first") return "Open first"
+  if (value === "sla_soon") return "SLA soonest"
+  if (value === "unread_first") return "Unread first"
 
   return "Newest first"
 }
@@ -163,6 +212,19 @@ function getPreview(ticket: SupportTicketForWorkbench) {
 function ticketNumber(index: number) {
   if (index < 0) return "#TKT-0000"
   return `#TKT-${String(index + 1).padStart(4, "0")}`
+}
+
+function displayUserName(ticket: SupportTicketForWorkbench) {
+  if (ticket.userName && ticket.userName.trim()) return ticket.userName.trim()
+  return ticket.userEmail || ticket.email
+}
+
+function displayUserLine(ticket: SupportTicketForWorkbench) {
+  const name = ticket.userName?.trim()
+  const email = ticket.userEmail || ticket.email
+
+  if (name) return `${name} (${email})`
+  return email
 }
 
 function statusClass(status: string) {
@@ -184,15 +246,141 @@ function statusClass(status: string) {
 }
 
 function priorityClass(priority: string) {
-  return normalizePriority(priority) === "high"
-    ? `${styles.priorityPill} ${styles.priorityHigh}`
-    : `${styles.priorityPill} ${styles.priorityNormal}`
+  const normalized = normalizePriority(priority)
+
+  if (normalized === "urgent") {
+    return `${styles.priorityPill} ${styles.priorityHigh}`
+  }
+
+  if (normalized === "high") {
+    return `${styles.priorityPill} ${styles.priorityHigh}`
+  }
+
+  return `${styles.priorityPill} ${styles.priorityNormal}`
 }
 
 function miniPriorityClass(priority: string) {
-  return normalizePriority(priority) === "high"
-    ? styles.miniPriorityHigh
-    : styles.miniPriorityNormal
+  const normalized = normalizePriority(priority)
+
+  if (normalized === "urgent" || normalized === "high") {
+    return styles.miniPriorityHigh
+  }
+
+  return styles.miniPriorityNormal
+}
+
+function getLastHumanMessage(ticket: SupportTicketForWorkbench) {
+  return [...ticket.messages]
+    .reverse()
+    .find((message) => message.sender.toLowerCase() !== "system")
+}
+
+function isTicketUnread(ticket: SupportTicketForWorkbench) {
+  const status = normalizeStatus(ticket.status)
+
+  if (status === "closed" || status === "resolved") return false
+
+  const latestHumanMessage = getLastHumanMessage(ticket)
+  const latestHumanIsUser = latestHumanMessage?.sender.toLowerCase() === "user"
+
+  const lastUserTime = ticket.lastUserMessageAt
+    ? new Date(ticket.lastUserMessageAt).getTime()
+    : 0
+
+  const lastReadTime = ticket.lastAdminReadAt
+    ? new Date(ticket.lastAdminReadAt).getTime()
+    : 0
+
+  return latestHumanIsUser && lastUserTime > lastReadTime
+}
+
+function slaInfo(ticket: SupportTicketForWorkbench) {
+  const status = normalizeStatus(ticket.status)
+
+  if (status === "closed") {
+    return {
+      label: "Closed",
+      tone: "#64748b",
+      background: "#f1f5f9",
+      urgent: false,
+      sortTime: Number.POSITIVE_INFINITY,
+    }
+  }
+
+  if (status === "resolved") {
+    return {
+      label: "Resolved",
+      tone: "#059669",
+      background: "#ecfdf5",
+      urgent: false,
+      sortTime: Number.POSITIVE_INFINITY,
+    }
+  }
+
+  if (!ticket.slaDueAt) {
+    return {
+      label: "No SLA",
+      tone: "#64748b",
+      background: "#f8fafc",
+      urgent: false,
+      sortTime: Number.POSITIVE_INFINITY,
+    }
+  }
+
+  const due = new Date(ticket.slaDueAt).getTime()
+
+  if (Number.isNaN(due)) {
+    return {
+      label: "No SLA",
+      tone: "#64748b",
+      background: "#f8fafc",
+      urgent: false,
+      sortTime: Number.POSITIVE_INFINITY,
+    }
+  }
+
+  const diffMs = due - Date.now()
+  const diffMinutes = Math.round(diffMs / 60000)
+
+  if (diffMinutes <= 0) {
+    return {
+      label: "Overdue",
+      tone: "#dc2626",
+      background: "#fef2f2",
+      urgent: true,
+      sortTime: due,
+    }
+  }
+
+  if (diffMinutes < 60) {
+    return {
+      label: `${diffMinutes}m left`,
+      tone: "#dc2626",
+      background: "#fff1f2",
+      urgent: true,
+      sortTime: due,
+    }
+  }
+
+  const hours = Math.round(diffMinutes / 60)
+
+  if (hours <= 4) {
+    return {
+      label: `${hours}h left`,
+      tone: "#c2410c",
+      background: "#fff7ed",
+      urgent: true,
+      sortTime: due,
+    }
+  }
+
+  return {
+    label: `${hours}h left`,
+    tone: "#2563eb",
+    background: "#eff6ff",
+    urgent: false,
+    sortTime: due,
+  }
 }
 
 function InfoRow({
@@ -221,6 +409,7 @@ export default function SupportTicketsWorkbench({
   replyAction,
   updateStatusAction,
   updatePriorityAction,
+  markReadAction,
 }: Props) {
   const [selectedTicketId, setSelectedTicketId] = useState(tickets[0]?.id || "")
   const [filter, setFilter] = useState<StatusFilter>("open")
@@ -230,10 +419,12 @@ export default function SupportTicketsWorkbench({
     useState<PriorityFilter>("all")
   const [draftCategoryFilter, setDraftCategoryFilter] = useState("all")
   const [sortMode, setSortMode] = useState<SortMode>("newest")
+  const [viewMode, setViewMode] = useState<ViewMode>("inbox")
   const [query, setQuery] = useState("")
   const [replyText, setReplyText] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
+  const [profileDrawerTicketId, setProfileDrawerTicketId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const filterRef = useRef<HTMLDivElement | null>(null)
@@ -293,7 +484,10 @@ export default function SupportTicketsWorkbench({
     const matchesSearch = search
       ? ticket.subject.toLowerCase().includes(search) ||
         ticket.email.toLowerCase().includes(search) ||
+        ticket.userEmail.toLowerCase().includes(search) ||
+        String(ticket.userName || "").toLowerCase().includes(search) ||
         ticket.category.toLowerCase().includes(search) ||
+        ticket.id.toLowerCase().includes(search) ||
         getPreview(ticket).toLowerCase().includes(search)
       : true
 
@@ -337,10 +531,17 @@ export default function SupportTicketsWorkbench({
       }
 
       if (sortMode === "high_priority") {
-        const aHigh = normalizePriority(a.priority) === "high" ? 1 : 0
-        const bHigh = normalizePriority(b.priority) === "high" ? 1 : 0
+        const weight = (ticket: SupportTicketForWorkbench) => {
+          const priority = normalizePriority(ticket.priority)
+          if (priority === "urgent") return 3
+          if (priority === "high") return 2
+          return 1
+        }
 
-        if (aHigh !== bHigh) return bHigh - aHigh
+        const aWeight = weight(a)
+        const bWeight = weight(b)
+
+        if (aWeight !== bWeight) return bWeight - aWeight
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       }
 
@@ -356,6 +557,18 @@ export default function SupportTicketsWorkbench({
         const bWeight = statusWeight[normalizeStatus(b.status)] || 0
 
         if (aWeight !== bWeight) return bWeight - aWeight
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      }
+
+      if (sortMode === "sla_soon") {
+        return slaInfo(a).sortTime - slaInfo(b).sortTime
+      }
+
+      if (sortMode === "unread_first") {
+        const aUnread = isTicketUnread(a) ? 1 : 0
+        const bUnread = isTicketUnread(b) ? 1 : 0
+
+        if (aUnread !== bUnread) return bUnread - aUnread
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       }
 
@@ -380,6 +593,9 @@ export default function SupportTicketsWorkbench({
     filteredTickets[0] ||
     tickets[0] ||
     null
+
+  const profileDrawerTicket =
+    tickets.find((ticket) => ticket.id === profileDrawerTicketId) || null
 
   const selectedTicketIndex = selectedTicket
     ? tickets.findIndex((ticket) => ticket.id === selectedTicket.id)
@@ -449,6 +665,36 @@ export default function SupportTicketsWorkbench({
     })
   }
 
+  function markTicketRead(ticket: SupportTicketForWorkbench) {
+    const formData = new FormData()
+    formData.set("ticketId", ticket.id)
+
+    startTransition(async () => {
+      await markReadAction(formData)
+    })
+  }
+
+  function selectTicket(ticket: SupportTicketForWorkbench) {
+    setSelectedTicketId(ticket.id)
+
+    if (isTicketUnread(ticket)) {
+      markTicketRead(ticket)
+    }
+  }
+
+  function openTicketFromList(ticket: SupportTicketForWorkbench) {
+    setSelectedTicketId(ticket.id)
+    setViewMode("inbox")
+
+    if (isTicketUnread(ticket)) {
+      markTicketRead(ticket)
+    }
+  }
+
+  function openUserDrawer(ticket: SupportTicketForWorkbench) {
+    setProfileDrawerTicketId(ticket.id)
+  }
+
   return (
     <div className={styles.shell}>
       <aside className={styles.listPanel}>
@@ -456,7 +702,9 @@ export default function SupportTicketsWorkbench({
           <div className={styles.listTitleRow}>
             <div>
               <div className={styles.listTitle}>Tickets</div>
-              <div className={styles.listSubtitle}>Customer support inbox</div>
+              <div className={styles.listSubtitle}>
+                Customer support inbox · Unread {counts.unread} · SLA risk {counts.slaAtRisk}
+              </div>
             </div>
 
             <div className={styles.listHeaderIcons}>
@@ -497,24 +745,31 @@ export default function SupportTicketsWorkbench({
                     </div>
 
                     <div className={styles.sortOptions}>
-                      {(["newest", "oldest", "high_priority", "open_first"] as SortMode[]).map(
-                        (mode) => (
-                          <button
-                            key={mode}
-                            type="button"
-                            onClick={() => {
-                              setSortMode(mode)
-                              setSortOpen(false)
-                            }}
-                            className={`${styles.sortOption} ${
-                              sortMode === mode ? styles.sortOptionActive : ""
-                            }`}
-                          >
-                            <span>{sortLabel(mode)}</span>
-                            {sortMode === mode ? <Check size={13} /> : null}
-                          </button>
-                        ),
-                      )}
+                      {(
+                        [
+                          "newest",
+                          "oldest",
+                          "high_priority",
+                          "open_first",
+                          "sla_soon",
+                          "unread_first",
+                        ] as SortMode[]
+                      ).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => {
+                            setSortMode(mode)
+                            setSortOpen(false)
+                          }}
+                          className={`${styles.sortOption} ${
+                            sortMode === mode ? styles.sortOptionActive : ""
+                          }`}
+                        >
+                          <span>{sortLabel(mode)}</span>
+                          {sortMode === mode ? <Check size={13} /> : null}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 ) : null}
@@ -571,6 +826,7 @@ export default function SupportTicketsWorkbench({
                         <option value="all">All priorities</option>
                         <option value="normal">Normal</option>
                         <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
                       </select>
                     </label>
 
@@ -623,12 +879,61 @@ export default function SupportTicketsWorkbench({
             </div>
           </div>
 
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 6,
+              marginBottom: 12,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setViewMode("inbox")}
+              style={{
+                height: 32,
+                border: "1px solid rgba(148, 163, 184, 0.18)",
+                borderRadius: 9,
+                background:
+                  viewMode === "inbox"
+                    ? "rgba(96, 165, 250, 0.16)"
+                    : "rgba(255, 255, 255, 0.04)",
+                color: viewMode === "inbox" ? "#bfdbfe" : "#94a3b8",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Inbox
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              style={{
+                height: 32,
+                border: "1px solid rgba(148, 163, 184, 0.18)",
+                borderRadius: 9,
+                background:
+                  viewMode === "list"
+                    ? "rgba(96, 165, 250, 0.16)"
+                    : "rgba(255, 255, 255, 0.04)",
+                color: viewMode === "list" ? "#bfdbfe" : "#94a3b8",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              List
+            </button>
+          </div>
+
           <div className={styles.searchWrap}>
             <Search size={14} className={styles.searchIcon} />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search tickets..."
+              placeholder="Search tickets, user, email, topic..."
               className={styles.searchInput}
             />
           </div>
@@ -687,31 +992,49 @@ export default function SupportTicketsWorkbench({
             filteredTickets.map((ticket) => {
               const active = selectedTicket?.id === ticket.id
               const status = normalizeStatus(ticket.status)
+              const unread = isTicketUnread(ticket)
+              const sla = slaInfo(ticket)
 
               return (
                 <button
                   key={ticket.id}
                   type="button"
-                  onClick={() => setSelectedTicketId(ticket.id)}
+                  onClick={() => selectTicket(ticket)}
                   className={`${styles.ticketItem} ${
                     active ? styles.ticketItemActive : ""
                   }`}
                 >
                   <div className={styles.ticketTop}>
-                    <span className={styles.ticketSubject}>{ticket.subject}</span>
+                    <span className={styles.ticketSubject}>
+                      {unread ? (
+                        <span
+                          style={{
+                            display: "inline-block",
+                            width: 7,
+                            height: 7,
+                            borderRadius: 99,
+                            background: "#ef4444",
+                            marginRight: 7,
+                            verticalAlign: "middle",
+                          }}
+                        />
+                      ) : null}
+                      {ticket.subject}
+                    </span>
                     <span className={styles.ticketTime}>
                       {formatShortTime(ticket.updated_at)}
                     </span>
                   </div>
 
                   <div className={styles.ticketMeta}>
-                    <span className={styles.ticketEmail}>{ticket.email}</span>
-                    <span className={statusClass(ticket.status)}>
-                      {statusLabel(ticket.status)}
+                    <span className={styles.ticketEmail}>
+                      {displayUserLine(ticket)}
                     </span>
+                    <span>{statusLabel(ticket.status)} thread</span>
                     <span className={miniPriorityClass(ticket.priority)}>
-                      {normalizePriority(ticket.priority)}
+                      {priorityLabel(ticket.priority)} priority
                     </span>
+                    <span style={{ color: sla.tone }}>{sla.label}</span>
                   </div>
 
                   <div className={styles.ticketPreview}>{getPreview(ticket)}</div>
@@ -727,7 +1050,243 @@ export default function SupportTicketsWorkbench({
       </aside>
 
       <main className={styles.mainPanel}>
-        {selectedTicket ? (
+        {viewMode === "list" ? (
+          <section
+            style={{
+              height: "100%",
+              overflow: "auto",
+              background: "#f7f9fc",
+              padding: 22,
+            }}
+          >
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #dbe5f2",
+                borderRadius: 14,
+                overflow: "hidden",
+                boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
+              }}
+            >
+              <div
+                style={{
+                  padding: "16px 18px",
+                  borderBottom: "1px solid #dbe5f2",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 16,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 17,
+                      fontWeight: 650,
+                      color: "#0f172a",
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
+                    Ticket list
+                  </div>
+                  <div style={{ marginTop: 3, color: "#64748b", fontSize: 12.5 }}>
+                    {filteredTickets.length} tickets shown · {counts.unread} unread ·{" "}
+                    {counts.slaAtRisk} SLA risk
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setViewMode("inbox")}
+                  style={{
+                    height: 34,
+                    borderRadius: 9,
+                    border: "1px solid #dbe5f2",
+                    background: "white",
+                    color: "#475569",
+                    padding: "0 13px",
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Back to inbox
+                </button>
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    minWidth: 980,
+                    fontSize: 13,
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: "#f8fafc",
+                        color: "#64748b",
+                        textAlign: "left",
+                        borderBottom: "1px solid #dbe5f2",
+                      }}
+                    >
+                      {[
+                        "ID",
+                        "Subject",
+                        "User",
+                        "Status",
+                        "Priority",
+                        "SLA",
+                        "Unread",
+                        "Assigned",
+                        "Updated",
+                        "Action",
+                      ].map((heading) => (
+                        <th
+                          key={heading}
+                          style={{
+                            padding: "11px 12px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.08em",
+                          }}
+                        >
+                          {heading}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {filteredTickets.map((ticket) => {
+                      const index = tickets.findIndex((item) => item.id === ticket.id)
+                      const sla = slaInfo(ticket)
+                      const unread = isTicketUnread(ticket)
+
+                      return (
+                        <tr
+                          key={ticket.id}
+                          style={{
+                            borderBottom: "1px solid #edf2f7",
+                            background:
+                              selectedTicket?.id === ticket.id ? "#fbfdff" : "#ffffff",
+                          }}
+                        >
+                          <td style={{ padding: "12px", color: "#64748b" }}>
+                            {ticketNumber(index)}
+                          </td>
+
+                          <td style={{ padding: "12px", color: "#0f172a" }}>
+                            <div style={{ fontWeight: 550 }}>{ticket.subject}</div>
+                            <div
+                              style={{
+                                marginTop: 3,
+                                color: "#94a3b8",
+                                fontSize: 12,
+                                maxWidth: 250,
+                                overflow: "hidden",
+                                whiteSpace: "nowrap",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {getPreview(ticket)}
+                            </div>
+                          </td>
+
+                          <td style={{ padding: "12px" }}>
+                            <button
+                              type="button"
+                              onClick={() => openUserDrawer(ticket)}
+                              style={{
+                                border: 0,
+                                background: "transparent",
+                                padding: 0,
+                                textAlign: "left",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <div style={{ color: "#0f172a", fontWeight: 550 }}>
+                                {displayUserName(ticket)}
+                              </div>
+                              <div style={{ marginTop: 3, color: "#64748b", fontSize: 12 }}>
+                                {ticket.userEmail}
+                              </div>
+                            </button>
+                          </td>
+
+                          <td style={{ padding: "12px", color: "#475569" }}>
+                            {statusLabel(ticket.status)}
+                          </td>
+
+                          <td style={{ padding: "12px", color: "#475569" }}>
+                            {priorityLabel(ticket.priority)}
+                          </td>
+
+                          <td style={{ padding: "12px" }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                borderRadius: 8,
+                                padding: "4px 8px",
+                                background: sla.background,
+                                color: sla.tone,
+                                fontWeight: 650,
+                                fontSize: 12,
+                              }}
+                            >
+                              {sla.label}
+                            </span>
+                          </td>
+
+                          <td style={{ padding: "12px" }}>
+                            {unread ? (
+                              <span style={{ color: "#dc2626", fontWeight: 650 }}>
+                                Unread
+                              </span>
+                            ) : (
+                              <span style={{ color: "#94a3b8" }}>Read</span>
+                            )}
+                          </td>
+
+                          <td style={{ padding: "12px", color: "#64748b" }}>
+                            {ticket.assignedAdminName || "Unassigned"}
+                          </td>
+
+                          <td style={{ padding: "12px", color: "#64748b" }}>
+                            {formatDateTime(ticket.updated_at)}
+                          </td>
+
+                          <td style={{ padding: "12px" }}>
+                            <button
+                              type="button"
+                              onClick={() => openTicketFromList(ticket)}
+                              style={{
+                                height: 30,
+                                borderRadius: 8,
+                                border: "1px solid #bfdbfe",
+                                background: "#eff6ff",
+                                color: "#2563eb",
+                                padding: "0 11px",
+                                fontSize: 12,
+                                fontWeight: 650,
+                                cursor: "pointer",
+                              }}
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        ) : selectedTicket ? (
           <>
             <header className={styles.threadHeader}>
               <div className={styles.threadTitleArea}>
@@ -818,19 +1377,40 @@ export default function SupportTicketsWorkbench({
                             isSupport ? styles.supportMessageMeta : ""
                           }`}
                         >
-                          <div
+                          <button
+                            type="button"
+                            onClick={() =>
+                              !isSupport ? openUserDrawer(selectedTicket) : undefined
+                            }
                             className={`${styles.messageAvatar} ${
                               isSupport ? styles.supportAvatar : styles.userAvatar
                             }`}
+                            style={{
+                              border: 0,
+                              cursor: isSupport ? "default" : "pointer",
+                            }}
                           >
-                            {isSupport ? "V" : safeInitials(selectedTicket.email)}
-                          </div>
+                            {isSupport ? "V" : safeInitials(selectedTicket)}
+                          </button>
 
-                          <span className={styles.messageSender}>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              !isSupport ? openUserDrawer(selectedTicket) : undefined
+                            }
+                            className={styles.messageSender}
+                            style={{
+                              border: 0,
+                              background: "transparent",
+                              padding: 0,
+                              cursor: isSupport ? "default" : "pointer",
+                              textAlign: "left",
+                            }}
+                          >
                             {isSupport
                               ? `${admin.fullName || "Vladimir"} · Support`
-                              : selectedTicket.email}
-                          </span>
+                              : displayUserLine(selectedTicket)}
+                          </button>
 
                           <span className={styles.messageTime}>
                             {formatShortTime(message.created_at)}
@@ -944,6 +1524,7 @@ export default function SupportTicketsWorkbench({
                   <InfoRow label="Category" value={selectedTicket.category} />
                   <InfoRow label="Created" value={formatDateTime(selectedTicket.created_at)} />
                   <InfoRow label="Last update" value={formatDateTime(selectedTicket.updated_at)} />
+                  <InfoRow label="SLA" value={slaInfo(selectedTicket).label} />
                 </div>
 
                 <div className={styles.infoSection}>
@@ -980,7 +1561,29 @@ export default function SupportTicketsWorkbench({
 
                 <div className={styles.infoSection}>
                   <div className={styles.infoSectionTitle}>User</div>
-                  <InfoRow label="Email" value={selectedTicket.email} email />
+
+                  <button
+                    type="button"
+                    onClick={() => openUserDrawer(selectedTicket)}
+                    style={{
+                      width: "100%",
+                      border: "1px solid #dbe5f2",
+                      borderRadius: 10,
+                      background: "#fbfdff",
+                      padding: 10,
+                      textAlign: "left",
+                      cursor: "pointer",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <div style={{ color: "#0f172a", fontSize: 12.5, fontWeight: 650 }}>
+                      {displayUserName(selectedTicket)}
+                    </div>
+                    <div style={{ color: "#64748b", fontSize: 11.5, marginTop: 3 }}>
+                      {selectedTicket.userEmail}
+                    </div>
+                  </button>
+
                   <InfoRow label="Plan" value={selectedTicket.userPlan} />
                   <InfoRow label="Member since" value={selectedTicket.memberSince} />
                 </div>
@@ -1041,6 +1644,233 @@ export default function SupportTicketsWorkbench({
           </div>
         )}
       </main>
+
+      {profileDrawerTicket ? (
+        <>
+          <button
+            type="button"
+            aria-label="Close user profile drawer"
+            onClick={() => setProfileDrawerTicketId(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 80,
+              border: 0,
+              background: "rgba(15, 23, 42, 0.28)",
+              cursor: "default",
+            }}
+          />
+
+          <aside
+            style={{
+              position: "fixed",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 90,
+              width: 390,
+              maxWidth: "92vw",
+              background: "#ffffff",
+              borderLeft: "1px solid #dbe5f2",
+              boxShadow: "-22px 0 55px rgba(15, 23, 42, 0.18)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                padding: "18px 18px 16px",
+                borderBottom: "1px solid #dbe5f2",
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    color: "#0f172a",
+                    fontSize: 17,
+                    fontWeight: 650,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  User profile
+                </div>
+                <div style={{ color: "#64748b", fontSize: 12.5, marginTop: 3 }}>
+                  Support context and account details
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setProfileDrawerTicketId(null)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 9,
+                  border: "1px solid #dbe5f2",
+                  background: "#f8fafc",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div style={{ padding: 18, overflowY: "auto" }}>
+              <div
+                style={{
+                  border: "1px solid #dbe5f2",
+                  borderRadius: 14,
+                  padding: 14,
+                  background: "#fbfdff",
+                  marginBottom: 14,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 999,
+                      background: "#2563eb",
+                      color: "white",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {safeInitials(profileDrawerTicket)}
+                  </div>
+
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        color: "#0f172a",
+                        fontSize: 15,
+                        fontWeight: 650,
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {displayUserName(profileDrawerTicket)}
+                    </div>
+                    <div
+                      style={{
+                        color: "#64748b",
+                        fontSize: 12.5,
+                        marginTop: 3,
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {profileDrawerTicket.userEmail}
+                    </div>
+                  </div>
+                </div>
+
+                {profileDrawerTicket.userIsBlocked ? (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      borderRadius: 9,
+                      background: "#fef2f2",
+                      color: "#dc2626",
+                      padding: "8px 10px",
+                      fontSize: 12,
+                      fontWeight: 650,
+                    }}
+                  >
+                    This account is blocked.
+                  </div>
+                ) : null}
+              </div>
+
+              <div style={{ display: "grid", gap: 10 }}>
+                {[
+                  ["User ID", profileDrawerTicket.userId],
+                  ["Plan", profileDrawerTicket.userPlan],
+                  ["Billing status", profileDrawerTicket.userBillingStatus],
+                  ["Jurisdiction", profileDrawerTicket.userJurisdiction],
+                  ["Exam", profileDrawerTicket.userExam],
+                  ["Member since", profileDrawerTicket.memberSince],
+                  ["Last active", formatDateTime(profileDrawerTicket.userLastActiveAt)],
+                  ["Total tickets", String(profileDrawerTicket.userTotalTicketCount)],
+                  ["Open tickets", String(profileDrawerTicket.userOpenTicketCount)],
+                  ["Current ticket", profileDrawerTicket.subject],
+                  ["Current ticket status", statusLabel(profileDrawerTicket.status)],
+                  ["Current ticket priority", priorityLabel(profileDrawerTicket.priority)],
+                  ["Current ticket SLA", slaInfo(profileDrawerTicket).label],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    style={{
+                      borderBottom: "1px solid #edf2f7",
+                      paddingBottom: 9,
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#94a3b8",
+                        fontSize: 11,
+                        fontWeight: 650,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      style={{
+                        color: "#334155",
+                        fontSize: 13,
+                        fontWeight: 550,
+                        marginTop: 4,
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {value || "Not available"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTicketId(profileDrawerTicket.id)
+                  setViewMode("inbox")
+                  setProfileDrawerTicketId(null)
+                }}
+                style={{
+                  marginTop: 18,
+                  width: "100%",
+                  height: 38,
+                  borderRadius: 10,
+                  border: 0,
+                  background: "#2563eb",
+                  color: "white",
+                  fontSize: 13,
+                  fontWeight: 650,
+                  cursor: "pointer",
+                }}
+              >
+                Open this ticket
+              </button>
+            </div>
+          </aside>
+        </>
+      ) : null}
     </div>
   )
 }
