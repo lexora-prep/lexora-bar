@@ -26,6 +26,39 @@ function cleanString(value: unknown, fallback = "") {
   return trimmed || fallback
 }
 
+function normalizePriority(category: string) {
+  const normalized = category.trim().toLowerCase()
+
+  if (
+    normalized === "billing" ||
+    normalized === "payment" ||
+    normalized === "invoice" ||
+    normalized === "subscription"
+  ) {
+    return "high"
+  }
+
+  return "normal"
+}
+
+function getSlaDueAt(priority: string, baseDate = new Date()) {
+  const normalized = priority.trim().toLowerCase()
+  const due = new Date(baseDate)
+
+  if (normalized === "urgent") {
+    due.setHours(due.getHours() + 2)
+    return due
+  }
+
+  if (normalized === "high") {
+    due.setHours(due.getHours() + 12)
+    return due
+  }
+
+  due.setHours(due.getHours() + 24)
+  return due
+}
+
 export async function GET() {
   try {
     const auth = await getAuthorizedUser()
@@ -54,7 +87,7 @@ export async function GET() {
 
     return NextResponse.json(
       { ok: false, error: err?.message || "Failed to load support tickets." },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -66,20 +99,24 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}))
 
-    const subject = cleanString(body.subject, "Billing support request")
-    const category = cleanString(body.category, "billing")
+    const subject = cleanString(body.subject, "Support request")
+    const category = cleanString(body.category, "general")
     const message = cleanString(body.message)
 
     if (!message) {
       return NextResponse.json(
         { ok: false, error: "Message is required." },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     const email =
       auth.user.email ||
       cleanString(body.email, "unknown@lexoraprep.com")
+
+    const now = new Date()
+    const priority = normalizePriority(category)
+    const slaDueAt = getSlaDueAt(priority, now)
 
     const ticket = await prisma.support_tickets.create({
       data: {
@@ -88,7 +125,7 @@ export async function POST(req: Request) {
         subject,
         category,
         status: "open",
-        priority: category === "billing" ? "high" : "normal",
+        priority,
         messages: {
           create: {
             sender: "user",
@@ -105,13 +142,22 @@ export async function POST(req: Request) {
       },
     })
 
+    await prisma.$executeRaw`
+      update public.support_tickets
+      set
+        last_user_message_at = ${now},
+        sla_due_at = ${slaDueAt},
+        updated_at = ${now}
+      where id = ${ticket.id}::uuid
+    `
+
     return NextResponse.json({ ok: true, ticket })
   } catch (err: any) {
     console.error("SUPPORT TICKETS POST ERROR:", err)
 
     return NextResponse.json(
       { ok: false, error: err?.message || "Failed to create support ticket." },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

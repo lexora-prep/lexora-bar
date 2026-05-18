@@ -33,6 +33,14 @@ export type SupportTicketForWorkbench = {
   updated_at: string
   userPlan: string
   memberSince: string
+  assignedAdminName: string | null
+  assignedAdminId: string | null
+  lastUserMessageAt: string | null
+  lastSupportReplyAt: string | null
+  lastAdminReadAt: string | null
+  resolvedAt: string | null
+  closedAt: string | null
+  slaDueAt: string | null
   messages: SupportMessage[]
 }
 
@@ -48,6 +56,8 @@ type Counts = {
   resolved: number
   closed: number
   all: number
+  unread: number
+  slaAtRisk: number
 }
 
 type Props = {
@@ -57,6 +67,7 @@ type Props = {
   replyAction: (formData: FormData) => Promise<void>
   updateStatusAction: (formData: FormData) => Promise<void>
   updatePriorityAction: (formData: FormData) => Promise<void>
+  markReadAction: (formData: FormData) => Promise<void>
 }
 
 type StatusFilter = "open" | "pending" | "resolved" | "closed" | "all"
