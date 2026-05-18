@@ -1,20 +1,14 @@
 "use client"
 
-import {
-  CSSProperties,
-  ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react"
+import { ReactNode, useEffect, useMemo, useRef, useState, useTransition } from "react"
 import {
   AlertCircle,
   Bot,
   Check,
   ChevronDown,
   Clock3,
+  CreditCard,
+  FileText,
   Filter,
   Inbox,
   Lock,
@@ -117,8 +111,10 @@ type SortMode =
 type ViewMode = "inbox" | "list"
 type SideTab = "details" | "copilot"
 type ReplyMode = "reply" | "internal"
+type AccountModal = "subscription" | "payment" | "conversations" | "notes" | null
 
 const statusOptions = ["open", "pending", "resolved", "closed"] as const
+const priorityOptions = ["normal", "high", "urgent"] as const
 
 function formatShortTime(value: string | null | undefined) {
   if (!value) return ""
@@ -415,54 +411,6 @@ function slaClass(ticket: SupportTicketForWorkbench) {
   return `${styles.dotText} ${styles.dotMuted}`
 }
 
-function inboxStatusClass(status: string) {
-  const normalized = normalizeStatus(status)
-
-  if (normalized === "open") return styles.inboxStatusOpen
-  if (normalized === "pending") return styles.inboxStatusPending
-  if (normalized === "resolved") return styles.inboxStatusResolved
-  if (normalized === "closed") return styles.inboxStatusClosed
-
-  return styles.inboxMetaMuted
-}
-
-function inboxPriorityClass(priority: string) {
-  const normalized = normalizePriority(priority)
-
-  if (normalized === "urgent") return styles.inboxPriorityUrgent
-  if (normalized === "high") return styles.inboxPriorityHigh
-
-  return styles.inboxPriorityNormal
-}
-
-function inboxCategoryClass(category: string) {
-  const normalized = category.toLowerCase()
-
-  if (
-    normalized.includes("billing") ||
-    normalized.includes("invoice") ||
-    normalized.includes("subscription")
-  ) {
-    return styles.inboxCategoryBilling
-  }
-
-  if (normalized.includes("technical")) return styles.inboxCategoryTechnical
-  if (normalized.includes("account")) return styles.inboxCategoryAccount
-
-  return styles.inboxCategoryOther
-}
-
-function inboxSlaToneClass(ticket: SupportTicketForWorkbench) {
-  const sla = slaInfo(ticket)
-
-  if (sla.tone === "danger") return styles.inboxSlaDanger
-  if (sla.tone === "warning") return styles.inboxSlaWarning
-  if (sla.tone === "good") return styles.inboxSlaGood
-  if (sla.tone === "info") return styles.inboxSlaInfo
-
-  return styles.inboxMetaMuted
-}
-
 function planClass(plan: string) {
   const normalized = plan.toLowerCase()
 
@@ -488,6 +436,36 @@ function compactPlanLabel(plan: string) {
 function adminUserLabel(user: AdminUserForWorkbench) {
   if (user.fullName && user.fullName.trim()) return user.fullName.trim()
   return user.email.split("@")[0] || user.email
+}
+
+function ticketColorByPriority(priority: string) {
+  const normalized = normalizePriority(priority)
+
+  if (normalized === "urgent") return "#dc2626"
+  if (normalized === "high") return "#ef4444"
+
+  return "#f97316"
+}
+
+function categoryColor(category: string) {
+  const normalized = category.toLowerCase()
+
+  if (normalized.includes("billing") || normalized.includes("invoice")) return "#2563eb"
+  if (normalized.includes("account")) return "#7c3aed"
+  if (normalized.includes("technical")) return "#0891b2"
+  if (normalized.includes("subscription")) return "#059669"
+
+  return "#64748b"
+}
+
+function statusColor(status: string) {
+  const normalized = normalizeStatus(status)
+
+  if (normalized === "resolved") return "#059669"
+  if (normalized === "closed") return "#64748b"
+  if (normalized === "pending") return "#c2410c"
+
+  return "#2563eb"
 }
 
 function DetailRow({
@@ -538,6 +516,355 @@ function SectionTitle({
   )
 }
 
+function SupportInfoModal({
+  mode,
+  ticket,
+  ticketNumberLabel,
+  userTickets,
+  onClose,
+  onOpenTicket,
+}: {
+  mode: Exclude<AccountModal, null>
+  ticket: SupportTicketForWorkbench
+  ticketNumberLabel: string
+  userTickets: SupportTicketForWorkbench[]
+  onClose: () => void
+  onOpenTicket: (ticket: SupportTicketForWorkbench) => void
+}) {
+  const title =
+    mode === "subscription"
+      ? "Subscription record"
+      : mode === "payment"
+        ? "Payment history"
+        : mode === "conversations"
+          ? "Recent conversations"
+          : "User notes"
+
+  const subtitle =
+    mode === "subscription"
+      ? "Plan, billing status, and account subscription context."
+      : mode === "payment"
+        ? "Payment information currently available from the user profile."
+        : mode === "conversations"
+          ? "Other support conversations from the same user."
+          : "Internal notes area for this user."
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 110,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(15, 23, 42, 0.36)",
+        padding: 24,
+      }}
+    >
+      <div
+        style={{
+          width: "min(760px, 94vw)",
+          maxHeight: "84vh",
+          overflow: "hidden",
+          borderRadius: 18,
+          background: "#ffffff",
+          boxShadow: "0 28px 80px rgba(15, 23, 42, 0.24)",
+          border: "1px solid #dbe5f2",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          style={{
+            padding: "18px 20px",
+            borderBottom: "1px solid #e2e8f0",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 14,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#94a3b8",
+                fontSize: 11,
+                fontWeight: 750,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+              }}
+            >
+              Support workspace
+            </div>
+            <div
+              style={{
+                marginTop: 4,
+                color: "#0f172a",
+                fontSize: 20,
+                fontWeight: 700,
+                letterSpacing: "-0.03em",
+              }}
+            >
+              {title}
+            </div>
+            <div
+              style={{
+                marginTop: 4,
+                color: "#64748b",
+                fontSize: 13,
+                lineHeight: 1.45,
+              }}
+            >
+              {subtitle}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              border: "1px solid #dbe5f2",
+              background: "#f8fafc",
+              color: "#64748b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            padding: 20,
+            overflowY: "auto",
+          }}
+        >
+          {mode === "subscription" ? (
+            <div style={{ display: "grid", gap: 12 }}>
+              <ModalCard>
+                <ModalRow label="User" value={displayUserName(ticket)} />
+                <ModalRow label="Email" value={ticket.userEmail} />
+                <ModalRow label="Plan" value={compactPlanLabel(ticket.userPlan)} strong />
+                <ModalRow label="Billing status" value={ticket.userBillingStatus} />
+                <ModalRow label="Member since" value={ticket.memberSince} />
+                <ModalRow label="Account created" value={formatDateTime(ticket.userCreatedAt)} />
+                <ModalRow label="Last active" value={formatDateTime(ticket.userLastActiveAt)} />
+              </ModalCard>
+
+              <ModalNotice>
+                This modal intentionally stays inside the support page. It shows the subscription context already loaded for this ticket. If later you want full Paddle subscription details here, connect this modal to a dedicated admin API that fetches the user’s Paddle records by user ID.
+              </ModalNotice>
+            </div>
+          ) : null}
+
+          {mode === "payment" ? (
+            <div style={{ display: "grid", gap: 12 }}>
+              <ModalCard>
+                <ModalRow label="User" value={displayUserName(ticket)} />
+                <ModalRow label="Email" value={ticket.userEmail} />
+                <ModalRow label="Plan" value={compactPlanLabel(ticket.userPlan)} strong />
+                <ModalRow label="Billing status" value={ticket.userBillingStatus} />
+                <ModalRow label="Current ticket" value={ticketNumberLabel} />
+                <ModalRow label="Ticket category" value={ticket.category} />
+                <ModalRow label="Last support reply" value={formatDateTime(ticket.lastSupportReplyAt)} />
+              </ModalCard>
+
+              <ModalNotice>
+                Payment history no longer redirects away from support. This window is ready for live payment rows once an admin payment history API is connected. For now, it displays the billing context available in the support ticket payload.
+              </ModalNotice>
+            </div>
+          ) : null}
+
+          {mode === "conversations" ? (
+            <div style={{ display: "grid", gap: 10 }}>
+              {userTickets.length === 0 ? (
+                <ModalNotice>No recent conversations found for this user.</ModalNotice>
+              ) : (
+                userTickets.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onOpenTicket(item)}
+                    style={{
+                      border: "1px solid #dbe5f2",
+                      borderRadius: 14,
+                      background: item.id === ticket.id ? "#eff6ff" : "#ffffff",
+                      padding: 14,
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          color: "#0f172a",
+                          fontSize: 13,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {item.subject}
+                      </div>
+                      <div
+                        style={{
+                          color: "#94a3b8",
+                          fontSize: 12,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {formatDateTime(item.updated_at)}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 6,
+                        color: "#64748b",
+                        fontSize: 12,
+                      }}
+                    >
+                      <span style={{ color: statusColor(item.status), fontWeight: 700 }}>
+                        {statusLabel(item.status)}
+                      </span>
+                      {" · "}
+                      <span style={{ color: ticketColorByPriority(item.priority), fontWeight: 700 }}>
+                        {priorityLabel(item.priority)}
+                      </span>
+                      {" · "}
+                      <span style={{ color: categoryColor(item.category), fontWeight: 700 }}>
+                        {item.category}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 7,
+                        color: "#7b8ba5",
+                        fontSize: 12,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {getPreview(item)}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          ) : null}
+
+          {mode === "notes" ? (
+            <div style={{ display: "grid", gap: 12 }}>
+              <ModalCard>
+                <ModalRow label="User" value={displayUserName(ticket)} />
+                <ModalRow label="Email" value={ticket.userEmail} />
+                <ModalRow label="Total tickets" value={String(ticket.userTotalTicketCount)} />
+                <ModalRow label="Open tickets" value={String(ticket.userOpenTicketCount)} />
+              </ModalCard>
+
+              <ModalNotice>
+                User notes panel is preserved inside the support workspace. Internal notes written in the reply box are saved into the ticket thread as internal messages and are hidden from the user. A separate long-term user-notes table can be connected later if you want notes that follow the user across all tickets.
+              </ModalNotice>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ModalCard({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        border: "1px solid #dbe5f2",
+        borderRadius: 14,
+        background: "#ffffff",
+        overflow: "hidden",
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function ModalRow({
+  label,
+  value,
+  strong = false,
+}: {
+  label: string
+  value: string
+  strong?: boolean
+}) {
+  return (
+    <div
+      style={{
+        minHeight: 42,
+        display: "grid",
+        gridTemplateColumns: "180px minmax(0, 1fr)",
+        gap: 14,
+        alignItems: "center",
+        padding: "10px 14px",
+        borderBottom: "1px solid #edf2f7",
+      }}
+    >
+      <div
+        style={{
+          color: "#94a3b8",
+          fontSize: 12,
+          fontWeight: 650,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          color: strong ? "#0f172a" : "#334155",
+          fontSize: 13,
+          fontWeight: strong ? 750 : 600,
+          wordBreak: "break-word",
+        }}
+      >
+        {value || "Not available"}
+      </div>
+    </div>
+  )
+}
+
+function ModalNotice({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        border: "1px solid #bfdbfe",
+        borderRadius: 14,
+        background: "#eff6ff",
+        color: "#1e3a8a",
+        padding: 14,
+        fontSize: 13,
+        fontWeight: 550,
+        lineHeight: 1.55,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
 export default function SupportTicketsWorkbench({
   admin,
   adminUsers,
@@ -560,13 +887,13 @@ export default function SupportTicketsWorkbench({
   const [viewMode, setViewMode] = useState<ViewMode>("inbox")
   const [sideTab, setSideTab] = useState<SideTab>("details")
   const [replyMode, setReplyMode] = useState<ReplyMode>("reply")
+  const [accountModal, setAccountModal] = useState<AccountModal>(null)
   const [query, setQuery] = useState("")
   const [replyText, setReplyText] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false)
   const [listCollapsed, setListCollapsed] = useState(false)
-  const [listWidth, setListWidth] = useState(338)
   const [profileDrawerTicketId, setProfileDrawerTicketId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -750,6 +1077,15 @@ export default function SupportTicketsWorkbench({
   const selectedIsClosed = selectedStatus === "closed"
   const selectedIsResolved = selectedStatus === "resolved"
 
+  const selectedUserTickets = selectedTicket
+    ? tickets
+        .filter((ticket) => ticket.userId === selectedTicket.userId)
+        .sort(
+          (a, b) =>
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+        )
+    : []
+
   function applyFilters() {
     setPriorityFilter(draftPriorityFilter)
     setCategoryFilter(draftCategoryFilter)
@@ -840,6 +1176,7 @@ export default function SupportTicketsWorkbench({
   function openTicketFromList(ticket: SupportTicketForWorkbench) {
     setSelectedTicketId(ticket.id)
     setViewMode("inbox")
+    setAccountModal(null)
 
     if (isTicketUnread(ticket)) {
       markTicketRead(ticket)
@@ -871,39 +1208,11 @@ export default function SupportTicketsWorkbench({
     setViewMode("inbox")
   }
 
-  function startListResize(event: React.MouseEvent<HTMLDivElement>) {
-    event.preventDefault()
-
-    const startX = event.clientX
-    const startWidth = listWidth
-
-    function handleMouseMove(moveEvent: MouseEvent) {
-      const nextWidth = Math.min(
-        520,
-        Math.max(260, startWidth + moveEvent.clientX - startX),
-      )
-      setListWidth(nextWidth)
-    }
-
-    function handleMouseUp() {
-      document.body.style.cursor = ""
-      document.body.style.userSelect = ""
-      window.removeEventListener("mousemove", handleMouseMove)
-      window.removeEventListener("mouseup", handleMouseUp)
-    }
-
-    document.body.style.cursor = "col-resize"
-    document.body.style.userSelect = "none"
-    window.addEventListener("mousemove", handleMouseMove)
-    window.addEventListener("mouseup", handleMouseUp)
-  }
-
   return (
     <div
       className={`${styles.shell} ${
         leftRailCollapsed ? styles.shellRailCollapsed : ""
       } ${listCollapsed ? styles.shellListCollapsed : ""}`}
-      style={{ "--support-list-width": `${listWidth}px` } as CSSProperties}
     >
       <aside className={styles.leftRail}>
         <div className={styles.railHeader}>
@@ -925,9 +1234,7 @@ export default function SupportTicketsWorkbench({
         <button
           type="button"
           onClick={() => applyRailStatus("open")}
-          className={`${styles.railItem} ${
-            filter === "open" ? styles.railItemActive : ""
-          }`}
+          className={`${styles.railItem} ${filter === "open" ? styles.railItemActive : ""}`}
         >
           <Inbox size={14} />
           <span>Open tickets</span>
@@ -1028,8 +1335,7 @@ export default function SupportTicketsWorkbench({
             <div>
               <div className={styles.listTitle}>Customer inbox</div>
               <div className={styles.listSubtitle}>
-                {filteredTickets.length} shown · {counts.unread} unread ·{" "}
-                {counts.slaAtRisk} SLA risk
+                {filteredTickets.length} shown · {counts.unread} unread · {counts.slaAtRisk} SLA risk
               </div>
             </div>
 
@@ -1326,16 +1632,18 @@ export default function SupportTicketsWorkbench({
                   </div>
 
                   <div className={styles.ticketMeta}>
-                    <span className={inboxStatusClass(ticket.status)}>
+                    <span style={{ color: statusColor(ticket.status), fontWeight: 650 }}>
                       {statusLabel(ticket.status)}
                     </span>
-                    <span className={inboxPriorityClass(ticket.priority)}>
+                    <span style={{ color: ticketColorByPriority(ticket.priority), fontWeight: 650 }}>
                       {priorityLabel(ticket.priority)}
                     </span>
-                    <span className={inboxCategoryClass(ticket.category)}>
+                    <span style={{ color: categoryColor(ticket.category), fontWeight: 650 }}>
                       {ticket.category}
                     </span>
-                    <span className={inboxSlaToneClass(ticket)}>{sla.label}</span>
+                    <span className={styles[`slaTone_${sla.tone}`]}>
+                      {sla.label}
+                    </span>
                   </div>
 
                   <div className={styles.ticketPreview}>{getPreview(ticket)}</div>
@@ -1345,15 +1653,6 @@ export default function SupportTicketsWorkbench({
           )}
         </div>
       </aside>
-
-      {!listCollapsed ? (
-        <div
-          role="separator"
-          aria-label="Resize customer inbox"
-          className={styles.listResizeHandle}
-          onMouseDown={startListResize}
-        />
-      ) : null}
 
       {listCollapsed ? (
         <button
@@ -1374,8 +1673,7 @@ export default function SupportTicketsWorkbench({
                 <div>
                   <div className={styles.listViewTitle}>Ticket list</div>
                   <div className={styles.listViewSub}>
-                    {filteredTickets.length} tickets shown · {counts.unread} unread ·{" "}
-                    {counts.slaAtRisk} SLA risk
+                    {filteredTickets.length} tickets shown · {counts.unread} unread · {counts.slaAtRisk} SLA risk
                   </div>
                 </div>
 
@@ -1700,9 +1998,7 @@ export default function SupportTicketsWorkbench({
 
                       <div className={styles.replyFooter}>
                         <div className={styles.replyingAs}>
-                          {replyMode === "internal"
-                            ? "Saving internal note as "
-                            : "Replying as "}
+                          {replyMode === "internal" ? "Saving internal note as " : "Replying as "}
                           <strong>{admin.fullName || "Vladimir"}</strong>
                         </div>
 
@@ -1836,14 +2132,7 @@ export default function SupportTicketsWorkbench({
                       <DetailRow
                         label="SLA"
                         value={slaInfo(selectedTicket).label}
-                        tone={
-                          slaInfo(selectedTicket).tone as
-                            | "good"
-                            | "warning"
-                            | "danger"
-                            | "info"
-                            | "muted"
-                        }
+                        tone={slaInfo(selectedTicket).tone as "good" | "warning" | "danger" | "info" | "muted"}
                       />
                       <DetailRow
                         label="Urgency"
@@ -1898,22 +2187,10 @@ export default function SupportTicketsWorkbench({
 
                     <div className={styles.sideSection}>
                       <SectionTitle icon={<Clock3 size={13} />} title="Recent history" />
-                      <DetailRow
-                        label="Total tickets"
-                        value={String(selectedTicket.userTotalTicketCount)}
-                      />
-                      <DetailRow
-                        label="Open tickets"
-                        value={String(selectedTicket.userOpenTicketCount)}
-                      />
-                      <DetailRow
-                        label="Last user message"
-                        value={formatDateTime(selectedTicket.lastUserMessageAt)}
-                      />
-                      <DetailRow
-                        label="Last support reply"
-                        value={formatDateTime(selectedTicket.lastSupportReplyAt)}
-                      />
+                      <DetailRow label="Total tickets" value={String(selectedTicket.userTotalTicketCount)} />
+                      <DetailRow label="Open tickets" value={String(selectedTicket.userOpenTicketCount)} />
+                      <DetailRow label="Last user message" value={formatDateTime(selectedTicket.lastUserMessageAt)} />
+                      <DetailRow label="Last support reply" value={formatDateTime(selectedTicket.lastSupportReplyAt)} />
                     </div>
 
                     <div className={styles.sideSection}>
@@ -1927,28 +2204,28 @@ export default function SupportTicketsWorkbench({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setQuery(selectedTicket.userEmail)
-                          setViewMode("list")
-                        }}
+                        onClick={() => setAccountModal("conversations")}
                         className={styles.linkRow}
                       >
                         Recent conversations
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          window.location.href = "/admin/subscription"
-                        }}
+                        onClick={() => setAccountModal("notes")}
+                        className={styles.linkRow}
+                      >
+                        User notes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAccountModal("subscription")}
                         className={styles.linkRow}
                       >
                         Subscription record
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          window.location.href = "/admin/billing"
-                        }}
+                        onClick={() => setAccountModal("payment")}
                         className={styles.linkRow}
                       >
                         Payment history
@@ -2027,9 +2304,7 @@ export default function SupportTicketsWorkbench({
             <div className={styles.drawerHeader}>
               <div>
                 <div className={styles.drawerTitle}>User profile</div>
-                <div className={styles.drawerSubtitle}>
-                  Support context and account details
-                </div>
+                <div className={styles.drawerSubtitle}>Support context and account details</div>
               </div>
 
               <button
@@ -2044,9 +2319,7 @@ export default function SupportTicketsWorkbench({
             <div className={styles.drawerBody}>
               <div className={styles.drawerIdentity}>
                 <div className={styles.drawerAvatarWrap}>
-                  <div className={styles.drawerAvatar}>
-                    {safeInitials(profileDrawerTicket)}
-                  </div>
+                  <div className={styles.drawerAvatar}>{safeInitials(profileDrawerTicket)}</div>
                   <span
                     className={
                       isRecentlyActive(profileDrawerTicket.userLastActiveAt)
@@ -2056,9 +2329,7 @@ export default function SupportTicketsWorkbench({
                   />
                 </div>
                 <div>
-                  <div className={styles.drawerName}>
-                    {displayUserName(profileDrawerTicket)}
-                  </div>
+                  <div className={styles.drawerName}>{displayUserName(profileDrawerTicket)}</div>
                   <div className={styles.drawerEmail}>{profileDrawerTicket.userEmail}</div>
                 </div>
               </div>
@@ -2067,13 +2338,7 @@ export default function SupportTicketsWorkbench({
                 <span className={planClass(profileDrawerTicket.userPlan)}>
                   {compactPlanLabel(profileDrawerTicket.userPlan)}
                 </span>
-                <span
-                  className={
-                    profileDrawerTicket.userIsBlocked
-                      ? styles.blockedBadge
-                      : styles.activeBadge
-                  }
-                >
+                <span className={profileDrawerTicket.userIsBlocked ? styles.blockedBadge : styles.activeBadge}>
                   {profileDrawerTicket.userIsBlocked ? "Blocked" : "Active"}
                 </span>
                 <span
@@ -2091,41 +2356,17 @@ export default function SupportTicketsWorkbench({
 
               <div className={styles.drawerGrid}>
                 <DetailRow label="User ID" value={profileDrawerTicket.userId} />
-                <DetailRow
-                  label="Billing status"
-                  value={profileDrawerTicket.userBillingStatus}
-                />
-                <DetailRow
-                  label="Jurisdiction"
-                  value={profileDrawerTicket.userJurisdiction}
-                />
+                <DetailRow label="Billing status" value={profileDrawerTicket.userBillingStatus} />
+                <DetailRow label="Jurisdiction" value={profileDrawerTicket.userJurisdiction} />
                 <DetailRow label="Exam" value={profileDrawerTicket.userExam} />
                 <DetailRow label="Member since" value={profileDrawerTicket.memberSince} />
-                <DetailRow
-                  label="Last active"
-                  value={formatDateTime(profileDrawerTicket.userLastActiveAt)}
-                />
-                <DetailRow
-                  label="Total tickets"
-                  value={String(profileDrawerTicket.userTotalTicketCount)}
-                />
-                <DetailRow
-                  label="Open tickets"
-                  value={String(profileDrawerTicket.userOpenTicketCount)}
-                />
+                <DetailRow label="Last active" value={formatDateTime(profileDrawerTicket.userLastActiveAt)} />
+                <DetailRow label="Total tickets" value={String(profileDrawerTicket.userTotalTicketCount)} />
+                <DetailRow label="Open tickets" value={String(profileDrawerTicket.userOpenTicketCount)} />
                 <DetailRow label="Current ticket" value={profileDrawerTicket.subject} />
-                <DetailRow
-                  label="Current status"
-                  value={statusLabel(profileDrawerTicket.status)}
-                />
-                <DetailRow
-                  label="Current priority"
-                  value={priorityLabel(profileDrawerTicket.priority)}
-                />
-                <DetailRow
-                  label="Current SLA"
-                  value={slaInfo(profileDrawerTicket).label}
-                />
+                <DetailRow label="Current status" value={statusLabel(profileDrawerTicket.status)} />
+                <DetailRow label="Current priority" value={priorityLabel(profileDrawerTicket.priority)} />
+                <DetailRow label="Current SLA" value={slaInfo(profileDrawerTicket).label} />
                 <DetailRow label="Urgency" value={urgencyLabel(profileDrawerTicket)} />
               </div>
 
@@ -2143,6 +2384,17 @@ export default function SupportTicketsWorkbench({
             </div>
           </aside>
         </>
+      ) : null}
+
+      {selectedTicket && accountModal ? (
+        <SupportInfoModal
+          mode={accountModal}
+          ticket={selectedTicket}
+          ticketNumberLabel={ticketNumber(selectedTicketIndex)}
+          userTickets={selectedUserTickets}
+          onClose={() => setAccountModal(null)}
+          onOpenTicket={openTicketFromList}
+        />
       ) : null}
     </div>
   )
