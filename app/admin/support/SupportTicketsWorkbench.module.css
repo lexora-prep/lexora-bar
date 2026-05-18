@@ -1,6 +1,6 @@
 .shell {
   display: grid;
-  grid-template-columns: 172px 338px minmax(0, 1fr);
+  grid-template-columns: 172px var(--support-list-width, 338px) 6px minmax(0, 1fr);
   height: calc(100vh - 56px);
   max-height: calc(100vh - 56px);
   overflow: hidden;
@@ -9,7 +9,7 @@
 }
 
 .shellRailCollapsed {
-  grid-template-columns: 32px 338px minmax(0, 1fr);
+  grid-template-columns: 32px var(--support-list-width, 338px) 6px minmax(0, 1fr);
 }
 
 .shellListCollapsed {
@@ -190,6 +190,35 @@
 }
 
 .shellListCollapsed .listPanel {
+  display: none;
+}
+
+.listResizeHandle {
+  width: 6px;
+  height: calc(100vh - 56px);
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  z-index: 20;
+}
+
+.listResizeHandle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 1px;
+  background: #dbe5f2;
+}
+
+.listResizeHandle:hover::before {
+  left: 1px;
+  width: 3px;
+  background: #93c5fd;
+}
+
+.shellListCollapsed .listResizeHandle {
   display: none;
 }
 
@@ -645,22 +674,106 @@
 }
 
 .ticketMeta {
-  display: block;
-  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 5px;
   margin-bottom: 7px;
-  color: #94a3b8;
   font-size: 11.5px;
-  font-weight: 400;
   line-height: 1.45;
+  flex-wrap: wrap;
 }
 
-.ticketMeta > * {
-  display: inline;
+.ticketMeta > span {
+  display: inline-flex;
+  align-items: center;
 }
 
-.ticketMeta > *:not(:last-child)::after {
-  content: " · ";
+.ticketMeta > span:not(:last-child)::after {
+  content: "·";
   color: #cbd5e1;
+  margin-left: 9px;
+  font-weight: 500;
+}
+
+.inboxMetaMuted {
+  color: #94a3b8;
+  font-weight: 650;
+}
+
+.inboxStatusOpen {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.inboxStatusPending {
+  color: #c2410c;
+  font-weight: 700;
+}
+
+.inboxStatusResolved {
+  color: #059669;
+  font-weight: 700;
+}
+
+.inboxStatusClosed {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.inboxPriorityNormal {
+  color: #c2410c;
+  font-weight: 700;
+}
+
+.inboxPriorityHigh {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.inboxPriorityUrgent {
+  color: #b91c1c;
+  font-weight: 800;
+}
+
+.inboxCategoryBilling {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.inboxCategoryTechnical {
+  color: #0891b2;
+  font-weight: 700;
+}
+
+.inboxCategoryAccount {
+  color: #7c3aed;
+  font-weight: 700;
+}
+
+.inboxCategoryOther {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.inboxSlaDanger {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.inboxSlaWarning {
+  color: #c2410c;
+  font-weight: 750;
+}
+
+.inboxSlaInfo {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.inboxSlaGood {
+  color: #059669;
+  font-weight: 700;
 }
 
 .ticketPreview {
@@ -942,7 +1055,7 @@
 
 .systemEvent small::before,
 .internalEvent small::before {
-  content: " · ";
+  content: "· ";
 }
 
 .messageBlock {
@@ -1735,8 +1848,7 @@
   font-size: 12.5px;
 }
 
-.drawerOverlay,
-.modalOverlay {
+.drawerOverlay {
   position: fixed;
   inset: 0;
   z-index: 80;
@@ -1895,173 +2007,13 @@
   background: #1d4ed8;
 }
 
-.accountModal {
-  position: fixed;
-  z-index: 95;
-  left: 50%;
-  top: 50%;
-  width: 560px;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 48px);
-  transform: translate(-50%, -50%);
-  overflow: hidden;
-  border-radius: 18px;
-  border: 1px solid #dbe5f2;
-  background: #ffffff;
-  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24);
-  display: flex;
-  flex-direction: column;
-}
-
-.accountModalHeader {
-  padding: 18px 18px 16px;
-  border-bottom: 1px solid #dbe5f2;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.accountModalEyebrow {
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.accountModalTitle {
-  margin-top: 4px;
-  color: #0f172a;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-}
-
-.accountModalBody {
-  padding: 18px;
-  overflow-y: auto;
-}
-
-.modalGrid {
-  display: grid;
-  gap: 4px;
-}
-
-.paymentCard {
-  display: grid;
-  grid-template-columns: 40px 1fr auto;
-  gap: 12px;
-  align-items: center;
-  border-radius: 14px;
-  border: 1px solid #dbe5f2;
-  background: #f8fafc;
-  padding: 14px;
-  margin-bottom: 14px;
-}
-
-.paymentIcon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  background: #eff6ff;
-  color: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.paymentMain {
-  min-width: 0;
-}
-
-.paymentTitle {
-  color: #0f172a;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.paymentSub {
-  margin-top: 3px;
-  color: #64748b;
-  font-size: 12px;
-}
-
-.paymentAmount {
-  color: #0f172a;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.modalPrimaryButton {
-  margin-top: 16px;
-  width: 100%;
-  height: 38px;
-  border: 0;
-  border-radius: 10px;
-  background: #2563eb;
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.modalPrimaryButton:hover {
-  background: #1d4ed8;
-}
-
-.conversationList {
-  display: grid;
-  gap: 8px;
-}
-
-.conversationRow {
-  width: 100%;
-  border: 1px solid #dbe5f2;
-  border-radius: 12px;
-  background: #ffffff;
-  padding: 12px;
-  text-align: left;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  cursor: pointer;
-}
-
-.conversationRow:hover {
-  background: #f8fafc;
-  border-color: #bfdbfe;
-}
-
-.conversationTitle {
-  color: #0f172a;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.conversationSub {
-  margin-top: 4px;
-  color: #64748b;
-  font-size: 12px;
-}
-
-.conversationRow span {
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-}
-
 @media (max-width: 1280px) {
   .shell {
-    grid-template-columns: 150px 310px minmax(0, 1fr);
+    grid-template-columns: 150px var(--support-list-width, 310px) 6px minmax(0, 1fr);
   }
 
   .shellRailCollapsed {
-    grid-template-columns: 32px 310px minmax(0, 1fr);
+    grid-template-columns: 32px var(--support-list-width, 310px) 6px minmax(0, 1fr);
   }
 
   .shellListCollapsed {
@@ -2079,11 +2031,11 @@
   }
 
   .shell {
-    grid-template-columns: 310px minmax(0, 1fr);
+    grid-template-columns: var(--support-list-width, 310px) 6px minmax(0, 1fr);
   }
 
   .shellRailCollapsed {
-    grid-template-columns: 310px minmax(0, 1fr);
+    grid-template-columns: var(--support-list-width, 310px) 6px minmax(0, 1fr);
   }
 
   .expandRailButton {
@@ -2093,7 +2045,7 @@
 
 @media (max-width: 900px) {
   .shell {
-    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-columns: 280px 6px minmax(0, 1fr);
   }
 
   .headerButton,

@@ -1,14 +1,20 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react"
+import {
+  CSSProperties,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react"
 import {
   AlertCircle,
   Bot,
   Check,
   ChevronDown,
   Clock3,
-  CreditCard,
-  FileText,
   Filter,
   Inbox,
   Lock,
@@ -40,13 +46,6 @@ export type SupportTicketForWorkbench = {
   userJurisdiction: string
   userExam: string
   userBillingStatus: string
-  userBillingCurrency: string
-  userBillingAmountCents: number | null
-  userBillingTaxCents: number | null
-  userBillingTotalCents: number | null
-  userBillingPeriodEndsAt: string | null
-  userBillingLastPaidAt: string | null
-  userBillingInvoiceUrl: string | null
   userIsBlocked: boolean
   userLastActiveAt: string | null
   userCreatedAt: string | null
@@ -118,10 +117,8 @@ type SortMode =
 type ViewMode = "inbox" | "list"
 type SideTab = "details" | "copilot"
 type ReplyMode = "reply" | "internal"
-type ModalMode = "none" | "subscription" | "payment" | "conversations"
 
 const statusOptions = ["open", "pending", "resolved", "closed"] as const
-const priorityOptions = ["normal", "high", "urgent"] as const
 
 function formatShortTime(value: string | null | undefined) {
   if (!value) return ""
@@ -161,15 +158,6 @@ function formatDateTime(value: string | null | undefined) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date)
-}
-
-function formatMoney(cents: number | null | undefined, currency = "USD") {
-  if (typeof cents !== "number") return "Not available"
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-  }).format(cents / 100)
 }
 
 function isRecentlyActive(value: string | null | undefined) {
@@ -313,6 +301,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "Closed",
       tone: "muted",
+      urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
   }
@@ -321,6 +310,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "Resolved",
       tone: "good",
+      urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
   }
@@ -329,6 +319,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "No SLA",
       tone: "muted",
+      urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
   }
@@ -339,6 +330,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "No SLA",
       tone: "muted",
+      urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
   }
@@ -350,6 +342,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "Overdue",
       tone: "danger",
+      urgent: true,
       sortTime: due,
     }
   }
@@ -358,6 +351,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: `${diffMinutes}m left`,
       tone: "danger",
+      urgent: true,
       sortTime: due,
     }
   }
@@ -368,6 +362,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: `${hours}h left`,
       tone: "warning",
+      urgent: true,
       sortTime: due,
     }
   }
@@ -375,6 +370,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   return {
     label: `${hours}h left`,
     tone: "info",
+    urgent: false,
     sortTime: due,
   }
 }
@@ -419,6 +415,54 @@ function slaClass(ticket: SupportTicketForWorkbench) {
   return `${styles.dotText} ${styles.dotMuted}`
 }
 
+function inboxStatusClass(status: string) {
+  const normalized = normalizeStatus(status)
+
+  if (normalized === "open") return styles.inboxStatusOpen
+  if (normalized === "pending") return styles.inboxStatusPending
+  if (normalized === "resolved") return styles.inboxStatusResolved
+  if (normalized === "closed") return styles.inboxStatusClosed
+
+  return styles.inboxMetaMuted
+}
+
+function inboxPriorityClass(priority: string) {
+  const normalized = normalizePriority(priority)
+
+  if (normalized === "urgent") return styles.inboxPriorityUrgent
+  if (normalized === "high") return styles.inboxPriorityHigh
+
+  return styles.inboxPriorityNormal
+}
+
+function inboxCategoryClass(category: string) {
+  const normalized = category.toLowerCase()
+
+  if (
+    normalized.includes("billing") ||
+    normalized.includes("invoice") ||
+    normalized.includes("subscription")
+  ) {
+    return styles.inboxCategoryBilling
+  }
+
+  if (normalized.includes("technical")) return styles.inboxCategoryTechnical
+  if (normalized.includes("account")) return styles.inboxCategoryAccount
+
+  return styles.inboxCategoryOther
+}
+
+function inboxSlaToneClass(ticket: SupportTicketForWorkbench) {
+  const sla = slaInfo(ticket)
+
+  if (sla.tone === "danger") return styles.inboxSlaDanger
+  if (sla.tone === "warning") return styles.inboxSlaWarning
+  if (sla.tone === "good") return styles.inboxSlaGood
+  if (sla.tone === "info") return styles.inboxSlaInfo
+
+  return styles.inboxMetaMuted
+}
+
 function planClass(plan: string) {
   const normalized = plan.toLowerCase()
 
@@ -435,7 +479,6 @@ function planClass(plan: string) {
 
 function compactPlanLabel(plan: string) {
   if (!plan || plan === "free") return "Free"
-
   return plan
     .replaceAll("_", " ")
     .replaceAll("-", " ")
@@ -484,7 +527,7 @@ function SectionTitle({
   icon,
   title,
 }: {
-  icon?: React.ReactNode
+  icon?: ReactNode
   title: string
 }) {
   return (
@@ -492,31 +535,6 @@ function SectionTitle({
       {icon}
       <span>{title}</span>
     </div>
-  )
-}
-
-function UserAvatar({
-  ticket,
-  size = "normal",
-  onClick,
-}: {
-  ticket: SupportTicketForWorkbench
-  size?: "normal" | "large"
-  onClick?: () => void
-}) {
-  const online = isRecentlyActive(ticket.userLastActiveAt)
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={size === "large" ? styles.drawerAvatarWrap : styles.customerAvatarWrap}
-    >
-      <span className={size === "large" ? styles.drawerAvatar : styles.customerAvatar}>
-        {safeInitials(ticket)}
-      </span>
-      <span className={online ? styles.onlineDot : styles.offlineDot} />
-    </button>
   )
 }
 
@@ -548,8 +566,8 @@ export default function SupportTicketsWorkbench({
   const [sortOpen, setSortOpen] = useState(false)
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false)
   const [listCollapsed, setListCollapsed] = useState(false)
+  const [listWidth, setListWidth] = useState(338)
   const [profileDrawerTicketId, setProfileDrawerTicketId] = useState<string | null>(null)
-  const [modalMode, setModalMode] = useState<ModalMode>("none")
   const [isPending, startTransition] = useTransition()
 
   const filterRef = useRef<HTMLDivElement | null>(null)
@@ -732,11 +750,6 @@ export default function SupportTicketsWorkbench({
   const selectedIsClosed = selectedStatus === "closed"
   const selectedIsResolved = selectedStatus === "resolved"
 
-  const userConversationTickets = useMemo(() => {
-    if (!selectedTicket) return []
-    return tickets.filter((ticket) => ticket.userId === selectedTicket.userId)
-  }, [selectedTicket, tickets])
-
   function applyFilters() {
     setPriorityFilter(draftPriorityFilter)
     setCategoryFilter(draftCategoryFilter)
@@ -858,11 +871,39 @@ export default function SupportTicketsWorkbench({
     setViewMode("inbox")
   }
 
+  function startListResize(event: React.MouseEvent<HTMLDivElement>) {
+    event.preventDefault()
+
+    const startX = event.clientX
+    const startWidth = listWidth
+
+    function handleMouseMove(moveEvent: MouseEvent) {
+      const nextWidth = Math.min(
+        520,
+        Math.max(260, startWidth + moveEvent.clientX - startX),
+      )
+      setListWidth(nextWidth)
+    }
+
+    function handleMouseUp() {
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("mouseup", handleMouseUp)
+    }
+
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
+    window.addEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mouseup", handleMouseUp)
+  }
+
   return (
     <div
       className={`${styles.shell} ${
         leftRailCollapsed ? styles.shellRailCollapsed : ""
       } ${listCollapsed ? styles.shellListCollapsed : ""}`}
+      style={{ "--support-list-width": `${listWidth}px` } as CSSProperties}
     >
       <aside className={styles.leftRail}>
         <div className={styles.railHeader}>
@@ -884,7 +925,9 @@ export default function SupportTicketsWorkbench({
         <button
           type="button"
           onClick={() => applyRailStatus("open")}
-          className={`${styles.railItem} ${filter === "open" ? styles.railItemActive : ""}`}
+          className={`${styles.railItem} ${
+            filter === "open" ? styles.railItemActive : ""
+          }`}
         >
           <Inbox size={14} />
           <span>Open tickets</span>
@@ -985,7 +1028,8 @@ export default function SupportTicketsWorkbench({
             <div>
               <div className={styles.listTitle}>Customer inbox</div>
               <div className={styles.listSubtitle}>
-                {filteredTickets.length} shown · {counts.unread} unread · {counts.slaAtRisk} SLA risk
+                {filteredTickets.length} shown · {counts.unread} unread ·{" "}
+                {counts.slaAtRisk} SLA risk
               </div>
             </div>
 
@@ -1282,11 +1326,16 @@ export default function SupportTicketsWorkbench({
                   </div>
 
                   <div className={styles.ticketMeta}>
-                    <span>{statusLabel(ticket.status)}</span>
-                    <span>{priorityLabel(ticket.priority)}</span>
-                    <span className={styles[`slaTone_${sla.tone}`]}>
-                      {sla.label}
+                    <span className={inboxStatusClass(ticket.status)}>
+                      {statusLabel(ticket.status)}
                     </span>
+                    <span className={inboxPriorityClass(ticket.priority)}>
+                      {priorityLabel(ticket.priority)}
+                    </span>
+                    <span className={inboxCategoryClass(ticket.category)}>
+                      {ticket.category}
+                    </span>
+                    <span className={inboxSlaToneClass(ticket)}>{sla.label}</span>
                   </div>
 
                   <div className={styles.ticketPreview}>{getPreview(ticket)}</div>
@@ -1296,6 +1345,15 @@ export default function SupportTicketsWorkbench({
           )}
         </div>
       </aside>
+
+      {!listCollapsed ? (
+        <div
+          role="separator"
+          aria-label="Resize customer inbox"
+          className={styles.listResizeHandle}
+          onMouseDown={startListResize}
+        />
+      ) : null}
 
       {listCollapsed ? (
         <button
@@ -1316,7 +1374,8 @@ export default function SupportTicketsWorkbench({
                 <div>
                   <div className={styles.listViewTitle}>Ticket list</div>
                   <div className={styles.listViewSub}>
-                    {filteredTickets.length} tickets shown · {counts.unread} unread · {counts.slaAtRisk} SLA risk
+                    {filteredTickets.length} tickets shown · {counts.unread} unread ·{" "}
+                    {counts.slaAtRisk} SLA risk
                   </div>
                 </div>
 
@@ -1641,7 +1700,9 @@ export default function SupportTicketsWorkbench({
 
                       <div className={styles.replyFooter}>
                         <div className={styles.replyingAs}>
-                          {replyMode === "internal" ? "Saving internal note as " : "Replying as "}
+                          {replyMode === "internal"
+                            ? "Saving internal note as "
+                            : "Replying as "}
                           <strong>{admin.fullName || "Vladimir"}</strong>
                         </div>
 
@@ -1711,10 +1772,22 @@ export default function SupportTicketsWorkbench({
                 ) : (
                   <>
                     <div className={styles.customerIdentity}>
-                      <UserAvatar
-                        ticket={selectedTicket}
+                      <button
+                        type="button"
                         onClick={() => openUserDrawer(selectedTicket)}
-                      />
+                        className={styles.customerAvatarWrap}
+                      >
+                        <span className={styles.customerAvatar}>
+                          {safeInitials(selectedTicket)}
+                        </span>
+                        <span
+                          className={
+                            isRecentlyActive(selectedTicket.userLastActiveAt)
+                              ? styles.onlineDot
+                              : styles.offlineDot
+                          }
+                        />
+                      </button>
 
                       <div className={styles.customerText}>
                         <button
@@ -1763,7 +1836,14 @@ export default function SupportTicketsWorkbench({
                       <DetailRow
                         label="SLA"
                         value={slaInfo(selectedTicket).label}
-                        tone={slaInfo(selectedTicket).tone as "good" | "warning" | "danger" | "info" | "muted"}
+                        tone={
+                          slaInfo(selectedTicket).tone as
+                            | "good"
+                            | "warning"
+                            | "danger"
+                            | "info"
+                            | "muted"
+                        }
                       />
                       <DetailRow
                         label="Urgency"
@@ -1818,10 +1898,22 @@ export default function SupportTicketsWorkbench({
 
                     <div className={styles.sideSection}>
                       <SectionTitle icon={<Clock3 size={13} />} title="Recent history" />
-                      <DetailRow label="Total tickets" value={String(selectedTicket.userTotalTicketCount)} />
-                      <DetailRow label="Open tickets" value={String(selectedTicket.userOpenTicketCount)} />
-                      <DetailRow label="Last user message" value={formatDateTime(selectedTicket.lastUserMessageAt)} />
-                      <DetailRow label="Last support reply" value={formatDateTime(selectedTicket.lastSupportReplyAt)} />
+                      <DetailRow
+                        label="Total tickets"
+                        value={String(selectedTicket.userTotalTicketCount)}
+                      />
+                      <DetailRow
+                        label="Open tickets"
+                        value={String(selectedTicket.userOpenTicketCount)}
+                      />
+                      <DetailRow
+                        label="Last user message"
+                        value={formatDateTime(selectedTicket.lastUserMessageAt)}
+                      />
+                      <DetailRow
+                        label="Last support reply"
+                        value={formatDateTime(selectedTicket.lastSupportReplyAt)}
+                      />
                     </div>
 
                     <div className={styles.sideSection}>
@@ -1835,21 +1927,28 @@ export default function SupportTicketsWorkbench({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setModalMode("conversations")}
+                        onClick={() => {
+                          setQuery(selectedTicket.userEmail)
+                          setViewMode("list")
+                        }}
                         className={styles.linkRow}
                       >
                         Recent conversations
                       </button>
                       <button
                         type="button"
-                        onClick={() => setModalMode("subscription")}
+                        onClick={() => {
+                          window.location.href = "/admin/subscription"
+                        }}
                         className={styles.linkRow}
                       >
                         Subscription record
                       </button>
                       <button
                         type="button"
-                        onClick={() => setModalMode("payment")}
+                        onClick={() => {
+                          window.location.href = "/admin/billing"
+                        }}
                         className={styles.linkRow}
                       >
                         Payment history
@@ -1928,7 +2027,9 @@ export default function SupportTicketsWorkbench({
             <div className={styles.drawerHeader}>
               <div>
                 <div className={styles.drawerTitle}>User profile</div>
-                <div className={styles.drawerSubtitle}>Support context and account details</div>
+                <div className={styles.drawerSubtitle}>
+                  Support context and account details
+                </div>
               </div>
 
               <button
@@ -1942,9 +2043,22 @@ export default function SupportTicketsWorkbench({
 
             <div className={styles.drawerBody}>
               <div className={styles.drawerIdentity}>
-                <UserAvatar ticket={profileDrawerTicket} size="large" />
+                <div className={styles.drawerAvatarWrap}>
+                  <div className={styles.drawerAvatar}>
+                    {safeInitials(profileDrawerTicket)}
+                  </div>
+                  <span
+                    className={
+                      isRecentlyActive(profileDrawerTicket.userLastActiveAt)
+                        ? styles.onlineDot
+                        : styles.offlineDot
+                    }
+                  />
+                </div>
                 <div>
-                  <div className={styles.drawerName}>{displayUserName(profileDrawerTicket)}</div>
+                  <div className={styles.drawerName}>
+                    {displayUserName(profileDrawerTicket)}
+                  </div>
                   <div className={styles.drawerEmail}>{profileDrawerTicket.userEmail}</div>
                 </div>
               </div>
@@ -1953,7 +2067,13 @@ export default function SupportTicketsWorkbench({
                 <span className={planClass(profileDrawerTicket.userPlan)}>
                   {compactPlanLabel(profileDrawerTicket.userPlan)}
                 </span>
-                <span className={profileDrawerTicket.userIsBlocked ? styles.blockedBadge : styles.activeBadge}>
+                <span
+                  className={
+                    profileDrawerTicket.userIsBlocked
+                      ? styles.blockedBadge
+                      : styles.activeBadge
+                  }
+                >
                   {profileDrawerTicket.userIsBlocked ? "Blocked" : "Active"}
                 </span>
                 <span
@@ -1971,17 +2091,41 @@ export default function SupportTicketsWorkbench({
 
               <div className={styles.drawerGrid}>
                 <DetailRow label="User ID" value={profileDrawerTicket.userId} />
-                <DetailRow label="Billing status" value={profileDrawerTicket.userBillingStatus} />
-                <DetailRow label="Jurisdiction" value={profileDrawerTicket.userJurisdiction} />
+                <DetailRow
+                  label="Billing status"
+                  value={profileDrawerTicket.userBillingStatus}
+                />
+                <DetailRow
+                  label="Jurisdiction"
+                  value={profileDrawerTicket.userJurisdiction}
+                />
                 <DetailRow label="Exam" value={profileDrawerTicket.userExam} />
                 <DetailRow label="Member since" value={profileDrawerTicket.memberSince} />
-                <DetailRow label="Last active" value={formatDateTime(profileDrawerTicket.userLastActiveAt)} />
-                <DetailRow label="Total tickets" value={String(profileDrawerTicket.userTotalTicketCount)} />
-                <DetailRow label="Open tickets" value={String(profileDrawerTicket.userOpenTicketCount)} />
+                <DetailRow
+                  label="Last active"
+                  value={formatDateTime(profileDrawerTicket.userLastActiveAt)}
+                />
+                <DetailRow
+                  label="Total tickets"
+                  value={String(profileDrawerTicket.userTotalTicketCount)}
+                />
+                <DetailRow
+                  label="Open tickets"
+                  value={String(profileDrawerTicket.userOpenTicketCount)}
+                />
                 <DetailRow label="Current ticket" value={profileDrawerTicket.subject} />
-                <DetailRow label="Current status" value={statusLabel(profileDrawerTicket.status)} />
-                <DetailRow label="Current priority" value={priorityLabel(profileDrawerTicket.priority)} />
-                <DetailRow label="Current SLA" value={slaInfo(profileDrawerTicket).label} />
+                <DetailRow
+                  label="Current status"
+                  value={statusLabel(profileDrawerTicket.status)}
+                />
+                <DetailRow
+                  label="Current priority"
+                  value={priorityLabel(profileDrawerTicket.priority)}
+                />
+                <DetailRow
+                  label="Current SLA"
+                  value={slaInfo(profileDrawerTicket).label}
+                />
                 <DetailRow label="Urgency" value={urgencyLabel(profileDrawerTicket)} />
               </div>
 
@@ -1998,172 +2142,6 @@ export default function SupportTicketsWorkbench({
               </button>
             </div>
           </aside>
-        </>
-      ) : null}
-
-      {selectedTicket && modalMode !== "none" ? (
-        <>
-          <button
-            type="button"
-            aria-label="Close modal"
-            onClick={() => setModalMode("none")}
-            className={styles.modalOverlay}
-          />
-
-          <section className={styles.accountModal}>
-            <div className={styles.accountModalHeader}>
-              <div>
-                <div className={styles.accountModalEyebrow}>
-                  {displayUserName(selectedTicket)}
-                </div>
-                <div className={styles.accountModalTitle}>
-                  {modalMode === "subscription"
-                    ? "Subscription record"
-                    : modalMode === "payment"
-                      ? "Payment history"
-                      : "Recent conversations"}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setModalMode("none")}
-                className={styles.drawerClose}
-              >
-                <X size={14} />
-              </button>
-            </div>
-
-            <div className={styles.accountModalBody}>
-              {modalMode === "subscription" ? (
-                <div className={styles.modalGrid}>
-                  <DetailRow label="Plan" value={compactPlanLabel(selectedTicket.userPlan)} />
-                  <DetailRow label="Billing status" value={selectedTicket.userBillingStatus} />
-                  <DetailRow label="Currency" value={selectedTicket.userBillingCurrency} />
-                  <DetailRow
-                    label="Amount"
-                    value={formatMoney(
-                      selectedTicket.userBillingAmountCents,
-                      selectedTicket.userBillingCurrency,
-                    )}
-                  />
-                  <DetailRow
-                    label="Tax"
-                    value={formatMoney(
-                      selectedTicket.userBillingTaxCents,
-                      selectedTicket.userBillingCurrency,
-                    )}
-                  />
-                  <DetailRow
-                    label="Total"
-                    value={formatMoney(
-                      selectedTicket.userBillingTotalCents,
-                      selectedTicket.userBillingCurrency,
-                    )}
-                  />
-                  <DetailRow
-                    label="Next renewal"
-                    value={formatDate(selectedTicket.userBillingPeriodEndsAt)}
-                  />
-                  <DetailRow
-                    label="Last paid"
-                    value={formatDate(selectedTicket.userBillingLastPaidAt)}
-                  />
-                </div>
-              ) : null}
-
-              {modalMode === "payment" ? (
-                <div>
-                  <div className={styles.paymentCard}>
-                    <div className={styles.paymentIcon}>
-                      <CreditCard size={18} />
-                    </div>
-                    <div className={styles.paymentMain}>
-                      <div className={styles.paymentTitle}>
-                        Latest payment record
-                      </div>
-                      <div className={styles.paymentSub}>
-                        {formatDate(selectedTicket.userBillingLastPaidAt)}
-                      </div>
-                    </div>
-                    <div className={styles.paymentAmount}>
-                      {formatMoney(
-                        selectedTicket.userBillingTotalCents,
-                        selectedTicket.userBillingCurrency,
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={styles.modalGrid}>
-                    <DetailRow label="Status" value={selectedTicket.userBillingStatus} />
-                    <DetailRow
-                      label="Tax"
-                      value={formatMoney(
-                        selectedTicket.userBillingTaxCents,
-                        selectedTicket.userBillingCurrency,
-                      )}
-                    />
-                    <DetailRow
-                      label="Billing period ends"
-                      value={formatDate(selectedTicket.userBillingPeriodEndsAt)}
-                    />
-                    <DetailRow
-                      label="Receipt"
-                      value={selectedTicket.userBillingInvoiceUrl ? "Available" : "Not available"}
-                    />
-                  </div>
-
-                  {selectedTicket.userBillingInvoiceUrl ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        window.open(
-                          selectedTicket.userBillingInvoiceUrl || "",
-                          "_blank",
-                          "noopener,noreferrer",
-                        )
-                      }
-                      className={styles.modalPrimaryButton}
-                    >
-                      <FileText size={14} />
-                      Open receipt
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {modalMode === "conversations" ? (
-                <div className={styles.conversationList}>
-                  {userConversationTickets.map((ticket) => {
-                    const index = tickets.findIndex((item) => item.id === ticket.id)
-
-                    return (
-                      <button
-                        key={ticket.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedTicketId(ticket.id)
-                          setViewMode("inbox")
-                          setModalMode("none")
-                        }}
-                        className={styles.conversationRow}
-                      >
-                        <div>
-                          <div className={styles.conversationTitle}>
-                            {ticketNumber(index)} · {ticket.subject}
-                          </div>
-                          <div className={styles.conversationSub}>
-                            {statusLabel(ticket.status)} · {priorityLabel(ticket.priority)} · {formatDateTime(ticket.updated_at)}
-                          </div>
-                        </div>
-                        <span>{slaInfo(ticket).label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              ) : null}
-            </div>
-          </section>
         </>
       ) : null}
     </div>
