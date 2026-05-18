@@ -9,11 +9,9 @@ import {
   Clock3,
   Filter,
   Inbox,
-  LinkIcon,
   Lock,
   Mail,
   MessageSquare,
-  Paperclip,
   Search,
   Send,
   SlidersHorizontal,
@@ -64,6 +62,13 @@ export type SupportTicketForWorkbench = {
   messages: SupportMessage[]
 }
 
+export type AdminUserForWorkbench = {
+  id: string
+  email: string
+  fullName: string | null
+  roleLabel: string
+}
+
 type AdminInfo = {
   id: string
   email: string
@@ -82,12 +87,14 @@ type Counts = {
 
 type Props = {
   admin: AdminInfo
+  adminUsers: AdminUserForWorkbench[]
   tickets: SupportTicketForWorkbench[]
   counts: Counts
   replyAction: (formData: FormData) => Promise<void>
   updateStatusAction: (formData: FormData) => Promise<void>
   updatePriorityAction: (formData: FormData) => Promise<void>
   markReadAction: (formData: FormData) => Promise<void>
+  assignTicketAction: (formData: FormData) => Promise<void>
 }
 
 type StatusFilter = "open" | "pending" | "resolved" | "closed" | "all"
@@ -101,6 +108,7 @@ type SortMode =
   | "unread_first"
 type ViewMode = "inbox" | "list"
 type SideTab = "details" | "copilot"
+type ReplyMode = "reply" | "internal"
 
 const statusOptions = ["open", "pending", "resolved", "closed"] as const
 const priorityOptions = ["normal", "high", "urgent"] as const
@@ -143,6 +151,15 @@ function formatDateTime(value: string | null | undefined) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date)
+}
+
+function isRecentlyActive(value: string | null | undefined) {
+  if (!value) return false
+
+  const time = new Date(value).getTime()
+  if (Number.isNaN(time)) return false
+
+  return Date.now() - time <= 5 * 60 * 1000
 }
 
 function safeInitials(ticket: SupportTicketForWorkbench) {
@@ -214,7 +231,11 @@ function sortLabel(value: SortMode) {
 function getPreview(ticket: SupportTicketForWorkbench) {
   const lastHumanMessage = [...ticket.messages]
     .reverse()
-    .find((message) => message.sender.toLowerCase() !== "system")
+    .find(
+      (message) =>
+        message.sender.toLowerCase() !== "system" &&
+        message.sender.toLowerCase() !== "internal",
+    )
 
   return lastHumanMessage?.message || "No message yet."
 }
@@ -240,7 +261,11 @@ function displayUserLine(ticket: SupportTicketForWorkbench) {
 function getLastHumanMessage(ticket: SupportTicketForWorkbench) {
   return [...ticket.messages]
     .reverse()
-    .find((message) => message.sender.toLowerCase() !== "system")
+    .find(
+      (message) =>
+        message.sender.toLowerCase() !== "system" &&
+        message.sender.toLowerCase() !== "internal",
+    )
 }
 
 function isTicketUnread(ticket: SupportTicketForWorkbench) {
@@ -405,6 +430,11 @@ function compactPlanLabel(plan: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
+function adminUserLabel(user: AdminUserForWorkbench) {
+  if (user.fullName && user.fullName.trim()) return user.fullName.trim()
+  return user.email.split("@")[0] || user.email
+}
+
 function DetailRow({
   label,
   value,
@@ -455,12 +485,14 @@ function SectionTitle({
 
 export default function SupportTicketsWorkbench({
   admin,
+  adminUsers,
   tickets,
   counts,
   replyAction,
   updateStatusAction,
   updatePriorityAction,
   markReadAction,
+  assignTicketAction,
 }: Props) {
   const [selectedTicketId, setSelectedTicketId] = useState(tickets[0]?.id || "")
   const [filter, setFilter] = useState<StatusFilter>("open")
@@ -472,10 +504,13 @@ export default function SupportTicketsWorkbench({
   const [sortMode, setSortMode] = useState<SortMode>("newest")
   const [viewMode, setViewMode] = useState<ViewMode>("inbox")
   const [sideTab, setSideTab] = useState<SideTab>("details")
+  const [replyMode, setReplyMode] = useState<ReplyMode>("reply")
   const [query, setQuery] = useState("")
   const [replyText, setReplyText] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
+  const [leftRailCollapsed, setLeftRailCollapsed] = useState(false)
+  const [listCollapsed, setListCollapsed] = useState(false)
   const [profileDrawerTicketId, setProfileDrawerTicketId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -685,6 +720,7 @@ export default function SupportTicketsWorkbench({
     const formData = new FormData()
     formData.set("ticketId", selectedTicket.id)
     formData.set("message", replyText.trim())
+    formData.set("mode", replyMode)
 
     startTransition(async () => {
       await replyAction(formData)
@@ -713,6 +749,18 @@ export default function SupportTicketsWorkbench({
 
     startTransition(async () => {
       await updatePriorityAction(formData)
+    })
+  }
+
+  function assignTicket(adminId: string) {
+    if (!selectedTicket) return
+
+    const formData = new FormData()
+    formData.set("ticketId", selectedTicket.id)
+    formData.set("adminId", adminId)
+
+    startTransition(async () => {
+      await assignTicketAction(formData)
     })
   }
 
@@ -746,20 +794,53 @@ export default function SupportTicketsWorkbench({
     setProfileDrawerTicketId(ticket.id)
   }
 
+  function applyRailStatus(nextFilter: StatusFilter) {
+    setFilter(nextFilter)
+    setPriorityFilter("all")
+    setCategoryFilter("all")
+    setViewMode("inbox")
+  }
+
+  function applyRailCategory(category: string) {
+    setCategoryFilter(category)
+    setPriorityFilter("all")
+    setFilter("all")
+    setViewMode("inbox")
+  }
+
+  function applyUrgentRail() {
+    setPriorityFilter("urgent")
+    setCategoryFilter("all")
+    setFilter("all")
+    setViewMode("inbox")
+  }
+
   return (
-    <div className={styles.shell}>
+    <div
+      className={`${styles.shell} ${
+        leftRailCollapsed ? styles.shellRailCollapsed : ""
+      } ${listCollapsed ? styles.shellListCollapsed : ""}`}
+    >
       <aside className={styles.leftRail}>
         <div className={styles.railHeader}>
-          <div className={styles.railTitle}>Support</div>
-          <div className={styles.railSubtitle}>Inbox workspace</div>
+          <div>
+            <div className={styles.railTitle}>Support</div>
+            <div className={styles.railSubtitle}>Inbox workspace</div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setLeftRailCollapsed(true)}
+            className={styles.collapseButton}
+            title="Hide support menu"
+          >
+            <ChevronDown size={13} />
+          </button>
         </div>
 
         <button
           type="button"
-          onClick={() => {
-            setFilter("open")
-            setViewMode("inbox")
-          }}
+          onClick={() => applyRailStatus("open")}
           className={`${styles.railItem} ${filter === "open" ? styles.railItemActive : ""}`}
         >
           <Inbox size={14} />
@@ -771,6 +852,7 @@ export default function SupportTicketsWorkbench({
           type="button"
           onClick={() => {
             setSortMode("unread_first")
+            setFilter("all")
             setViewMode("inbox")
           }}
           className={styles.railItem}
@@ -784,6 +866,7 @@ export default function SupportTicketsWorkbench({
           type="button"
           onClick={() => {
             setSortMode("sla_soon")
+            setFilter("all")
             setViewMode("inbox")
           }}
           className={styles.railItem}
@@ -799,8 +882,10 @@ export default function SupportTicketsWorkbench({
 
         <button
           type="button"
-          onClick={() => setCategoryFilter("billing")}
-          className={styles.railItem}
+          onClick={() => applyRailCategory("billing")}
+          className={`${styles.railItem} ${
+            categoryFilter === "billing" ? styles.railItemActive : ""
+          }`}
         >
           <Tag size={14} />
           <span>Billing issues</span>
@@ -808,8 +893,10 @@ export default function SupportTicketsWorkbench({
 
         <button
           type="button"
-          onClick={() => setCategoryFilter("account")}
-          className={styles.railItem}
+          onClick={() => applyRailCategory("account")}
+          className={`${styles.railItem} ${
+            categoryFilter === "account" ? styles.railItemActive : ""
+          }`}
         >
           <UserRound size={14} />
           <span>Account access</span>
@@ -817,8 +904,10 @@ export default function SupportTicketsWorkbench({
 
         <button
           type="button"
-          onClick={() => setPriorityFilter("urgent")}
-          className={styles.railItem}
+          onClick={applyUrgentRail}
+          className={`${styles.railItem} ${
+            priorityFilter === "urgent" ? styles.railItemActive : ""
+          }`}
         >
           <AlertCircle size={14} />
           <span>Urgent</span>
@@ -836,6 +925,17 @@ export default function SupportTicketsWorkbench({
         </div>
       </aside>
 
+      {leftRailCollapsed ? (
+        <button
+          type="button"
+          onClick={() => setLeftRailCollapsed(false)}
+          className={styles.expandRailButton}
+          title="Open support menu"
+        >
+          Support
+        </button>
+      ) : null}
+
       <aside className={styles.listPanel}>
         <div className={styles.listHeader}>
           <div className={styles.listTitleRow}>
@@ -847,6 +947,15 @@ export default function SupportTicketsWorkbench({
             </div>
 
             <div className={styles.listHeaderIcons}>
+              <button
+                type="button"
+                onClick={() => setListCollapsed(true)}
+                className={styles.smallIconButton}
+                title="Hide ticket list"
+              >
+                <ChevronDown size={14} />
+              </button>
+
               <div ref={sortRef} className={styles.filterWrap}>
                 <button
                   type="button"
@@ -1145,6 +1254,17 @@ export default function SupportTicketsWorkbench({
         </div>
       </aside>
 
+      {listCollapsed ? (
+        <button
+          type="button"
+          onClick={() => setListCollapsed(false)}
+          className={styles.expandListButton}
+          title="Open ticket list"
+        >
+          Tickets
+        </button>
+      ) : null}
+
       <main className={styles.mainPanel}>
         {viewMode === "list" ? (
           <section className={styles.listView}>
@@ -1328,11 +1448,20 @@ export default function SupportTicketsWorkbench({
                     const sender = message.sender.toLowerCase()
                     const isSupport = sender === "support"
                     const isSystem = sender === "system"
+                    const isInternal = sender === "internal"
 
-                    if (isSystem) {
+                    if (isSystem || isInternal) {
                       return (
-                        <div key={message.id} className={styles.systemEvent}>
-                          <span>{message.message}</span>
+                        <div
+                          key={message.id}
+                          className={
+                            isInternal ? styles.internalEvent : styles.systemEvent
+                          }
+                        >
+                          <span>
+                            {isInternal ? "Internal note: " : ""}
+                            {message.message}
+                          </span>
                           <small>{formatDateTime(message.created_at)}</small>
                         </div>
                       )
@@ -1355,11 +1484,26 @@ export default function SupportTicketsWorkbench({
                             onClick={() =>
                               !isSupport ? openUserDrawer(selectedTicket) : undefined
                             }
-                            className={`${styles.messageAvatar} ${
-                              isSupport ? styles.supportAvatar : styles.userAvatar
+                            className={`${styles.messageAvatarWrap} ${
+                              isSupport ? styles.supportAvatarWrap : ""
                             }`}
                           >
-                            {isSupport ? "V" : safeInitials(selectedTicket)}
+                            <span
+                              className={`${styles.messageAvatar} ${
+                                isSupport ? styles.supportAvatar : styles.userAvatar
+                              }`}
+                            >
+                              {isSupport ? "V" : safeInitials(selectedTicket)}
+                            </span>
+                            {!isSupport ? (
+                              <span
+                                className={
+                                  isRecentlyActive(selectedTicket.userLastActiveAt)
+                                    ? styles.onlineDot
+                                    : styles.offlineDot
+                                }
+                              />
+                            ) : null}
                           </button>
 
                           <button
@@ -1410,30 +1554,28 @@ export default function SupportTicketsWorkbench({
                   ) : (
                     <>
                       <div className={styles.replyToolbar}>
-                        <button type="button" className={styles.replyTabActive}>
+                        <button
+                          type="button"
+                          onClick={() => setReplyMode("reply")}
+                          className={
+                            replyMode === "reply"
+                              ? styles.replyTabActive
+                              : styles.replyTab
+                          }
+                        >
                           Reply
                         </button>
 
-                        <button type="button" className={styles.replyTab}>
+                        <button
+                          type="button"
+                          onClick={() => setReplyMode("internal")}
+                          className={
+                            replyMode === "internal"
+                              ? styles.replyTabActive
+                              : styles.replyTab
+                          }
+                        >
                           Internal note
-                        </button>
-
-                        <div className={styles.toolbarDivider} />
-
-                        <button type="button" className={styles.toolbarButton}>
-                          <strong>B</strong>
-                        </button>
-
-                        <button type="button" className={styles.toolbarButton}>
-                          <em>I</em>
-                        </button>
-
-                        <button type="button" className={styles.toolbarButton}>
-                          <LinkIcon size={13} />
-                        </button>
-
-                        <button type="button" className={styles.toolbarButton}>
-                          <Paperclip size={13} />
                         </button>
                       </div>
 
@@ -1446,13 +1588,18 @@ export default function SupportTicketsWorkbench({
                             submitReply()
                           }
                         }}
-                        placeholder="Write a reply to the user... (⌘ + Enter to send)"
+                        placeholder={
+                          replyMode === "internal"
+                            ? "Write an internal note. Users will not see this."
+                            : "Write a reply to the user... (⌘ + Enter to send)"
+                        }
                         className={styles.replyTextarea}
                       />
 
                       <div className={styles.replyFooter}>
                         <div className={styles.replyingAs}>
-                          Replying as <strong>{admin.fullName || "Vladimir"}</strong> · Support
+                          {replyMode === "internal" ? "Saving internal note as " : "Replying as "}
+                          <strong>{admin.fullName || "Vladimir"}</strong>
                         </div>
 
                         <div className={styles.replyActions}>
@@ -1471,7 +1618,11 @@ export default function SupportTicketsWorkbench({
                             className={styles.sendButton}
                           >
                             <Send size={12} />
-                            {isPending ? "Sending..." : "Send reply"}
+                            {isPending
+                              ? "Sending..."
+                              : replyMode === "internal"
+                                ? "Save note"
+                                : "Send reply"}
                           </button>
                         </div>
                       </div>
@@ -1520,9 +1671,18 @@ export default function SupportTicketsWorkbench({
                       <button
                         type="button"
                         onClick={() => openUserDrawer(selectedTicket)}
-                        className={styles.customerAvatar}
+                        className={styles.customerAvatarWrap}
                       >
-                        {safeInitials(selectedTicket)}
+                        <span className={styles.customerAvatar}>
+                          {safeInitials(selectedTicket)}
+                        </span>
+                        <span
+                          className={
+                            isRecentlyActive(selectedTicket.userLastActiveAt)
+                              ? styles.onlineDot
+                              : styles.offlineDot
+                          }
+                        />
                       </button>
 
                       <div className={styles.customerText}>
@@ -1549,10 +1709,42 @@ export default function SupportTicketsWorkbench({
                     <div className={styles.sideSection}>
                       <SectionTitle icon={<MessageSquare size={13} />} title="Ticket" />
                       <DetailRow label="ID" value={ticketNumber(selectedTicketIndex)} />
-                      <DetailRow label="Status" value={statusLabel(selectedTicket.status)} tone={selectedStatus === "closed" ? "muted" : selectedStatus === "resolved" ? "good" : "info"} />
-                      <DetailRow label="Priority" value={priorityLabel(selectedTicket.priority)} tone={normalizePriority(selectedTicket.priority) === "normal" ? "warning" : "danger"} />
-                      <DetailRow label="SLA" value={slaInfo(selectedTicket).label} tone={slaInfo(selectedTicket).tone as "good" | "warning" | "danger" | "info" | "muted"} />
-                      <DetailRow label="Urgency" value={urgencyLabel(selectedTicket)} tone={urgencyLabel(selectedTicket) === "Critical" ? "danger" : urgencyLabel(selectedTicket) === "High" ? "warning" : "muted"} />
+                      <DetailRow
+                        label="Status"
+                        value={statusLabel(selectedTicket.status)}
+                        tone={
+                          selectedStatus === "closed"
+                            ? "muted"
+                            : selectedStatus === "resolved"
+                              ? "good"
+                              : "info"
+                        }
+                      />
+                      <DetailRow
+                        label="Priority"
+                        value={priorityLabel(selectedTicket.priority)}
+                        tone={
+                          normalizePriority(selectedTicket.priority) === "normal"
+                            ? "warning"
+                            : "danger"
+                        }
+                      />
+                      <DetailRow
+                        label="SLA"
+                        value={slaInfo(selectedTicket).label}
+                        tone={slaInfo(selectedTicket).tone as "good" | "warning" | "danger" | "info" | "muted"}
+                      />
+                      <DetailRow
+                        label="Urgency"
+                        value={urgencyLabel(selectedTicket)}
+                        tone={
+                          urgencyLabel(selectedTicket) === "Critical"
+                            ? "danger"
+                            : urgencyLabel(selectedTicket) === "High"
+                              ? "warning"
+                              : "muted"
+                        }
+                      />
                       <DetailRow label="Category" value={selectedTicket.category} />
                     </div>
 
@@ -1561,11 +1753,48 @@ export default function SupportTicketsWorkbench({
                       <DetailRow label="Jurisdiction" value={selectedTicket.userJurisdiction} />
                       <DetailRow label="Exam" value={selectedTicket.userExam} />
                       <DetailRow label="Member since" value={selectedTicket.memberSince} />
-                      <DetailRow label="Last active" value={formatDateTime(selectedTicket.userLastActiveAt)} />
+                      <DetailRow
+                        label="Last active"
+                        value={formatDateTime(selectedTicket.userLastActiveAt)}
+                        tone={
+                          isRecentlyActive(selectedTicket.userLastActiveAt)
+                            ? "good"
+                            : "muted"
+                        }
+                      />
                     </div>
 
                     <div className={styles.sideSection}>
-                      <SectionTitle icon={<LinkIcon size={13} />} title="Links" />
+                      <SectionTitle icon={<UserRound size={13} />} title="Assignment" />
+                      <select
+                        value={selectedTicket.assignedAdminId || ""}
+                        onChange={(event) => assignTicket(event.target.value)}
+                        disabled={isPending}
+                        className={styles.sideSelect}
+                      >
+                        <option value="">Unassigned</option>
+                        {adminUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {adminUserLabel(user)}
+                          </option>
+                        ))}
+                      </select>
+                      <DetailRow
+                        label="Current"
+                        value={selectedTicket.assignedAdminName || "Unassigned"}
+                      />
+                    </div>
+
+                    <div className={styles.sideSection}>
+                      <SectionTitle icon={<Clock3 size={13} />} title="Recent history" />
+                      <DetailRow label="Total tickets" value={String(selectedTicket.userTotalTicketCount)} />
+                      <DetailRow label="Open tickets" value={String(selectedTicket.userOpenTicketCount)} />
+                      <DetailRow label="Last user message" value={formatDateTime(selectedTicket.lastUserMessageAt)} />
+                      <DetailRow label="Last support reply" value={formatDateTime(selectedTicket.lastSupportReplyAt)} />
+                    </div>
+
+                    <div className={styles.sideSection}>
+                      <SectionTitle icon={<Tag size={13} />} title="Account links" />
                       <button
                         type="button"
                         onClick={() => openUserDrawer(selectedTicket)}
@@ -1573,19 +1802,34 @@ export default function SupportTicketsWorkbench({
                       >
                         Open user profile
                       </button>
-                      <button type="button" className={styles.linkRow}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuery(selectedTicket.userEmail)
+                          setViewMode("list")
+                        }}
+                        className={styles.linkRow}
+                      >
+                        Recent conversations
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.location.href = "/admin/subscription"
+                        }}
+                        className={styles.linkRow}
+                      >
                         Subscription record
                       </button>
-                      <button type="button" className={styles.linkRow}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.location.href = "/admin/billing"
+                        }}
+                        className={styles.linkRow}
+                      >
                         Payment history
                       </button>
-                    </div>
-
-                    <div className={styles.sideSection}>
-                      <SectionTitle icon={<Clock3 size={13} />} title="Recent history" />
-                      <DetailRow label="Total tickets" value={String(selectedTicket.userTotalTicketCount)} />
-                      <DetailRow label="Open tickets" value={String(selectedTicket.userOpenTicketCount)} />
-                      <DetailRow label="Assigned" value={selectedTicket.assignedAdminName || "Unassigned"} />
                     </div>
 
                     <div className={styles.sideSectionLast}>
@@ -1674,7 +1918,16 @@ export default function SupportTicketsWorkbench({
 
             <div className={styles.drawerBody}>
               <div className={styles.drawerIdentity}>
-                <div className={styles.drawerAvatar}>{safeInitials(profileDrawerTicket)}</div>
+                <div className={styles.drawerAvatarWrap}>
+                  <div className={styles.drawerAvatar}>{safeInitials(profileDrawerTicket)}</div>
+                  <span
+                    className={
+                      isRecentlyActive(profileDrawerTicket.userLastActiveAt)
+                        ? styles.onlineDot
+                        : styles.offlineDot
+                    }
+                  />
+                </div>
                 <div>
                   <div className={styles.drawerName}>{displayUserName(profileDrawerTicket)}</div>
                   <div className={styles.drawerEmail}>{profileDrawerTicket.userEmail}</div>
@@ -1687,6 +1940,17 @@ export default function SupportTicketsWorkbench({
                 </span>
                 <span className={profileDrawerTicket.userIsBlocked ? styles.blockedBadge : styles.activeBadge}>
                   {profileDrawerTicket.userIsBlocked ? "Blocked" : "Active"}
+                </span>
+                <span
+                  className={
+                    isRecentlyActive(profileDrawerTicket.userLastActiveAt)
+                      ? styles.onlineBadge
+                      : styles.offlineBadge
+                  }
+                >
+                  {isRecentlyActive(profileDrawerTicket.userLastActiveAt)
+                    ? "Online"
+                    : "Offline"}
                 </span>
               </div>
 

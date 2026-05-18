@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import SupportTicketsWorkbench, {
+  AdminUserForWorkbench,
   SupportTicketForWorkbench,
 } from "./SupportTicketsWorkbench"
 
@@ -35,10 +36,7 @@ function cleanString(value: FormDataEntryValue | null) {
   return value.trim()
 }
 
-function adminDisplayName(admin: {
-  fullName: string | null
-  email: string
-}) {
+function adminDisplayName(admin: { fullName: string | null; email: string }) {
   if (admin.fullName && admin.fullName.trim()) return admin.fullName.trim()
   return admin.email.split("@")[0] || "Admin"
 }
@@ -90,7 +88,10 @@ function formatMonthYear(value: Date | null | undefined) {
   }).format(value)
 }
 
-function formatExam(valueMonth: number | null | undefined, valueYear: number | null | undefined) {
+function formatExam(
+  valueMonth: number | null | undefined,
+  valueYear: number | null | undefined,
+) {
   if (!valueMonth || !valueYear) return "Not set"
 
   const date = new Date(valueYear, valueMonth - 1, 1)
@@ -200,6 +201,33 @@ async function getUserTicketCounts(userIds: string[]) {
   return new Map(rows.map((row) => [row.user_id, row]))
 }
 
+async function getAdminUsers(): Promise<AdminUserForWorkbench[]> {
+  const rows = await prisma.profiles.findMany({
+    where: {
+      deleted_at: null,
+      is_blocked: false,
+      OR: [{ is_admin: true }, { role: "admin" }],
+    },
+    orderBy: {
+      created_at: "asc",
+    },
+    select: {
+      id: true,
+      email: true,
+      full_name: true,
+      admin_role: true,
+      role: true,
+    },
+  })
+
+  return rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    fullName: row.full_name,
+    roleLabel: row.admin_role || row.role || "admin",
+  }))
+}
+
 export default async function AdminSupportPage() {
   const admin = await getCurrentAdmin()
 
@@ -210,6 +238,7 @@ export default async function AdminSupportPage() {
 
     const ticketId = cleanString(formData.get("ticketId"))
     const message = cleanString(formData.get("message"))
+    const mode = cleanString(formData.get("mode")) || "reply"
 
     if (!ticketId || !message) {
       redirect("/admin/support")
@@ -231,6 +260,29 @@ export default async function AdminSupportPage() {
 
     const now = new Date()
     const name = adminDisplayName(currentAdmin)
+
+    if (mode === "internal") {
+      await prisma.support_ticket_messages.create({
+        data: {
+          ticket_id: ticket.id,
+          sender: "internal",
+          message,
+        },
+      })
+
+      await prisma.$executeRaw`
+        update public.support_tickets
+        set
+          assigned_admin_id = ${currentAdmin.id}::uuid,
+          assigned_admin_name = ${name},
+          last_admin_read_at = ${now},
+          updated_at = ${now}
+        where id = ${ticket.id}::uuid
+      `
+
+      revalidatePath("/admin/support")
+      return
+    }
 
     await prisma.support_ticket_messages.create({
       data: {
@@ -328,7 +380,8 @@ export default async function AdminSupportPage() {
     }
 
     if (nextStatus === "closed") {
-      systemMessage = `Ticket closed by ${name}. The thread is now locked. The user should open a new ticket if more help is needed.`
+      systemMessage =
+        `Ticket closed by ${name}. The thread is now locked. The user should open a new ticket if more help is needed.`
     }
 
     if (previousStatus === "closed" && nextStatus === "open") {
@@ -478,6 +531,66 @@ export default async function AdminSupportPage() {
     revalidatePath("/admin/support")
   }
 
+  async function assignTicket(formData: FormData) {
+    "use server"
+
+    const currentAdmin = await getCurrentAdmin()
+
+    const ticketId = cleanString(formData.get("ticketId"))
+    const adminId = cleanString(formData.get("adminId"))
+
+    if (!ticketId) {
+      redirect("/admin/support")
+    }
+
+    const targetAdmin = adminId
+      ? await prisma.profiles.findFirst({
+          where: {
+            id: adminId,
+            is_blocked: false,
+            OR: [{ is_admin: true }, { role: "admin" }],
+          },
+          select: {
+            id: true,
+            email: true,
+            full_name: true,
+          },
+        })
+      : null
+
+    const now = new Date()
+    const assignedName = targetAdmin
+      ? adminDisplayName({
+          fullName: targetAdmin.full_name,
+          email: targetAdmin.email,
+        })
+      : null
+
+    const changedBy = adminDisplayName(currentAdmin)
+
+    await prisma.support_ticket_messages.create({
+      data: {
+        ticket_id: ticketId,
+        sender: "system",
+        message: assignedName
+          ? `Ticket assigned to ${assignedName} by ${changedBy}.`
+          : `Ticket assignment cleared by ${changedBy}.`,
+      },
+    })
+
+    await prisma.$executeRaw`
+      update public.support_tickets
+      set
+        assigned_admin_id = ${targetAdmin?.id || null}::uuid,
+        assigned_admin_name = ${assignedName},
+        last_admin_read_at = ${now},
+        updated_at = ${now}
+      where id = ${ticketId}::uuid
+    `
+
+    revalidatePath("/admin/support")
+  }
+
   const baseTickets = await prisma.support_tickets.findMany({
     orderBy: {
       updated_at: "desc",
@@ -495,7 +608,7 @@ export default async function AdminSupportPage() {
   const userIds = Array.from(new Set(baseTickets.map((ticket) => ticket.user_id)))
   const ticketIds = baseTickets.map((ticket) => ticket.id)
 
-  const [profiles, metaMap, userTicketCountMap] = await Promise.all([
+  const [profiles, metaMap, userTicketCountMap, adminUsers] = await Promise.all([
     prisma.profiles.findMany({
       where: {
         id: {
@@ -518,6 +631,7 @@ export default async function AdminSupportPage() {
     }),
     getSupportTicketMeta(ticketIds),
     getUserTicketCounts(userIds),
+    getAdminUsers(),
   ])
 
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile]))
@@ -575,7 +689,11 @@ export default async function AdminSupportPage() {
 
       const latestHumanMessage = [...ticket.messages]
         .reverse()
-        .find((message) => message.sender.toLowerCase() !== "system")
+        .find(
+          (message) =>
+            message.sender.toLowerCase() !== "system" &&
+            message.sender.toLowerCase() !== "internal",
+        )
 
       const latestHumanIsUser =
         latestHumanMessage?.sender.toLowerCase() === "user"
@@ -623,12 +741,14 @@ export default async function AdminSupportPage() {
   return (
     <SupportTicketsWorkbench
       admin={admin}
+      adminUsers={adminUsers}
       tickets={tickets}
       counts={counts}
       replyAction={replyToTicket}
       updateStatusAction={updateTicketStatus}
       updatePriorityAction={updateTicketPriority}
       markReadAction={markTicketRead}
+      assignTicketAction={assignTicket}
     />
   )
 }
