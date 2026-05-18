@@ -5,12 +5,16 @@ import { useMemo, useState, useTransition } from "react"
 import {
   BarChart3,
   Bell,
+  BookOpen,
   Check,
+  CreditCard,
   FileText,
   Filter,
   Grid2X2,
   Inbox,
+  LayoutDashboard,
   LinkIcon,
+  Megaphone,
   Menu,
   MessageSquare,
   MoreVertical,
@@ -68,8 +72,74 @@ type Props = {
   updatePriorityAction: (formData: FormData) => Promise<void>
 }
 
+type RailItem = {
+  label: string
+  href: string
+  icon: React.ComponentType<{ size?: number }>
+  active?: boolean
+}
+
 const statusOptions = ["open", "pending", "resolved", "closed"]
 const priorityOptions = ["normal", "high"]
+
+const railItems: RailItem[] = [
+  {
+    label: "Dashboard",
+    href: "/admin",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
+  },
+  {
+    label: "Users",
+    href: "/admin/users",
+    icon: Users,
+  },
+  {
+    label: "Subscriptions",
+    href: "/admin/subscription",
+    icon: CreditCard,
+  },
+  {
+    label: "Billing",
+    href: "/admin/billing",
+    icon: CreditCard,
+  },
+  {
+    label: "Support Tickets",
+    href: "/admin/support",
+    icon: MessageSquare,
+    active: true,
+  },
+  {
+    label: "BLL Rules",
+    href: "/admin/rules",
+    icon: BookOpen,
+  },
+  {
+    label: "MBE Questions",
+    href: "/admin/questions",
+    icon: Bell,
+  },
+  {
+    label: "Announcements",
+    href: "/admin/announcements",
+    icon: Megaphone,
+  },
+  {
+    label: "Team Workspace",
+    href: "/admin/workspace",
+    icon: FileText,
+  },
+  {
+    label: "Settings",
+    href: "/admin/settings",
+    icon: Settings,
+  },
+]
 
 function formatShortTime(value: string) {
   const date = new Date(value)
@@ -272,51 +342,31 @@ export default function SupportTicketsWorkbench({
         <Link
           href="/admin"
           prefetch={false}
-          title="Back to Admin Dashboard"
+          title="Admin Dashboard"
           className={styles.logoButton}
         >
           <Menu size={15} />
         </Link>
 
-        <Link href="/admin" prefetch={false} title="Dashboard" className={styles.iconButton}>
-          <Grid2X2 size={16} />
-        </Link>
+        {railItems.map((item) => {
+          const Icon = item.icon
 
-        <Link href="/admin/users" prefetch={false} title="Users" className={styles.iconButton}>
-          <Users size={16} />
-        </Link>
-
-        <Link
-          href="/admin/support"
-          prefetch={false}
-          title="Support"
-          className={`${styles.iconButton} ${styles.iconButtonActive}`}
-        >
-          <MessageSquare size={16} />
-          <span className={styles.redDot} />
-        </Link>
-
-        <Link href="/admin/rules" prefetch={false} title="BLL Rules" className={styles.iconButton}>
-          <FileText size={16} />
-        </Link>
-
-        <Link
-          href="/admin/analytics"
-          prefetch={false}
-          title="Analytics"
-          className={styles.iconButton}
-        >
-          <BarChart3 size={16} />
-        </Link>
-
-        <Link
-          href="/admin/settings"
-          prefetch={false}
-          title="Settings"
-          className={styles.iconButton}
-        >
-          <Settings size={16} />
-        </Link>
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              prefetch={false}
+              title={item.label}
+              aria-label={item.label}
+              className={`${styles.iconButton} ${
+                item.active ? styles.iconButtonActive : ""
+              }`}
+            >
+              <Icon size={16} />
+              {item.active ? <span className={styles.redDot} /> : null}
+            </Link>
+          )
+        })}
 
         <div className={styles.railBottom}>
           <button type="button" title="Notifications" className={styles.iconButton}>
