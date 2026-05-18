@@ -1,29 +1,17 @@
 "use client"
 
-import Link from "next/link"
 import { useMemo, useState, useTransition } from "react"
 import {
-  BarChart3,
-  Bell,
-  BookOpen,
   Check,
-  CreditCard,
-  FileText,
   Filter,
-  Grid2X2,
   Inbox,
-  LayoutDashboard,
   LinkIcon,
-  Megaphone,
-  Menu,
   MessageSquare,
   MoreVertical,
   Paperclip,
   Search,
   Send,
-  Settings,
   SlidersHorizontal,
-  Users,
   X,
 } from "lucide-react"
 import styles from "./SupportTicketsWorkbench.module.css"
@@ -72,74 +60,8 @@ type Props = {
   updatePriorityAction: (formData: FormData) => Promise<void>
 }
 
-type RailItem = {
-  label: string
-  href: string
-  icon: React.ComponentType<{ size?: number }>
-  active?: boolean
-}
-
 const statusOptions = ["open", "pending", "resolved", "closed"]
 const priorityOptions = ["normal", "high"]
-
-const railItems: RailItem[] = [
-  {
-    label: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Analytics",
-    href: "/admin/analytics",
-    icon: BarChart3,
-  },
-  {
-    label: "Users",
-    href: "/admin/users",
-    icon: Users,
-  },
-  {
-    label: "Subscriptions",
-    href: "/admin/subscription",
-    icon: CreditCard,
-  },
-  {
-    label: "Billing",
-    href: "/admin/billing",
-    icon: CreditCard,
-  },
-  {
-    label: "Support Tickets",
-    href: "/admin/support",
-    icon: MessageSquare,
-    active: true,
-  },
-  {
-    label: "BLL Rules",
-    href: "/admin/rules",
-    icon: BookOpen,
-  },
-  {
-    label: "MBE Questions",
-    href: "/admin/questions",
-    icon: Bell,
-  },
-  {
-    label: "Announcements",
-    href: "/admin/announcements",
-    icon: Megaphone,
-  },
-  {
-    label: "Team Workspace",
-    href: "/admin/workspace",
-    icon: FileText,
-  },
-  {
-    label: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-  },
-]
 
 function formatShortTime(value: string) {
   const date = new Date(value)
@@ -338,51 +260,13 @@ export default function SupportTicketsWorkbench({
 
   return (
     <div className={styles.shell}>
-      <aside className={styles.iconRail}>
-        <Link
-          href="/admin"
-          prefetch={false}
-          title="Admin Dashboard"
-          className={styles.logoButton}
-        >
-          <Menu size={15} />
-        </Link>
-
-        {railItems.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              prefetch={false}
-              title={item.label}
-              aria-label={item.label}
-              className={`${styles.iconButton} ${
-                item.active ? styles.iconButtonActive : ""
-              }`}
-            >
-              <Icon size={16} />
-              {item.active ? <span className={styles.redDot} /> : null}
-            </Link>
-          )
-        })}
-
-        <div className={styles.railBottom}>
-          <button type="button" title="Notifications" className={styles.iconButton}>
-            <Bell size={15} />
-          </button>
-
-          <button type="button" title={admin.fullName || admin.email} className={styles.avatar}>
-            {admin.fullName ? admin.fullName.slice(0, 1).toUpperCase() : "V"}
-          </button>
-        </div>
-      </aside>
-
       <aside className={styles.listPanel}>
         <div className={styles.listHeader}>
           <div className={styles.listTitleRow}>
-            <span className={styles.listTitle}>Tickets</span>
+            <div>
+              <div className={styles.listTitle}>Tickets</div>
+              <div className={styles.listSubtitle}>Customer support inbox</div>
+            </div>
 
             <div className={styles.listHeaderIcons}>
               <button type="button" title="Sort" className={styles.smallIconButton}>
@@ -396,7 +280,7 @@ export default function SupportTicketsWorkbench({
           </div>
 
           <div className={styles.searchWrap}>
-            <Search size={12} className={styles.searchIcon} />
+            <Search size={14} className={styles.searchIcon} />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -411,7 +295,7 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("open")}
               className={`${styles.tab} ${filter === "open" ? styles.tabActive : ""}`}
             >
-              Open <span className={styles.tabCount}>{counts.open}</span>
+              Open <span>{counts.open}</span>
             </button>
 
             <button
@@ -419,7 +303,7 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("pending")}
               className={`${styles.tab} ${filter === "pending" ? styles.tabActive : ""}`}
             >
-              Pending <span className={styles.tabCount}>{counts.pending}</span>
+              Pending <span>{counts.pending}</span>
             </button>
 
             <button
@@ -427,7 +311,7 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("resolved")}
               className={`${styles.tab} ${filter === "resolved" ? styles.tabActive : ""}`}
             >
-              Resolved <span className={styles.tabCount}>{counts.resolved}</span>
+              Resolved <span>{counts.resolved}</span>
             </button>
 
             <button
@@ -435,7 +319,7 @@ export default function SupportTicketsWorkbench({
               onClick={() => setFilter("all")}
               className={`${styles.tab} ${filter === "all" ? styles.tabActive : ""}`}
             >
-              All <span className={styles.tabCount}>{counts.all}</span>
+              All <span>{counts.all}</span>
             </button>
           </div>
         </div>
@@ -456,8 +340,6 @@ export default function SupportTicketsWorkbench({
                     active ? styles.ticketItemActive : ""
                   }`}
                 >
-                  {active ? <span className={styles.activeMarker} /> : null}
-
                   <div className={styles.ticketTop}>
                     <span className={styles.ticketSubject}>{ticket.subject}</span>
                     <span className={styles.ticketTime}>

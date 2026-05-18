@@ -4,36 +4,24 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
-  AlertTriangle,
   BarChart3,
   Bell,
   BookOpen,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  CirclePlus,
   CreditCard,
   FileCheck2,
   FileText,
-  Flag,
-  Gift,
-  Home,
   LayoutDashboard,
   LogOut,
-  Mail,
   Megaphone,
   MessageSquare,
-  MonitorCog,
-  Palette,
-  Percent,
-  Search,
   Settings,
   Shield,
-  ShieldAlert,
-  Sparkles,
+  TicketPercent,
   Users,
   UserSquare2,
-  Workflow,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -63,20 +51,13 @@ type Counts = {
   paidSubscribers: number
 }
 
-type BadgeTone = "blue" | "amber" | "red" | "muted"
-
 type NavItem = {
   label: string
   href: string
   icon: React.ComponentType<{ size?: number; className?: string }>
   badge?: string | number
-  badgeTone?: BadgeTone
+  badgeTone?: "blue" | "amber" | "red" | "gray"
   show: boolean
-}
-
-type NavSection = {
-  title: string
-  items: NavItem[]
 }
 
 function safeName(fullName: string | null, email: string) {
@@ -95,67 +76,30 @@ function initials(fullName: string | null, email: string) {
   )
 }
 
-function getPageTitle(pathname: string) {
-  const clean = pathname.replace(/\/$/, "")
-
-  const titles: Record<string, string> = {
-    "/admin": "Dashboard",
-    "/admin/analytics": "Analytics",
-    "/admin/billing": "Billing",
-    "/admin/subscription": "Subscriptions",
-    "/admin/support": "Support Tickets",
-    "/admin/users": "Users",
-    "/admin/team": "Teams",
-    "/admin/workspace": "Team Workspace",
-    "/admin/questions": "MBE Questions",
-    "/admin/rules": "BLL Rules",
-    "/admin/announcements": "Announcements",
-    "/admin/coupons": "Discounts",
-    "/admin/legal-acceptances": "Legal Records",
-    "/admin/audit-log": "Audit Log",
-    "/admin/settings": "Settings",
-  }
-
-  if (titles[clean]) return titles[clean]
-
-  if (clean.startsWith("/admin/users/")) return "User Details"
-  if (clean.startsWith("/admin/questions/")) return "Question Details"
-  if (clean.startsWith("/admin/rules/")) return "Rule Details"
-  if (clean.startsWith("/admin/workspace")) return "Team Workspace"
-
-  return "Admin Console"
-}
-
-function getBreadcrumb(pathname: string) {
-  const title = getPageTitle(pathname)
-
-  if (pathname === "/admin") {
-    return ["Admin", "Overview", "Dashboard"]
-  }
-
-  const section =
-    pathname.includes("billing") ||
-    pathname.includes("subscription") ||
-    pathname.includes("coupons")
-      ? "Revenue"
-      : pathname.includes("support")
-        ? "Support"
-        : pathname.includes("questions") || pathname.includes("rules")
-          ? "Content"
-          : pathname.includes("users") || pathname.includes("team")
-            ? "Users"
-            : pathname.includes("settings") || pathname.includes("audit")
-              ? "System"
-              : "Admin"
-
-  return ["Admin", section, title]
-}
-
-function badgeClass(tone: BadgeTone = "blue") {
+function badgeClass(tone: NavItem["badgeTone"] = "blue") {
   if (tone === "amber") return "border border-amber-200 bg-amber-50 text-amber-700"
   if (tone === "red") return "border border-red-200 bg-red-50 text-red-600"
-  if (tone === "muted") return "border border-slate-200 bg-slate-100 text-slate-500"
+  if (tone === "gray") return "border border-slate-200 bg-slate-100 text-slate-500"
   return "bg-blue-600 text-white"
+}
+
+function pageTitle(pathname: string) {
+  if (pathname === "/admin") return "Dashboard"
+  if (pathname.startsWith("/admin/analytics")) return "Analytics"
+  if (pathname.startsWith("/admin/billing")) return "Billing"
+  if (pathname.startsWith("/admin/subscription")) return "Subscriptions"
+  if (pathname.startsWith("/admin/support")) return "Support Tickets"
+  if (pathname.startsWith("/admin/users")) return "Users"
+  if (pathname.startsWith("/admin/legal-acceptances")) return "Legal Records"
+  if (pathname.startsWith("/admin/questions")) return "MBE Questions"
+  if (pathname.startsWith("/admin/rules")) return "BLL Rules"
+  if (pathname.startsWith("/admin/announcements")) return "Announcements"
+  if (pathname.startsWith("/admin/coupons")) return "Discounts"
+  if (pathname.startsWith("/admin/workspace")) return "Team Workspace"
+  if (pathname.startsWith("/admin/team")) return "Teams"
+  if (pathname.startsWith("/admin/settings")) return "Settings"
+  if (pathname.startsWith("/admin/audit-log")) return "Audit Log"
+  return "Admin Console"
 }
 
 function Section({
@@ -251,6 +195,7 @@ export default function AdminShell({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (!profileRef.current) return
+
       if (!profileRef.current.contains(event.target as Node)) {
         setProfileOpen(false)
       }
@@ -260,135 +205,132 @@ export default function AdminShell({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const nav = useMemo<NavSection[]>(() => {
+  const nav = useMemo(() => {
     const p = currentUser.permissions
     const isSuperAdmin = currentUser.isSuperAdmin
 
-    const canSeeUsers = p.canManageUsers || isSuperAdmin
-    const canSeeBilling = p.canViewBilling || isSuperAdmin
-    const canSeeSupport =
-      p.canViewBilling || p.canManageUsers || p.canViewAuditLog || isSuperAdmin
-    const canSeeContent = p.canManageQuestions || p.canManageRules || isSuperAdmin
-    const canSeeAnnouncements = p.canManageAnnouncements || isSuperAdmin
-    const canSeeSettings = p.canManageSettings || isSuperAdmin
-    const canSeeAudit = p.canViewAuditLog || isSuperAdmin
+    return {
+      overview: [
+        {
+          label: "Dashboard",
+          href: "/admin",
+          icon: LayoutDashboard,
+          show: true,
+        },
+        {
+          label: "Analytics",
+          href: "/admin/analytics",
+          icon: BarChart3,
+          show: true,
+        },
+      ] satisfies NavItem[],
 
-    return [
-      {
-        title: "Overview",
-        items: [
-          { label: "Dashboard", href: "/admin", icon: LayoutDashboard, show: true },
-          { label: "Analytics", href: "/admin/analytics", icon: BarChart3, show: true },
-          { label: "Scheduled Jobs", href: "/admin/jobs", icon: Workflow, show: isSuperAdmin },
-        ],
-      },
-      {
-        title: "Users",
-        items: [
-          {
-            label: "Users",
-            href: "/admin/users",
-            icon: Users,
-            badge: counts.totalUsers,
-            badgeTone: "blue",
-            show: canSeeUsers,
-          },
-          { label: "Roles & Access", href: "/admin/team", icon: Shield, show: canSeeUsers },
-          { label: "Sessions", href: "/admin/sessions", icon: MonitorCog, show: isSuperAdmin },
-          {
-            label: "Privacy Requests",
-            href: "/admin/legal-acceptances",
-            icon: ShieldAlert,
-            show: canSeeUsers || canSeeAudit,
-          },
-        ],
-      },
-      {
-        title: "Revenue",
-        items: [
-          {
-            label: "Subscriptions",
-            href: "/admin/subscription",
-            icon: CreditCard,
-            badge: counts.paidSubscribers,
-            badgeTone: "blue",
-            show: canSeeBilling || canSeeUsers,
-          },
-          { label: "Billing", href: "/admin/billing", icon: CreditCard, show: canSeeBilling },
-          { label: "Discounts", href: "/admin/coupons", icon: Percent, show: p.canManageCoupons || canSeeBilling },
-          { label: "Trial Funnel", href: "/admin/trial-funnel", icon: Gift, show: isSuperAdmin },
-        ],
-      },
-      {
-        title: "Support",
-        items: [
-          {
-            label: "Support Tickets",
-            href: "/admin/support",
-            icon: MessageSquare,
-            badge: "3",
-            badgeTone: "amber",
-            show: canSeeSupport,
-          },
-          {
-            label: "Reported Rules",
-            href: "/admin/reported-rules",
-            icon: AlertTriangle,
-            badge: "2",
-            badgeTone: "red",
-            show: canSeeContent || canSeeSupport,
-          },
-          { label: "Email Delivery", href: "/admin/email-delivery", icon: Mail, show: isSuperAdmin },
-        ],
-      },
-      {
-        title: "Content",
-        items: [
-          { label: "BLL Rules", href: "/admin/rules", icon: BookOpen, show: p.canManageRules || isSuperAdmin },
-          { label: "MBE Questions", href: "/admin/questions", icon: Bell, show: p.canManageQuestions || isSuperAdmin },
-          { label: "Subjects & Topics", href: "/admin/subjects", icon: FileText, show: canSeeContent },
-        ],
-      },
-      {
-        title: "Communications",
-        items: [
-          { label: "Announcements", href: "/admin/announcements", icon: Megaphone, show: canSeeAnnouncements },
-          { label: "Bulk Messages", href: "/admin/bulk-messages", icon: MessageSquare, show: isSuperAdmin },
-        ],
-      },
-      {
-        title: "Website Studio",
-        items: [
-          { label: "Theme Settings", href: "/admin/theme", icon: Palette, show: canSeeSettings },
-          { label: "Homepage Builder", href: "/admin/homepage", icon: Home, show: canSeeSettings },
-          { label: "Banner Manager", href: "/admin/banners", icon: Flag, show: canSeeSettings },
-          { label: "Legal Docs", href: "/admin/legal-acceptances", icon: FileCheck2, show: canSeeUsers || canSeeAudit },
-        ],
-      },
-      {
-        title: "Teams",
-        items: [
-          { label: "Teams", href: "/admin/team", icon: UserSquare2, show: canSeeUsers },
-          { label: "Team Workspace", href: "/admin/workspace", icon: FileText, show: true },
-        ],
-      },
-      {
-        title: "Configuration",
-        items: [
-          { label: "Menu Control", href: "/admin/menu-control", icon: MonitorCog, show: canSeeSettings },
-          { label: "Design Sandbox", href: "/admin/design-sandbox", icon: Sparkles, show: canSeeSettings },
-        ],
-      },
-      {
-        title: "System",
-        items: [
-          { label: "Audit Log", href: "/admin/audit-log", icon: Shield, show: canSeeAudit },
-          { label: "Abuse Detection", href: "/admin/abuse-detection", icon: AlertTriangle, show: isSuperAdmin },
-          { label: "Environment", href: "/admin/environment", icon: MonitorCog, show: isSuperAdmin },
-          { label: "Settings", href: "/admin/settings", icon: Settings, show: canSeeSettings },
-        ],
-      },
-    ]
+      users: [
+        {
+          label: "Users",
+          href: "/admin/users",
+          icon: Users,
+          badge: counts.totalUsers,
+          badgeTone: "blue",
+          show: p.canManageUsers || isSuperAdmin,
+        },
+        {
+          label: "Legal Records",
+          href: "/admin/legal-acceptances",
+          icon: FileCheck2,
+          show: p.canManageUsers || p.canViewAuditLog || isSuperAdmin,
+        },
+      ] satisfies NavItem[],
+
+      revenue: [
+        {
+          label: "Subscriptions",
+          href: "/admin/subscription",
+          icon: CreditCard,
+          badge: counts.paidSubscribers,
+          badgeTone: "blue",
+          show: p.canViewBilling || p.canManageUsers || isSuperAdmin,
+        },
+        {
+          label: "Billing",
+          href: "/admin/billing",
+          icon: CreditCard,
+          show: p.canViewBilling || isSuperAdmin,
+        },
+        {
+          label: "Discounts",
+          href: "/admin/coupons",
+          icon: TicketPercent,
+          show: p.canManageCoupons || p.canViewBilling || isSuperAdmin,
+        },
+      ] satisfies NavItem[],
+
+      support: [
+        {
+          label: "Support Tickets",
+          href: "/admin/support",
+          icon: MessageSquare,
+          badge: 3,
+          badgeTone: "amber",
+          show:
+            p.canViewBilling ||
+            p.canManageUsers ||
+            p.canViewAuditLog ||
+            isSuperAdmin,
+        },
+      ] satisfies NavItem[],
+
+      content: [
+        {
+          label: "BLL Rules",
+          href: "/admin/rules",
+          icon: BookOpen,
+          show: p.canManageRules || isSuperAdmin,
+        },
+        {
+          label: "MBE Questions",
+          href: "/admin/questions",
+          icon: Bell,
+          show: p.canManageQuestions || isSuperAdmin,
+        },
+      ] satisfies NavItem[],
+
+      communications: [
+        {
+          label: "Announcements",
+          href: "/admin/announcements",
+          icon: Megaphone,
+          show: p.canManageAnnouncements || isSuperAdmin,
+        },
+        {
+          label: "Team Workspace",
+          href: "/admin/workspace",
+          icon: FileText,
+          show: true,
+        },
+        {
+          label: "Teams",
+          href: "/admin/team",
+          icon: UserSquare2,
+          show: p.canManageUsers || isSuperAdmin,
+        },
+      ] satisfies NavItem[],
+
+      system: [
+        {
+          label: "Settings",
+          href: "/admin/settings",
+          icon: Settings,
+          show: p.canManageSettings || isSuperAdmin,
+        },
+        {
+          label: "Audit Log",
+          href: "/admin/audit-log",
+          icon: Shield,
+          show: p.canViewAuditLog || isSuperAdmin,
+        },
+      ] satisfies NavItem[],
+    }
   }, [currentUser, counts])
 
   async function handleLogout() {
@@ -403,28 +345,31 @@ export default function AdminShell({
     }
   }
 
-  if (pathname === "/admin/support" || pathname.startsWith("/admin/support/")) {
-    return <>{children}</>
-  }
-
-  const pageTitle = getPageTitle(pathname)
-  const breadcrumb = getBreadcrumb(pathname)
-
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-slate-950">
       <div
         className="grid min-h-screen"
-        style={{ gridTemplateColumns: collapsed ? "52px 1fr" : "232px 1fr" }}
+        style={{ gridTemplateColumns: collapsed ? "56px 1fr" : "232px 1fr" }}
       >
         <aside className="min-h-screen overflow-hidden border-r border-slate-200 bg-white">
           <div className="flex h-screen flex-col">
-            <div className="flex min-h-[57px] items-center gap-2 border-b border-slate-200 px-3">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-600 font-serif text-[12px] font-bold text-white">
-                L
-              </div>
+            <div className="flex h-14 items-center border-b border-slate-200 px-3">
+              {collapsed ? (
+                <button
+                  type="button"
+                  onClick={() => setCollapsed(false)}
+                  className="mx-auto flex h-8 w-8 items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                  aria-label="Expand sidebar"
+                  title="Expand menu"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              ) : (
+                <div className="flex w-full items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-600 font-serif text-[13px] font-bold text-white">
+                    L
+                  </div>
 
-              {!collapsed ? (
-                <>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[13px] font-bold leading-4 text-slate-950">
                       Lexora Prep
@@ -437,34 +382,24 @@ export default function AdminShell({
                   <button
                     type="button"
                     onClick={() => setCollapsed(true)}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                     aria-label="Collapse sidebar"
+                    title="Collapse menu"
                   >
-                    <ChevronLeft size={15} />
+                    <ChevronLeft size={16} />
                   </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setCollapsed(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                  aria-label="Expand sidebar"
-                >
-                  <ChevronRight size={15} />
-                </button>
+                </div>
               )}
             </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3">
-              {nav.map((section) => (
-                <Section
-                  key={section.title}
-                  title={section.title}
-                  items={section.items}
-                  pathname={pathname}
-                  collapsed={collapsed}
-                />
-              ))}
+              <Section title="Overview" items={nav.overview} pathname={pathname} collapsed={collapsed} />
+              <Section title="Users" items={nav.users} pathname={pathname} collapsed={collapsed} />
+              <Section title="Revenue" items={nav.revenue} pathname={pathname} collapsed={collapsed} />
+              <Section title="Support" items={nav.support} pathname={pathname} collapsed={collapsed} />
+              <Section title="Content" items={nav.content} pathname={pathname} collapsed={collapsed} />
+              <Section title="Communications" items={nav.communications} pathname={pathname} collapsed={collapsed} />
+              <Section title="System" items={nav.system} pathname={pathname} collapsed={collapsed} />
             </div>
 
             <div className="border-t border-slate-200 px-2 py-3">
@@ -518,31 +453,6 @@ export default function AdminShell({
                         Team Workspace
                       </Link>
 
-                      {(currentUser.permissions.canManageUsers ||
-                        currentUser.isSuperAdmin) && (
-                        <Link
-                          href="/admin/team"
-                          prefetch={false}
-                          onClick={() => setProfileOpen(false)}
-                          className="block px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-                        >
-                          Teams
-                        </Link>
-                      )}
-
-                      {(currentUser.permissions.canManageUsers ||
-                        currentUser.permissions.canViewAuditLog ||
-                        currentUser.isSuperAdmin) && (
-                        <Link
-                          href="/admin/legal-acceptances"
-                          prefetch={false}
-                          onClick={() => setProfileOpen(false)}
-                          className="block px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 hover:text-slate-950"
-                        >
-                          Legal Records
-                        </Link>
-                      )}
-
                       {(currentUser.permissions.canManageSettings ||
                         currentUser.isSuperAdmin) && (
                         <Link
@@ -578,15 +488,10 @@ export default function AdminShell({
           <header className="flex h-14 items-center gap-3 border-b border-slate-200 bg-white px-6">
             <div className="min-w-0">
               <div className="truncate text-[15px] font-bold leading-5 text-slate-950">
-                {pageTitle}
+                {pageTitle(pathname)}
               </div>
-              <div className="mt-0.5 flex items-center gap-1 text-[11.5px] text-slate-400">
-                {breadcrumb.map((item, index) => (
-                  <span key={`${item}-${index}`} className="flex items-center gap-1">
-                    {index > 0 ? <span className="text-slate-300">›</span> : null}
-                    <span>{item}</span>
-                  </span>
-                ))}
+              <div className="mt-0.5 text-[11.5px] text-slate-400">
+                Admin › {pageTitle(pathname)}
               </div>
             </div>
 
@@ -600,11 +505,7 @@ export default function AdminShell({
               type="button"
               className="hidden h-8 min-w-[220px] items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-[12.5px] text-slate-400 hover:border-slate-300 md:flex"
             >
-              <Search size={14} className="text-slate-500" />
-              <span className="min-w-0 flex-1 truncate">Search anything...</span>
-              <kbd className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] text-slate-400">
-                ⌘K
-              </kbd>
+              Search anything...
             </button>
 
             <Link
@@ -615,15 +516,6 @@ export default function AdminShell({
             >
               <Bell size={15} />
               <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
-            </Link>
-
-            <Link
-              href="/admin/users"
-              prefetch={false}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-              aria-label="Users"
-            >
-              <CirclePlus size={16} />
             </Link>
 
             <div className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-[12px] font-bold text-blue-600">
