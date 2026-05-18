@@ -8,6 +8,7 @@ import {
   BillingSummaryCard,
   ManageBillingCard,
   PaymentHistoryCard,
+  PaymentHistoryRecord,
   PlanAccessCard,
   SubscriptionHero,
 } from "./_components/SubscriptionCards"
@@ -36,6 +37,33 @@ type ProfileData = {
   billing_discount_code: string | null
   billing_discount_amount: string | null
   billing_invoice_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+type PaymentRecordData = {
+  id: string
+  user_id: string
+  email: string
+  paddle_event_id: string | null
+  paddle_customer_id: string | null
+  paddle_subscription_id: string | null
+  paddle_transaction_id: string
+  paddle_price_id: string | null
+  plan: string | null
+  status: string | null
+  currency: string | null
+  amount_cents: number | null
+  tax_cents: number | null
+  total_cents: number | null
+  billing_period_starts_at: string | null
+  billing_period_ends_at: string | null
+  paid_at: string | null
+  discount_id: string | null
+  discount_code: string | null
+  discount_amount: string | null
+  invoice_url: string | null
+  receipt_url: string | null
   created_at: string
   updated_at: string
 }
@@ -132,6 +160,26 @@ function formatMoney(cents: number | null | undefined, currency = "USD") {
   }).format(cents / 100)
 }
 
+function formatPlanLabel(value: string | null | undefined) {
+  const plan = normalizePlan(value)
+
+  if (plan === "premium") return "Premium"
+  if (plan === "bll-monthly") return "BLL Monthly"
+
+  return "Free"
+}
+
+function formatStatus(value: string | null | undefined) {
+  const status = String(value || "paid").trim().toLowerCase()
+
+  if (status === "paid" || status === "active" || status === "completed") return "Paid"
+  if (status === "refunded") return "Refunded"
+  if (status === "failed") return "Failed"
+  if (status === "past_due") return "Past due"
+
+  return status.charAt(0).toUpperCase() + status.slice(1)
+}
+
 export default function SubscriptionPage() {
   const supabase = useMemo(() => createClient(), [])
 
@@ -139,6 +187,7 @@ export default function SubscriptionPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState("")
   const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [paymentRecords, setPaymentRecords] = useState<PaymentRecordData[]>([])
 
   const [invoiceHistoryOpen, setInvoiceHistoryOpen] = useState(false)
 
@@ -173,6 +222,62 @@ export default function SubscriptionPage() {
       : profile.billing_discount_code
     : "None"
 
+  const paymentHistoryRecords: PaymentHistoryRecord[] =
+    paymentRecords.length > 0
+      ? paymentRecords.map((record, index) => {
+          const recordCurrency = record.currency || currency
+          const amount =
+            typeof record.total_cents === "number"
+              ? record.total_cents
+              : record.amount_cents
+
+          return {
+            id: record.id,
+            number: index + 1,
+            planLabel: formatPlanLabel(record.plan),
+            paidAt: formatDate(record.paid_at || record.created_at),
+            billingPeriodEnds: formatDate(record.billing_period_ends_at),
+            amount: formatMoney(amount, recordCurrency),
+            tax: formatMoney(record.tax_cents, recordCurrency),
+            status: formatStatus(record.status),
+            receiptUrl: record.receipt_url || record.invoice_url,
+          }
+        })
+      : isPaid
+        ? [
+            {
+              id: "latest-profile-record",
+              number: 1,
+              planLabel: plan.label,
+              paidAt: lastPaymentDate,
+              billingPeriodEnds: nextRenewal,
+              amount: total,
+              tax,
+              status: "Paid",
+              receiptUrl: profile?.billing_invoice_url || null,
+            },
+          ]
+        : []
+
+  async function loadPaymentRecords() {
+    try {
+      const res = await fetch("/api/paddle/payment-records", {
+        cache: "no-store",
+      })
+
+      if (!res.ok) {
+        setPaymentRecords([])
+        return
+      }
+
+      const data = await res.json().catch(() => null)
+      setPaymentRecords(Array.isArray(data?.records) ? data.records : [])
+    } catch (err) {
+      console.error("PAYMENT RECORDS LOAD ERROR:", err)
+      setPaymentRecords([])
+    }
+  }
+
   async function loadSubscription(showSpinner = true) {
     try {
       if (showSpinner) setLoading(true)
@@ -199,6 +304,8 @@ export default function SubscriptionPage() {
 
       const data: ProfileData = await res.json()
       setProfile(data)
+
+      await loadPaymentRecords()
     } catch (err) {
       console.error("SUBSCRIPTION LOAD ERROR:", err)
       setError("Something went wrong while loading subscription.")
@@ -273,7 +380,21 @@ export default function SubscriptionPage() {
     }
   }
 
+  function openPaymentRecord(record: PaymentHistoryRecord) {
+    if (record.receiptUrl) {
+      window.open(record.receiptUrl, "_blank", "noopener,noreferrer")
+      return
+    }
+
+    openBillingPortal("invoices")
+  }
+
   function openLatestInvoice() {
+    if (paymentHistoryRecords[0]) {
+      openPaymentRecord(paymentHistoryRecords[0])
+      return
+    }
+
     if (profile?.billing_invoice_url) {
       window.open(profile.billing_invoice_url, "_blank", "noopener,noreferrer")
       return
@@ -397,11 +518,8 @@ export default function SubscriptionPage() {
 
             <PaymentHistoryCard
               isPaid={isPaid}
-              planLabel={plan.label}
-              nextRenewal={nextRenewal}
-              total={total}
-              tax={tax}
-              onView={openLatestInvoice}
+              records={paymentHistoryRecords}
+              onView={openPaymentRecord}
               onViewAll={() => setInvoiceHistoryOpen(true)}
             />
 
@@ -421,8 +539,8 @@ export default function SubscriptionPage() {
       {invoiceHistoryOpen && (
         <InvoiceHistoryModal
           isPaid={isPaid}
-          paidAt={profile?.billing_last_paid_at}
-          total={total}
+          paidAt={paymentHistoryRecords[0]?.paidAt || profile?.billing_last_paid_at}
+          total={paymentHistoryRecords[0]?.amount || total}
           onClose={() => setInvoiceHistoryOpen(false)}
           onView={openLatestInvoice}
         />

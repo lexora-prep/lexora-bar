@@ -1,7 +1,19 @@
 "use client"
 
-import { ReactNode, useState } from "react"
+import { ReactNode, useEffect, useState } from "react"
 import { Check, ChevronDown, CreditCard, FileText, X } from "lucide-react"
+
+export type PaymentHistoryRecord = {
+  id: string
+  number: number
+  planLabel: string
+  paidAt: string
+  billingPeriodEnds: string
+  amount: string
+  tax: string
+  status: string
+  receiptUrl: string | null
+}
 
 const planAccessFeatures = [
   "Full BLL rule access",
@@ -265,30 +277,29 @@ export function AccountActivityCard({
 
 export function PaymentHistoryCard({
   isPaid,
-  planLabel,
-  nextRenewal,
-  total,
-  tax,
+  records,
   onView,
   onViewAll,
 }: {
   isPaid: boolean
-  planLabel: string
-  nextRenewal: string
-  total: string
-  tax: string
-  onView: () => void
+  records: PaymentHistoryRecord[]
+  onView: (record: PaymentHistoryRecord) => void
   onViewAll: () => void
 }) {
-  const [openRecord, setOpenRecord] = useState<string | null>(isPaid ? "latest" : null)
-  const isOpen = openRecord === "latest"
+  const [openRecordId, setOpenRecordId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!openRecordId && records[0]?.id) {
+      setOpenRecordId(records[0].id)
+    }
+  }, [records, openRecordId])
 
   return (
     <Card>
       <SectionHeader
         title="Payment history"
         right={
-          isPaid ? (
+          isPaid && records.length > 0 ? (
             <button
               type="button"
               onClick={onViewAll}
@@ -304,69 +315,77 @@ export function PaymentHistoryCard({
         }
       />
 
-      {isPaid ? (
+      {isPaid && records.length > 0 ? (
         <div>
-          <button
-            type="button"
-            onClick={() => setOpenRecord(isOpen ? null : "latest")}
-            className="grid w-full grid-cols-[40px_32px_1fr_130px_90px_34px] items-center gap-3 px-5 py-4 text-left hover:bg-slate-50"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
-              <CreditCard className="h-4 w-4" />
-            </div>
+          {records.slice(0, 4).map((record) => {
+            const isOpen = openRecordId === record.id
 
-            <div className="text-[13px] font-bold text-slate-400">
-              1
-            </div>
-
-            <div>
-              <div className="text-[13px] font-semibold text-slate-950">
-                {planLabel}
-              </div>
-              <div className="mt-1 text-[11px] font-medium text-slate-400">
-                Billing period ends {nextRenewal}
-              </div>
-            </div>
-
-            <div className="text-[12px] font-medium text-slate-500">
-              Latest payment
-            </div>
-
-            <div>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700">
-                Paid
-              </span>
-            </div>
-
-            <ChevronDown
-              className={`h-4 w-4 justify-self-end text-slate-400 transition-transform ${
-                isOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {isOpen && (
-            <div className="border-t border-slate-200 bg-slate-50/60 px-5 py-4">
-              <div className="grid gap-3 md:grid-cols-5">
-                <PaymentDetail label="Billing period ends" value={nextRenewal} />
-                <PaymentDetail label="Paid" value={total} />
-                <PaymentDetail label="Tax / VAT" value={tax} />
-                <PaymentDetail label="Status" value="Active" green />
-                <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                    Receipt
+            return (
+              <div key={record.id} className="border-b border-slate-200 last:border-b-0">
+                <button
+                  type="button"
+                  onClick={() => setOpenRecordId(isOpen ? null : record.id)}
+                  className="grid w-full grid-cols-[40px_32px_1fr_110px_90px_34px] items-center gap-3 px-5 py-4 text-left hover:bg-slate-50"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
+                    <CreditCard className="h-4 w-4" />
                   </div>
-                  <button
-                    type="button"
-                    onClick={onView}
-                    className="mt-1 text-[12px] font-semibold text-blue-600 underline underline-offset-2"
-                  >
-                    View
-                  </button>
-                </div>
+
+                  <div className="text-[13px] font-bold text-slate-400">
+                    {record.number}
+                  </div>
+
+                  <div>
+                    <div className="text-[13px] font-semibold text-slate-950">
+                      {record.planLabel}
+                    </div>
+                    <div className="mt-1 text-[11px] font-medium text-slate-400">
+                      Billing period ends {record.billingPeriodEnds}
+                    </div>
+                  </div>
+
+                  <div className="text-[12px] font-medium text-slate-500">
+                    {record.paidAt}
+                  </div>
+
+                  <div>
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700">
+                      {record.status}
+                    </span>
+                  </div>
+
+                  <ChevronDown
+                    className={`h-4 w-4 justify-self-end text-slate-400 transition-transform ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isOpen && (
+                  <div className="border-t border-slate-200 bg-slate-50/60 px-5 py-4">
+                    <div className="grid gap-3 md:grid-cols-5">
+                      <PaymentDetail label="Billing period ends" value={record.billingPeriodEnds} />
+                      <PaymentDetail label="Paid" value={record.amount} />
+                      <PaymentDetail label="Tax / VAT" value={record.tax} />
+                      <PaymentDetail label="Status" value={record.status} green />
+                      <div>
+                        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                          Receipt
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onView(record)}
+                          className="mt-1 text-[12px] font-semibold text-blue-600 underline underline-offset-2"
+                        >
+                          View
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )
+          })}
         </div>
       ) : (
         <div className="px-6 py-8 text-center text-[13px] font-medium text-slate-500">
