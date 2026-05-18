@@ -4,24 +4,39 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
+  AlertTriangle,
   BarChart3,
   Bell,
   BookOpen,
+  Briefcase,
+  CalendarClock,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   CreditCard,
   FileCheck2,
   FileText,
+  Flag,
+  Globe2,
+  Home,
+  Image,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
+  Mail,
   Megaphone,
   MessageSquare,
+  MonitorCog,
+  Palette,
+  Percent,
+  Search,
   Settings,
   Shield,
-  TicketPercent,
+  SlidersHorizontal,
+  Sparkles,
   Users,
   UserSquare2,
+  Zap,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -86,19 +101,36 @@ function badgeClass(tone: NavItem["badgeTone"] = "blue") {
 function pageTitle(pathname: string) {
   if (pathname === "/admin") return "Dashboard"
   if (pathname.startsWith("/admin/analytics")) return "Analytics"
-  if (pathname.startsWith("/admin/billing")) return "Billing"
-  if (pathname.startsWith("/admin/subscription")) return "Subscriptions"
-  if (pathname.startsWith("/admin/support")) return "Support Tickets"
+  if (pathname.startsWith("/admin/scheduled-jobs")) return "Scheduled Jobs"
   if (pathname.startsWith("/admin/users")) return "Users"
-  if (pathname.startsWith("/admin/legal-acceptances")) return "Legal Records"
-  if (pathname.startsWith("/admin/questions")) return "MBE Questions"
-  if (pathname.startsWith("/admin/rules")) return "BLL Rules"
-  if (pathname.startsWith("/admin/announcements")) return "Announcements"
+  if (pathname.startsWith("/admin/roles-access")) return "Roles & Access"
+  if (pathname.startsWith("/admin/sessions")) return "Sessions"
+  if (pathname.startsWith("/admin/privacy-requests")) return "Privacy Requests"
+  if (pathname.startsWith("/admin/subscription")) return "Subscriptions"
+  if (pathname.startsWith("/admin/billing")) return "Billing"
   if (pathname.startsWith("/admin/coupons")) return "Discounts"
-  if (pathname.startsWith("/admin/workspace")) return "Team Workspace"
+  if (pathname.startsWith("/admin/trial-funnel")) return "Trial Funnel"
+  if (pathname.startsWith("/admin/support")) return "Support Tickets"
+  if (pathname.startsWith("/admin/reported-rules")) return "Reported Rules"
+  if (pathname.startsWith("/admin/email-delivery")) return "Email Delivery"
+  if (pathname.startsWith("/admin/rules")) return "BLL Rules"
+  if (pathname.startsWith("/admin/questions")) return "MBE Questions"
+  if (pathname.startsWith("/admin/subjects-topics")) return "Subjects & Topics"
+  if (pathname.startsWith("/admin/announcements")) return "Announcements"
+  if (pathname.startsWith("/admin/bulk-messages")) return "Bulk Messages"
+  if (pathname.startsWith("/admin/theme-settings")) return "Theme Settings"
+  if (pathname.startsWith("/admin/homepage-builder")) return "Homepage Builder"
+  if (pathname.startsWith("/admin/banner-manager")) return "Banner Manager"
+  if (pathname.startsWith("/admin/legal-docs")) return "Legal Docs"
   if (pathname.startsWith("/admin/team")) return "Teams"
-  if (pathname.startsWith("/admin/settings")) return "Settings"
+  if (pathname.startsWith("/admin/workspace")) return "Team Workspace"
+  if (pathname.startsWith("/admin/menu-control")) return "Menu Control"
+  if (pathname.startsWith("/admin/design-sandbox")) return "Design Sandbox"
+  if (pathname.startsWith("/admin/rule-bank")) return "Rule Bank"
   if (pathname.startsWith("/admin/audit-log")) return "Audit Log"
+  if (pathname.startsWith("/admin/abuse-detection")) return "Abuse Detection"
+  if (pathname.startsWith("/admin/environment")) return "Environment"
+  if (pathname.startsWith("/admin/settings")) return "Settings"
   return "Admin Console"
 }
 
@@ -120,7 +152,7 @@ function Section({
   return (
     <div className="mb-4">
       {!collapsed ? (
-        <div className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+        <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
           {title}
         </div>
       ) : null}
@@ -140,7 +172,7 @@ function Section({
               title={collapsed ? item.label : undefined}
               className={`group flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition ${
                 active
-                  ? "bg-blue-50 font-semibold text-blue-600"
+                  ? "bg-blue-50 font-medium text-blue-600"
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
               } ${collapsed ? "justify-center px-1.5" : ""}`}
             >
@@ -156,7 +188,7 @@ function Section({
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   {item.badge !== undefined ? (
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${badgeClass(
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${badgeClass(
                         item.badgeTone,
                       )}`}
                     >
@@ -223,6 +255,12 @@ export default function AdminShell({
           icon: BarChart3,
           show: true,
         },
+        {
+          label: "Scheduled Jobs",
+          href: "/admin/scheduled-jobs",
+          icon: CalendarClock,
+          show: true,
+        },
       ] satisfies NavItem[],
 
       users: [
@@ -235,9 +273,23 @@ export default function AdminShell({
           show: p.canManageUsers || isSuperAdmin,
         },
         {
-          label: "Legal Records",
-          href: "/admin/legal-acceptances",
-          icon: FileCheck2,
+          label: "Roles & Access",
+          href: "/admin/roles-access",
+          icon: LockKeyhole,
+          show: p.canManageUsers || isSuperAdmin,
+        },
+        {
+          label: "Sessions",
+          href: "/admin/sessions",
+          icon: MonitorCog,
+          show: p.canManageUsers || p.canViewAuditLog || isSuperAdmin,
+        },
+        {
+          label: "Privacy Requests",
+          href: "/admin/privacy-requests",
+          icon: Shield,
+          badge: 1,
+          badgeTone: "amber",
           show: p.canManageUsers || p.canViewAuditLog || isSuperAdmin,
         },
       ] satisfies NavItem[],
@@ -260,8 +312,14 @@ export default function AdminShell({
         {
           label: "Discounts",
           href: "/admin/coupons",
-          icon: TicketPercent,
+          icon: Percent,
           show: p.canManageCoupons || p.canViewBilling || isSuperAdmin,
+        },
+        {
+          label: "Trial Funnel",
+          href: "/admin/trial-funnel",
+          icon: Zap,
+          show: p.canViewBilling || p.canManageUsers || isSuperAdmin,
         },
       ] satisfies NavItem[],
 
@@ -278,6 +336,20 @@ export default function AdminShell({
             p.canViewAuditLog ||
             isSuperAdmin,
         },
+        {
+          label: "Reported Rules",
+          href: "/admin/reported-rules",
+          icon: AlertTriangle,
+          badge: 2,
+          badgeTone: "red",
+          show: p.canManageRules || p.canManageQuestions || isSuperAdmin,
+        },
+        {
+          label: "Email Delivery",
+          href: "/admin/email-delivery",
+          icon: Mail,
+          show: p.canManageSettings || p.canManageAnnouncements || isSuperAdmin,
+        },
       ] satisfies NavItem[],
 
       content: [
@@ -293,6 +365,12 @@ export default function AdminShell({
           icon: Bell,
           show: p.canManageQuestions || isSuperAdmin,
         },
+        {
+          label: "Subjects & Topics",
+          href: "/admin/subjects-topics",
+          icon: GridIcon,
+          show: p.canManageQuestions || p.canManageRules || isSuperAdmin,
+        },
       ] satisfies NavItem[],
 
       communications: [
@@ -303,31 +381,103 @@ export default function AdminShell({
           show: p.canManageAnnouncements || isSuperAdmin,
         },
         {
-          label: "Team Workspace",
-          href: "/admin/workspace",
-          icon: FileText,
-          show: true,
+          label: "Bulk Messages",
+          href: "/admin/bulk-messages",
+          icon: Mail,
+          show: p.canManageAnnouncements || isSuperAdmin,
         },
+      ] satisfies NavItem[],
+
+      websiteStudio: [
+        {
+          label: "Theme Settings",
+          href: "/admin/theme-settings",
+          icon: Palette,
+          show: p.canManageSettings || isSuperAdmin,
+        },
+        {
+          label: "Homepage Builder",
+          href: "/admin/homepage-builder",
+          icon: Home,
+          show: p.canManageSettings || isSuperAdmin,
+        },
+        {
+          label: "Banner Manager",
+          href: "/admin/banner-manager",
+          icon: Image,
+          show: p.canManageSettings || isSuperAdmin,
+        },
+        {
+          label: "Legal Docs",
+          href: "/admin/legal-docs",
+          icon: FileCheck2,
+          show: p.canManageSettings || p.canViewAuditLog || isSuperAdmin,
+        },
+      ] satisfies NavItem[],
+
+      teams: [
         {
           label: "Teams",
           href: "/admin/team",
           icon: UserSquare2,
           show: p.canManageUsers || isSuperAdmin,
         },
+        {
+          label: "Team Workspace",
+          href: "/admin/workspace",
+          icon: Briefcase,
+          show: true,
+        },
+      ] satisfies NavItem[],
+
+      configuration: [
+        {
+          label: "Menu Control",
+          href: "/admin/menu-control",
+          icon: SlidersHorizontal,
+          show: p.canManageSettings || isSuperAdmin,
+        },
+        {
+          label: "Design Sandbox",
+          href: "/admin/design-sandbox",
+          icon: Sparkles,
+          show: p.canManageSettings || isSuperAdmin,
+        },
+      ] satisfies NavItem[],
+
+      ruleManagement: [
+        {
+          label: "Rule Bank",
+          href: "/admin/rule-bank",
+          icon: BookOpen,
+          show: p.canManageRules || isSuperAdmin,
+        },
       ] satisfies NavItem[],
 
       system: [
+        {
+          label: "Audit Log",
+          href: "/admin/audit-log",
+          icon: FileText,
+          show: p.canViewAuditLog || isSuperAdmin,
+        },
+        {
+          label: "Abuse Detection",
+          href: "/admin/abuse-detection",
+          icon: Flag,
+          show: p.canViewAuditLog || p.canManageUsers || isSuperAdmin,
+        },
+        {
+          label: "Environment",
+          href: "/admin/environment",
+          icon: Globe2,
+          show: p.canManageSettings || isSuperAdmin,
+        },
         {
           label: "Settings",
           href: "/admin/settings",
           icon: Settings,
           show: p.canManageSettings || isSuperAdmin,
-        },
-        {
-          label: "Audit Log",
-          href: "/admin/audit-log",
-          icon: Shield,
-          show: p.canViewAuditLog || isSuperAdmin,
         },
       ] satisfies NavItem[],
     }
@@ -366,12 +516,12 @@ export default function AdminShell({
                 </button>
               ) : (
                 <div className="flex w-full items-center gap-2">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-600 font-serif text-[13px] font-bold text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-600 font-serif text-[13px] font-semibold text-white">
                     L
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] font-bold leading-4 text-slate-950">
+                    <div className="truncate text-[13px] font-semibold leading-4 text-slate-950">
                       Lexora Prep
                     </div>
                     <div className="truncate text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
@@ -399,6 +549,10 @@ export default function AdminShell({
               <Section title="Support" items={nav.support} pathname={pathname} collapsed={collapsed} />
               <Section title="Content" items={nav.content} pathname={pathname} collapsed={collapsed} />
               <Section title="Communications" items={nav.communications} pathname={pathname} collapsed={collapsed} />
+              <Section title="Website Studio" items={nav.websiteStudio} pathname={pathname} collapsed={collapsed} />
+              <Section title="Teams" items={nav.teams} pathname={pathname} collapsed={collapsed} />
+              <Section title="Configuration" items={nav.configuration} pathname={pathname} collapsed={collapsed} />
+              <Section title="Rule Management" items={nav.ruleManagement} pathname={pathname} collapsed={collapsed} />
               <Section title="System" items={nav.system} pathname={pathname} collapsed={collapsed} />
             </div>
 
@@ -411,14 +565,14 @@ export default function AdminShell({
                     collapsed ? "justify-center px-1" : ""
                   }`}
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-[11px] font-bold text-blue-600">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-[11px] font-semibold text-blue-600">
                     {initials(currentUser.fullName, currentUser.email)}
                   </div>
 
                   {!collapsed ? (
                     <>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[13px] font-semibold text-slate-900">
+                        <div className="truncate text-[13px] font-medium text-slate-900">
                           {safeName(currentUser.fullName, currentUser.email)}
                         </div>
                         <div className="truncate text-[10.5px] text-slate-400">
@@ -435,7 +589,7 @@ export default function AdminShell({
                 {profileOpen && !collapsed ? (
                   <div className="absolute bottom-full left-0 right-0 z-30 mb-2 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
                     <div className="border-b border-slate-100 px-3 py-3">
-                      <div className="truncate text-[13px] font-semibold text-slate-950">
+                      <div className="truncate text-[13px] font-medium text-slate-950">
                         {safeName(currentUser.fullName, currentUser.email)}
                       </div>
                       <div className="truncate text-[12px] text-slate-500">
@@ -487,7 +641,7 @@ export default function AdminShell({
         <main className="min-w-0">
           <header className="flex h-14 items-center gap-3 border-b border-slate-200 bg-white px-6">
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-bold leading-5 text-slate-950">
+              <div className="truncate text-[15px] font-semibold leading-5 text-slate-950">
                 {pageTitle(pathname)}
               </div>
               <div className="mt-0.5 text-[11.5px] text-slate-400">
@@ -497,7 +651,7 @@ export default function AdminShell({
 
             <div className="flex-1" />
 
-            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
               DEV
             </span>
 
@@ -505,6 +659,7 @@ export default function AdminShell({
               type="button"
               className="hidden h-8 min-w-[220px] items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-left text-[12.5px] text-slate-400 hover:border-slate-300 md:flex"
             >
+              <Search size={14} />
               Search anything...
             </button>
 
@@ -518,7 +673,7 @@ export default function AdminShell({
               <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
             </Link>
 
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-[12px] font-bold text-blue-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-[12px] font-semibold text-blue-600">
               {initials(currentUser.fullName, currentUser.email)}
             </div>
           </header>
@@ -527,5 +682,27 @@ export default function AdminShell({
         </main>
       </div>
     </div>
+  )
+}
+
+function GridIcon({ size = 15, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect width="7" height="7" x="3" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="3" rx="1" />
+      <rect width="7" height="7" x="3" y="14" rx="1" />
+      <rect width="7" height="7" x="14" y="14" rx="1" />
+    </svg>
   )
 }
