@@ -25,7 +25,6 @@ import {
   LogOut,
   Mail,
   Megaphone,
-  MessageSquare,
   MonitorCog,
   Palette,
   Percent,
@@ -34,13 +33,15 @@ import {
   Shield,
   SlidersHorizontal,
   Sparkles,
-  Users,
   UserSquare2,
+  Users,
   Zap,
+  MessageSquare,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
+import AdminNotificationsBell from "./AdminNotificationsBell"
 
-type PermissionSet = {
+type Permissions = {
   canManageQuestions: boolean
   canManageRules: boolean
   canManageUsers: boolean
@@ -55,10 +56,10 @@ type CurrentUser = {
   id: string
   email: string
   fullName: string | null
-  role: string
+  role: string | null
   adminRole: string | null
   isSuperAdmin: boolean
-  permissions: PermissionSet
+  permissions: Permissions
 }
 
 type Counts = {
@@ -70,19 +71,21 @@ type NavItem = {
   label: string
   href: string
   icon: React.ComponentType<{ size?: number; className?: string }>
-  badge?: string | number
-  badgeTone?: "blue" | "amber" | "red" | "gray"
   show: boolean
+  badge?: number | string
+  badgeTone?: "blue" | "amber" | "red" | "slate"
 }
 
 function safeName(fullName: string | null, email: string) {
-  if (fullName && fullName.trim()) return fullName
-  return email.split("@")[0]
+  if (fullName && fullName.trim()) return fullName.trim()
+  return email.split("@")[0] || "Admin"
 }
 
 function initials(fullName: string | null, email: string) {
+  const name = safeName(fullName, email)
+
   return (
-    safeName(fullName, email)
+    name
       .split(" ")
       .filter(Boolean)
       .slice(0, 2)
@@ -91,47 +94,34 @@ function initials(fullName: string | null, email: string) {
   )
 }
 
-function badgeClass(tone: NavItem["badgeTone"] = "blue") {
-  if (tone === "amber") return "border border-amber-200 bg-amber-50 text-amber-700"
-  if (tone === "red") return "border border-red-200 bg-red-50 text-red-600"
-  if (tone === "gray") return "border border-slate-200 bg-slate-100 text-slate-500"
-  return "bg-blue-600 text-white"
+function badgeClass(tone: NavItem["badgeTone"]) {
+  if (tone === "red") return "bg-red-50 text-red-600"
+  if (tone === "amber") return "bg-amber-50 text-amber-700"
+  if (tone === "blue") return "bg-blue-50 text-blue-600"
+
+  return "bg-slate-100 text-slate-500"
 }
 
 function pageTitle(pathname: string) {
-  if (pathname === "/admin") return "Dashboard"
-  if (pathname.startsWith("/admin/analytics")) return "Analytics"
-  if (pathname.startsWith("/admin/scheduled-jobs")) return "Scheduled Jobs"
-  if (pathname.startsWith("/admin/users")) return "Users"
-  if (pathname.startsWith("/admin/roles-access")) return "Roles & Access"
-  if (pathname.startsWith("/admin/sessions")) return "Sessions"
-  if (pathname.startsWith("/admin/privacy-requests")) return "Privacy Requests"
-  if (pathname.startsWith("/admin/subscription")) return "Subscriptions"
-  if (pathname.startsWith("/admin/billing")) return "Billing"
-  if (pathname.startsWith("/admin/coupons")) return "Discounts"
-  if (pathname.startsWith("/admin/trial-funnel")) return "Trial Funnel"
-  if (pathname.startsWith("/admin/support")) return "Support Tickets"
-  if (pathname.startsWith("/admin/reported-rules")) return "Reported Rules"
-  if (pathname.startsWith("/admin/email-delivery")) return "Email Delivery"
-  if (pathname.startsWith("/admin/rules")) return "BLL Rules"
-  if (pathname.startsWith("/admin/questions")) return "MBE Questions"
-  if (pathname.startsWith("/admin/subjects-topics")) return "Subjects & Topics"
-  if (pathname.startsWith("/admin/announcements")) return "Announcements"
-  if (pathname.startsWith("/admin/bulk-messages")) return "Bulk Messages"
-  if (pathname.startsWith("/admin/theme-settings")) return "Theme Settings"
-  if (pathname.startsWith("/admin/homepage-builder")) return "Homepage Builder"
-  if (pathname.startsWith("/admin/banner-manager")) return "Banner Manager"
-  if (pathname.startsWith("/admin/legal-docs")) return "Legal Docs"
-  if (pathname.startsWith("/admin/team")) return "Teams"
-  if (pathname.startsWith("/admin/workspace")) return "Team Workspace"
-  if (pathname.startsWith("/admin/menu-control")) return "Menu Control"
-  if (pathname.startsWith("/admin/design-sandbox")) return "Design Sandbox"
-  if (pathname.startsWith("/admin/rule-bank")) return "Rule Bank"
-  if (pathname.startsWith("/admin/audit-log")) return "Audit Log"
-  if (pathname.startsWith("/admin/abuse-detection")) return "Abuse Detection"
-  if (pathname.startsWith("/admin/environment")) return "Environment"
-  if (pathname.startsWith("/admin/settings")) return "Settings"
-  return "Admin Console"
+  const clean = pathname.replace(/^\/admin\/?/, "")
+
+  if (!clean) return "Dashboard"
+
+  const last = clean.split("/").filter(Boolean).at(-1) || "Dashboard"
+
+  return last
+    .replaceAll("-", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+function permissionLabel(value: boolean) {
+  return value ? "Allowed" : "No access"
+}
+
+function permissionTone(value: boolean) {
+  return value
+    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+    : "bg-slate-50 text-slate-400 border-slate-100"
 }
 
 function Section({
@@ -205,6 +195,27 @@ function Section({
   )
 }
 
+function PermissionRow({
+  label,
+  value,
+}: {
+  label: string
+  value: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 last:border-b-0">
+      <span className="text-[12.5px] font-medium text-slate-600">{label}</span>
+      <span
+        className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${permissionTone(
+          value,
+        )}`}
+      >
+        {permissionLabel(value)}
+      </span>
+    </div>
+  )
+}
+
 export default function AdminShell({
   children,
   currentUser,
@@ -220,16 +231,22 @@ export default function AdminShell({
 
   const [collapsed, setCollapsed] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [topProfileOpen, setTopProfileOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
   const profileRef = useRef<HTMLDivElement | null>(null)
+  const topProfileRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (!profileRef.current) return
+      const target = event.target as Node
 
-      if (!profileRef.current.contains(event.target as Node)) {
+      if (profileRef.current && !profileRef.current.contains(target)) {
         setProfileOpen(false)
+      }
+
+      if (topProfileRef.current && !topProfileRef.current.contains(target)) {
+        setTopProfileOpen(false)
       }
     }
 
@@ -663,18 +680,87 @@ export default function AdminShell({
               Search anything...
             </button>
 
-            <Link
-              href="/admin/support"
-              prefetch={false}
-              className="relative flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-              aria-label="Support tickets"
-            >
-              <Bell size={15} />
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
-            </Link>
+            <AdminNotificationsBell />
 
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-[12px] font-semibold text-blue-600">
-              {initials(currentUser.fullName, currentUser.email)}
+            <div ref={topProfileRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setTopProfileOpen((value) => !value)}
+                className="flex h-8 items-center gap-2 rounded-full border border-blue-200 bg-blue-50 pl-1 pr-2 text-blue-700 hover:bg-blue-100"
+                title="Admin profile and permissions"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[10.5px] font-bold text-blue-600">
+                  {initials(currentUser.fullName, currentUser.email)}
+                </span>
+                <span className="hidden max-w-[110px] truncate text-[12px] font-semibold lg:block">
+                  {currentUser.isSuperAdmin ? "Super Admin" : currentUser.adminRole || "Admin"}
+                </span>
+                <ChevronDown size={13} />
+              </button>
+
+              {topProfileOpen ? (
+                <div className="absolute right-0 top-10 z-50 w-[340px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+                  <div className="border-b border-slate-200 px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-[12px] font-bold text-blue-600">
+                        {initials(currentUser.fullName, currentUser.email)}
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="truncate text-[14px] font-semibold text-slate-950">
+                          {safeName(currentUser.fullName, currentUser.email)}
+                        </div>
+                        <div className="truncate text-[12px] text-slate-500">
+                          {currentUser.email}
+                        </div>
+                        <div className="mt-2 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600">
+                          {currentUser.isSuperAdmin
+                            ? "Super Admin"
+                            : currentUser.adminRole || currentUser.role || "Admin"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-4 py-3">
+                    <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                      Permissions
+                    </div>
+
+                    <div className="overflow-hidden rounded-lg border border-slate-100">
+                      <PermissionRow label="Manage users" value={currentUser.permissions.canManageUsers} />
+                      <PermissionRow label="View billing" value={currentUser.permissions.canViewBilling} />
+                      <PermissionRow label="Manage questions" value={currentUser.permissions.canManageQuestions} />
+                      <PermissionRow label="Manage rules" value={currentUser.permissions.canManageRules} />
+                      <PermissionRow label="Announcements" value={currentUser.permissions.canManageAnnouncements} />
+                      <PermissionRow label="Coupons" value={currentUser.permissions.canManageCoupons} />
+                      <PermissionRow label="Settings" value={currentUser.permissions.canManageSettings} />
+                      <PermissionRow label="Audit log" value={currentUser.permissions.canViewAuditLog} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3">
+                    <Link
+                      href="/admin/team"
+                      prefetch={false}
+                      onClick={() => setTopProfileOpen(false)}
+                      className="text-[12.5px] font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      Team settings
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      disabled={loggingOut}
+                      className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[12.5px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      <LogOut size={13} />
+                      {loggingOut ? "Logging out..." : "Log out"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </header>
 
