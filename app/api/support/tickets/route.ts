@@ -26,17 +26,45 @@ function cleanString(value: unknown, fallback = "") {
   return trimmed || fallback
 }
 
+function normalizeCategory(value: string) {
+  const normalized = value.trim().toLowerCase()
+
+  if (normalized === "billing") return "billing"
+  if (normalized === "account") return "account"
+  if (normalized === "technical") return "technical"
+  if (normalized === "content") return "content"
+
+  return normalized || "billing"
+}
+
+function getPriority(category: string) {
+  const normalized = normalizeCategory(category)
+
+  if (normalized === "billing") return "high"
+  if (normalized === "technical") return "high"
+
+  return "normal"
+}
+
 function getSlaDueAt(category: string, baseDate = new Date()) {
-  const normalized = category.toLowerCase()
+  const normalized = normalizeCategory(category)
   const due = new Date(baseDate)
 
-  if (normalized === "billing") {
+  if (normalized === "billing" || normalized === "technical") {
     due.setHours(due.getHours() + 12)
     return due
   }
 
   due.setHours(due.getHours() + 24)
   return due
+}
+
+const publicMessageFilter = {
+  NOT: {
+    sender: {
+      in: ["internal", "note", "admin_note"],
+    },
+  },
 }
 
 export async function GET() {
@@ -54,11 +82,7 @@ export async function GET() {
       take: 20,
       include: {
         messages: {
-          where: {
-            NOT: {
-              sender: "internal",
-            },
-          },
+          where: publicMessageFilter,
           orderBy: {
             created_at: "asc",
           },
@@ -85,7 +109,7 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}))
 
     const subject = cleanString(body.subject, "Billing support request")
-    const category = cleanString(body.category, "billing")
+    const category = normalizeCategory(cleanString(body.category, "billing"))
     const message = cleanString(body.message)
 
     if (!message) {
@@ -100,7 +124,8 @@ export async function POST(req: Request) {
       cleanString(body.email, "unknown@lexoraprep.com")
 
     const now = new Date()
-    const priority = category.toLowerCase() === "billing" ? "high" : "normal"
+    const priority = getPriority(category)
+    const slaDueAt = getSlaDueAt(category, now)
 
     const ticket = await prisma.support_tickets.create({
       data: {
@@ -119,11 +144,7 @@ export async function POST(req: Request) {
       },
       include: {
         messages: {
-          where: {
-            NOT: {
-              sender: "internal",
-            },
-          },
+          where: publicMessageFilter,
           orderBy: {
             created_at: "asc",
           },
@@ -135,7 +156,7 @@ export async function POST(req: Request) {
       update public.support_tickets
       set
         last_user_message_at = ${now},
-        sla_due_at = ${getSlaDueAt(category, now)},
+        sla_due_at = ${slaDueAt},
         updated_at = ${now}
       where id = ${ticket.id}::uuid
     `
@@ -146,11 +167,7 @@ export async function POST(req: Request) {
       },
       include: {
         messages: {
-          where: {
-            NOT: {
-              sender: "internal",
-            },
-          },
+          where: publicMessageFilter,
           orderBy: {
             created_at: "asc",
           },
