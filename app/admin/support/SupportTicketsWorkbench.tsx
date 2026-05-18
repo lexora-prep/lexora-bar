@@ -3,11 +3,10 @@
 import { useMemo, useState, useTransition } from "react"
 import {
   Check,
+  ChevronDown,
   Filter,
   Inbox,
   LinkIcon,
-  MessageSquare,
-  MoreVertical,
   Paperclip,
   Search,
   Send,
@@ -60,8 +59,11 @@ type Props = {
   updatePriorityAction: (formData: FormData) => Promise<void>
 }
 
-const statusOptions = ["open", "pending", "resolved", "closed"]
-const priorityOptions = ["normal", "high"]
+type StatusFilter = "open" | "pending" | "resolved" | "closed" | "all"
+type PriorityFilter = "all" | "normal" | "high"
+
+const statusOptions = ["open", "pending", "resolved", "closed"] as const
+const priorityOptions = ["normal", "high"] as const
 
 function formatShortTime(value: string) {
   const date = new Date(value)
@@ -91,6 +93,7 @@ function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
+    year: "numeric",
     hour: "numeric",
     minute: "2-digit",
   }).format(date)
@@ -130,8 +133,11 @@ function priorityLabel(value: string) {
 }
 
 function getPreview(ticket: SupportTicketForWorkbench) {
-  const last = ticket.messages[ticket.messages.length - 1]
-  return last?.message || "No message yet."
+  const lastHumanMessage = [...ticket.messages]
+    .reverse()
+    .find((message) => message.sender.toLowerCase() !== "system")
+
+  return lastHumanMessage?.message || "No message yet."
 }
 
 function ticketNumber(index: number) {
@@ -189,17 +195,35 @@ export default function SupportTicketsWorkbench({
   updatePriorityAction,
 }: Props) {
   const [selectedTicketId, setSelectedTicketId] = useState(tickets[0]?.id || "")
-  const [filter, setFilter] = useState<"open" | "pending" | "resolved" | "all">("open")
+  const [filter, setFilter] = useState<StatusFilter>("open")
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all")
+  const [categoryFilter, setCategoryFilter] = useState("all")
   const [query, setQuery] = useState("")
   const [replyText, setReplyText] = useState("")
+  const [filterOpen, setFilterOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  const categories = useMemo(() => {
+    const values = Array.from(
+      new Set(tickets.map((ticket) => ticket.category).filter(Boolean)),
+    )
+
+    return values.length ? values : ["billing"]
+  }, [tickets])
 
   const filteredTickets = useMemo(() => {
     const search = query.trim().toLowerCase()
 
     return tickets.filter((ticket) => {
       const status = normalizeStatus(ticket.status)
-      const matchesFilter = filter === "all" ? true : status === filter
+      const priority = normalizePriority(ticket.priority)
+
+      const matchesStatus = filter === "all" ? true : status === filter
+      const matchesPriority =
+        priorityFilter === "all" ? true : priority === priorityFilter
+      const matchesCategory =
+        categoryFilter === "all" ? true : ticket.category === categoryFilter
+
       const matchesSearch = search
         ? ticket.subject.toLowerCase().includes(search) ||
           ticket.email.toLowerCase().includes(search) ||
@@ -207,9 +231,9 @@ export default function SupportTicketsWorkbench({
           getPreview(ticket).toLowerCase().includes(search)
         : true
 
-      return matchesFilter && matchesSearch
+      return matchesStatus && matchesPriority && matchesCategory && matchesSearch
     })
-  }, [tickets, filter, query])
+  }, [tickets, filter, priorityFilter, categoryFilter, query])
 
   const selectedTicket =
     tickets.find((ticket) => ticket.id === selectedTicketId) ||
@@ -221,8 +245,15 @@ export default function SupportTicketsWorkbench({
     ? tickets.findIndex((ticket) => ticket.id === selectedTicket.id)
     : -1
 
+  const selectedStatus = selectedTicket
+    ? normalizeStatus(selectedTicket.status)
+    : "open"
+
+  const selectedIsClosed = selectedStatus === "closed"
+  const selectedIsResolved = selectedStatus === "resolved"
+
   function submitReply() {
-    if (!selectedTicket || !replyText.trim()) return
+    if (!selectedTicket || !replyText.trim() || selectedIsClosed) return
 
     const formData = new FormData()
     formData.set("ticketId", selectedTicket.id)
@@ -247,7 +278,7 @@ export default function SupportTicketsWorkbench({
   }
 
   function updatePriority(priority: string) {
-    if (!selectedTicket) return
+    if (!selectedTicket || selectedIsClosed) return
 
     const formData = new FormData()
     formData.set("ticketId", selectedTicket.id)
@@ -256,6 +287,12 @@ export default function SupportTicketsWorkbench({
     startTransition(async () => {
       await updatePriorityAction(formData)
     })
+  }
+
+  function resetFilters() {
+    setPriorityFilter("all")
+    setCategoryFilter("all")
+    setQuery("")
   }
 
   return (
@@ -273,9 +310,67 @@ export default function SupportTicketsWorkbench({
                 <SlidersHorizontal size={14} />
               </button>
 
-              <button type="button" title="Filter" className={styles.smallIconButton}>
-                <Filter size={14} />
-              </button>
+              <div className={styles.filterWrap}>
+                <button
+                  type="button"
+                  title="Filter"
+                  onClick={() => setFilterOpen((value) => !value)}
+                  className={`${styles.smallIconButton} ${
+                    filterOpen ||
+                    priorityFilter !== "all" ||
+                    categoryFilter !== "all"
+                      ? styles.smallIconButtonActive
+                      : ""
+                  }`}
+                >
+                  <Filter size={14} />
+                </button>
+
+                {filterOpen ? (
+                  <div className={styles.filterMenu}>
+                    <div className={styles.filterMenuTitle}>Filter tickets</div>
+
+                    <label className={styles.filterLabel}>
+                      Priority
+                      <select
+                        value={priorityFilter}
+                        onChange={(event) =>
+                          setPriorityFilter(event.target.value as PriorityFilter)
+                        }
+                        className={styles.filterSelect}
+                      >
+                        <option value="all">All priorities</option>
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                      </select>
+                    </label>
+
+                    <label className={styles.filterLabel}>
+                      Category
+                      <select
+                        value={categoryFilter}
+                        onChange={(event) => setCategoryFilter(event.target.value)}
+                        className={styles.filterSelect}
+                      >
+                        <option value="all">All categories</option>
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className={styles.clearFiltersButton}
+                    >
+                      Clear filters
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -316,6 +411,14 @@ export default function SupportTicketsWorkbench({
 
             <button
               type="button"
+              onClick={() => setFilter("closed")}
+              className={`${styles.tab} ${filter === "closed" ? styles.tabActive : ""}`}
+            >
+              Closed <span>{counts.closed}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setFilter("all")}
               className={`${styles.tab} ${filter === "all" ? styles.tabActive : ""}`}
             >
@@ -330,6 +433,7 @@ export default function SupportTicketsWorkbench({
           ) : (
             filteredTickets.map((ticket) => {
               const active = selectedTicket?.id === ticket.id
+              const status = normalizeStatus(ticket.status)
 
               return (
                 <button
@@ -349,12 +453,19 @@ export default function SupportTicketsWorkbench({
 
                   <div className={styles.ticketMeta}>
                     <span className={styles.ticketEmail}>{ticket.email}</span>
+                    <span className={statusClass(ticket.status)}>
+                      {statusLabel(ticket.status)}
+                    </span>
                     <span className={miniPriorityClass(ticket.priority)}>
                       {normalizePriority(ticket.priority)}
                     </span>
                   </div>
 
                   <div className={styles.ticketPreview}>{getPreview(ticket)}</div>
+
+                  {status === "closed" ? (
+                    <div className={styles.closedHint}>Closed thread</div>
+                  ) : null}
                 </button>
               )
             })
@@ -381,7 +492,7 @@ export default function SupportTicketsWorkbench({
 
               <div className={styles.headerActions}>
                 <select
-                  value={normalizeStatus(selectedTicket.status)}
+                  value={selectedStatus}
                   onChange={(event) => updateStatus(event.target.value)}
                   disabled={isPending}
                   className={styles.headerSelect}
@@ -393,19 +504,29 @@ export default function SupportTicketsWorkbench({
                   ))}
                 </select>
 
-                <button
-                  type="button"
-                  onClick={() => updateStatus("resolved")}
-                  disabled={isPending}
-                  className={styles.headerButton}
-                >
-                  <Check size={12} />
-                  Resolve
-                </button>
+                {!selectedIsResolved && !selectedIsClosed ? (
+                  <button
+                    type="button"
+                    onClick={() => updateStatus("resolved")}
+                    disabled={isPending}
+                    className={styles.headerButton}
+                  >
+                    <Check size={12} />
+                    Mark resolved
+                  </button>
+                ) : null}
 
-                <button type="button" className={styles.iconOnlyButton}>
-                  <MoreVertical size={14} />
-                </button>
+                {selectedIsResolved ? (
+                  <button
+                    type="button"
+                    onClick={() => updateStatus("closed")}
+                    disabled={isPending}
+                    className={styles.headerButtonDanger}
+                  >
+                    <X size={12} />
+                    Close ticket
+                  </button>
+                ) : null}
               </div>
             </header>
 
@@ -419,7 +540,18 @@ export default function SupportTicketsWorkbench({
                   </div>
 
                   {selectedTicket.messages.map((message) => {
-                    const isSupport = message.sender.toLowerCase() === "support"
+                    const sender = message.sender.toLowerCase()
+                    const isSupport = sender === "support"
+                    const isSystem = sender === "system"
+
+                    if (isSystem) {
+                      return (
+                        <div key={message.id} className={styles.systemEvent}>
+                          <span>{message.message}</span>
+                          <small>{formatDateTime(message.created_at)}</small>
+                        </div>
+                      )
+                    }
 
                     return (
                       <div
@@ -470,72 +602,85 @@ export default function SupportTicketsWorkbench({
                 </div>
 
                 <div className={styles.replyBox}>
-                  <div className={styles.replyToolbar}>
-                    <button type="button" className={styles.replyTabActive}>
-                      Reply
-                    </button>
-
-                    <button type="button" className={styles.replyTab}>
-                      Note
-                    </button>
-
-                    <div className={styles.toolbarDivider} />
-
-                    <button type="button" className={styles.toolbarButton}>
-                      <strong>B</strong>
-                    </button>
-
-                    <button type="button" className={styles.toolbarButton}>
-                      <em>I</em>
-                    </button>
-
-                    <button type="button" className={styles.toolbarButton}>
-                      <LinkIcon size={13} />
-                    </button>
-
-                    <button type="button" className={styles.toolbarButton}>
-                      <Paperclip size={13} />
-                    </button>
-                  </div>
-
-                  <textarea
-                    value={replyText}
-                    onChange={(event) => setReplyText(event.target.value)}
-                    onKeyDown={(event) => {
-                      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-                        event.preventDefault()
-                        submitReply()
-                      }
-                    }}
-                    placeholder="Write a reply to the user... (⌘ + Enter to send)"
-                    className={styles.replyTextarea}
-                  />
-
-                  <div className={styles.replyFooter}>
-                    <div className={styles.replyingAs}>
-                      Replying as <strong>{admin.fullName || "Vladimir"}</strong> · Support
+                  {selectedIsClosed ? (
+                    <div className={styles.closedReplyNotice}>
+                      <div className={styles.closedReplyTitle}>
+                        This ticket is closed.
+                      </div>
+                      <div className={styles.closedReplyText}>
+                        The thread is locked. The user should open a new ticket if more help is needed.
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className={styles.replyToolbar}>
+                        <button type="button" className={styles.replyTabActive}>
+                          Reply
+                        </button>
 
-                    <div className={styles.replyActions}>
-                      <button
-                        type="button"
-                        onClick={() => setReplyText("")}
-                        className={styles.discardButton}
-                      >
-                        Discard
-                      </button>
+                        <button type="button" className={styles.replyTab}>
+                          Internal note
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={submitReply}
-                        disabled={isPending || !replyText.trim()}
-                        className={styles.sendButton}
-                      >
-                        <Send size={12} />
-                        {isPending ? "Sending..." : "Send reply"}
-                      </button>
-                    </div>
-                  </div>
+                        <div className={styles.toolbarDivider} />
+
+                        <button type="button" className={styles.toolbarButton}>
+                          <strong>B</strong>
+                        </button>
+
+                        <button type="button" className={styles.toolbarButton}>
+                          <em>I</em>
+                        </button>
+
+                        <button type="button" className={styles.toolbarButton}>
+                          <LinkIcon size={13} />
+                        </button>
+
+                        <button type="button" className={styles.toolbarButton}>
+                          <Paperclip size={13} />
+                        </button>
+                      </div>
+
+                      <textarea
+                        value={replyText}
+                        onChange={(event) => setReplyText(event.target.value)}
+                        onKeyDown={(event) => {
+                          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+                            event.preventDefault()
+                            submitReply()
+                          }
+                        }}
+                        placeholder="Write a reply to the user... (⌘ + Enter to send)"
+                        className={styles.replyTextarea}
+                      />
+
+                      <div className={styles.replyFooter}>
+                        <div className={styles.replyingAs}>
+                          Replying as <strong>{admin.fullName || "Vladimir"}</strong> · Support
+                        </div>
+
+                        <div className={styles.replyActions}>
+                          <button
+                            type="button"
+                            onClick={() => setReplyText("")}
+                            className={styles.discardButton}
+                          >
+                            Discard
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={submitReply}
+                            disabled={isPending || !replyText.trim()}
+                            className={styles.sendButton}
+                          >
+                            <Send size={12} />
+                            {isPending ? "Sending..." : "Send reply"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </section>
 
@@ -554,7 +699,7 @@ export default function SupportTicketsWorkbench({
                   <select
                     value={normalizePriority(selectedTicket.priority)}
                     onChange={(event) => updatePriority(event.target.value)}
-                    disabled={isPending}
+                    disabled={isPending || selectedIsClosed}
                     className={styles.sideSelect}
                   >
                     {priorityOptions.map((priority) => (
@@ -567,7 +712,7 @@ export default function SupportTicketsWorkbench({
                   <div className={styles.statusTitle}>Status</div>
 
                   <select
-                    value={normalizeStatus(selectedTicket.status)}
+                    value={selectedStatus}
                     onChange={(event) => updateStatus(event.target.value)}
                     disabled={isPending}
                     className={styles.sideSelect}
@@ -590,25 +735,45 @@ export default function SupportTicketsWorkbench({
                 <div className={styles.infoSectionLast}>
                   <div className={styles.infoSectionTitle}>Quick actions</div>
 
-                  <button
-                    type="button"
-                    onClick={() => updateStatus("resolved")}
-                    disabled={isPending}
-                    className={styles.resolveButton}
-                  >
-                    <Check size={11} />
-                    Mark resolved
-                  </button>
+                  {!selectedIsResolved && !selectedIsClosed ? (
+                    <button
+                      type="button"
+                      onClick={() => updateStatus("resolved")}
+                      disabled={isPending}
+                      className={styles.resolveButton}
+                    >
+                      <Check size={11} />
+                      Mark resolved
+                    </button>
+                  ) : null}
 
-                  <button
-                    type="button"
-                    onClick={() => updateStatus("closed")}
-                    disabled={isPending}
-                    className={styles.closeButton}
-                  >
-                    <X size={11} />
-                    Close ticket
-                  </button>
+                  {!selectedIsClosed ? (
+                    <button
+                      type="button"
+                      onClick={() => updateStatus("closed")}
+                      disabled={isPending}
+                      className={styles.closeButton}
+                    >
+                      <X size={11} />
+                      Close ticket
+                    </button>
+                  ) : (
+                    <div className={styles.closedSideNotice}>
+                      Closed ticket. Replies are disabled.
+                    </div>
+                  )}
+
+                  {selectedIsClosed ? (
+                    <button
+                      type="button"
+                      onClick={() => updateStatus("open")}
+                      disabled={isPending}
+                      className={styles.reopenButton}
+                    >
+                      <ChevronDown size={11} />
+                      Reopen ticket
+                    </button>
+                  ) : null}
                 </div>
               </aside>
             </div>

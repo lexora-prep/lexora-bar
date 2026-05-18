@@ -17,26 +17,42 @@ function cleanString(value: FormDataEntryValue | null) {
   return value.trim()
 }
 
-function normalizePlan(value: string | null | undefined) {
-  const plan = String(value || "free").toLowerCase()
+function normalizeStatus(value: string): SupportStatus {
+  const status = value.toLowerCase()
 
-  if (plan === "premium") return "Premium"
-
-  if (plan === "bll-monthly" || plan === "bll_monthly" || plan === "bll") {
-    return "BLL Monthly"
+  if (allowedStatuses.includes(status as SupportStatus)) {
+    return status as SupportStatus
   }
 
-  return "Free"
+  return "open"
 }
 
-function formatMemberSince(value: Date | null | undefined) {
-  if (!value) return "Not available"
+function normalizePriority(value: string): SupportPriority {
+  const priority = value.toLowerCase()
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(value)
+  if (allowedPriorities.includes(priority as SupportPriority)) {
+    return priority as SupportPriority
+  }
+
+  return "normal"
+}
+
+function labelStatus(value: string) {
+  const status = normalizeStatus(value)
+
+  if (status === "open") return "Open"
+  if (status === "pending") return "Pending"
+  if (status === "resolved") return "Resolved"
+  return "Closed"
+}
+
+function labelPriority(value: string) {
+  return normalizePriority(value) === "high" ? "High" : "Normal"
+}
+
+function safeName(fullName: string | null, email: string) {
+  if (fullName && fullName.trim()) return fullName.trim()
+  return email.split("@")[0] || "Admin"
 }
 
 async function getCurrentAdmin() {
@@ -91,8 +107,30 @@ async function getCurrentAdmin() {
     id: profile.id,
     email: profile.email,
     fullName: profile.full_name,
+    displayName: safeName(profile.full_name, profile.email),
     isSuperAdmin,
   }
+}
+
+function formatMemberSince(value: Date | null | undefined) {
+  if (!value) return "Not available"
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    year: "numeric",
+  }).format(value)
+}
+
+function normalizePlan(value: string | null | undefined) {
+  const plan = String(value || "free").trim().toLowerCase()
+
+  if (plan === "premium") return "Premium"
+  if (plan === "bll-monthly" || plan === "bll_monthly" || plan === "bll") {
+    return "BLL Monthly"
+  }
+  if (plan === "trial") return "Trial"
+
+  return "Free"
 }
 
 export default async function AdminSupportPage() {
@@ -101,7 +139,7 @@ export default async function AdminSupportPage() {
   async function replyToTicket(formData: FormData) {
     "use server"
 
-    await getCurrentAdmin()
+    const currentAdmin = await getCurrentAdmin()
 
     const ticketId = cleanString(formData.get("ticketId"))
     const message = cleanString(formData.get("message"))
@@ -116,6 +154,7 @@ export default async function AdminSupportPage() {
       },
       select: {
         id: true,
+        status: true,
       },
     })
 
@@ -123,147 +162,233 @@ export default async function AdminSupportPage() {
       redirect("/admin/support")
     }
 
-    await prisma.support_ticket_messages.create({
-      data: {
-        ticket_id: ticket.id,
-        sender: "support",
-        message,
-      },
-    })
+    if (normalizeStatus(ticket.status) === "closed") {
+      await prisma.support_ticket_messages.create({
+        data: {
+          ticket_id: ticket.id,
+          sender: "system",
+          message: `Reply blocked because this ticket is closed. ${currentAdmin.displayName} must reopen it before replying.`,
+        },
+      })
 
-    await prisma.support_tickets.update({
-      where: {
-        id: ticket.id,
-      },
-      data: {
-        status: "pending",
-        updated_at: new Date(),
-      },
-    })
+      revalidatePath("/admin/support")
+      return
+    }
+
+    await prisma.$transaction([
+      prisma.support_ticket_messages.create({
+        data: {
+          ticket_id: ticket.id,
+          sender: "support",
+          message,
+        },
+      }),
+
+      prisma.support_ticket_messages.create({
+        data: {
+          ticket_id: ticket.id,
+          sender: "system",
+          message: `Support replied by ${currentAdmin.displayName}. Ticket moved to Pending.`,
+        },
+      }),
+
+      prisma.support_tickets.update({
+        where: {
+          id: ticket.id,
+        },
+        data: {
+          status: "pending",
+          updated_at: new Date(),
+        },
+      }),
+    ])
 
     revalidatePath("/admin/support")
-    revalidatePath("/subscription")
   }
 
   async function updateTicketStatus(formData: FormData) {
     "use server"
 
-    await getCurrentAdmin()
+    const currentAdmin = await getCurrentAdmin()
 
     const ticketId = cleanString(formData.get("ticketId"))
-    const rawStatus = cleanString(formData.get("status")).toLowerCase()
-    const status = allowedStatuses.includes(rawStatus as SupportStatus)
-      ? (rawStatus as SupportStatus)
-      : "open"
+    const nextStatus = normalizeStatus(cleanString(formData.get("status")))
 
     if (!ticketId) {
       redirect("/admin/support")
     }
 
-    await prisma.support_tickets.update({
+    const ticket = await prisma.support_tickets.findUnique({
       where: {
         id: ticketId,
       },
-      data: {
-        status,
-        updated_at: new Date(),
+      select: {
+        id: true,
+        status: true,
       },
     })
 
+    if (!ticket) {
+      redirect("/admin/support")
+    }
+
+    const oldStatus = normalizeStatus(ticket.status)
+
+    if (oldStatus === nextStatus) {
+      revalidatePath("/admin/support")
+      return
+    }
+
+    const eventMessage =
+      nextStatus === "resolved"
+        ? `Ticket marked Resolved by ${currentAdmin.displayName}.`
+        : nextStatus === "closed"
+          ? `Ticket closed by ${currentAdmin.displayName}. This thread is now closed. The user should open a new ticket if more help is needed.`
+          : `Status changed from ${labelStatus(oldStatus)} to ${labelStatus(nextStatus)} by ${currentAdmin.displayName}.`
+
+    await prisma.$transaction([
+      prisma.support_ticket_messages.create({
+        data: {
+          ticket_id: ticket.id,
+          sender: "system",
+          message: eventMessage,
+        },
+      }),
+
+      prisma.support_tickets.update({
+        where: {
+          id: ticket.id,
+        },
+        data: {
+          status: nextStatus,
+          updated_at: new Date(),
+        },
+      }),
+    ])
+
     revalidatePath("/admin/support")
-    revalidatePath("/subscription")
   }
 
   async function updateTicketPriority(formData: FormData) {
     "use server"
 
-    await getCurrentAdmin()
+    const currentAdmin = await getCurrentAdmin()
 
     const ticketId = cleanString(formData.get("ticketId"))
-    const rawPriority = cleanString(formData.get("priority")).toLowerCase()
-    const priority = allowedPriorities.includes(rawPriority as SupportPriority)
-      ? (rawPriority as SupportPriority)
-      : "normal"
+    const nextPriority = normalizePriority(cleanString(formData.get("priority")))
 
     if (!ticketId) {
       redirect("/admin/support")
     }
 
-    await prisma.support_tickets.update({
+    const ticket = await prisma.support_tickets.findUnique({
       where: {
         id: ticketId,
       },
-      data: {
-        priority,
-        updated_at: new Date(),
+      select: {
+        id: true,
+        priority: true,
       },
     })
 
-    revalidatePath("/admin/support")
-  }
+    if (!ticket) {
+      redirect("/admin/support")
+    }
 
-  const [tickets, openCount, pendingCount, resolvedCount, closedCount] =
-    await Promise.all([
-      prisma.support_tickets.findMany({
-        orderBy: {
-          updated_at: "desc",
-        },
-        take: 100,
-        include: {
-          messages: {
-            orderBy: {
-              created_at: "asc",
-            },
-          },
-        },
-      }),
+    const oldPriority = normalizePriority(ticket.priority)
 
-      prisma.support_tickets.count({
-        where: {
-          status: "open",
+    if (oldPriority === nextPriority) {
+      revalidatePath("/admin/support")
+      return
+    }
+
+    await prisma.$transaction([
+      prisma.support_ticket_messages.create({
+        data: {
+          ticket_id: ticket.id,
+          sender: "system",
+          message: `Priority changed from ${labelPriority(oldPriority)} to ${labelPriority(nextPriority)} by ${currentAdmin.displayName}.`,
         },
       }),
 
-      prisma.support_tickets.count({
+      prisma.support_tickets.update({
         where: {
-          status: "pending",
+          id: ticket.id,
         },
-      }),
-
-      prisma.support_tickets.count({
-        where: {
-          status: "resolved",
-        },
-      }),
-
-      prisma.support_tickets.count({
-        where: {
-          status: "closed",
+        data: {
+          priority: nextPriority,
+          updated_at: new Date(),
         },
       }),
     ])
 
-  const userIds = Array.from(new Set(tickets.map((ticket) => ticket.user_id)))
+    revalidatePath("/admin/support")
+  }
 
-  const profiles =
-    userIds.length > 0
-      ? await prisma.profiles.findMany({
-          where: {
-            id: {
-              in: userIds,
-            },
+  const [
+    rawTickets,
+    openCount,
+    pendingCount,
+    resolvedCount,
+    closedCount,
+  ] = await Promise.all([
+    prisma.support_tickets.findMany({
+      orderBy: {
+        updated_at: "desc",
+      },
+      take: 100,
+      include: {
+        messages: {
+          orderBy: {
+            created_at: "asc",
           },
-          select: {
-            id: true,
-            subscription_tier: true,
-            created_at: true,
-          },
-        })
-      : []
+        },
+      },
+    }),
+
+    prisma.support_tickets.count({
+      where: {
+        status: "open",
+      },
+    }),
+
+    prisma.support_tickets.count({
+      where: {
+        status: "pending",
+      },
+    }),
+
+    prisma.support_tickets.count({
+      where: {
+        status: "resolved",
+      },
+    }),
+
+    prisma.support_tickets.count({
+      where: {
+        status: "closed",
+      },
+    }),
+  ])
+
+  const userIds = Array.from(new Set(rawTickets.map((ticket) => ticket.user_id)))
+
+  const profiles = await prisma.profiles.findMany({
+    where: {
+      id: {
+        in: userIds,
+      },
+    },
+    select: {
+      id: true,
+      subscription_tier: true,
+      created_at: true,
+    },
+  })
 
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile]))
 
-  const serializedTickets: SupportTicketForWorkbench[] = tickets.map((ticket) => {
+  const tickets: SupportTicketForWorkbench[] = rawTickets.map((ticket) => {
     const profile = profileMap.get(ticket.user_id)
 
     return {
@@ -293,13 +418,13 @@ export default async function AdminSupportPage() {
         email: admin.email,
         fullName: admin.fullName,
       }}
-      tickets={serializedTickets}
+      tickets={tickets}
       counts={{
         open: openCount,
         pending: pendingCount,
         resolved: resolvedCount,
         closed: closedCount,
-        all: tickets.length,
+        all: rawTickets.length,
       }}
       replyAction={replyToTicket}
       updateStatusAction={updateTicketStatus}
