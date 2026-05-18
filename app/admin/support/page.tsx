@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
+import { createAdminNotification } from "@/lib/admin-notifications"
 import SupportTicketsWorkbench, {
   AdminUserForWorkbench,
   SupportTicketForWorkbench,
@@ -9,7 +10,6 @@ import SupportTicketsWorkbench, {
 
 type SupportStatus = "open" | "pending" | "resolved" | "closed"
 type SupportPriority = "normal" | "high" | "urgent"
-type AdminNotificationSeverity = "normal" | "info" | "success" | "warning" | "danger"
 
 const allowedStatuses: SupportStatus[] = ["open", "pending", "resolved", "closed"]
 const allowedPriorities: SupportPriority[] = ["normal", "high", "urgent"]
@@ -30,17 +30,6 @@ type UserTicketCountRow = {
   user_id: string
   total_count: number
   open_count: number
-}
-
-type CreateAdminNotificationInput = {
-  adminId: string
-  actorAdminId: string | null
-  type: string
-  title: string
-  body: string
-  href: string | null
-  metadata: Record<string, unknown>
-  severity?: AdminNotificationSeverity
 }
 
 function cleanString(value: FormDataEntryValue | null) {
@@ -118,46 +107,6 @@ function formatExam(
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null
-}
-
-async function createAdminNotification({
-  adminId,
-  actorAdminId,
-  type,
-  title,
-  body,
-  href,
-  metadata,
-  severity = "normal",
-}: CreateAdminNotificationInput) {
-  if (!adminId) return
-
-  await prisma.$executeRaw`
-    insert into public.admin_notifications (
-      admin_id,
-      actor_admin_id,
-      type,
-      title,
-      body,
-      href,
-      metadata,
-      severity,
-      read_at,
-      created_at
-    )
-    values (
-      ${adminId}::uuid,
-      ${actorAdminId || null}::uuid,
-      ${type},
-      ${title},
-      ${body},
-      ${href},
-      ${JSON.stringify(metadata)}::jsonb,
-      ${severity},
-      null,
-      now()
-    )
-  `
 }
 
 async function getCurrentAdmin() {
@@ -665,7 +614,7 @@ export default async function AdminSupportPage() {
         title: "New support ticket assignment",
         body: `${changedBy} assigned you: ${ticket.subject}`,
         href: `/admin/support?ticket=${ticket.id}`,
-        severity: normalizePriority(ticket.status) === "urgent" ? "warning" : "normal",
+        severity: "normal",
         metadata: {
           module: "support",
           event: "ticket_assigned",
