@@ -11,6 +11,7 @@ type AdminNotificationRow = {
   body: string
   href: string | null
   metadata: unknown
+  severity: string
   read_at: Date | null
   created_at: Date
 }
@@ -79,6 +80,12 @@ function parseLimit(value: string | null) {
   return Math.floor(parsed)
 }
 
+function cleanFilter(value: string | null) {
+  if (!value) return "all"
+  const trimmed = value.trim().toLowerCase()
+  return trimmed || "all"
+}
+
 export async function GET(req: Request) {
   try {
     const auth = await getCurrentAdmin()
@@ -86,6 +93,9 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url)
     const limit = parseLimit(url.searchParams.get("limit"))
+    const type = cleanFilter(url.searchParams.get("type"))
+    const severity = cleanFilter(url.searchParams.get("severity"))
+    const status = cleanFilter(url.searchParams.get("status"))
 
     const rows = await prisma.$queryRaw<AdminNotificationRow[]>`
       select
@@ -96,11 +106,19 @@ export async function GET(req: Request) {
         title,
         body,
         href,
-        metadata,
+        coalesce(metadata, '{}'::jsonb) as metadata,
+        coalesce(severity, 'normal') as severity,
         read_at,
         created_at
       from public.admin_notifications
       where admin_id = ${auth.admin.id}::uuid
+        and (${type} = 'all' or type = ${type})
+        and (${severity} = 'all' or severity = ${severity})
+        and (
+          ${status} = 'all'
+          or (${status} = 'unread' and read_at is null)
+          or (${status} = 'read' and read_at is not null)
+        )
       order by created_at desc
       limit ${limit}
     `
@@ -124,6 +142,7 @@ export async function GET(req: Request) {
         body: row.body,
         href: row.href,
         metadata: row.metadata,
+        severity: row.severity || "normal",
         readAt: row.read_at ? row.read_at.toISOString() : null,
         createdAt: row.created_at.toISOString(),
       })),
