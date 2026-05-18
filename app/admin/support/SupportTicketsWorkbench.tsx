@@ -2,15 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import {
+  AlertCircle,
+  Bot,
   Check,
   ChevronDown,
+  Clock3,
   Filter,
   Inbox,
   LinkIcon,
+  Lock,
+  Mail,
+  MessageSquare,
   Paperclip,
   Search,
   Send,
   SlidersHorizontal,
+  Sparkles,
+  Tag,
+  UserRound,
   X,
 } from "lucide-react"
 import styles from "./SupportTicketsWorkbench.module.css"
@@ -91,6 +100,7 @@ type SortMode =
   | "sla_soon"
   | "unread_first"
 type ViewMode = "inbox" | "list"
+type SideTab = "details" | "copilot"
 
 const statusOptions = ["open", "pending", "resolved", "closed"] as const
 const priorityOptions = ["normal", "high", "urgent"] as const
@@ -227,48 +237,6 @@ function displayUserLine(ticket: SupportTicketForWorkbench) {
   return email
 }
 
-function statusClass(status: string) {
-  const normalized = normalizeStatus(status)
-
-  if (normalized === "resolved") {
-    return `${styles.statusPill} ${styles.statusResolved}`
-  }
-
-  if (normalized === "closed") {
-    return `${styles.statusPill} ${styles.statusClosed}`
-  }
-
-  if (normalized === "pending") {
-    return `${styles.statusPill} ${styles.statusPending}`
-  }
-
-  return `${styles.statusPill} ${styles.statusOpen}`
-}
-
-function priorityClass(priority: string) {
-  const normalized = normalizePriority(priority)
-
-  if (normalized === "urgent") {
-    return `${styles.priorityPill} ${styles.priorityHigh}`
-  }
-
-  if (normalized === "high") {
-    return `${styles.priorityPill} ${styles.priorityHigh}`
-  }
-
-  return `${styles.priorityPill} ${styles.priorityNormal}`
-}
-
-function miniPriorityClass(priority: string) {
-  const normalized = normalizePriority(priority)
-
-  if (normalized === "urgent" || normalized === "high") {
-    return styles.miniPriorityHigh
-  }
-
-  return styles.miniPriorityNormal
-}
-
 function getLastHumanMessage(ticket: SupportTicketForWorkbench) {
   return [...ticket.messages]
     .reverse()
@@ -300,8 +268,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   if (status === "closed") {
     return {
       label: "Closed",
-      tone: "#64748b",
-      background: "#f1f5f9",
+      tone: "muted",
       urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
@@ -310,8 +277,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   if (status === "resolved") {
     return {
       label: "Resolved",
-      tone: "#059669",
-      background: "#ecfdf5",
+      tone: "good",
       urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
@@ -320,8 +286,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   if (!ticket.slaDueAt) {
     return {
       label: "No SLA",
-      tone: "#64748b",
-      background: "#f8fafc",
+      tone: "muted",
       urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
@@ -332,8 +297,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   if (Number.isNaN(due)) {
     return {
       label: "No SLA",
-      tone: "#64748b",
-      background: "#f8fafc",
+      tone: "muted",
       urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
@@ -345,8 +309,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   if (diffMinutes <= 0) {
     return {
       label: "Overdue",
-      tone: "#dc2626",
-      background: "#fef2f2",
+      tone: "danger",
       urgent: true,
       sortTime: due,
     }
@@ -355,8 +318,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   if (diffMinutes < 60) {
     return {
       label: `${diffMinutes}m left`,
-      tone: "#dc2626",
-      background: "#fff1f2",
+      tone: "danger",
       urgent: true,
       sortTime: due,
     }
@@ -367,8 +329,7 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   if (hours <= 4) {
     return {
       label: `${hours}h left`,
-      tone: "#c2410c",
-      background: "#fff7ed",
+      tone: "warning",
       urgent: true,
       sortTime: due,
     }
@@ -376,28 +337,118 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
 
   return {
     label: `${hours}h left`,
-    tone: "#2563eb",
-    background: "#eff6ff",
+    tone: "info",
     urgent: false,
     sortTime: due,
   }
 }
 
-function InfoRow({
+function urgencyLabel(ticket: SupportTicketForWorkbench) {
+  const priority = normalizePriority(ticket.priority)
+  const sla = slaInfo(ticket)
+
+  if (sla.tone === "danger") return "Critical"
+  if (priority === "urgent") return "Urgent"
+  if (priority === "high" || sla.tone === "warning") return "High"
+  return "Normal"
+}
+
+function statusClass(status: string) {
+  const normalized = normalizeStatus(status)
+
+  if (normalized === "resolved") return `${styles.dotText} ${styles.dotGood}`
+  if (normalized === "closed") return `${styles.dotText} ${styles.dotMuted}`
+  if (normalized === "pending") return `${styles.dotText} ${styles.dotWarning}`
+
+  return `${styles.dotText} ${styles.dotInfo}`
+}
+
+function priorityClass(priority: string) {
+  const normalized = normalizePriority(priority)
+
+  if (normalized === "urgent") return `${styles.dotText} ${styles.dotDanger}`
+  if (normalized === "high") return `${styles.dotText} ${styles.dotDanger}`
+
+  return `${styles.dotText} ${styles.dotWarning}`
+}
+
+function slaClass(ticket: SupportTicketForWorkbench) {
+  const sla = slaInfo(ticket)
+
+  if (sla.tone === "danger") return `${styles.dotText} ${styles.dotDanger}`
+  if (sla.tone === "warning") return `${styles.dotText} ${styles.dotWarning}`
+  if (sla.tone === "good") return `${styles.dotText} ${styles.dotGood}`
+  if (sla.tone === "info") return `${styles.dotText} ${styles.dotInfo}`
+
+  return `${styles.dotText} ${styles.dotMuted}`
+}
+
+function planClass(plan: string) {
+  const normalized = plan.toLowerCase()
+
+  if (normalized.includes("premium") || normalized.includes("pro")) {
+    return `${styles.planBadge} ${styles.planBadgePremium}`
+  }
+
+  if (normalized.includes("trial")) {
+    return `${styles.planBadge} ${styles.planBadgeTrial}`
+  }
+
+  return `${styles.planBadge} ${styles.planBadgeFree}`
+}
+
+function compactPlanLabel(plan: string) {
+  if (!plan || plan === "free") return "Free"
+  return plan
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+function DetailRow({
   label,
   value,
-  email = false,
+  tone,
 }: {
   label: string
   value: string
-  email?: boolean
+  tone?: "good" | "warning" | "danger" | "info" | "muted"
 }) {
   return (
-    <div className={styles.infoRow}>
-      <span className={styles.infoLabel}>{label}</span>
-      <span className={email ? styles.infoValueEmail : styles.infoValue}>
+    <div className={styles.detailRow}>
+      <span className={styles.detailLabel}>{label}</span>
+      <span
+        className={`${styles.detailValue} ${
+          tone === "good"
+            ? styles.detailGood
+            : tone === "warning"
+              ? styles.detailWarning
+              : tone === "danger"
+                ? styles.detailDanger
+                : tone === "info"
+                  ? styles.detailInfo
+                  : tone === "muted"
+                    ? styles.detailMuted
+                    : ""
+        }`}
+      >
         {value}
       </span>
+    </div>
+  )
+}
+
+function SectionTitle({
+  icon,
+  title,
+}: {
+  icon?: React.ReactNode
+  title: string
+}) {
+  return (
+    <div className={styles.sideSectionTitle}>
+      {icon}
+      <span>{title}</span>
     </div>
   )
 }
@@ -420,6 +471,7 @@ export default function SupportTicketsWorkbench({
   const [draftCategoryFilter, setDraftCategoryFilter] = useState("all")
   const [sortMode, setSortMode] = useState<SortMode>("newest")
   const [viewMode, setViewMode] = useState<ViewMode>("inbox")
+  const [sideTab, setSideTab] = useState<SideTab>("details")
   const [query, setQuery] = useState("")
   const [replyText, setReplyText] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
@@ -471,31 +523,30 @@ export default function SupportTicketsWorkbench({
     return count
   }, [priorityFilter, categoryFilter])
 
-  function ticketMatchesSearchAndSecondaryFilters(ticket: SupportTicketForWorkbench) {
-    const search = query.trim().toLowerCase()
-    const priority = normalizePriority(ticket.priority)
-
-    const matchesPriority =
-      priorityFilter === "all" ? true : priority === priorityFilter
-
-    const matchesCategory =
-      categoryFilter === "all" ? true : ticket.category === categoryFilter
-
-    const matchesSearch = search
-      ? ticket.subject.toLowerCase().includes(search) ||
-        ticket.email.toLowerCase().includes(search) ||
-        ticket.userEmail.toLowerCase().includes(search) ||
-        String(ticket.userName || "").toLowerCase().includes(search) ||
-        ticket.category.toLowerCase().includes(search) ||
-        ticket.id.toLowerCase().includes(search) ||
-        getPreview(ticket).toLowerCase().includes(search)
-      : true
-
-    return matchesPriority && matchesCategory && matchesSearch
-  }
-
   const ticketsAfterSearchAndSecondaryFilters = useMemo(() => {
-    return tickets.filter(ticketMatchesSearchAndSecondaryFilters)
+    const search = query.trim().toLowerCase()
+
+    return tickets.filter((ticket) => {
+      const priority = normalizePriority(ticket.priority)
+
+      const matchesPriority =
+        priorityFilter === "all" ? true : priority === priorityFilter
+
+      const matchesCategory =
+        categoryFilter === "all" ? true : ticket.category === categoryFilter
+
+      const matchesSearch = search
+        ? ticket.subject.toLowerCase().includes(search) ||
+          ticket.email.toLowerCase().includes(search) ||
+          ticket.userEmail.toLowerCase().includes(search) ||
+          String(ticket.userName || "").toLowerCase().includes(search) ||
+          ticket.category.toLowerCase().includes(search) ||
+          ticket.id.toLowerCase().includes(search) ||
+          getPreview(ticket).toLowerCase().includes(search)
+        : true
+
+      return matchesPriority && matchesCategory && matchesSearch
+    })
   }, [tickets, query, priorityFilter, categoryFilter])
 
   const visibleCounts = useMemo(() => {
@@ -697,13 +748,101 @@ export default function SupportTicketsWorkbench({
 
   return (
     <div className={styles.shell}>
+      <aside className={styles.leftRail}>
+        <div className={styles.railHeader}>
+          <div className={styles.railTitle}>Support</div>
+          <div className={styles.railSubtitle}>Inbox workspace</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setFilter("open")
+            setViewMode("inbox")
+          }}
+          className={`${styles.railItem} ${filter === "open" ? styles.railItemActive : ""}`}
+        >
+          <Inbox size={14} />
+          <span>Open tickets</span>
+          <strong>{visibleCounts.open}</strong>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSortMode("unread_first")
+            setViewMode("inbox")
+          }}
+          className={styles.railItem}
+        >
+          <Mail size={14} />
+          <span>Unread</span>
+          <strong>{counts.unread}</strong>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSortMode("sla_soon")
+            setViewMode("inbox")
+          }}
+          className={styles.railItem}
+        >
+          <Clock3 size={14} />
+          <span>SLA risk</span>
+          <strong>{counts.slaAtRisk}</strong>
+        </button>
+
+        <div className={styles.railDivider} />
+
+        <div className={styles.railGroupLabel}>Views</div>
+
+        <button
+          type="button"
+          onClick={() => setCategoryFilter("billing")}
+          className={styles.railItem}
+        >
+          <Tag size={14} />
+          <span>Billing issues</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCategoryFilter("account")}
+          className={styles.railItem}
+        >
+          <UserRound size={14} />
+          <span>Account access</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPriorityFilter("urgent")}
+          className={styles.railItem}
+        >
+          <AlertCircle size={14} />
+          <span>Urgent</span>
+        </button>
+
+        <div className={styles.railBottom}>
+          <button
+            type="button"
+            onClick={() => setSideTab("copilot")}
+            className={styles.copilotRailButton}
+          >
+            <Sparkles size={14} />
+            <span>Copilot preview</span>
+          </button>
+        </div>
+      </aside>
+
       <aside className={styles.listPanel}>
         <div className={styles.listHeader}>
           <div className={styles.listTitleRow}>
             <div>
-              <div className={styles.listTitle}>Tickets</div>
+              <div className={styles.listTitle}>Customer inbox</div>
               <div className={styles.listSubtitle}>
-                Customer support inbox · Unread {counts.unread} · SLA risk {counts.slaAtRisk}
+                {filteredTickets.length} shown · {counts.unread} unread · {counts.slaAtRisk} SLA risk
               </div>
             </div>
 
@@ -879,30 +1018,13 @@ export default function SupportTicketsWorkbench({
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 6,
-              marginBottom: 12,
-            }}
-          >
+          <div className={styles.viewToggle}>
             <button
               type="button"
               onClick={() => setViewMode("inbox")}
-              style={{
-                height: 32,
-                border: "1px solid rgba(148, 163, 184, 0.18)",
-                borderRadius: 9,
-                background:
-                  viewMode === "inbox"
-                    ? "rgba(96, 165, 250, 0.16)"
-                    : "rgba(255, 255, 255, 0.04)",
-                color: viewMode === "inbox" ? "#bfdbfe" : "#94a3b8",
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              className={`${styles.viewToggleButton} ${
+                viewMode === "inbox" ? styles.viewToggleButtonActive : ""
+              }`}
             >
               Inbox
             </button>
@@ -910,19 +1032,9 @@ export default function SupportTicketsWorkbench({
             <button
               type="button"
               onClick={() => setViewMode("list")}
-              style={{
-                height: 32,
-                border: "1px solid rgba(148, 163, 184, 0.18)",
-                borderRadius: 9,
-                background:
-                  viewMode === "list"
-                    ? "rgba(96, 165, 250, 0.16)"
-                    : "rgba(255, 255, 255, 0.04)",
-                color: viewMode === "list" ? "#bfdbfe" : "#94a3b8",
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+              className={`${styles.viewToggleButton} ${
+                viewMode === "list" ? styles.viewToggleButtonActive : ""
+              }`}
             >
               List
             </button>
@@ -991,7 +1103,6 @@ export default function SupportTicketsWorkbench({
           ) : (
             filteredTickets.map((ticket) => {
               const active = selectedTicket?.id === ticket.id
-              const status = normalizeStatus(ticket.status)
               const unread = isTicketUnread(ticket)
               const sla = slaInfo(ticket)
 
@@ -1006,19 +1117,7 @@ export default function SupportTicketsWorkbench({
                 >
                   <div className={styles.ticketTop}>
                     <span className={styles.ticketSubject}>
-                      {unread ? (
-                        <span
-                          style={{
-                            display: "inline-block",
-                            width: 7,
-                            height: 7,
-                            borderRadius: 99,
-                            background: "#ef4444",
-                            marginRight: 7,
-                            verticalAlign: "middle",
-                          }}
-                        />
-                      ) : null}
+                      {unread ? <span className={styles.unreadDot} /> : null}
                       {ticket.subject}
                     </span>
                     <span className={styles.ticketTime}>
@@ -1026,22 +1125,19 @@ export default function SupportTicketsWorkbench({
                     </span>
                   </div>
 
+                  <div className={styles.ticketCustomerLine}>
+                    <span>{displayUserLine(ticket)}</span>
+                  </div>
+
                   <div className={styles.ticketMeta}>
-                    <span className={styles.ticketEmail}>
-                      {displayUserLine(ticket)}
+                    <span>{statusLabel(ticket.status)}</span>
+                    <span>{priorityLabel(ticket.priority)}</span>
+                    <span className={styles[`slaTone_${sla.tone}`]}>
+                      {sla.label}
                     </span>
-                    <span>{statusLabel(ticket.status)} thread</span>
-                    <span className={miniPriorityClass(ticket.priority)}>
-                      {priorityLabel(ticket.priority)} priority
-                    </span>
-                    <span style={{ color: sla.tone }}>{sla.label}</span>
                   </div>
 
                   <div className={styles.ticketPreview}>{getPreview(ticket)}</div>
-
-                  {status === "closed" ? (
-                    <div className={styles.closedHint}>Closed thread</div>
-                  ) : null}
                 </button>
               )
             })
@@ -1051,112 +1147,39 @@ export default function SupportTicketsWorkbench({
 
       <main className={styles.mainPanel}>
         {viewMode === "list" ? (
-          <section
-            style={{
-              height: "100%",
-              overflow: "auto",
-              background: "#f7f9fc",
-              padding: 22,
-            }}
-          >
-            <div
-              style={{
-                background: "#ffffff",
-                border: "1px solid #dbe5f2",
-                borderRadius: 14,
-                overflow: "hidden",
-                boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
-              }}
-            >
-              <div
-                style={{
-                  padding: "16px 18px",
-                  borderBottom: "1px solid #dbe5f2",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 16,
-                }}
-              >
+          <section className={styles.listView}>
+            <div className={styles.listViewCard}>
+              <div className={styles.listViewHeader}>
                 <div>
-                  <div
-                    style={{
-                      fontSize: 17,
-                      fontWeight: 650,
-                      color: "#0f172a",
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
-                    Ticket list
-                  </div>
-                  <div style={{ marginTop: 3, color: "#64748b", fontSize: 12.5 }}>
-                    {filteredTickets.length} tickets shown · {counts.unread} unread ·{" "}
-                    {counts.slaAtRisk} SLA risk
+                  <div className={styles.listViewTitle}>Ticket list</div>
+                  <div className={styles.listViewSub}>
+                    {filteredTickets.length} tickets shown · {counts.unread} unread · {counts.slaAtRisk} SLA risk
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setViewMode("inbox")}
-                  style={{
-                    height: 34,
-                    borderRadius: 9,
-                    border: "1px solid #dbe5f2",
-                    background: "white",
-                    color: "#475569",
-                    padding: "0 13px",
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
+                  className={styles.secondaryButton}
                 >
                   Back to inbox
                 </button>
               </div>
 
-              <div style={{ overflowX: "auto" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    minWidth: 980,
-                    fontSize: 13,
-                  }}
-                >
+              <div className={styles.tableWrap}>
+                <table className={styles.ticketTable}>
                   <thead>
-                    <tr
-                      style={{
-                        background: "#f8fafc",
-                        color: "#64748b",
-                        textAlign: "left",
-                        borderBottom: "1px solid #dbe5f2",
-                      }}
-                    >
-                      {[
-                        "ID",
-                        "Subject",
-                        "User",
-                        "Status",
-                        "Priority",
-                        "SLA",
-                        "Unread",
-                        "Assigned",
-                        "Updated",
-                        "Action",
-                      ].map((heading) => (
-                        <th
-                          key={heading}
-                          style={{
-                            padding: "11px 12px",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.08em",
-                          }}
-                        >
-                          {heading}
-                        </th>
-                      ))}
+                    <tr>
+                      <th>ID</th>
+                      <th>Subject</th>
+                      <th>User</th>
+                      <th>Status</th>
+                      <th>Priority</th>
+                      <th>SLA</th>
+                      <th>Urgency</th>
+                      <th>Assigned</th>
+                      <th>Updated</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
 
@@ -1167,113 +1190,55 @@ export default function SupportTicketsWorkbench({
                       const unread = isTicketUnread(ticket)
 
                       return (
-                        <tr
-                          key={ticket.id}
-                          style={{
-                            borderBottom: "1px solid #edf2f7",
-                            background:
-                              selectedTicket?.id === ticket.id ? "#fbfdff" : "#ffffff",
-                          }}
-                        >
-                          <td style={{ padding: "12px", color: "#64748b" }}>
-                            {ticketNumber(index)}
-                          </td>
+                        <tr key={ticket.id}>
+                          <td>{ticketNumber(index)}</td>
 
-                          <td style={{ padding: "12px", color: "#0f172a" }}>
-                            <div style={{ fontWeight: 550 }}>{ticket.subject}</div>
-                            <div
-                              style={{
-                                marginTop: 3,
-                                color: "#94a3b8",
-                                fontSize: 12,
-                                maxWidth: 250,
-                                overflow: "hidden",
-                                whiteSpace: "nowrap",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {getPreview(ticket)}
+                          <td>
+                            <div className={styles.tableSubject}>
+                              {unread ? <span className={styles.tableUnreadDot} /> : null}
+                              {ticket.subject}
                             </div>
+                            <div className={styles.tablePreview}>{getPreview(ticket)}</div>
                           </td>
 
-                          <td style={{ padding: "12px" }}>
+                          <td>
                             <button
                               type="button"
                               onClick={() => openUserDrawer(ticket)}
-                              style={{
-                                border: 0,
-                                background: "transparent",
-                                padding: 0,
-                                textAlign: "left",
-                                cursor: "pointer",
-                              }}
+                              className={styles.tableUserButton}
                             >
-                              <div style={{ color: "#0f172a", fontWeight: 550 }}>
-                                {displayUserName(ticket)}
-                              </div>
-                              <div style={{ marginTop: 3, color: "#64748b", fontSize: 12 }}>
-                                {ticket.userEmail}
-                              </div>
+                              <span>{displayUserName(ticket)}</span>
+                              <small>{ticket.userEmail}</small>
                             </button>
                           </td>
 
-                          <td style={{ padding: "12px", color: "#475569" }}>
-                            {statusLabel(ticket.status)}
-                          </td>
-
-                          <td style={{ padding: "12px", color: "#475569" }}>
-                            {priorityLabel(ticket.priority)}
-                          </td>
-
-                          <td style={{ padding: "12px" }}>
-                            <span
-                              style={{
-                                display: "inline-flex",
-                                borderRadius: 8,
-                                padding: "4px 8px",
-                                background: sla.background,
-                                color: sla.tone,
-                                fontWeight: 650,
-                                fontSize: 12,
-                              }}
-                            >
-                              {sla.label}
+                          <td>
+                            <span className={statusClass(ticket.status)}>
+                              {statusLabel(ticket.status)}
                             </span>
                           </td>
 
-                          <td style={{ padding: "12px" }}>
-                            {unread ? (
-                              <span style={{ color: "#dc2626", fontWeight: 650 }}>
-                                Unread
-                              </span>
-                            ) : (
-                              <span style={{ color: "#94a3b8" }}>Read</span>
-                            )}
+                          <td>
+                            <span className={priorityClass(ticket.priority)}>
+                              {priorityLabel(ticket.priority)}
+                            </span>
                           </td>
 
-                          <td style={{ padding: "12px", color: "#64748b" }}>
-                            {ticket.assignedAdminName || "Unassigned"}
+                          <td>
+                            <span className={slaClass(ticket)}>{sla.label}</span>
                           </td>
 
-                          <td style={{ padding: "12px", color: "#64748b" }}>
-                            {formatDateTime(ticket.updated_at)}
-                          </td>
+                          <td>{urgencyLabel(ticket)}</td>
 
-                          <td style={{ padding: "12px" }}>
+                          <td>{ticket.assignedAdminName || "Unassigned"}</td>
+
+                          <td>{formatDateTime(ticket.updated_at)}</td>
+
+                          <td>
                             <button
                               type="button"
                               onClick={() => openTicketFromList(ticket)}
-                              style={{
-                                height: 30,
-                                borderRadius: 8,
-                                border: "1px solid #bfdbfe",
-                                background: "#eff6ff",
-                                color: "#2563eb",
-                                padding: "0 11px",
-                                fontSize: 12,
-                                fontWeight: 650,
-                                cursor: "pointer",
-                              }}
+                              className={styles.tableViewButton}
                             >
                               View
                             </button>
@@ -1290,7 +1255,12 @@ export default function SupportTicketsWorkbench({
           <>
             <header className={styles.threadHeader}>
               <div className={styles.threadTitleArea}>
-                <div className={styles.threadTitle}>{selectedTicket.subject}</div>
+                <div>
+                  <div className={styles.threadTitle}>{selectedTicket.subject}</div>
+                  <div className={styles.threadSubline}>
+                    {ticketNumber(selectedTicketIndex)} · {displayUserLine(selectedTicket)}
+                  </div>
+                </div>
 
                 <div className={styles.pillGroup}>
                   <span className={statusClass(selectedTicket.status)}>
@@ -1298,6 +1268,9 @@ export default function SupportTicketsWorkbench({
                   </span>
                   <span className={priorityClass(selectedTicket.priority)}>
                     {priorityLabel(selectedTicket.priority)}
+                  </span>
+                  <span className={slaClass(selectedTicket)}>
+                    {slaInfo(selectedTicket).label}
                   </span>
                 </div>
               </div>
@@ -1385,10 +1358,6 @@ export default function SupportTicketsWorkbench({
                             className={`${styles.messageAvatar} ${
                               isSupport ? styles.supportAvatar : styles.userAvatar
                             }`}
-                            style={{
-                              border: 0,
-                              cursor: isSupport ? "default" : "pointer",
-                            }}
                           >
                             {isSupport ? "V" : safeInitials(selectedTicket)}
                           </button>
@@ -1399,13 +1368,6 @@ export default function SupportTicketsWorkbench({
                               !isSupport ? openUserDrawer(selectedTicket) : undefined
                             }
                             className={styles.messageSender}
-                            style={{
-                              border: 0,
-                              background: "transparent",
-                              padding: 0,
-                              cursor: isSupport ? "default" : "pointer",
-                              textAlign: "left",
-                            }}
                           >
                             {isSupport
                               ? `${admin.fullName || "Vladimir"} · Support`
@@ -1437,11 +1399,12 @@ export default function SupportTicketsWorkbench({
                 <div className={styles.replyBox}>
                   {selectedIsClosed ? (
                     <div className={styles.closedReplyNotice}>
-                      <div className={styles.closedReplyTitle}>
-                        This ticket is closed.
-                      </div>
-                      <div className={styles.closedReplyText}>
-                        The thread is locked. The user should open a new ticket if more help is needed.
+                      <Lock size={14} />
+                      <div>
+                        <div className={styles.closedReplyTitle}>This ticket is closed.</div>
+                        <div className={styles.closedReplyText}>
+                          The thread is locked. Reopen the ticket if more support is needed.
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -1518,119 +1481,158 @@ export default function SupportTicketsWorkbench({
               </section>
 
               <aside className={styles.infoPanel}>
-                <div className={styles.infoSection}>
-                  <div className={styles.infoSectionTitle}>Ticket info</div>
-                  <InfoRow label="ID" value={ticketNumber(selectedTicketIndex)} />
-                  <InfoRow label="Category" value={selectedTicket.category} />
-                  <InfoRow label="Created" value={formatDateTime(selectedTicket.created_at)} />
-                  <InfoRow label="Last update" value={formatDateTime(selectedTicket.updated_at)} />
-                  <InfoRow label="SLA" value={slaInfo(selectedTicket).label} />
-                </div>
-
-                <div className={styles.infoSection}>
-                  <div className={styles.infoSectionTitle}>Priority</div>
-
-                  <select
-                    value={normalizePriority(selectedTicket.priority)}
-                    onChange={(event) => updatePriority(event.target.value)}
-                    disabled={isPending || selectedIsClosed}
-                    className={styles.sideSelect}
+                <div className={styles.sideTabs}>
+                  <button
+                    type="button"
+                    onClick={() => setSideTab("details")}
+                    className={`${styles.sideTabButton} ${
+                      sideTab === "details" ? styles.sideTabButtonActive : ""
+                    }`}
                   >
-                    {priorityOptions.map((priority) => (
-                      <option key={priority} value={priority}>
-                        {priorityLabel(priority)}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className={styles.statusTitle}>Status</div>
-
-                  <select
-                    value={selectedStatus}
-                    onChange={(event) => updateStatus(event.target.value)}
-                    disabled={isPending}
-                    className={styles.sideSelect}
-                  >
-                    {statusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {statusLabel(status)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className={styles.infoSection}>
-                  <div className={styles.infoSectionTitle}>User</div>
+                    Details
+                  </button>
 
                   <button
                     type="button"
-                    onClick={() => openUserDrawer(selectedTicket)}
-                    style={{
-                      width: "100%",
-                      border: "1px solid #dbe5f2",
-                      borderRadius: 10,
-                      background: "#fbfdff",
-                      padding: 10,
-                      textAlign: "left",
-                      cursor: "pointer",
-                      marginBottom: 10,
-                    }}
+                    onClick={() => setSideTab("copilot")}
+                    className={`${styles.sideTabButton} ${
+                      sideTab === "copilot" ? styles.sideTabButtonActive : ""
+                    }`}
                   >
-                    <div style={{ color: "#0f172a", fontSize: 12.5, fontWeight: 650 }}>
-                      {displayUserName(selectedTicket)}
-                    </div>
-                    <div style={{ color: "#64748b", fontSize: 11.5, marginTop: 3 }}>
-                      {selectedTicket.userEmail}
-                    </div>
+                    Copilot
                   </button>
-
-                  <InfoRow label="Plan" value={selectedTicket.userPlan} />
-                  <InfoRow label="Member since" value={selectedTicket.memberSince} />
                 </div>
 
-                <div className={styles.infoSectionLast}>
-                  <div className={styles.infoSectionTitle}>Quick actions</div>
-
-                  {!selectedIsResolved && !selectedIsClosed ? (
-                    <button
-                      type="button"
-                      onClick={() => updateStatus("resolved")}
-                      disabled={isPending}
-                      className={styles.resolveButton}
-                    >
-                      <Check size={11} />
-                      Mark resolved
-                    </button>
-                  ) : null}
-
-                  {!selectedIsClosed ? (
-                    <button
-                      type="button"
-                      onClick={() => updateStatus("closed")}
-                      disabled={isPending}
-                      className={styles.closeButton}
-                    >
-                      <X size={11} />
-                      Close ticket
-                    </button>
-                  ) : (
-                    <div className={styles.closedSideNotice}>
-                      Closed ticket. Replies are disabled.
+                {sideTab === "copilot" ? (
+                  <div className={styles.copilotPanel}>
+                    <div className={styles.copilotIcon}>
+                      <Bot size={18} />
                     </div>
-                  )}
+                    <div className={styles.copilotTitle}>Copilot is prepared</div>
+                    <div className={styles.copilotText}>
+                      AI suggestions are disabled for now. Later this panel can summarize the ticket, suggest replies, and detect risk using an AI API.
+                    </div>
+                    <div className={styles.copilotDisabled}>Not connected</div>
+                  </div>
+                ) : (
+                  <>
+                    <div className={styles.customerIdentity}>
+                      <button
+                        type="button"
+                        onClick={() => openUserDrawer(selectedTicket)}
+                        className={styles.customerAvatar}
+                      >
+                        {safeInitials(selectedTicket)}
+                      </button>
 
-                  {selectedIsClosed ? (
-                    <button
-                      type="button"
-                      onClick={() => updateStatus("open")}
-                      disabled={isPending}
-                      className={styles.reopenButton}
-                    >
-                      <ChevronDown size={11} />
-                      Reopen ticket
-                    </button>
-                  ) : null}
-                </div>
+                      <div className={styles.customerText}>
+                        <button
+                          type="button"
+                          onClick={() => openUserDrawer(selectedTicket)}
+                          className={styles.customerName}
+                        >
+                          {displayUserName(selectedTicket)}
+                        </button>
+                        <div className={styles.customerEmail}>{selectedTicket.userEmail}</div>
+                      </div>
+                    </div>
+
+                    <div className={styles.planLine}>
+                      <span className={planClass(selectedTicket.userPlan)}>
+                        {compactPlanLabel(selectedTicket.userPlan)}
+                      </span>
+                      <span className={styles.billingText}>
+                        {selectedTicket.userBillingStatus}
+                      </span>
+                    </div>
+
+                    <div className={styles.sideSection}>
+                      <SectionTitle icon={<MessageSquare size={13} />} title="Ticket" />
+                      <DetailRow label="ID" value={ticketNumber(selectedTicketIndex)} />
+                      <DetailRow label="Status" value={statusLabel(selectedTicket.status)} tone={selectedStatus === "closed" ? "muted" : selectedStatus === "resolved" ? "good" : "info"} />
+                      <DetailRow label="Priority" value={priorityLabel(selectedTicket.priority)} tone={normalizePriority(selectedTicket.priority) === "normal" ? "warning" : "danger"} />
+                      <DetailRow label="SLA" value={slaInfo(selectedTicket).label} tone={slaInfo(selectedTicket).tone as "good" | "warning" | "danger" | "info" | "muted"} />
+                      <DetailRow label="Urgency" value={urgencyLabel(selectedTicket)} tone={urgencyLabel(selectedTicket) === "Critical" ? "danger" : urgencyLabel(selectedTicket) === "High" ? "warning" : "muted"} />
+                      <DetailRow label="Category" value={selectedTicket.category} />
+                    </div>
+
+                    <div className={styles.sideSection}>
+                      <SectionTitle icon={<UserRound size={13} />} title="User details" />
+                      <DetailRow label="Jurisdiction" value={selectedTicket.userJurisdiction} />
+                      <DetailRow label="Exam" value={selectedTicket.userExam} />
+                      <DetailRow label="Member since" value={selectedTicket.memberSince} />
+                      <DetailRow label="Last active" value={formatDateTime(selectedTicket.userLastActiveAt)} />
+                    </div>
+
+                    <div className={styles.sideSection}>
+                      <SectionTitle icon={<LinkIcon size={13} />} title="Links" />
+                      <button
+                        type="button"
+                        onClick={() => openUserDrawer(selectedTicket)}
+                        className={styles.linkRow}
+                      >
+                        Open user profile
+                      </button>
+                      <button type="button" className={styles.linkRow}>
+                        Subscription record
+                      </button>
+                      <button type="button" className={styles.linkRow}>
+                        Payment history
+                      </button>
+                    </div>
+
+                    <div className={styles.sideSection}>
+                      <SectionTitle icon={<Clock3 size={13} />} title="Recent history" />
+                      <DetailRow label="Total tickets" value={String(selectedTicket.userTotalTicketCount)} />
+                      <DetailRow label="Open tickets" value={String(selectedTicket.userOpenTicketCount)} />
+                      <DetailRow label="Assigned" value={selectedTicket.assignedAdminName || "Unassigned"} />
+                    </div>
+
+                    <div className={styles.sideSectionLast}>
+                      <SectionTitle icon={<Check size={13} />} title="Quick actions" />
+
+                      {!selectedIsResolved && !selectedIsClosed ? (
+                        <button
+                          type="button"
+                          onClick={() => updateStatus("resolved")}
+                          disabled={isPending}
+                          className={styles.resolveButton}
+                        >
+                          <Check size={11} />
+                          Mark resolved
+                        </button>
+                      ) : null}
+
+                      {!selectedIsClosed ? (
+                        <button
+                          type="button"
+                          onClick={() => updateStatus("closed")}
+                          disabled={isPending}
+                          className={styles.closeButton}
+                        >
+                          <X size={11} />
+                          Close ticket
+                        </button>
+                      ) : (
+                        <div className={styles.closedSideNotice}>
+                          Closed ticket. Replies are disabled.
+                        </div>
+                      )}
+
+                      {selectedIsClosed ? (
+                        <button
+                          type="button"
+                          onClick={() => updateStatus("open")}
+                          disabled={isPending}
+                          className={styles.reopenButton}
+                        >
+                          <ChevronDown size={11} />
+                          Reopen ticket
+                        </button>
+                      ) : null}
+                    </div>
+                  </>
+                )}
               </aside>
             </div>
           </>
@@ -1640,7 +1642,7 @@ export default function SupportTicketsWorkbench({
               <Inbox size={20} />
             </div>
             <div className={styles.noTicketTitle}>No ticket selected</div>
-            <div className={styles.noTicketText}>Select a ticket from the left panel.</div>
+            <div className={styles.noTicketText}>Select a ticket from the inbox.</div>
           </div>
         )}
       </main>
@@ -1651,198 +1653,57 @@ export default function SupportTicketsWorkbench({
             type="button"
             aria-label="Close user profile drawer"
             onClick={() => setProfileDrawerTicketId(null)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 80,
-              border: 0,
-              background: "rgba(15, 23, 42, 0.28)",
-              cursor: "default",
-            }}
+            className={styles.drawerOverlay}
           />
 
-          <aside
-            style={{
-              position: "fixed",
-              top: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 90,
-              width: 390,
-              maxWidth: "92vw",
-              background: "#ffffff",
-              borderLeft: "1px solid #dbe5f2",
-              boxShadow: "-22px 0 55px rgba(15, 23, 42, 0.18)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div
-              style={{
-                padding: "18px 18px 16px",
-                borderBottom: "1px solid #dbe5f2",
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
+          <aside className={styles.profileDrawer}>
+            <div className={styles.drawerHeader}>
               <div>
-                <div
-                  style={{
-                    color: "#0f172a",
-                    fontSize: 17,
-                    fontWeight: 650,
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  User profile
-                </div>
-                <div style={{ color: "#64748b", fontSize: 12.5, marginTop: 3 }}>
-                  Support context and account details
-                </div>
+                <div className={styles.drawerTitle}>User profile</div>
+                <div className={styles.drawerSubtitle}>Support context and account details</div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setProfileDrawerTicketId(null)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 9,
-                  border: "1px solid #dbe5f2",
-                  background: "#f8fafc",
-                  color: "#64748b",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
+                className={styles.drawerClose}
               >
                 <X size={14} />
               </button>
             </div>
 
-            <div style={{ padding: 18, overflowY: "auto" }}>
-              <div
-                style={{
-                  border: "1px solid #dbe5f2",
-                  borderRadius: 14,
-                  padding: 14,
-                  background: "#fbfdff",
-                  marginBottom: 14,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 999,
-                      background: "#2563eb",
-                      color: "white",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {safeInitials(profileDrawerTicket)}
-                  </div>
-
-                  <div style={{ minWidth: 0 }}>
-                    <div
-                      style={{
-                        color: "#0f172a",
-                        fontSize: 15,
-                        fontWeight: 650,
-                        overflow: "hidden",
-                        whiteSpace: "nowrap",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {displayUserName(profileDrawerTicket)}
-                    </div>
-                    <div
-                      style={{
-                        color: "#64748b",
-                        fontSize: 12.5,
-                        marginTop: 3,
-                        overflow: "hidden",
-                        whiteSpace: "nowrap",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {profileDrawerTicket.userEmail}
-                    </div>
-                  </div>
+            <div className={styles.drawerBody}>
+              <div className={styles.drawerIdentity}>
+                <div className={styles.drawerAvatar}>{safeInitials(profileDrawerTicket)}</div>
+                <div>
+                  <div className={styles.drawerName}>{displayUserName(profileDrawerTicket)}</div>
+                  <div className={styles.drawerEmail}>{profileDrawerTicket.userEmail}</div>
                 </div>
-
-                {profileDrawerTicket.userIsBlocked ? (
-                  <div
-                    style={{
-                      marginTop: 12,
-                      borderRadius: 9,
-                      background: "#fef2f2",
-                      color: "#dc2626",
-                      padding: "8px 10px",
-                      fontSize: 12,
-                      fontWeight: 650,
-                    }}
-                  >
-                    This account is blocked.
-                  </div>
-                ) : null}
               </div>
 
-              <div style={{ display: "grid", gap: 10 }}>
-                {[
-                  ["User ID", profileDrawerTicket.userId],
-                  ["Plan", profileDrawerTicket.userPlan],
-                  ["Billing status", profileDrawerTicket.userBillingStatus],
-                  ["Jurisdiction", profileDrawerTicket.userJurisdiction],
-                  ["Exam", profileDrawerTicket.userExam],
-                  ["Member since", profileDrawerTicket.memberSince],
-                  ["Last active", formatDateTime(profileDrawerTicket.userLastActiveAt)],
-                  ["Total tickets", String(profileDrawerTicket.userTotalTicketCount)],
-                  ["Open tickets", String(profileDrawerTicket.userOpenTicketCount)],
-                  ["Current ticket", profileDrawerTicket.subject],
-                  ["Current ticket status", statusLabel(profileDrawerTicket.status)],
-                  ["Current ticket priority", priorityLabel(profileDrawerTicket.priority)],
-                  ["Current ticket SLA", slaInfo(profileDrawerTicket).label],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    style={{
-                      borderBottom: "1px solid #edf2f7",
-                      paddingBottom: 9,
-                    }}
-                  >
-                    <div
-                      style={{
-                        color: "#94a3b8",
-                        fontSize: 11,
-                        fontWeight: 650,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
-                      {label}
-                    </div>
-                    <div
-                      style={{
-                        color: "#334155",
-                        fontSize: 13,
-                        fontWeight: 550,
-                        marginTop: 4,
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {value || "Not available"}
-                    </div>
-                  </div>
-                ))}
+              <div className={styles.drawerBadgeLine}>
+                <span className={planClass(profileDrawerTicket.userPlan)}>
+                  {compactPlanLabel(profileDrawerTicket.userPlan)}
+                </span>
+                <span className={profileDrawerTicket.userIsBlocked ? styles.blockedBadge : styles.activeBadge}>
+                  {profileDrawerTicket.userIsBlocked ? "Blocked" : "Active"}
+                </span>
+              </div>
+
+              <div className={styles.drawerGrid}>
+                <DetailRow label="User ID" value={profileDrawerTicket.userId} />
+                <DetailRow label="Billing status" value={profileDrawerTicket.userBillingStatus} />
+                <DetailRow label="Jurisdiction" value={profileDrawerTicket.userJurisdiction} />
+                <DetailRow label="Exam" value={profileDrawerTicket.userExam} />
+                <DetailRow label="Member since" value={profileDrawerTicket.memberSince} />
+                <DetailRow label="Last active" value={formatDateTime(profileDrawerTicket.userLastActiveAt)} />
+                <DetailRow label="Total tickets" value={String(profileDrawerTicket.userTotalTicketCount)} />
+                <DetailRow label="Open tickets" value={String(profileDrawerTicket.userOpenTicketCount)} />
+                <DetailRow label="Current ticket" value={profileDrawerTicket.subject} />
+                <DetailRow label="Current status" value={statusLabel(profileDrawerTicket.status)} />
+                <DetailRow label="Current priority" value={priorityLabel(profileDrawerTicket.priority)} />
+                <DetailRow label="Current SLA" value={slaInfo(profileDrawerTicket).label} />
+                <DetailRow label="Urgency" value={urgencyLabel(profileDrawerTicket)} />
               </div>
 
               <button
@@ -1852,18 +1713,7 @@ export default function SupportTicketsWorkbench({
                   setViewMode("inbox")
                   setProfileDrawerTicketId(null)
                 }}
-                style={{
-                  marginTop: 18,
-                  width: "100%",
-                  height: 38,
-                  borderRadius: 10,
-                  border: 0,
-                  background: "#2563eb",
-                  color: "white",
-                  fontSize: 13,
-                  fontWeight: 650,
-                  cursor: "pointer",
-                }}
+                className={styles.drawerPrimaryButton}
               >
                 Open this ticket
               </button>
