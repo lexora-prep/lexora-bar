@@ -1,5 +1,6 @@
 import crypto from "crypto"
 import { NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 
 type PaddleEvent = {
@@ -20,9 +21,7 @@ type PaddleCustomData = {
 }
 
 function getSignatureParts(signatureHeader: string | null) {
-  if (!signatureHeader) {
-    return null
-  }
+  if (!signatureHeader) return null
 
   const parts = signatureHeader.split(";").reduce<Record<string, string>>((acc, part) => {
     const [key, value] = part.split("=")
@@ -34,9 +33,7 @@ function getSignatureParts(signatureHeader: string | null) {
     return acc
   }, {})
 
-  if (!parts.ts || !parts.h1) {
-    return null
-  }
+  if (!parts.ts || !parts.h1) return null
 
   return {
     timestamp: parts.ts,
@@ -49,9 +46,7 @@ function timingSafeEqualHex(left: string, right: string) {
     const leftBuffer = Buffer.from(left, "hex")
     const rightBuffer = Buffer.from(right, "hex")
 
-    if (leftBuffer.length !== rightBuffer.length) {
-      return false
-    }
+    if (leftBuffer.length !== rightBuffer.length) return false
 
     return crypto.timingSafeEqual(leftBuffer, rightBuffer)
   } catch {
@@ -68,9 +63,7 @@ function verifyPaddleSignature(rawBody: string, signatureHeader: string | null) 
 
   const signatureParts = getSignatureParts(signatureHeader)
 
-  if (!signatureParts) {
-    return false
-  }
+  if (!signatureParts) return false
 
   const signedPayload = `${signatureParts.timestamp}:${rawBody}`
 
@@ -153,7 +146,6 @@ function getPlanFromEvent(event: PaddleEvent) {
   )
 }
 
-
 function asDate(value: unknown) {
   if (typeof value !== "string" || !value.trim()) return undefined
   const date = new Date(value)
@@ -201,12 +193,7 @@ function getTransactionId(event: PaddleEvent) {
     return data.id || null
   }
 
-  return (
-    data.transaction_id ||
-    data.transactionId ||
-    data.transaction?.id ||
-    null
-  )
+  return data.transaction_id || data.transactionId || data.transaction?.id || null
 }
 
 function getPriceId(event: PaddleEvent) {
@@ -296,6 +283,21 @@ function getPeriodEndsAt(event: PaddleEvent) {
   return asDate(period?.ends_at || period?.endsAt)
 }
 
+function getPaidAt(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    asDate(data.billed_at) ||
+    asDate(data.billedAt) ||
+    asDate(data.payments?.[0]?.captured_at) ||
+    asDate(data.payments?.[0]?.capturedAt) ||
+    asDate(data.created_at) ||
+    asDate(data.createdAt) ||
+    asDate(event.occurred_at) ||
+    new Date()
+  )
+}
+
 function getInvoiceUrl(event: PaddleEvent) {
   const data = event.data || {}
 
@@ -305,6 +307,18 @@ function getInvoiceUrl(event: PaddleEvent) {
     data.receipt_url ||
     data.receiptUrl ||
     data.checkout?.url ||
+    null
+  )
+}
+
+function getReceiptUrl(event: PaddleEvent) {
+  const data = event.data || {}
+
+  return (
+    data.receipt_url ||
+    data.receiptUrl ||
+    data.invoice_url ||
+    data.invoiceUrl ||
     null
   )
 }
@@ -370,6 +384,105 @@ async function findProfileForEvent(event: PaddleEvent) {
   return null
 }
 
+async function upsertPaymentRecord(event: PaddleEvent, profile: { id: string; email: string }) {
+  const transactionId = getTransactionId(event)
+
+  if (!transactionId) {
+    console.warn("PADDLE WEBHOOK: Payment record skipped because transaction ID is missing.", {
+      event_id: event.event_id,
+      event_type: event.event_type,
+    })
+    return
+  }
+
+  const discount = getDiscountData(event)
+  const plan = getPlanFromEvent(event) || "premium"
+
+  await prisma.$executeRaw`
+    insert into public.paddle_payment_records (
+      user_id,
+      email,
+      paddle_event_id,
+      paddle_customer_id,
+      paddle_subscription_id,
+      paddle_transaction_id,
+      paddle_price_id,
+      plan,
+      status,
+      currency,
+      amount_cents,
+      tax_cents,
+      total_cents,
+      billing_period_starts_at,
+      billing_period_ends_at,
+      paid_at,
+      discount_id,
+      discount_code,
+      discount_amount,
+      invoice_url,
+      receipt_url,
+      raw_event,
+      updated_at
+    )
+    values (
+      ${profile.id}::uuid,
+      ${profile.email},
+      ${event.event_id || null},
+      ${getCustomerId(event)},
+      ${getSubscriptionId(event)},
+      ${transactionId},
+      ${getPriceId(event)},
+      ${plan},
+      ${"paid"},
+      ${getCurrency(event)},
+      ${getAmountCents(event) ?? null},
+      ${getTaxCents(event) ?? null},
+      ${getTotalCents(event) ?? null},
+      ${getPeriodStartsAt(event) ?? null},
+      ${getPeriodEndsAt(event) ?? null},
+      ${getPaidAt(event)},
+      ${discount.id || null},
+      ${discount.code || null},
+      ${discount.amount ? String(discount.amount) : null},
+      ${getInvoiceUrl(event)},
+      ${getReceiptUrl(event)},
+      ${JSON.stringify(event)}::jsonb,
+      now()
+    )
+    on conflict (paddle_transaction_id)
+    do update set
+      user_id = excluded.user_id,
+      email = excluded.email,
+      paddle_event_id = excluded.paddle_event_id,
+      paddle_customer_id = excluded.paddle_customer_id,
+      paddle_subscription_id = excluded.paddle_subscription_id,
+      paddle_price_id = excluded.paddle_price_id,
+      plan = excluded.plan,
+      status = excluded.status,
+      currency = excluded.currency,
+      amount_cents = excluded.amount_cents,
+      tax_cents = excluded.tax_cents,
+      total_cents = excluded.total_cents,
+      billing_period_starts_at = excluded.billing_period_starts_at,
+      billing_period_ends_at = excluded.billing_period_ends_at,
+      paid_at = excluded.paid_at,
+      discount_id = excluded.discount_id,
+      discount_code = excluded.discount_code,
+      discount_amount = excluded.discount_amount,
+      invoice_url = excluded.invoice_url,
+      receipt_url = excluded.receipt_url,
+      raw_event = excluded.raw_event,
+      updated_at = now()
+  `
+
+  console.log("PADDLE WEBHOOK: Payment record stored.", {
+    event_id: event.event_id,
+    event_type: event.event_type,
+    profile_id: profile.id,
+    transaction_id: transactionId,
+  })
+}
+
 async function activatePaidAccess(event: PaddleEvent) {
   const profile = await findProfileForEvent(event)
 
@@ -412,7 +525,7 @@ async function activatePaidAccess(event: PaddleEvent) {
       billing_cancelled_at: null,
       billing_last_paid_at:
         eventType === "transaction.completed" || eventType === "transaction.paid"
-          ? asDate(event.data?.billed_at) || asDate(event.data?.payments?.[0]?.captured_at) || now
+          ? getPaidAt(event)
           : undefined,
 
       billing_discount_id: discount.id || undefined,
@@ -426,6 +539,10 @@ async function activatePaidAccess(event: PaddleEvent) {
       updated_at: now,
     },
   })
+
+  if (eventType === "transaction.completed" || eventType === "transaction.paid") {
+    await upsertPaymentRecord(event, profile)
+  }
 
   console.log("PADDLE WEBHOOK: Paid access activated.", {
     event_id: event.event_id,
@@ -466,8 +583,7 @@ async function restrictPaidAccess(event: PaddleEvent) {
           ? "past_due"
           : "inactive",
       mbe_access: false,
-      billing_cancelled_at:
-        eventType === "subscription.canceled" ? now : undefined,
+      billing_cancelled_at: eventType === "subscription.canceled" ? now : undefined,
       updated_at: now,
     },
   })
@@ -492,7 +608,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json(
         { ok: false, error: "Invalid signature." },
-        { status: 401 }
+        { status: 401 },
       )
     }
 
@@ -511,8 +627,16 @@ export async function POST(req: Request) {
       data_id: event.data?.id || null,
       data_status: event.data?.status || null,
       customer_id: event.data?.customer_id || event.data?.customerId || event.data?.customer?.id || null,
-      subscription_id: event.data?.subscription_id || event.data?.subscriptionId || event.data?.subscription?.id || null,
-      transaction_id: event.data?.transaction_id || event.data?.transactionId || event.data?.transaction?.id || null,
+      subscription_id:
+        event.data?.subscription_id ||
+        event.data?.subscriptionId ||
+        event.data?.subscription?.id ||
+        null,
+      transaction_id:
+        event.data?.transaction_id ||
+        event.data?.transactionId ||
+        event.data?.transaction?.id ||
+        null,
       price_id:
         event.data?.items?.[0]?.price?.id ||
         event.data?.items?.[0]?.price_id ||
@@ -574,7 +698,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { ok: false, error: error?.message || "Webhook failed." },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
