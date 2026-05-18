@@ -9,6 +9,7 @@ import SupportTicketsWorkbench, {
 
 type SupportStatus = "open" | "pending" | "resolved" | "closed"
 type SupportPriority = "normal" | "high" | "urgent"
+type AdminNotificationSeverity = "normal" | "info" | "success" | "warning" | "danger"
 
 const allowedStatuses: SupportStatus[] = ["open", "pending", "resolved", "closed"]
 const allowedPriorities: SupportPriority[] = ["normal", "high", "urgent"]
@@ -29,6 +30,17 @@ type UserTicketCountRow = {
   user_id: string
   total_count: number
   open_count: number
+}
+
+type CreateAdminNotificationInput = {
+  adminId: string
+  actorAdminId: string | null
+  type: string
+  title: string
+  body: string
+  href: string | null
+  metadata: Record<string, unknown>
+  severity?: AdminNotificationSeverity
 }
 
 function cleanString(value: FormDataEntryValue | null) {
@@ -106,6 +118,46 @@ function formatExam(
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null
+}
+
+async function createAdminNotification({
+  adminId,
+  actorAdminId,
+  type,
+  title,
+  body,
+  href,
+  metadata,
+  severity = "normal",
+}: CreateAdminNotificationInput) {
+  if (!adminId) return
+
+  await prisma.$executeRaw`
+    insert into public.admin_notifications (
+      admin_id,
+      actor_admin_id,
+      type,
+      title,
+      body,
+      href,
+      metadata,
+      severity,
+      read_at,
+      created_at
+    )
+    values (
+      ${adminId}::uuid,
+      ${actorAdminId || null}::uuid,
+      ${type},
+      ${title},
+      ${body},
+      ${href},
+      ${JSON.stringify(metadata)}::jsonb,
+      ${severity},
+      null,
+      now()
+    )
+  `
 }
 
 async function getCurrentAdmin() {
@@ -606,36 +658,26 @@ export default async function AdminSupportPage() {
     `
 
     if (targetAdmin && targetAdmin.id !== currentAdmin.id) {
-      await prisma.$executeRaw`
-        insert into public.admin_notifications (
-          admin_id,
-          actor_admin_id,
-          type,
-          title,
-          body,
-          href,
-          metadata,
-          created_at
-        )
-        values (
-          ${targetAdmin.id}::uuid,
-          ${currentAdmin.id}::uuid,
-          'support_assignment',
-          'New support ticket assignment',
-          ${`${changedBy} assigned you: ${ticket.subject}`},
-          ${`/admin/support?ticket=${ticket.id}`},
-          ${JSON.stringify({
-            ticketId: ticket.id,
-            ticketSubject: ticket.subject,
-            ticketStatus: ticket.status,
-            assignedByAdminId: currentAdmin.id,
-            assignedByName: changedBy,
-            assignedToAdminId: targetAdmin.id,
-            assignedToName: assignedName,
-          })}::jsonb,
-          ${now}
-        )
-      `
+      await createAdminNotification({
+        adminId: targetAdmin.id,
+        actorAdminId: currentAdmin.id,
+        type: "support_assignment",
+        title: "New support ticket assignment",
+        body: `${changedBy} assigned you: ${ticket.subject}`,
+        href: `/admin/support?ticket=${ticket.id}`,
+        severity: normalizePriority(ticket.status) === "urgent" ? "warning" : "normal",
+        metadata: {
+          module: "support",
+          event: "ticket_assigned",
+          ticketId: ticket.id,
+          ticketSubject: ticket.subject,
+          ticketStatus: ticket.status,
+          assignedByAdminId: currentAdmin.id,
+          assignedByName: changedBy,
+          assignedToAdminId: targetAdmin.id,
+          assignedToName: assignedName,
+        },
+      })
     }
 
     revalidatePath("/admin/support")
