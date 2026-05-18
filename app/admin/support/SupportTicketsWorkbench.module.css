@@ -2007,6 +2007,216 @@
   background: #1d4ed8;
 }
 
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.34);
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+
+.accountModal {
+  width: min(780px, 94vw);
+  max-height: 86vh;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.24);
+  border: 1px solid #dbe5f2;
+  display: flex;
+  flex-direction: column;
+}
+
+.accountModalHeader {
+  padding: 24px 26px 22px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+}
+
+.accountModalKicker {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.accountModalTitle {
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 25px;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.accountModalSubtitle {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.accountModalClose {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  border: 1px solid #dbe5f2;
+  background: #f8fafc;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.accountModalClose:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.accountModalBody {
+  padding: 18px 26px 24px;
+  overflow-y: auto;
+  background: #ffffff;
+}
+
+.cleanInfoGrid {
+  display: grid;
+  gap: 0;
+}
+
+.cleanInfoRow {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.cleanInfoRow:last-child {
+  border-bottom: 0;
+}
+
+.cleanInfoLabel {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cleanInfoValue {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.cleanNotice {
+  margin-top: 18px;
+  border-radius: 15px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.modalPrimaryButton {
+  margin-top: 18px;
+  height: 38px;
+  border-radius: 11px;
+  border: 0;
+  background: #2563eb;
+  color: white;
+  padding: 0 15px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modalPrimaryButton:hover {
+  background: #1d4ed8;
+}
+
+.conversationList {
+  display: grid;
+  gap: 10px;
+}
+
+.conversationCard {
+  border: 1px solid #dbe5f2;
+  border-radius: 15px;
+  background: #ffffff;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conversationCard:hover {
+  background: #f8fafc;
+  border-color: #bfdbfe;
+}
+
+.conversationCardActive {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.conversationCardTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.conversationCardTop small {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.conversationCardMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.conversationCardMeta span:not(:last-child)::after {
+  content: "·";
+  color: #cbd5e1;
+  margin-left: 8px;
+}
+
+.conversationCardPreview {
+  margin-top: 8px;
+  color: #7b8ba5;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 1280px) {
   .shell {
     grid-template-columns: 150px var(--support-list-width, 310px) 6px minmax(0, 1fr);
