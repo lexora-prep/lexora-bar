@@ -7,15 +7,12 @@ import {
   Circle,
   Filter,
   Inbox,
-  LayoutGrid,
-  Menu,
   MessageSquare,
   MoreVertical,
   Paperclip,
   Search,
   Send,
   SlidersHorizontal,
-  UserRound,
   X,
 } from "lucide-react"
 
@@ -244,61 +241,14 @@ export default function SupportTicketsWorkbench({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-[#F6F6F4] text-slate-950">
-      <aside className="flex w-12 shrink-0 flex-col items-center border-r border-slate-800 bg-[#10131A] py-3 text-slate-400">
-        <div className="mb-6 flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-white">
-          <Menu className="h-4 w-4" />
-        </div>
-
-        <div className="flex flex-1 flex-col items-center gap-4">
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-white/5 hover:text-white"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-white/5 hover:text-white"
-          >
-            <UserRound className="h-4 w-4" />
-          </button>
-
-          <button
-            type="button"
-            className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white"
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
-          </button>
-
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-white/5 hover:text-white"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </button>
-
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-white/5 hover:text-white"
-          >
-            <AlertTriangle className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="mt-auto flex flex-col items-center gap-3">
-          <Circle className="h-3.5 w-3.5 text-slate-500" />
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500 text-xs font-bold text-white">
-            {admin.fullName ? admin.fullName.slice(0, 1).toUpperCase() : "V"}
-          </div>
-        </div>
-      </aside>
-
-      <aside className="flex w-[270px] shrink-0 flex-col border-r border-slate-200 bg-[#171A22] text-white">
+    <div className="flex h-[calc(100vh-56px)] min-w-0 bg-[#F6F7F9] text-slate-950">
+      <aside className="flex w-[300px] shrink-0 flex-col border-r border-slate-200 bg-[#171A22] text-white">
         <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-          <div className="text-sm font-semibold">Tickets</div>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-indigo-400" />
+            <div className="text-sm font-semibold">Tickets</div>
+          </div>
+
           <div className="flex items-center gap-2 text-slate-500">
             <Filter className="h-3.5 w-3.5" />
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -612,7 +562,7 @@ export default function SupportTicketsWorkbench({
                 </div>
               </section>
 
-              <aside className="hidden w-[220px] shrink-0 border-l border-slate-200 bg-white xl:block">
+              <aside className="hidden w-[230px] shrink-0 border-l border-slate-200 bg-white xl:block">
                 <div className="border-b border-slate-200 px-4 py-4">
                   <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-300">
                     Ticket Info
