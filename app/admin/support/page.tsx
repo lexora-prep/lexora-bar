@@ -273,8 +273,8 @@ export default async function AdminSupportPage() {
       await prisma.$executeRaw`
         update public.support_tickets
         set
-          assigned_admin_id = ${currentAdmin.id}::uuid,
-          assigned_admin_name = ${name},
+          assigned_admin_id = coalesce(assigned_admin_id, ${currentAdmin.id}::uuid),
+          assigned_admin_name = coalesce(assigned_admin_name, ${name}),
           last_admin_read_at = ${now},
           updated_at = ${now}
         where id = ${ticket.id}::uuid
@@ -571,7 +571,7 @@ export default async function AdminSupportPage() {
     await prisma.support_ticket_messages.create({
       data: {
         ticket_id: ticketId,
-        sender: "system",
+        sender: "internal",
         message: assignedName
           ? `Ticket assigned to ${assignedName} by ${changedBy}.`
           : `Ticket assignment cleared by ${changedBy}.`,
@@ -624,6 +624,13 @@ export default async function AdminSupportPage() {
         exam_year: true,
         subscription_tier: true,
         billing_status: true,
+        billing_currency: true,
+        billing_amount_cents: true,
+        billing_tax_cents: true,
+        billing_total_cents: true,
+        billing_period_ends_at: true,
+        billing_last_paid_at: true,
+        billing_invoice_url: true,
         is_blocked: true,
         last_active_at: true,
         created_at: true,
@@ -650,6 +657,13 @@ export default async function AdminSupportPage() {
       userJurisdiction: profile?.jurisdiction || "Not set",
       userExam: formatExam(profile?.exam_month, profile?.exam_year),
       userBillingStatus: profile?.billing_status || "free",
+      userBillingCurrency: profile?.billing_currency || "USD",
+      userBillingAmountCents: profile?.billing_amount_cents ?? null,
+      userBillingTaxCents: profile?.billing_tax_cents ?? null,
+      userBillingTotalCents: profile?.billing_total_cents ?? null,
+      userBillingPeriodEndsAt: toIso(profile?.billing_period_ends_at),
+      userBillingLastPaidAt: toIso(profile?.billing_last_paid_at),
+      userBillingInvoiceUrl: profile?.billing_invoice_url || null,
       userIsBlocked: !!profile?.is_blocked,
       userLastActiveAt: toIso(profile?.last_active_at),
       userCreatedAt: toIso(profile?.created_at),

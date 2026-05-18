@@ -7,6 +7,8 @@ import {
   Check,
   ChevronDown,
   Clock3,
+  CreditCard,
+  FileText,
   Filter,
   Inbox,
   Lock,
@@ -38,6 +40,13 @@ export type SupportTicketForWorkbench = {
   userJurisdiction: string
   userExam: string
   userBillingStatus: string
+  userBillingCurrency: string
+  userBillingAmountCents: number | null
+  userBillingTaxCents: number | null
+  userBillingTotalCents: number | null
+  userBillingPeriodEndsAt: string | null
+  userBillingLastPaidAt: string | null
+  userBillingInvoiceUrl: string | null
   userIsBlocked: boolean
   userLastActiveAt: string | null
   userCreatedAt: string | null
@@ -109,6 +118,7 @@ type SortMode =
 type ViewMode = "inbox" | "list"
 type SideTab = "details" | "copilot"
 type ReplyMode = "reply" | "internal"
+type ModalMode = "none" | "subscription" | "payment" | "conversations"
 
 const statusOptions = ["open", "pending", "resolved", "closed"] as const
 const priorityOptions = ["normal", "high", "urgent"] as const
@@ -151,6 +161,15 @@ function formatDateTime(value: string | null | undefined) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date)
+}
+
+function formatMoney(cents: number | null | undefined, currency = "USD") {
+  if (typeof cents !== "number") return "Not available"
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(cents / 100)
 }
 
 function isRecentlyActive(value: string | null | undefined) {
@@ -294,7 +313,6 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "Closed",
       tone: "muted",
-      urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
   }
@@ -303,7 +321,6 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "Resolved",
       tone: "good",
-      urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
   }
@@ -312,7 +329,6 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "No SLA",
       tone: "muted",
-      urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
   }
@@ -323,7 +339,6 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "No SLA",
       tone: "muted",
-      urgent: false,
       sortTime: Number.POSITIVE_INFINITY,
     }
   }
@@ -335,7 +350,6 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: "Overdue",
       tone: "danger",
-      urgent: true,
       sortTime: due,
     }
   }
@@ -344,7 +358,6 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: `${diffMinutes}m left`,
       tone: "danger",
-      urgent: true,
       sortTime: due,
     }
   }
@@ -355,7 +368,6 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
     return {
       label: `${hours}h left`,
       tone: "warning",
-      urgent: true,
       sortTime: due,
     }
   }
@@ -363,7 +375,6 @@ function slaInfo(ticket: SupportTicketForWorkbench) {
   return {
     label: `${hours}h left`,
     tone: "info",
-    urgent: false,
     sortTime: due,
   }
 }
@@ -424,6 +435,7 @@ function planClass(plan: string) {
 
 function compactPlanLabel(plan: string) {
   if (!plan || plan === "free") return "Free"
+
   return plan
     .replaceAll("_", " ")
     .replaceAll("-", " ")
@@ -483,6 +495,31 @@ function SectionTitle({
   )
 }
 
+function UserAvatar({
+  ticket,
+  size = "normal",
+  onClick,
+}: {
+  ticket: SupportTicketForWorkbench
+  size?: "normal" | "large"
+  onClick?: () => void
+}) {
+  const online = isRecentlyActive(ticket.userLastActiveAt)
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={size === "large" ? styles.drawerAvatarWrap : styles.customerAvatarWrap}
+    >
+      <span className={size === "large" ? styles.drawerAvatar : styles.customerAvatar}>
+        {safeInitials(ticket)}
+      </span>
+      <span className={online ? styles.onlineDot : styles.offlineDot} />
+    </button>
+  )
+}
+
 export default function SupportTicketsWorkbench({
   admin,
   adminUsers,
@@ -512,6 +549,7 @@ export default function SupportTicketsWorkbench({
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false)
   const [listCollapsed, setListCollapsed] = useState(false)
   const [profileDrawerTicketId, setProfileDrawerTicketId] = useState<string | null>(null)
+  const [modalMode, setModalMode] = useState<ModalMode>("none")
   const [isPending, startTransition] = useTransition()
 
   const filterRef = useRef<HTMLDivElement | null>(null)
@@ -693,6 +731,11 @@ export default function SupportTicketsWorkbench({
 
   const selectedIsClosed = selectedStatus === "closed"
   const selectedIsResolved = selectedStatus === "resolved"
+
+  const userConversationTickets = useMemo(() => {
+    if (!selectedTicket) return []
+    return tickets.filter((ticket) => ticket.userId === selectedTicket.userId)
+  }, [selectedTicket, tickets])
 
   function applyFilters() {
     setPriorityFilter(draftPriorityFilter)
@@ -1668,22 +1711,10 @@ export default function SupportTicketsWorkbench({
                 ) : (
                   <>
                     <div className={styles.customerIdentity}>
-                      <button
-                        type="button"
+                      <UserAvatar
+                        ticket={selectedTicket}
                         onClick={() => openUserDrawer(selectedTicket)}
-                        className={styles.customerAvatarWrap}
-                      >
-                        <span className={styles.customerAvatar}>
-                          {safeInitials(selectedTicket)}
-                        </span>
-                        <span
-                          className={
-                            isRecentlyActive(selectedTicket.userLastActiveAt)
-                              ? styles.onlineDot
-                              : styles.offlineDot
-                          }
-                        />
-                      </button>
+                      />
 
                       <div className={styles.customerText}>
                         <button
@@ -1804,28 +1835,21 @@ export default function SupportTicketsWorkbench({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setQuery(selectedTicket.userEmail)
-                          setViewMode("list")
-                        }}
+                        onClick={() => setModalMode("conversations")}
                         className={styles.linkRow}
                       >
                         Recent conversations
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          window.location.href = "/admin/subscription"
-                        }}
+                        onClick={() => setModalMode("subscription")}
                         className={styles.linkRow}
                       >
                         Subscription record
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          window.location.href = "/admin/billing"
-                        }}
+                        onClick={() => setModalMode("payment")}
                         className={styles.linkRow}
                       >
                         Payment history
@@ -1918,16 +1942,7 @@ export default function SupportTicketsWorkbench({
 
             <div className={styles.drawerBody}>
               <div className={styles.drawerIdentity}>
-                <div className={styles.drawerAvatarWrap}>
-                  <div className={styles.drawerAvatar}>{safeInitials(profileDrawerTicket)}</div>
-                  <span
-                    className={
-                      isRecentlyActive(profileDrawerTicket.userLastActiveAt)
-                        ? styles.onlineDot
-                        : styles.offlineDot
-                    }
-                  />
-                </div>
+                <UserAvatar ticket={profileDrawerTicket} size="large" />
                 <div>
                   <div className={styles.drawerName}>{displayUserName(profileDrawerTicket)}</div>
                   <div className={styles.drawerEmail}>{profileDrawerTicket.userEmail}</div>
@@ -1983,6 +1998,172 @@ export default function SupportTicketsWorkbench({
               </button>
             </div>
           </aside>
+        </>
+      ) : null}
+
+      {selectedTicket && modalMode !== "none" ? (
+        <>
+          <button
+            type="button"
+            aria-label="Close modal"
+            onClick={() => setModalMode("none")}
+            className={styles.modalOverlay}
+          />
+
+          <section className={styles.accountModal}>
+            <div className={styles.accountModalHeader}>
+              <div>
+                <div className={styles.accountModalEyebrow}>
+                  {displayUserName(selectedTicket)}
+                </div>
+                <div className={styles.accountModalTitle}>
+                  {modalMode === "subscription"
+                    ? "Subscription record"
+                    : modalMode === "payment"
+                      ? "Payment history"
+                      : "Recent conversations"}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setModalMode("none")}
+                className={styles.drawerClose}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className={styles.accountModalBody}>
+              {modalMode === "subscription" ? (
+                <div className={styles.modalGrid}>
+                  <DetailRow label="Plan" value={compactPlanLabel(selectedTicket.userPlan)} />
+                  <DetailRow label="Billing status" value={selectedTicket.userBillingStatus} />
+                  <DetailRow label="Currency" value={selectedTicket.userBillingCurrency} />
+                  <DetailRow
+                    label="Amount"
+                    value={formatMoney(
+                      selectedTicket.userBillingAmountCents,
+                      selectedTicket.userBillingCurrency,
+                    )}
+                  />
+                  <DetailRow
+                    label="Tax"
+                    value={formatMoney(
+                      selectedTicket.userBillingTaxCents,
+                      selectedTicket.userBillingCurrency,
+                    )}
+                  />
+                  <DetailRow
+                    label="Total"
+                    value={formatMoney(
+                      selectedTicket.userBillingTotalCents,
+                      selectedTicket.userBillingCurrency,
+                    )}
+                  />
+                  <DetailRow
+                    label="Next renewal"
+                    value={formatDate(selectedTicket.userBillingPeriodEndsAt)}
+                  />
+                  <DetailRow
+                    label="Last paid"
+                    value={formatDate(selectedTicket.userBillingLastPaidAt)}
+                  />
+                </div>
+              ) : null}
+
+              {modalMode === "payment" ? (
+                <div>
+                  <div className={styles.paymentCard}>
+                    <div className={styles.paymentIcon}>
+                      <CreditCard size={18} />
+                    </div>
+                    <div className={styles.paymentMain}>
+                      <div className={styles.paymentTitle}>
+                        Latest payment record
+                      </div>
+                      <div className={styles.paymentSub}>
+                        {formatDate(selectedTicket.userBillingLastPaidAt)}
+                      </div>
+                    </div>
+                    <div className={styles.paymentAmount}>
+                      {formatMoney(
+                        selectedTicket.userBillingTotalCents,
+                        selectedTicket.userBillingCurrency,
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={styles.modalGrid}>
+                    <DetailRow label="Status" value={selectedTicket.userBillingStatus} />
+                    <DetailRow
+                      label="Tax"
+                      value={formatMoney(
+                        selectedTicket.userBillingTaxCents,
+                        selectedTicket.userBillingCurrency,
+                      )}
+                    />
+                    <DetailRow
+                      label="Billing period ends"
+                      value={formatDate(selectedTicket.userBillingPeriodEndsAt)}
+                    />
+                    <DetailRow
+                      label="Receipt"
+                      value={selectedTicket.userBillingInvoiceUrl ? "Available" : "Not available"}
+                    />
+                  </div>
+
+                  {selectedTicket.userBillingInvoiceUrl ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.open(
+                          selectedTicket.userBillingInvoiceUrl || "",
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
+                      className={styles.modalPrimaryButton}
+                    >
+                      <FileText size={14} />
+                      Open receipt
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {modalMode === "conversations" ? (
+                <div className={styles.conversationList}>
+                  {userConversationTickets.map((ticket) => {
+                    const index = tickets.findIndex((item) => item.id === ticket.id)
+
+                    return (
+                      <button
+                        key={ticket.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTicketId(ticket.id)
+                          setViewMode("inbox")
+                          setModalMode("none")
+                        }}
+                        className={styles.conversationRow}
+                      >
+                        <div>
+                          <div className={styles.conversationTitle}>
+                            {ticketNumber(index)} · {ticket.subject}
+                          </div>
+                          <div className={styles.conversationSub}>
+                            {statusLabel(ticket.status)} · {priorityLabel(ticket.priority)} · {formatDateTime(ticket.updated_at)}
+                          </div>
+                        </div>
+                        <span>{slaInfo(ticket).label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+            </div>
+          </section>
         </>
       ) : null}
     </div>
