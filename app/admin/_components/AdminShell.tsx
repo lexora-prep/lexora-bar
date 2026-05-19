@@ -516,13 +516,13 @@ export default function AdminShell({
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC] text-slate-950">
+    <div className="h-screen overflow-hidden bg-[#F7F9FC] text-slate-950">
       <div
-        className="grid min-h-screen"
+        className="grid h-screen overflow-hidden"
         style={{ gridTemplateColumns: collapsed ? "56px 1fr" : "232px 1fr" }}
       >
-        <aside className="min-h-screen overflow-hidden border-r border-slate-200 bg-white">
-          <div className="flex h-screen flex-col">
+        <aside className="h-screen overflow-hidden border-r border-slate-200 bg-white">
+          <div className="flex h-full min-h-0 flex-col overflow-hidden">
             <div className="flex h-14 items-center border-b border-slate-200 px-3">
               {collapsed ? (
                 <button
@@ -658,7 +658,7 @@ export default function AdminShell({
           </div>
         </aside>
 
-        <main className="min-w-0">
+        <main className="flex h-screen min-w-0 flex-col overflow-hidden">
           <header className="flex h-14 items-center gap-3 border-b border-slate-200 bg-white px-6">
             <div className="min-w-0">
               <div className="truncate text-[15px] font-semibold leading-5 text-slate-950">
@@ -767,7 +767,7 @@ export default function AdminShell({
             </div>
           </header>
 
-          <div className="min-h-[calc(100vh-56px)] bg-[#F7F9FC]">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[#F7F9FC] px-6 py-5">{children}</div>
         </main>
       </div>
     </div>
