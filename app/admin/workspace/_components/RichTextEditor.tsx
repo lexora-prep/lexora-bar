@@ -176,9 +176,6 @@ export default function RichTextEditor({
       editor.commands.setContent(next, { emitUpdate: false })
     }
   }, [editor, value])
-
-  if (!editor) return null
-
   const filteredMentionMembers = useMemo(() => {
     const q = (mentionQuery || "").trim().toLowerCase()
 
@@ -195,6 +192,7 @@ export default function RichTextEditor({
       .slice(0, 8)
   }, [mentionMembers, mentionQuery])
 
+  if (!editor) return null
   function insertMention(member: RichTextMentionMember) {
     const from = editor.state.selection.from
     const query = mentionQuery || ""
