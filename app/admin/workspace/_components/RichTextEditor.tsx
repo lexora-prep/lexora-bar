@@ -30,6 +30,7 @@ type RichTextEditorProps = {
   placeholder?: string
   minHeight?: number
   compact?: boolean
+  frameless?: boolean
 }
 
 const SYMBOLS = [
@@ -95,6 +96,7 @@ export default function RichTextEditor({
   placeholder = "Write something...",
   minHeight = 180,
   compact = false,
+  frameless = false,
 }: RichTextEditorProps) {
   const [symbolPickerOpen, setSymbolPickerOpen] = useState(false)
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
@@ -166,20 +168,20 @@ export default function RichTextEditor({
   return (
     <div
       style={{
-        border: "1px solid rgba(15,23,42,0.10)",
-        borderRadius: compact ? 14 : 16,
-        background: "#ffffff",
-        boxShadow: compact ? "none" : "0 18px 50px rgba(15,23,42,0.06)",
-        overflow: "hidden",
+        border: frameless ? "none" : "1px solid rgba(15,23,42,0.10)",
+        borderRadius: frameless ? 0 : compact ? 14 : 16,
+        background: frameless ? "transparent" : "#ffffff",
+        boxShadow: frameless ? "none" : compact ? "none" : "0 18px 50px rgba(15,23,42,0.06)",
+        overflow: frameless ? "visible" : "hidden",
       }}
     >
       <style jsx global>{`
         .lexora-rich-editor-content {
           min-height: ${minHeight}px;
-          padding: ${compact ? "10px 12px" : "18px 20px"};
+          padding: ${frameless ? "24px 8px 80px" : compact ? "10px 12px" : "18px 20px"};
           outline: none;
           color: #111827;
-          font-size: ${compact ? "13.5px" : "15px"};
+          font-size: ${frameless ? "16px" : compact ? "13.5px" : "15px"};
           line-height: 1.72;
           font-weight: 400;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -227,9 +229,9 @@ export default function RichTextEditor({
           alignItems: "center",
           gap: 6,
           flexWrap: "wrap",
-          padding: compact ? "8px 10px" : "10px 12px",
-          borderBottom: "1px solid rgba(15,23,42,0.08)",
-          background: "#f8fafc",
+          padding: frameless ? "8px 0 12px" : compact ? "8px 10px" : "10px 12px",
+          borderBottom: frameless ? "none" : "1px solid rgba(15,23,42,0.08)",
+          background: frameless ? "transparent" : "#f8fafc",
           position: "relative",
         }}
       >

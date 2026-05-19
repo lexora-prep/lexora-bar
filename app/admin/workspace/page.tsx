@@ -3785,12 +3785,13 @@ export default function AdminWorkspacePage() {
                               </div>
                             ) : null}
 
-                            <div style={{ maxWidth: 820, margin: "0 auto 16px", background: "#ffffff", borderRadius: 18, padding: "18px 20px", border: "1px solid rgba(15,23,42,0.06)", boxShadow: "0 12px 34px rgba(15,23,42,0.04)" }}>
+                            <div style={{ maxWidth: 900, margin: "0 auto 16px" }}>
                               <RichTextEditor
                                 value={noteBody}
                                 onChange={setNoteBody}
                                 placeholder="Start typing your note..."
-                                minHeight={520}
+                                minHeight={560}
+                                frameless
                               />
                             </div>
                             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -3800,7 +3801,7 @@ export default function AdminWorkspacePage() {
                           </>
                         ) : (
                           activeNote.body ? (
-                            <div style={{ maxWidth: 820, margin: "0 auto", background: "#ffffff", borderRadius: 18, padding: "22px 24px", border: "1px solid rgba(15,23,42,0.06)", boxShadow: "0 12px 34px rgba(15,23,42,0.04)" }}>
+                            <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 8px 80px" }}>
                               <RichTextContent content={activeNote.body || activeNote.description || ""} emptyText="No note content." />
                             </div>
                           ) : (
@@ -3815,18 +3816,18 @@ export default function AdminWorkspacePage() {
                               }}
                               style={{
                                 display: "block",
-                                maxWidth: 820,
+                                maxWidth: 900,
                                 width: "100%",
-                                minHeight: 520,
+                                minHeight: 560,
                                 margin: "0 auto",
-                                border: "1px solid rgba(15,23,42,0.06)",
-                                borderRadius: 18,
-                                background: "#ffffff",
-                                boxShadow: "0 12px 34px rgba(15,23,42,0.04)",
+                                border: "none",
+                                borderRadius: 0,
+                                background: "transparent",
+                                boxShadow: "none",
                                 color: "#94a3b8",
                                 fontSize: 16,
                                 cursor: "text",
-                                padding: "26px 28px",
+                                padding: "28px 8px",
                                 textAlign: "left",
                               }}
                             >
