@@ -40,6 +40,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import AdminNotificationsBell from "./AdminNotificationsBell"
+import AdminRealtimeBridge from "./AdminRealtimeBridge"
 
 type Permissions = {
   canManageQuestions: boolean
@@ -191,6 +192,8 @@ function Section({
           )
         })}
       </div>
+
+      <AdminRealtimeBridge />
     </div>
   )
 }
