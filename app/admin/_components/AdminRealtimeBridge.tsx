@@ -37,6 +37,16 @@ type AdminRealtimeEvent = {
   dmMessage?: RealtimeDmMessage
 }
 
+type WorkspaceTypingPayload = {
+  type: "workspace_typing"
+  scope: "channel" | "dm"
+  targetId: string
+  senderId: string
+  senderName: string
+  isTyping: boolean
+  createdAt: string
+}
+
 type ToastState = {
   id: string
   title: string
@@ -75,6 +85,9 @@ function getMutedDmMemberIds() {
 
 export default function AdminRealtimeBridge() {
   const clientRef = useRef<Ably.Realtime | null>(null)
+  const typingChannelRef = useRef<{
+    publish: (name: string, data: WorkspaceTypingPayload) => Promise<unknown>
+  } | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const seenEventIdsRef = useRef<Set<string>>(new Set())
   const activeDmIdRef = useRef<string | null>(null)
@@ -91,6 +104,28 @@ export default function AdminRealtimeBridge() {
 
     return () => {
       window.removeEventListener("admin:workspace-active-dm-changed", handleActiveDmChanged)
+    }
+  }, [])
+
+  useEffect(() => {
+    function handleTypingPublish(event: Event) {
+      const customEvent = event as CustomEvent<WorkspaceTypingPayload>
+      const payload = customEvent.detail
+
+      if (!payload || payload.type !== "workspace_typing") return
+
+      const typingChannel = typingChannelRef.current
+      if (!typingChannel) return
+
+      void typingChannel.publish("typing", payload).catch((error) => {
+        console.error("ADMIN WORKSPACE TYPING PUBLISH ERROR:", error)
+      })
+    }
+
+    window.addEventListener("admin:workspace-typing-publish", handleTypingPublish)
+
+    return () => {
+      window.removeEventListener("admin:workspace-typing-publish", handleTypingPublish)
     }
   }, [])
 
@@ -125,6 +160,20 @@ export default function AdminRealtimeBridge() {
         if (!alive || !clientId) return
 
         const channel = client.channels.get(`admin:user:${clientId}`)
+        const typingChannel = client.channels.get("admin:workspace:typing")
+        typingChannelRef.current = typingChannel
+
+        await typingChannel.subscribe("typing", (message) => {
+          const data = message.data as WorkspaceTypingPayload | null
+          if (!data || data.type !== "workspace_typing") return
+          if (data.senderId === clientId) return
+
+          window.dispatchEvent(
+            new CustomEvent("admin:workspace-typing", {
+              detail: data,
+            }),
+          )
+        })
 
         await channel.subscribe((message) => {
           const data = message.data as AdminRealtimeEvent | null
@@ -223,6 +272,7 @@ export default function AdminRealtimeBridge() {
 
       const activeClient = clientRef.current
       clientRef.current = null
+      typingChannelRef.current = null
 
       if (activeClient) {
         activeClient.close()

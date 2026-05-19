@@ -218,6 +218,16 @@ type DMMessagesResponse = {
   error?: string
 }
 
+type WorkspaceTypingEvent = {
+  type: "workspace_typing"
+  scope: "channel" | "dm"
+  targetId: string
+  senderId: string
+  senderName: string
+  isTyping: boolean
+  createdAt: string
+}
+
 type AdminRealtimeBrowserEvent = {
   type: string
   recipientId?: string
@@ -572,6 +582,9 @@ export default function AdminWorkspacePage() {
   const [mutedDmMemberIds, setMutedDmMemberIds] = useState<string[]>([])
 
   const [composerEmojiOpen, setComposerEmojiOpen] = useState(false)
+  const [typingUsers, setTypingUsers] = useState<Record<string, { name: string; timeoutAt: number }>>({})
+  const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastTypingPublishRef = useRef<number>(0)
   const [mentionPickerOpen, setMentionPickerOpen] = useState(false)
   const [mentionQuery, setMentionQuery] = useState("")
   const [mentionStart, setMentionStart] = useState<number | null>(null)
@@ -768,6 +781,73 @@ export default function AdminWorkspacePage() {
         },
       }),
     )
+  }, [activePane])
+
+  useEffect(() => {
+    function handleTypingEvent(event: Event) {
+      const customEvent = event as CustomEvent<WorkspaceTypingEvent>
+      const data = customEvent.detail
+
+      if (!data || data.type !== "workspace_typing") return
+
+      const activeTarget = getTypingTarget()
+      if (!activeTarget) return
+
+      if (data.scope !== activeTarget.scope || data.targetId !== activeTarget.targetId) {
+        return
+      }
+
+      if (currentUser?.id && data.senderId === currentUser.id) {
+        return
+      }
+
+      setTypingUsers((prev) => {
+        const next = { ...prev }
+
+        if (!data.isTyping) {
+          delete next[data.senderId]
+          return next
+        }
+
+        next[data.senderId] = {
+          name: data.senderName || "Someone",
+          timeoutAt: Date.now() + 3500,
+        }
+
+        return next
+      })
+    }
+
+    window.addEventListener("admin:workspace-typing", handleTypingEvent)
+
+    return () => {
+      window.removeEventListener("admin:workspace-typing", handleTypingEvent)
+    }
+  }, [activePane, currentUser?.id])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const now = Date.now()
+
+      setTypingUsers((prev) => {
+        const entries = Object.entries(prev).filter(([, value]) => value.timeoutAt > now)
+        if (entries.length === Object.keys(prev).length) return prev
+        return Object.fromEntries(entries)
+      })
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    setTypingUsers({})
+    publishTypingState(false)
+
+    return () => {
+      if (typingStopTimerRef.current) {
+        clearTimeout(typingStopTimerRef.current)
+      }
+    }
   }, [activePane])
 
   useEffect(() => {
@@ -2014,8 +2094,70 @@ export default function AdminWorkspacePage() {
     return [...groupOptions, ...memberOptions]
   }, [mentionQuery, teamMembers])
 
+  function getTypingTarget() {
+    if (activePane.type === "channel") {
+      return {
+        scope: "channel" as const,
+        targetId: activePane.slug,
+      }
+    }
+
+    if (activePane.type === "dm") {
+      return {
+        scope: "dm" as const,
+        targetId: activePane.id,
+      }
+    }
+
+    return null
+  }
+
+  function publishTypingState(isTyping: boolean) {
+    if (!currentUser?.id) return
+
+    const target = getTypingTarget()
+    if (!target) return
+
+    window.dispatchEvent(
+      new CustomEvent("admin:workspace-typing-publish", {
+        detail: {
+          type: "workspace_typing",
+          scope: target.scope,
+          targetId: target.targetId,
+          senderId: currentUser.id,
+          senderName: currentUserDisplayName,
+          isTyping,
+          createdAt: new Date().toISOString(),
+        } satisfies WorkspaceTypingEvent,
+      }),
+    )
+  }
+
+  function markTypingActivity() {
+    const now = Date.now()
+
+    if (now - lastTypingPublishRef.current > 1200) {
+      lastTypingPublishRef.current = now
+      publishTypingState(true)
+    }
+
+    if (typingStopTimerRef.current) {
+      clearTimeout(typingStopTimerRef.current)
+    }
+
+    typingStopTimerRef.current = setTimeout(() => {
+      publishTypingState(false)
+    }, 1800)
+  }
+
   function handleComposerChange(nextValue: string, cursorPosition: number | null) {
     updateActiveComposerValue(nextValue)
+
+    if (nextValue.trim()) {
+      markTypingActivity()
+    } else {
+      publishTypingState(false)
+    }
 
     const cursor = typeof cursorPosition === "number" ? cursorPosition : nextValue.length
     const beforeCursor = nextValue.slice(0, cursor)
@@ -3460,6 +3602,24 @@ export default function AdminWorkspacePage() {
                   )}
                   {activePane.type === "dm" ? <div ref={dmMessagesEndRef} /> : null}
                 </div>
+
+                {Object.keys(typingUsers).length > 0 ? (
+                  <div
+                    style={{
+                      padding: "0 26px 8px",
+                      fontSize: 12,
+                      color: "#7a8099",
+                      background: "#ffffff",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {Object.values(typingUsers)
+                      .slice(0, 2)
+                      .map((user) => user.name)
+                      .join(", ")}
+                    {Object.keys(typingUsers).length > 2 ? " and others are typing..." : Object.keys(typingUsers).length === 1 ? " is typing..." : " are typing..."}
+                  </div>
+                ) : null}
 
                 {activePane.type === "channel" ? renderSharedComposer("channel") : null}
                 {activePane.type === "dm" ? renderSharedComposer("dm") : null}

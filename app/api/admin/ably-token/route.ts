@@ -77,6 +77,7 @@ export async function GET() {
       clientId: auth.admin.id,
       capability: {
         [`admin:user:${auth.admin.id}`]: ["subscribe"],
+        "admin:workspace:typing": ["publish", "subscribe"],
       },
       ttl: 1000 * 60 * 60,
     })
