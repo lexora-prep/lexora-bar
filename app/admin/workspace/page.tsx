@@ -492,6 +492,9 @@ export default function AdminWorkspacePage() {
   const channelComposerRef = useRef<HTMLTextAreaElement | null>(null)
   const dmComposerRef = useRef<HTMLTextAreaElement | null>(null)
   const dmMessagesEndRef = useRef<HTMLDivElement | null>(null)
+  const dmMessagesByMemberIdRef = useRef<Record<string, DMMessage[]>>({})
+  const dmThreadIdByMemberIdRef = useRef<Record<string, string>>({})
+  const seenRealtimeDmMessageIdsRef = useRef<Set<string>>(new Set())
 
   function toggleMutedDmMember(memberId: string) {
     const cleanedMemberId = String(memberId || "").trim()
@@ -642,6 +645,23 @@ export default function AdminWorkspacePage() {
         is_deleted: data.dmMessage.isDeleted,
       }
 
+      if (seenRealtimeDmMessageIdsRef.current.has(incoming.id)) {
+        return
+      }
+
+      seenRealtimeDmMessageIdsRef.current.add(incoming.id)
+
+      if (data.threadId) {
+        dmThreadIdByMemberIdRef.current[data.senderId] = data.threadId
+      }
+
+      dmMessagesByMemberIdRef.current[data.senderId] = [
+        ...(dmMessagesByMemberIdRef.current[data.senderId] || []).filter(
+          (message) => message.id !== incoming.id,
+        ),
+        incoming,
+      ]
+
       const isOpenThread = activePane.type === "dm" && activePane.id === data.senderId
 
       if (isOpenThread) {
@@ -713,6 +733,12 @@ export default function AdminWorkspacePage() {
       setTeamMembers(loadedTeamMembers)
       setDirectMembers(loadedDirectMembers)
 
+      for (const member of loadedDirectMembers) {
+        if (member.dm_thread_id) {
+          dmThreadIdByMemberIdRef.current[member.id] = member.dm_thread_id
+        }
+      }
+
       const nextUnreadByMemberId: Record<string, number> = {}
       for (const member of loadedDirectMembers) {
         nextUnreadByMemberId[member.id] = Number(member.dm_unread_count || 0)
@@ -767,33 +793,50 @@ export default function AdminWorkspacePage() {
   }
 
   async function loadOrCreateDMThread(recipientId: string) {
+    const cachedMessages = dmMessagesByMemberIdRef.current[recipientId] || []
+    const knownThreadId =
+      dmThreadIdByMemberIdRef.current[recipientId] ||
+      directMembers.find((member) => member.id === recipientId)?.dm_thread_id ||
+      null
+
     try {
-      setDmLoading(true)
       setError("")
-      setDmMessages([])
-      setDmThreadId(null)
       setDmUnreadByMemberId((prev) => ({
         ...prev,
         [recipientId]: 0,
       }))
 
-      const bootstrapRes = await fetch("/api/admin/workspace/dms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientId,
-          bootstrapOnly: true,
-        }),
-      })
-
-      const bootstrapData = await bootstrapRes.json().catch(() => null)
-
-      if (!bootstrapRes.ok || !bootstrapData?.ok || !bootstrapData?.threadId) {
-        setError(bootstrapData?.error || "Failed to open direct message thread.")
-        return
+      if (cachedMessages.length > 0) {
+        setDmMessages(cachedMessages)
+        setDmLoading(false)
+      } else {
+        setDmLoading(true)
+        setDmMessages([])
       }
 
-      const threadId = String(bootstrapData.threadId)
+      let threadId = knownThreadId
+
+      if (!threadId) {
+        const bootstrapRes = await fetch("/api/admin/workspace/dms", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipientId,
+            bootstrapOnly: true,
+          }),
+        })
+
+        const bootstrapData = await bootstrapRes.json().catch(() => null)
+
+        if (!bootstrapRes.ok || !bootstrapData?.ok || !bootstrapData?.threadId) {
+          setError(bootstrapData?.error || "Failed to open direct message thread.")
+          return
+        }
+
+        threadId = String(bootstrapData.threadId)
+      }
+
+      dmThreadIdByMemberIdRef.current[recipientId] = threadId
       setDmThreadId(threadId)
 
       const threadRes = await fetch(`/api/admin/workspace/dms/${threadId}`, {
@@ -807,7 +850,13 @@ export default function AdminWorkspacePage() {
         return
       }
 
-      setDmMessages(Array.isArray(threadData.messages) ? threadData.messages : [])
+      const nextMessages = Array.isArray(threadData.messages) ? threadData.messages : []
+      dmMessagesByMemberIdRef.current[recipientId] = nextMessages
+      setDmMessages(nextMessages)
+      setDmUnreadByMemberId((prev) => ({
+        ...prev,
+        [recipientId]: 0,
+      }))
     } catch (err) {
       console.error("LOAD DM THREAD ERROR:", err)
       setError("Something went wrong while loading the direct message thread.")
@@ -899,14 +948,19 @@ export default function AdminWorkspacePage() {
         return
       }
 
-      setDmThreadId(String(data.threadId))
+      const nextThreadId = String(data.threadId)
+      setDmThreadId(nextThreadId)
+      dmThreadIdByMemberIdRef.current[activePane.id] = nextThreadId
 
       if (data.message) {
         const sentMessage = data.message as DMMessage
 
         setDmMessages((prev) => {
           if (prev.some((item) => item.id === sentMessage.id)) return prev
-          return [...prev, sentMessage]
+
+          const nextMessages = [...prev, sentMessage]
+          dmMessagesByMemberIdRef.current[activePane.id] = nextMessages
+          return nextMessages
         })
       }
     } catch (err) {

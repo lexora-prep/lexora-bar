@@ -26,37 +26,31 @@ export async function GET(
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
     }
 
+    await prisma.$executeRaw`
+      update public.workspace_direct_messages
+      set read_by = array_append(read_by, ${auth.actor.id}::text)
+      where thread_id = ${threadId}::uuid
+        and author_id <> ${auth.actor.id}::uuid
+        and is_deleted = false
+        and not (${auth.actor.id}::text = any(read_by))
+    `
+
     const rows = await prisma.workspace_direct_messages.findMany({
       where: { thread_id: threadId },
       orderBy: { created_at: "asc" },
+      select: {
+        id: true,
+        author_id: true,
+        content: true,
+        created_at: true,
+        edited_at: true,
+        read_by: true,
+        is_deleted: true,
+      },
     })
 
-    const unreadForActor = rows.filter(
-      (row) => !row.read_by.includes(auth.actor.id) && row.author_id !== auth.actor.id
-    )
+    const userIds = Array.from(new Set(rows.map((row) => row.author_id)))
 
-    if (unreadForActor.length > 0) {
-      await Promise.all(
-        unreadForActor.map((row) =>
-          prisma.workspace_direct_messages.update({
-            where: { id: row.id },
-            data: {
-              read_by: [...row.read_by, auth.actor.id],
-            },
-          })
-        )
-      )
-    }
-
-    const refreshedRows =
-      unreadForActor.length > 0
-        ? await prisma.workspace_direct_messages.findMany({
-            where: { thread_id: threadId },
-            orderBy: { created_at: "asc" },
-          })
-        : rows
-
-    const userIds = Array.from(new Set(refreshedRows.map((r) => r.author_id)))
     const profiles = userIds.length
       ? await prisma.profiles.findMany({
           where: { id: { in: userIds } },
@@ -71,17 +65,18 @@ export async function GET(
       : []
 
     const profileMap = new Map(
-      profiles.map((p) => [
-        p.id,
+      profiles.map((profile) => [
+        profile.id,
         {
-          name: p.full_name?.trim() || p.email.split("@")[0],
-          role: p.admin_role || p.role || "admin",
+          name: profile.full_name?.trim() || profile.email.split("@")[0],
+          role: profile.admin_role || profile.role || "admin",
         },
       ])
     )
 
-    const messages = refreshedRows.map((row) => {
+    const messages = rows.map((row) => {
       const profile = profileMap.get(row.author_id)
+
       return {
         id: row.id,
         author: profile?.name || "Unknown",
