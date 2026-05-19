@@ -3835,11 +3835,19 @@ export default function AdminWorkspacePage() {
                   {dmsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   <span className="lexora-ws-section-text">Direct messages</span>
                 </span>
-                <button
-                  type="button"
-                  onClick={(event) => {
+                <span
+                  role="button"
+                  tabIndex={0}
+                                    onClick={(event) => {
                     event.stopPropagation()
                     setWorkspaceDmPopupsEnabled((prev) => !prev)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      setWorkspaceDmPopupsEnabled((prev) => !prev)
+                    }
                   }}
                   title={workspaceDmPopupsEnabled ? "Turn DM popups off" : "Turn DM popups on"}
                   style={{
@@ -3851,7 +3859,7 @@ export default function AdminWorkspacePage() {
                   }}
                 >
                   <BellOff size={12} />
-                </button>
+                </span>
               </button>
 
               {!dmsCollapsed ? (
