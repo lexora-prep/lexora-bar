@@ -2,6 +2,7 @@
 
 import {
   AtSign,
+  BellOff,
   ChevronDown,
   ChevronRight,
   Clock3,
@@ -68,6 +69,11 @@ type WorkspaceMember = {
   bio?: string | null
   avatar_url?: string | null
   profile_theme?: string | null
+  dm_thread_id?: string | null
+  dm_unread_count?: number
+  dm_last_message_at?: string | null
+  dm_last_message_preview?: string | null
+  dm_last_message_author_id?: string | null
 }
 
 type WorkspaceNote = {
@@ -468,6 +474,8 @@ export default function AdminWorkspacePage() {
   const [dmPosting, setDmPosting] = useState(false)
   const [dmDeletingId, setDmDeletingId] = useState<string | null>(null)
   const [dmUnreadByMemberId, setDmUnreadByMemberId] = useState<Record<string, number>>({})
+  const [workspaceDmPopupsEnabled, setWorkspaceDmPopupsEnabled] = useState(true)
+  const [mutedDmMemberIds, setMutedDmMemberIds] = useState<string[]>([])
 
   const [composerEmojiOpen, setComposerEmojiOpen] = useState(false)
 
@@ -484,6 +492,17 @@ export default function AdminWorkspacePage() {
   const channelComposerRef = useRef<HTMLTextAreaElement | null>(null)
   const dmComposerRef = useRef<HTMLTextAreaElement | null>(null)
   const dmMessagesEndRef = useRef<HTMLDivElement | null>(null)
+
+  function toggleMutedDmMember(memberId: string) {
+    const cleanedMemberId = String(memberId || "").trim()
+    if (!cleanedMemberId) return
+
+    setMutedDmMemberIds((prev) =>
+      prev.includes(cleanedMemberId)
+        ? prev.filter((id) => id !== cleanedMemberId)
+        : [...prev, cleanedMemberId],
+    )
+  }
 
   const activeChannel = useMemo(() => {
     if (activePane.type !== "channel") return null
@@ -545,6 +564,37 @@ export default function AdminWorkspacePage() {
   useEffect(() => {
     void bootstrap()
   }, [])
+
+  useEffect(() => {
+    const popupValue = window.localStorage.getItem("lexora:admin:notification-popups-enabled")
+    setWorkspaceDmPopupsEnabled(popupValue !== "false")
+
+    const mutedRaw = window.localStorage.getItem("lexora:admin:workspace-muted-dm-member-ids")
+    if (mutedRaw) {
+      try {
+        const parsed = JSON.parse(mutedRaw)
+        if (Array.isArray(parsed)) {
+          setMutedDmMemberIds(parsed.map((item) => String(item)).filter(Boolean))
+        }
+      } catch {
+        setMutedDmMemberIds([])
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "lexora:admin:notification-popups-enabled",
+      workspaceDmPopupsEnabled ? "true" : "false",
+    )
+  }, [workspaceDmPopupsEnabled])
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "lexora:admin:workspace-muted-dm-member-ids",
+      JSON.stringify(mutedDmMemberIds),
+    )
+  }, [mutedDmMemberIds])
 
   useEffect(() => {
     if (activePane.type === "channel" && channels.length > 0) {
@@ -662,6 +712,13 @@ export default function AdminWorkspacePage() {
       setNotes(loadedNotes)
       setTeamMembers(loadedTeamMembers)
       setDirectMembers(loadedDirectMembers)
+
+      const nextUnreadByMemberId: Record<string, number> = {}
+      for (const member of loadedDirectMembers) {
+        nextUnreadByMemberId[member.id] = Number(member.dm_unread_count || 0)
+      }
+      setDmUnreadByMemberId(nextUnreadByMemberId)
+
       setCurrentUser(data.currentUser || null)
 
       if (data.currentUser?.status) {
@@ -715,6 +772,10 @@ export default function AdminWorkspacePage() {
       setError("")
       setDmMessages([])
       setDmThreadId(null)
+      setDmUnreadByMemberId((prev) => ({
+        ...prev,
+        [recipientId]: 0,
+      }))
 
       const bootstrapRes = await fetch("/api/admin/workspace/dms", {
         method: "POST",
@@ -2121,6 +2182,28 @@ export default function AdminWorkspacePage() {
                     {dmsCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                     <span>Direct Messages</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setWorkspaceDmPopupsEnabled((prev) => !prev)}
+                    title={workspaceDmPopupsEnabled ? "Turn DM popups off" : "Turn DM popups on"}
+                    style={{
+                      border: "none",
+                      borderRadius: 999,
+                      background: workspaceDmPopupsEnabled ? "rgba(22,163,74,0.12)" : "rgba(148,163,184,0.16)",
+                      color: workspaceDmPopupsEnabled ? "#16a34a" : "#64748b",
+                      height: 22,
+                      padding: "0 8px",
+                      fontSize: 9,
+                      fontWeight: 800,
+                      letterSpacing: 0.4,
+                      cursor: "pointer",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {workspaceDmPopupsEnabled ? "Popups on" : "Popups off"}
+                  </button>
                 </div>
 
                 {!dmsCollapsed ? (
@@ -2215,6 +2298,38 @@ export default function AdminWorkspacePage() {
                                 {dmUnreadByMemberId[dm.id] > 9 ? "9+" : dmUnreadByMemberId[dm.id]}
                               </span>
                             ) : null}
+
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              title={mutedDmMemberIds.includes(dm.id) ? "Unmute this member" : "Mute this member"}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                toggleMutedDmMember(dm.id)
+                              }}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                  toggleMutedDmMember(dm.id)
+                                }
+                              }}
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: 8,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                                color: mutedDmMemberIds.includes(dm.id) ? "#ef4444" : "#94a3b8",
+                                background: mutedDmMemberIds.includes(dm.id)
+                                  ? "rgba(239,68,68,0.10)"
+                                  : "rgba(148,163,184,0.10)",
+                              }}
+                            >
+                              <BellOff size={13} />
+                            </span>
                           </button>
                         )
                       })
