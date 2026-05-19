@@ -407,165 +407,152 @@ export default async function AdminDashboardPage() {
   const access = await ensureAdminAccess(user.id)
   const { canManageSettings, canViewBilling } = access
 
-  const [
-    flags,
-    totalUsers,
-    paidSubscribers,
-    trialUsers,
-    blockedUsers,
-    pendingPrivacyRequests,
-    newUsersThisWeek,
-    recentSignups,
-    mbeAttemptsToday,
-    mbeAttemptsAllTime,
-    bllAttemptsToday,
-    bllAttemptsAllTime,
-    activeTodayRows,
-    lastActivityRows,
-    paymentSummary,
-    supportTickets,
-    reportedRules,
-    unreadNotifications,
-    recentAdminActivity,
-  ] = await Promise.all([
-    getFeatureFlags(),
+  const flags = await getFeatureFlags()
 
-    prisma.profiles.count({
-      where: {
-        deleted_at: null,
+  const totalUsers = await prisma.profiles.count({
+    where: {
+      deleted_at: null,
+    },
+  })
+
+  const paidSubscribers = await prisma.profiles.count({
+    where: {
+      deleted_at: null,
+      is_blocked: false,
+      subscription_tier: {
+        in: [
+          "pro",
+          "monthly",
+          "annual",
+          "pro_monthly",
+          "pro_annual",
+          "premium",
+          "enterprise",
+        ],
       },
-    }),
+    },
+  })
 
-    prisma.profiles.count({
-      where: {
-        deleted_at: null,
-        is_blocked: false,
-        subscription_tier: {
-          in: [
-            "pro",
-            "monthly",
-            "annual",
-            "pro_monthly",
-            "pro_annual",
-            "premium",
-            "enterprise",
-          ],
-        },
+  const trialUsers = await prisma.profiles.count({
+    where: {
+      deleted_at: null,
+      is_blocked: false,
+      subscription_tier: "trial",
+    },
+  })
+
+  const blockedUsers = await prisma.profiles.count({
+    where: {
+      deleted_at: null,
+      is_blocked: true,
+    },
+  })
+
+  const pendingPrivacyRequests = await prisma.profiles.count({
+    where: {
+      deleted_at: null,
+      pending_deletion: true,
+    },
+  })
+
+  const newUsersThisWeek = await prisma.profiles.count({
+    where: {
+      deleted_at: null,
+      created_at: {
+        gte: weekStart,
       },
-    }),
+    },
+  })
 
-    prisma.profiles.count({
-      where: {
-        deleted_at: null,
-        is_blocked: false,
-        subscription_tier: "trial",
+  const recentSignups = await prisma.profiles.findMany({
+    where: {
+      deleted_at: null,
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+    take: 5,
+    select: {
+      id: true,
+      full_name: true,
+      email: true,
+      subscription_tier: true,
+      exam_month: true,
+      exam_year: true,
+      is_blocked: true,
+      pending_deletion: true,
+      created_at: true,
+    },
+  })
+
+  const mbeAttemptsToday = await prisma.user_mbe_attempts.count({
+    where: {
+      created_at: {
+        gte: todayStart,
       },
-    }),
+    },
+  })
 
-    prisma.profiles.count({
-      where: {
-        deleted_at: null,
-        is_blocked: true,
+  const mbeAttemptsAllTime = await prisma.user_mbe_attempts.count()
+
+  const bllAttemptsToday = await prisma.user_rule_attempts.count({
+    where: {
+      created_at: {
+        gte: todayStart,
       },
-    }),
+    },
+  })
 
-    prisma.profiles.count({
-      where: {
-        deleted_at: null,
-        pending_deletion: true,
-      },
-    }),
+  const bllAttemptsAllTime = await prisma.user_rule_attempts.count()
 
-    prisma.profiles.count({
-      where: {
-        deleted_at: null,
-        created_at: {
-          gte: weekStart,
-        },
-      },
-    }),
+  const activeTodayRows = await prisma.$queryRaw<{ count: number }[]>`
+    SELECT COUNT(*)::int AS count
+    FROM (
+      SELECT DISTINCT user_id
+      FROM public."user_mbe_attempts"
+      WHERE created_at >= ${todayStart}
 
-    prisma.profiles.findMany({
-      where: {
-        deleted_at: null,
-      },
-      orderBy: {
-        created_at: "desc",
-      },
-      take: 5,
-      select: {
-        id: true,
-        full_name: true,
-        email: true,
-        subscription_tier: true,
-        exam_month: true,
-        exam_year: true,
-        is_blocked: true,
-        pending_deletion: true,
-        created_at: true,
-      },
-    }),
+      UNION
 
-    prisma.user_mbe_attempts.count({
-      where: {
-        created_at: {
-          gte: todayStart,
-        },
-      },
-    }),
+      SELECT DISTINCT user_id
+      FROM public."user_rule_attempts"
+      WHERE created_at >= ${todayStart}
+    ) AS active_users
+  `
 
-    prisma.user_mbe_attempts.count(),
+  const lastActivityRows = await prisma.$queryRaw<{ last_seen: Date | null }[]>`
+    SELECT MAX(created_at) AS last_seen
+    FROM (
+      SELECT created_at FROM public."user_mbe_attempts"
+      UNION ALL
+      SELECT created_at FROM public."user_rule_attempts"
+    ) AS activity
+  `
 
-    prisma.user_rule_attempts.count({
-      where: {
-        created_at: {
-          gte: todayStart,
-        },
-      },
-    }),
+  const paymentSummary = canViewBilling
+    ? await getPaymentSummary()
+    : {
+        connected: false,
+        revenueCents: 0,
+        failedCount: 0,
+      }
 
-    prisma.user_rule_attempts.count(),
+  const supportTickets = await optionalTableCount(
+    "support_tickets",
+    "status NOT IN ('closed', 'resolved')",
+  )
 
-    prisma.$queryRaw<{ count: number }[]>`
-      SELECT COUNT(*)::int AS count
-      FROM (
-        SELECT DISTINCT user_id
-        FROM public."user_mbe_attempts"
-        WHERE created_at >= ${todayStart}
+  const reportedRules = await optionalTableCount(
+    "reported_rules",
+    "status NOT IN ('closed', 'resolved', 'dismissed')",
+  )
 
-        UNION
+  const unreadNotifications = await optionalTableCount(
+    "admin_notifications",
+    `user_id = '${user.id}'::uuid AND is_read = false`,
+  )
 
-        SELECT DISTINCT user_id
-        FROM public."user_rule_attempts"
-        WHERE created_at >= ${todayStart}
-      ) AS active_users
-    `,
-
-    prisma.$queryRaw<{ last_seen: Date | null }[]>`
-      SELECT MAX(created_at) AS last_seen
-      FROM (
-        SELECT created_at FROM public."user_mbe_attempts"
-        UNION ALL
-        SELECT created_at FROM public."user_rule_attempts"
-      ) AS activity
-    `,
-
-    canViewBilling
-      ? getPaymentSummary()
-      : Promise.resolve({
-          connected: false,
-          revenueCents: 0,
-          failedCount: 0,
-        }),
-
-    optionalTableCount("support_tickets", "status NOT IN ('closed', 'resolved')"),
-
-    optionalTableCount("reported_rules", "status NOT IN ('closed', 'resolved', 'dismissed')"),
-
-    optionalTableCount("admin_notifications", `user_id = '${user.id}'::uuid AND is_read = false`),
-
-    getRecentAdminActivity(user.id),
-  ])
+  const recentAdminActivity = await getRecentAdminActivity(user.id)
 
   const activeToday = Number(activeTodayRows[0]?.count || 0)
   const lastActivityAt = lastActivityRows[0]?.last_seen || null
