@@ -308,18 +308,18 @@ function FlagToggle({
   action?: (formData: FormData) => Promise<void>
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold text-slate-950">{title}</div>
-        <div className="text-xs text-slate-400">{description}</div>
+    <div className="flex items-center justify-between gap-5 border-b border-slate-100 px-5 py-4 last:border-b-0">
+      <div className="min-w-0">
+        <div className="text-[13px] font-semibold text-slate-900">{title}</div>
+        <div className="mt-0.5 text-xs leading-5 text-slate-500">{description}</div>
       </div>
 
       {disabled || !flagKey || !action ? (
-        <div className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-400">
+        <div className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
           Not connected
         </div>
       ) : (
-        <form action={action}>
+        <form action={action} className="shrink-0">
           <input type="hidden" name="key" value={flagKey} />
           <input type="hidden" name="value" value={String(!enabled)} />
           <button
@@ -586,13 +586,13 @@ export default async function AdminDashboardPage() {
   const activityRows = recentAdminActivity.length > 0 ? recentAdminActivity : activityFallback
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
+    <div className="mx-auto w-full max-w-[1560px] space-y-5 px-5 pb-8 pt-2">
+      <div className="flex items-start justify-between gap-6">
         <div>
-          <h1 className="text-lg font-bold tracking-[-0.03em] text-slate-950">
+          <h1 className="text-xl font-semibold tracking-[-0.03em] text-slate-950">
             Dashboard
           </h1>
-          <div className="mt-0.5 text-sm text-slate-500">
+          <div className="mt-1 text-sm text-slate-500">
             Platform overview — {formatDate(new Date())}
           </div>
         </div>
@@ -613,7 +613,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
         <MetricCard
           label="Total Users"
           value={totalUsers.toLocaleString()}
@@ -665,53 +665,63 @@ export default async function AdminDashboardPage() {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
           {canManageSettings ? (
-            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                <div className="text-base font-bold tracking-[-0.03em] text-slate-950">
-                  Feature Flags
+            <section className="rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-between px-5 py-4">
+                <div>
+                  <div className="text-[15px] font-semibold tracking-[-0.02em] text-slate-950">
+                    Feature Flags
+                  </div>
+                  <div className="mt-0.5 text-xs text-slate-500">
+                    Control live access and public visibility without redeploying.
+                  </div>
                 </div>
                 <Link
                   href="/admin/settings"
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Manage →
                 </Link>
               </div>
 
-              <div className="grid gap-3 p-5 md:grid-cols-2">
-                <FlagToggle
-                  title="MBE Premium"
-                  description="Controls MBE access"
-                  flagKey="mbe_premium_enabled"
-                  enabled={flags.mbePremiumEnabled}
-                  action={updateFeatureFlag}
-                />
-                <FlagToggle
-                  title="MBE Visibility"
-                  description="Public vs Coming Soon"
-                  flagKey="mbe_public_visible"
-                  enabled={flags.mbePublicVisible}
-                  action={updateFeatureFlag}
-                />
-                <FlagToggle
-                  title="Study Streaks"
-                  description="Enable streak tracking"
-                  enabled={false}
-                  disabled
-                />
-                <FlagToggle
-                  title="Beta Features"
-                  description="Selected users only"
-                  enabled={false}
-                  disabled
-                />
+              <div className="grid border-t border-slate-100 md:grid-cols-2 md:divide-x md:divide-slate-100">
+                <div>
+                  <FlagToggle
+                    title="MBE Premium"
+                    description="Controls MBE access"
+                    flagKey="mbe_premium_enabled"
+                    enabled={flags.mbePremiumEnabled}
+                    action={updateFeatureFlag}
+                  />
+                  <FlagToggle
+                    title="Study Streaks"
+                    description="Enable streak tracking"
+                    enabled={false}
+                    disabled
+                  />
+                </div>
+
+                <div>
+                  <FlagToggle
+                    title="MBE Visibility"
+                    description="Public vs Coming Soon"
+                    flagKey="mbe_public_visible"
+                    enabled={flags.mbePublicVisible}
+                    action={updateFeatureFlag}
+                  />
+                  <FlagToggle
+                    title="Beta Features"
+                    description="Selected users only"
+                    enabled={false}
+                    disabled
+                  />
+                </div>
               </div>
             </section>
           ) : null}
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div className="text-base font-bold tracking-[-0.03em] text-slate-950">
+              <div className="text-[15px] font-semibold tracking-[-0.02em] text-slate-950">
                 System Health
               </div>
               <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
@@ -766,9 +776,9 @@ export default async function AdminDashboardPage() {
           </section>
         </div>
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <div className="text-base font-bold tracking-[-0.03em] text-slate-950">
+            <div className="text-[15px] font-semibold tracking-[-0.02em] text-slate-950">
               Live Snapshot
             </div>
             <div className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
@@ -808,9 +818,9 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <div className="text-base font-bold tracking-[-0.03em] text-slate-950">
+            <div className="text-[15px] font-semibold tracking-[-0.02em] text-slate-950">
               Recent Signups
             </div>
             <Link
@@ -885,9 +895,9 @@ export default async function AdminDashboardPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <div className="text-base font-bold tracking-[-0.03em] text-slate-950">
+            <div className="text-[15px] font-semibold tracking-[-0.02em] text-slate-950">
               Recent Admin Activity
             </div>
             <Link
