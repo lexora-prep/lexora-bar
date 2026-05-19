@@ -50,11 +50,49 @@ function cleanText(value: unknown, fallback: string) {
   return text || fallback
 }
 
+function getPopupsEnabled() {
+  if (typeof window === "undefined") return true
+
+  const value = window.localStorage.getItem("lexora:admin:notification-popups-enabled")
+  return value !== "false"
+}
+
+function getMutedDmMemberIds() {
+  if (typeof window === "undefined") return new Set<string>()
+
+  const raw = window.localStorage.getItem("lexora:admin:workspace-muted-dm-member-ids")
+
+  if (!raw) return new Set<string>()
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return new Set<string>()
+    return new Set(parsed.map((item) => String(item)).filter(Boolean))
+  } catch {
+    return new Set<string>()
+  }
+}
+
 export default function AdminRealtimeBridge() {
   const clientRef = useRef<Ably.Realtime | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const seenEventIdsRef = useRef<Set<string>>(new Set())
+  const activeDmIdRef = useRef<string | null>(null)
+
   const [toast, setToast] = useState<ToastState | null>(null)
+
+  useEffect(() => {
+    function handleActiveDmChanged(event: Event) {
+      const customEvent = event as CustomEvent<{ activeDmId?: string | null }>
+      activeDmIdRef.current = customEvent.detail?.activeDmId || null
+    }
+
+    window.addEventListener("admin:workspace-active-dm-changed", handleActiveDmChanged)
+
+    return () => {
+      window.removeEventListener("admin:workspace-active-dm-changed", handleActiveDmChanged)
+    }
+  }, [])
 
   useEffect(() => {
     let alive = true
@@ -66,6 +104,18 @@ export default function AdminRealtimeBridge() {
     })
 
     clientRef.current = client
+
+    async function markNotificationRead(notificationId: string) {
+      if (!notificationId) return
+
+      try {
+        await fetch(`/api/admin/notifications/${notificationId}/read`, {
+          method: "POST",
+        })
+      } catch {
+        // Do not break realtime UI because read-sync failed.
+      }
+    }
 
     async function subscribe() {
       try {
@@ -101,6 +151,22 @@ export default function AdminRealtimeBridge() {
             }),
           )
 
+          const isDmEvent = data.type === "team_dm_message"
+          const senderId = data.senderId || ""
+          const notificationId = data.notification?.id || ""
+          const activeDmId = activeDmIdRef.current
+          const isSameOpenDm = isDmEvent && senderId && activeDmId === senderId
+          const mutedDmMemberIds = getMutedDmMemberIds()
+          const isMutedSender = isDmEvent && senderId && mutedDmMemberIds.has(senderId)
+          const popupsEnabled = getPopupsEnabled()
+
+          if (isSameOpenDm) {
+            if (notificationId) {
+              void markNotificationRead(notificationId)
+            }
+            return
+          }
+
           if (data.notification) {
             window.dispatchEvent(
               new CustomEvent("admin:notification-created", {
@@ -109,13 +175,17 @@ export default function AdminRealtimeBridge() {
             )
           }
 
+          if (!popupsEnabled || isMutedSender) {
+            return
+          }
+
           const notification = data.notification
 
           const nextToast: ToastState = {
             id: eventId,
             title:
               cleanText(notification?.title, "") ||
-              (data.type === "team_dm_message" ? "New direct message" : "New notification"),
+              (isDmEvent ? "New direct message" : "New notification"),
             body:
               cleanText(notification?.body, "") ||
               (data.dmMessage
@@ -123,7 +193,7 @@ export default function AdminRealtimeBridge() {
                 : "Something new happened in the admin workspace."),
             href:
               notification?.href ||
-              (data.senderId ? `/admin/workspace?dm=${data.senderId}` : null),
+              (senderId ? `/admin/workspace?dm=${senderId}` : null),
             type: cleanText(notification?.type || data.type, "system_alert"),
           }
 

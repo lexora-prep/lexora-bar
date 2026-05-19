@@ -217,6 +217,15 @@ type AdminRealtimeBrowserEvent = {
   senderId?: string
   senderName?: string
   threadId?: string
+  notification?: {
+    id?: string
+    title?: string
+    body?: string
+    href?: string | null
+    type?: string
+    severity?: string
+    createdAt?: string
+  }
   dmMessage?: {
     id: string
     threadId: string
@@ -551,6 +560,18 @@ export default function AdminWorkspacePage() {
   }, [activePane, channels.length])
 
   useEffect(() => {
+    const activeDmId = activePane.type === "dm" ? activePane.id : null
+
+    window.dispatchEvent(
+      new CustomEvent("admin:workspace-active-dm-changed", {
+        detail: {
+          activeDmId,
+        },
+      }),
+    )
+  }, [activePane])
+
+  useEffect(() => {
     function handleRealtime(event: Event) {
       const customEvent = event as CustomEvent<AdminRealtimeBrowserEvent>
       const data = customEvent.detail
@@ -583,6 +604,16 @@ export default function AdminWorkspacePage() {
           ...prev,
           [data.senderId as string]: 0,
         }))
+
+        const notificationId =
+          typeof data.notification?.id === "string" ? data.notification.id : ""
+
+        if (notificationId) {
+          void fetch(`/api/admin/notifications/${notificationId}/read`, {
+            method: "POST",
+          }).catch(() => null)
+        }
+
         return
       }
 
