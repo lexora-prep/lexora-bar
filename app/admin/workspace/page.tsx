@@ -599,6 +599,9 @@ export default function AdminWorkspacePage() {
   const [selectedNoteRecipientIds, setSelectedNoteRecipientIds] = useState<string[]>([])
   const [noteRecipientSearch, setNoteRecipientSearch] = useState("")
   const [creatingNote, setCreatingNote] = useState(false)
+  const [noteSaveStatus, setNoteSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const noteAutosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const noteLastSavedRef = useRef<{ id: string; title: string; body: string; scope: string; recipientsKey: string } | null>(null)
 
   const [noteComments, setNoteComments] = useState<NoteComment[]>([])
   const [noteCommentText, setNoteCommentText] = useState("")
@@ -670,6 +673,47 @@ export default function AdminWorkspacePage() {
     if (activePane.type !== "dm") return null
     return directMembers.find((dm) => dm.id === activePane.id) || null
   }, [directMembers, activePane])
+
+  useEffect(() => {
+    if (!activeNote || !editingNote) return
+
+    if (noteAutosaveTimerRef.current) {
+      clearTimeout(noteAutosaveTimerRef.current)
+    }
+
+    noteAutosaveTimerRef.current = setTimeout(() => {
+      void saveActiveNoteDraft()
+    }, 850)
+
+    return () => {
+      if (noteAutosaveTimerRef.current) {
+        clearTimeout(noteAutosaveTimerRef.current)
+      }
+    }
+  }, [
+    activeNote?.id,
+    editingNote,
+    noteTitle,
+    noteBody,
+    noteSharedScope,
+    selectedNoteRecipientIds.join(","),
+  ])
+
+  useEffect(() => {
+    if (!activeNote) return
+
+    noteLastSavedRef.current = {
+      id: activeNote.id,
+      title: activeNote.title || "",
+      body: activeNote.body || "",
+      scope: activeNote.shared_scope || "private",
+      recipientsKey: Array.isArray(activeNote.recipient_ids)
+        ? activeNote.recipient_ids.slice().sort().join(",")
+        : "",
+    }
+
+    setNoteSaveStatus("idle")
+  }, [activeNote?.id])
 
   const currentUserDisplayName =
     currentUser?.full_name?.trim() || currentUser?.email?.split("@")[0] || "Admin User"
@@ -1533,8 +1577,10 @@ export default function AdminWorkspacePage() {
         await bootstrap()
       }
 
-      resetNoteForm()
       setNoteModalOpen(false)
+      setNoteRecipientSearch("")
+      setNoteSymbolPickerOpen(false)
+      setForwardingNote(null)
     } catch (err) {
       console.error("CREATE NOTE ERROR:", err)
       setError("Something went wrong while creating the note.")
@@ -1554,28 +1600,61 @@ export default function AdminWorkspacePage() {
     setForwardingNote(null)
   }
 
-  async function updateNote() {
-    if (!activeNote) return
+  async function saveActiveNoteDraft(options?: { closeAfterSave?: boolean }) {
+    if (!activeNote) return false
+
+    const title = noteTitle.trim() || activeNote.title || "Untitled note"
+    const body = noteBody.trim()
+    const scope = activeNote.note_type === "shared" ? noteSharedScope : "private"
+    const recipientIds =
+      activeNote.note_type === "shared" && noteSharedScope === "specific_users"
+        ? selectedNoteRecipientIds
+        : []
+
+    const recipientsKey = recipientIds.slice().sort().join(",")
+
+    const last = noteLastSavedRef.current
+    if (
+      last &&
+      last.id === activeNote.id &&
+      last.title === title &&
+      last.body === body &&
+      last.scope === scope &&
+      last.recipientsKey === recipientsKey
+    ) {
+      return true
+    }
+
     try {
+      setNoteSaveStatus("saving")
       setError("")
+
       const res = await fetch(`/api/admin/workspace/notes/${activeNote.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: noteTitle.trim(),
-          body: noteBody.trim(),
+          title,
+          body,
           visibility: activeNote.note_type === "shared" ? "shared" : "private",
-          sharedScope: activeNote.note_type === "shared" ? noteSharedScope : "private",
-          recipientIds:
-            activeNote.note_type === "shared" && noteSharedScope === "specific_users"
-              ? selectedNoteRecipientIds
-              : [],
+          sharedScope: scope,
+          recipientIds,
         }),
       })
+
       const data = await res.json().catch(() => null)
+
       if (!res.ok || !data?.ok) {
-        setError(data?.error || "Failed to update note.")
-        return
+        setNoteSaveStatus("error")
+        setError(data?.error || "Failed to save note.")
+        return false
+      }
+
+      noteLastSavedRef.current = {
+        id: activeNote.id,
+        title,
+        body,
+        scope,
+        recipientsKey,
       }
 
       setNotes((prev) =>
@@ -1583,23 +1662,34 @@ export default function AdminWorkspacePage() {
           note.id === activeNote.id
             ? {
                 ...note,
-                title: noteTitle.trim(),
-                body: noteBody.trim(),
-                description: noteBody.trim().slice(0, 80),
+                title,
+                body,
+                description: body.slice(0, 80),
                 shared_scope: activeNote.note_type === "shared" ? noteSharedScope : "private",
-                recipient_ids:
-                  activeNote.note_type === "shared" && noteSharedScope === "specific_users"
-                    ? selectedNoteRecipientIds
-                    : [],
+                recipient_ids: recipientIds,
+                updated_at: new Date().toISOString(),
               }
             : note
         )
       )
-      setEditingNote(false)
+
+      setNoteSaveStatus("saved")
+
+      if (options?.closeAfterSave) {
+        setEditingNote(false)
+      }
+
+      return true
     } catch (err) {
-      console.error("UPDATE NOTE ERROR:", err)
-      setError("Something went wrong while updating the note.")
+      console.error("AUTOSAVE NOTE ERROR:", err)
+      setNoteSaveStatus("error")
+      setError("Something went wrong while saving the note.")
+      return false
     }
+  }
+
+  async function updateNote() {
+    await saveActiveNoteDraft({ closeAfterSave: false })
   }
 
   async function withdrawNote() {
@@ -3794,9 +3884,28 @@ export default function AdminWorkspacePage() {
                                 frameless
                               />
                             </div>
-                            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                              <button type="button" className="lexora-ws-pill-btn" onClick={() => void updateNote()}><Edit3 size={13} /> Save</button>
-                              <button type="button" className="lexora-ws-pill-btn" onClick={() => { setEditingNote(false); setNoteTitle(""); setNoteBody(""); setNoteRecipientSearch("") }}><X size={13} /> Cancel</button>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 16 }}>
+                              <div style={{ fontSize: 12, color: noteSaveStatus === "error" ? "#dc2626" : "#94a3b8" }}>
+                                {noteSaveStatus === "saving"
+                                  ? "Saving..."
+                                  : noteSaveStatus === "saved"
+                                    ? "Saved"
+                                    : noteSaveStatus === "error"
+                                      ? "Save failed"
+                                      : "Autosaves while you type"}
+                              </div>
+                              <button
+                                type="button"
+                                className="lexora-ws-pill-btn"
+                                onClick={async () => {
+                                  const ok = await saveActiveNoteDraft({ closeAfterSave: true })
+                                  if (ok) {
+                                    setNoteRecipientSearch("")
+                                  }
+                                }}
+                              >
+                                <Edit3 size={13} /> Done
+                              </button>
                             </div>
                           </>
                         ) : (
@@ -3837,7 +3946,19 @@ export default function AdminWorkspacePage() {
                         )}
 
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
-                          <button type="button" className="lexora-ws-pill-btn" onClick={() => setEditingNote(true)}><Edit3 size={13} /> Edit</button>
+                          <button
+                            type="button"
+                            className="lexora-ws-pill-btn"
+                            onClick={() => {
+                              setNoteTitle(activeNote.title || "")
+                              setNoteBody(activeNote.body || "")
+                              setNoteSharedScope(activeNote.shared_scope === "specific_users" ? "specific_users" : "workspace")
+                              setSelectedNoteRecipientIds(Array.isArray(activeNote.recipient_ids) ? activeNote.recipient_ids : [])
+                              setEditingNote(true)
+                            }}
+                          >
+                            <Edit3 size={13} /> Edit
+                          </button>
                           <button type="button" className="lexora-ws-pill-btn" onClick={() => setNoteReactionPickerOpen((v) => !v)}><Smile size={13} /> React</button>
                           <button type="button" className="lexora-ws-pill-btn" onClick={() => openForwardPickerForNote(activeNote)}><Forward size={13} /> Forward</button>
                           <button type="button" className="lexora-ws-pill-btn" onClick={() => void withdrawNote()}><Trash2 size={13} /> Withdraw</button>
