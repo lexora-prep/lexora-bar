@@ -547,6 +547,10 @@ type WorkspaceTaskItem = {
   priority: "low" | "medium" | "high"
   tag: string
   assigneeInitial: string
+  assigneeName?: string
+  creatorId?: string
+  creatorName?: string
+  creatorInitial?: string
   dueLabel: string
   completedAt?: string
 }
@@ -559,6 +563,9 @@ const INITIAL_WORKSPACE_TASKS: WorkspaceTaskItem[] = [
     priority: "high",
     tag: "bug",
     assigneeInitial: "V",
+    assigneeName: "Vladimir",
+    creatorName: "Vladimir",
+    creatorInitial: "V",
     dueLabel: "Due today",
   },
   {
@@ -568,6 +575,9 @@ const INITIAL_WORKSPACE_TASKS: WorkspaceTaskItem[] = [
     priority: "medium",
     tag: "feature",
     assigneeInitial: "A",
+    assigneeName: "admin 2",
+    creatorName: "Vladimir",
+    creatorInitial: "V",
     dueLabel: "May 22",
   },
   {
@@ -577,6 +587,9 @@ const INITIAL_WORKSPACE_TASKS: WorkspaceTaskItem[] = [
     priority: "medium",
     tag: "content",
     assigneeInitial: "T",
+    assigneeName: "Test Account",
+    creatorName: "Vladimir",
+    creatorInitial: "V",
     dueLabel: "May 25",
   },
   {
@@ -586,6 +599,9 @@ const INITIAL_WORKSPACE_TASKS: WorkspaceTaskItem[] = [
     priority: "low",
     tag: "improvement",
     assigneeInitial: "A",
+    assigneeName: "admin 2",
+    creatorName: "Vladimir",
+    creatorInitial: "V",
     dueLabel: "May 28",
   },
   {
@@ -595,6 +611,9 @@ const INITIAL_WORKSPACE_TASKS: WorkspaceTaskItem[] = [
     priority: "high",
     tag: "critical",
     assigneeInitial: "V",
+    assigneeName: "Vladimir",
+    creatorName: "Vladimir",
+    creatorInitial: "V",
     dueLabel: "Overdue · May 17",
   },
   {
@@ -604,6 +623,9 @@ const INITIAL_WORKSPACE_TASKS: WorkspaceTaskItem[] = [
     priority: "low",
     tag: "done",
     assigneeInitial: "V",
+    assigneeName: "Vladimir",
+    creatorName: "Vladimir",
+    creatorInitial: "V",
     dueLabel: "Done · May 17",
     completedAt: "May 17",
   },
@@ -794,6 +816,10 @@ export default function AdminWorkspacePage() {
       priority: taskPriority,
       tag: taskTag.trim() || "general",
       assigneeInitial: getInitials(currentUserDisplayName).slice(0, 2) || "V",
+      assigneeName: currentUserDisplayName,
+      creatorId: currentUser?.id,
+      creatorName: currentUserDisplayName,
+      creatorInitial: getInitials(currentUserDisplayName).slice(0, 2) || "V",
       dueLabel: taskDueLabel.trim() || "No due date",
     }
 
@@ -968,8 +994,25 @@ export default function AdminWorkspacePage() {
           {task.title}
         </button>
 
-        <span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle(task.assigneeInitial) }}>
+        <span className="lexora-ws-avatar" title={`Assigned to ${task.assigneeName || task.assigneeInitial}`} style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle(task.assigneeInitial) }}>
           {task.assigneeInitial}
+        </span>
+
+        <span
+          title={`Created by ${task.creatorName || "Unknown"}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            color: "#64748b",
+            fontSize: 11.5,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span className="lexora-ws-avatar" style={{ width: 18, height: 18, fontSize: 8, ...avatarStyle(task.creatorInitial || getInitials(task.creatorName || "A")) }}>
+            {task.creatorInitial || getInitials(task.creatorName || "A").slice(0, 2)}
+          </span>
+          Created by {task.creatorName || "Unknown"}
         </span>
 
         <span style={{ color: done ? "#b0b8cc" : task.dueLabel.toLowerCase().includes("overdue") || task.dueLabel.toLowerCase().includes("today") ? "#dc2626" : "#b0b8cc", fontSize: 11.5 }}>
