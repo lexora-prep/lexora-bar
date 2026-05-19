@@ -688,6 +688,10 @@ export default function AdminWorkspacePage() {
   const [taskTag, setTaskTag] = useState("general")
   const [taskDueLabel, setTaskDueLabel] = useState("")
   const [taskPriority, setTaskPriority] = useState<"low" | "medium" | "high">("medium")
+  const [taskStatusFilter, setTaskStatusFilter] = useState<WorkspaceTaskStatus | "all">("all")
+  const [taskMentionPickerOpen, setTaskMentionPickerOpen] = useState(false)
+  const [taskMentionQuery, setTaskMentionQuery] = useState("")
+  const [taskMentionStart, setTaskMentionStart] = useState<number | null>(null)
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [editingTaskTitle, setEditingTaskTitle] = useState("")
   const [editingTaskTag, setEditingTaskTag] = useState("")
@@ -769,6 +773,7 @@ export default function AdminWorkspacePage() {
 
   const channelComposerRef = useRef<HTMLTextAreaElement | null>(null)
   const dmComposerRef = useRef<HTMLTextAreaElement | null>(null)
+  const taskTitleRef = useRef<HTMLInputElement | null>(null)
   const dmMessagesEndRef = useRef<HTMLDivElement | null>(null)
   const dmMessagesByMemberIdRef = useRef<Record<string, DMMessage[]>>({})
   const dmThreadIdByMemberIdRef = useRef<Record<string, string>>({})
@@ -852,6 +857,9 @@ export default function AdminWorkspacePage() {
     setTaskDueLabel("")
     setTaskPriority("medium")
     setTaskComposerOpen(false)
+    setTaskMentionPickerOpen(false)
+    setTaskMentionQuery("")
+    setTaskMentionStart(null)
     setError("")
   }
 
@@ -864,6 +872,30 @@ export default function AdminWorkspacePage() {
             : { ...task, status: "completed", completedAt: "Today", dueLabel: "Done · Today" }
           : task
       )
+    )
+  }
+
+  function moveWorkspaceTask(taskId: string, nextStatus: WorkspaceTaskStatus) {
+    setWorkspaceTasks((prev) =>
+      prev.map((task) => {
+        if (task.id !== taskId) return task
+
+        if (nextStatus === "completed") {
+          return {
+            ...task,
+            status: "completed",
+            completedAt: task.completedAt || "Today",
+            dueLabel: task.dueLabel.startsWith("Done · ") ? task.dueLabel : `Done · ${task.dueLabel || "Today"}`,
+          }
+        }
+
+        return {
+          ...task,
+          status: nextStatus,
+          completedAt: undefined,
+          dueLabel: task.dueLabel.replace(/^Done · /, "") || "No due date",
+        }
+      })
     )
   }
 
@@ -997,6 +1029,27 @@ export default function AdminWorkspacePage() {
           {done ? "✓" : ""}
         </button>
 
+        <select
+          value={task.status}
+          onChange={(event) => moveWorkspaceTask(task.id, event.target.value as WorkspaceTaskStatus)}
+          title="Move task"
+          style={{
+            height: 28,
+            borderRadius: 8,
+            border: "1px solid rgba(15,23,42,0.10)",
+            background: "#ffffff",
+            color: "#475569",
+            fontSize: 11.5,
+            padding: "0 6px",
+            outline: "none",
+            cursor: "pointer",
+          }}
+        >
+          <option value="todo">Todo</option>
+          <option value="in_progress">In progress</option>
+          <option value="completed">Completed</option>
+        </select>
+
         {!done ? <span style={{ width: 8, height: 8, borderRadius: "50%", background: priorityColor }} /> : null}
 
         <button
@@ -1014,7 +1067,7 @@ export default function AdminWorkspacePage() {
             fontSize: 14,
           }}
         >
-          {task.title}
+          {renderMessageContent(task.title, false)}
         </button>
 
         <span className="lexora-ws-avatar" title={`Assigned to ${task.assigneeName || task.assigneeInitial}`} style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle(task.assigneeInitial) }}>
@@ -2617,6 +2670,74 @@ export default function AdminWorkspacePage() {
     return [...groupOptions, ...memberOptions]
   }, [mentionQuery, teamMembers])
 
+  const taskMentionOptions = useMemo(() => {
+    const q = taskMentionQuery.trim().toLowerCase()
+
+    const groupOptions = [
+      { id: "all", label: "all", description: "Mention everyone in the admin workspace", token: "@all" },
+      { id: "team", label: "team", description: "Mention the admin team", token: "@team" },
+    ].filter((option) => !q || option.label.includes(q))
+
+    const memberOptions = teamMembers
+      .filter((member) => {
+        if (!q) return true
+        return (
+          member.name.toLowerCase().includes(q) ||
+          (member.email || "").toLowerCase().includes(q) ||
+          (member.title || "").toLowerCase().includes(q) ||
+          member.role.toLowerCase().includes(q)
+        )
+      })
+      .slice(0, 8)
+      .map((member) => ({
+        id: member.id,
+        label: member.name,
+        description: member.email || member.title || member.role,
+        token: `@[${member.name.replace(/[\$begin:math:display$\$end:math:display$\\]/g, "").trim() || member.email || "Admin"}](admin:${member.id})`,
+      }))
+
+    return [...groupOptions, ...memberOptions]
+  }, [taskMentionQuery, teamMembers])
+
+  function handleTaskTitleChange(nextValue: string, cursorPosition: number | null) {
+    setTaskTitle(nextValue)
+
+    const cursor = typeof cursorPosition === "number" ? cursorPosition : nextValue.length
+    const beforeCursor = nextValue.slice(0, cursor)
+    const match = beforeCursor.match(/(^|\s)@([\p{L}\p{N}._-]*)$/u)
+
+    if (!match) {
+      setTaskMentionPickerOpen(false)
+      setTaskMentionQuery("")
+      setTaskMentionStart(null)
+      return
+    }
+
+    const typed = match[2] || ""
+    setTaskMentionQuery(typed)
+    setTaskMentionStart(cursor - typed.length - 1)
+    setTaskMentionPickerOpen(true)
+  }
+
+  function insertTaskMentionToken(token: string) {
+    const el = taskTitleRef.current
+    const currentValue = taskTitle
+    const cursor = el?.selectionStart ?? currentValue.length
+    const start = taskMentionStart ?? cursor
+
+    const nextValue = `${currentValue.slice(0, start)}${token} ${currentValue.slice(cursor)}`
+    setTaskTitle(nextValue)
+    setTaskMentionPickerOpen(false)
+    setTaskMentionQuery("")
+    setTaskMentionStart(null)
+
+    requestAnimationFrame(() => {
+      const nextCursor = start + token.length + 1
+      el?.focus()
+      el?.setSelectionRange(nextCursor, nextCursor)
+    })
+  }
+
   function getTypingTarget() {
     if (activePane.type === "channel") {
       return {
@@ -4166,7 +4287,17 @@ export default function AdminWorkspacePage() {
                     Tasks — {activePane.type === "channel" ? `#${activeChannel?.name || "general"}` : "Workspace"}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button type="button" className="lexora-ws-pill-btn">☰ Filter</button>
+                    <select
+                      value={taskStatusFilter}
+                      onChange={(event) => setTaskStatusFilter(event.target.value as WorkspaceTaskStatus | "all")}
+                      className="lexora-ws-pill-btn"
+                      style={{ height: 32, outline: "none" }}
+                    >
+                      <option value="all">All tasks</option>
+                      <option value="todo">Todo</option>
+                      <option value="in_progress">In progress</option>
+                      <option value="completed">Completed</option>
+                    </select>
                     <button
                       type="button"
                       onClick={() => setTaskComposerOpen((prev) => !prev)}
@@ -4189,18 +4320,105 @@ export default function AdminWorkspacePage() {
                       marginBottom: 22,
                     }}
                   >
-                    <input
-                      value={taskTitle}
-                      onChange={(event) => setTaskTitle(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault()
-                          createWorkspaceTask()
-                        }
-                      }}
-                      placeholder="Task title"
-                      style={{ ...inputStyle, marginBottom: 10 }}
-                    />
+                    <div style={{ position: "relative", marginBottom: 10 }}>
+                      <input
+                        ref={taskTitleRef}
+                        value={taskTitle}
+                        onChange={(event) => handleTaskTitleChange(event.target.value, event.target.selectionStart)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault()
+                            createWorkspaceTask()
+                          }
+                          if (event.key === "Escape") {
+                            setTaskMentionPickerOpen(false)
+                          }
+                        }}
+                        placeholder="Task title. Type @ to mention an admin."
+                        style={{ ...inputStyle, marginBottom: 0 }}
+                      />
+
+                      {taskMentionPickerOpen && taskMentionOptions.length > 0 ? (
+                        <div
+                          onMouseDown={(event) => event.stopPropagation()}
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            top: 48,
+                            zIndex: 50,
+                            width: 300,
+                            borderRadius: 12,
+                            border: "1px solid rgba(15,23,42,0.08)",
+                            background: "#ffffff",
+                            boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+                            padding: 8,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: 10,
+                              textTransform: "uppercase",
+                              letterSpacing: 0.8,
+                              color: "#94a3b8",
+                              margin: "4px 6px 8px",
+                              fontFamily: '"DM Mono", ui-monospace, monospace',
+                            }}
+                          >
+                            Mention admin
+                          </div>
+
+                          {taskMentionOptions.map((option) => (
+                            <button
+                              key={`task-mention-${option.id}`}
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                insertTaskMentionToken(option.token)
+                              }}
+                              style={{
+                                width: "100%",
+                                border: "none",
+                                background: "#ffffff",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                padding: "8px 9px",
+                                borderRadius: 9,
+                                cursor: "pointer",
+                                textAlign: "left",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: "50%",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  background: option.id === "all" || option.id === "team" ? "rgba(99,102,241,0.12)" : "rgba(15,23,42,0.06)",
+                                  color: option.id === "all" || option.id === "team" ? "#4f46e5" : "#475569",
+                                  fontSize: 12,
+                                  fontWeight: 800,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {option.id === "all" ? "@@" : option.id === "team" ? "@T" : getInitials(option.label)}
+                              </span>
+                              <span style={{ minWidth: 0 }}>
+                                <span style={{ display: "block", fontSize: 13, color: "#111827", fontWeight: 700 }}>
+                                  {option.id === "all" || option.id === "team" ? option.token : `@${option.label}`}
+                                </span>
+                                <span style={{ display: "block", fontSize: 11.5, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {option.description}
+                                </span>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 8 }}>
                       <input
@@ -4243,7 +4461,9 @@ export default function AdminWorkspacePage() {
                   </div>
                 ) : null}
 
-                {(["in_progress", "todo", "completed"] as WorkspaceTaskStatus[]).map((status) => {
+                {(["in_progress", "todo", "completed"] as WorkspaceTaskStatus[])
+                  .filter((status) => taskStatusFilter === "all" || taskStatusFilter === status)
+                  .map((status) => {
                   const sectionTasks = workspaceTasks.filter((task) => task.status === status)
                   const title =
                     status === "in_progress"
