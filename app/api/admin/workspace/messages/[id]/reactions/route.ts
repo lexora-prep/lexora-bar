@@ -46,26 +46,46 @@ export async function POST(
       where: {
         message_id: messageId,
         user_id: auth.actor.id,
-        emoji,
       },
-      select: { id: true },
+      select: {
+        id: true,
+        emoji: true,
+      },
     })
 
-    if (existing) {
+    if (existing && existing.emoji === emoji) {
       await prisma.workspace_message_reactions.delete({
         where: { id: existing.id },
       })
-    } else {
-      await prisma.workspace_message_reactions.create({
-        data: {
-          message_id: messageId,
-          user_id: auth.actor.id,
-          emoji,
-        },
+
+      return NextResponse.json({
+        ok: true,
+        reaction: null,
       })
     }
 
-    return NextResponse.json({ ok: true })
+    await prisma.workspace_message_reactions.deleteMany({
+      where: {
+        message_id: messageId,
+        user_id: auth.actor.id,
+      },
+    })
+
+    const created = await prisma.workspace_message_reactions.create({
+      data: {
+        message_id: messageId,
+        user_id: auth.actor.id,
+        emoji,
+      },
+      select: {
+        emoji: true,
+      },
+    })
+
+    return NextResponse.json({
+      ok: true,
+      reaction: created,
+    })
   } catch (error) {
     console.error("POST WORKSPACE MESSAGE REACTION ERROR:", error)
     return NextResponse.json(

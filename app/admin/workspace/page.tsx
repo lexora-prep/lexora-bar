@@ -43,6 +43,7 @@ type WorkspaceChannel = {
   icon_symbol?: string | null
   color_hex?: string | null
   created_by?: string | null
+  member_ids?: string[]
 }
 
 type WorkspaceTeam = {
@@ -571,6 +572,9 @@ export default function AdminWorkspacePage() {
   const [mutedDmMemberIds, setMutedDmMemberIds] = useState<string[]>([])
 
   const [composerEmojiOpen, setComposerEmojiOpen] = useState(false)
+  const [mentionPickerOpen, setMentionPickerOpen] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState("")
+  const [mentionStart, setMentionStart] = useState<number | null>(null)
 
   const [editingChannelMessage, setEditingChannelMessage] = useState<WorkspaceMessage | null>(null)
   const [editingDmMessage, setEditingDmMessage] = useState<DMMessage | null>(null)
@@ -734,6 +738,7 @@ export default function AdminWorkspacePage() {
       setComposerEmojiOpen(false)
       setEmojiPickerFor(null)
       setNoteReactionPickerOpen(false)
+      setMentionPickerOpen(false)
     }
 
     document.addEventListener("mousedown", closeFloatingWorkspaceMenus)
@@ -1226,7 +1231,7 @@ export default function AdminWorkspacePage() {
     setChannelColor(normalizeColor(channel.color_hex))
     setChannelIsPrivate(Boolean(channel.is_private))
     setChannelIsHidden(Boolean(channel.is_hidden))
-    setChannelVisibleUserIds([])
+    setChannelVisibleUserIds(Array.isArray(channel.member_ids) ? channel.member_ids : [])
     setChannelEditModalOpen(true)
   }
 
@@ -1255,7 +1260,7 @@ export default function AdminWorkspacePage() {
           colorHex: channelColor,
           isPrivate: channelIsPrivate,
           isHidden: channelIsHidden,
-          visibleUserIds: channelIsHidden ? channelVisibleUserIds : [],
+          visibleUserIds: channelIsHidden || channelIsPrivate ? channelVisibleUserIds : [],
         }),
       })
 
@@ -1307,7 +1312,7 @@ export default function AdminWorkspacePage() {
           colorHex: channelColor,
           isPrivate: channelIsPrivate,
           isHidden: channelIsHidden,
-          visibleUserIds: channelIsHidden ? channelVisibleUserIds : [],
+          visibleUserIds: channelIsHidden || channelIsPrivate ? channelVisibleUserIds : [],
         }),
       })
 
@@ -1328,6 +1333,7 @@ export default function AdminWorkspacePage() {
                 color_hex: channelColor,
                 is_private: channelIsPrivate,
                 is_hidden: channelIsHidden,
+                member_ids: channelIsHidden || channelIsPrivate ? channelVisibleUserIds : channel.member_ids,
               }
             : channel
         )
@@ -1552,6 +1558,65 @@ export default function AdminWorkspacePage() {
   async function react(messageId: string, emoji: string) {
     if (activePane.type !== "channel") return
 
+    const previousMessages = messages
+
+    setMessages((prev) =>
+      prev.map((message) => {
+        if (message.id !== messageId || message.is_deleted) return message
+
+        const hadSameEmoji = message.my_emojis.includes(emoji)
+        const previousMine = new Set(message.my_emojis)
+
+        let nextReactions = message.reactions
+          .map((reaction) => {
+            if (!previousMine.has(reaction.emoji)) return reaction
+            return {
+              ...reaction,
+              count: Math.max(0, reaction.count - 1),
+            }
+          })
+          .filter((reaction) => reaction.count > 0)
+
+        let nextMyEmojis: string[] = []
+
+        if (!hadSameEmoji) {
+          const existingIndex = nextReactions.findIndex((reaction) => reaction.emoji === emoji)
+          if (existingIndex >= 0) {
+            nextReactions = nextReactions.map((reaction, index) =>
+              index === existingIndex
+                ? { ...reaction, count: reaction.count + 1 }
+                : reaction
+            )
+          } else {
+            nextReactions = [
+              ...nextReactions,
+              {
+                emoji,
+                count: 1,
+                users: currentUser
+                  ? [
+                      {
+                        user_id: currentUser.id,
+                        author_name: currentUserDisplayName,
+                        author_role: currentUser.admin_role || currentUser.role || "admin",
+                      },
+                    ]
+                  : [],
+              },
+            ]
+          }
+
+          nextMyEmojis = [emoji]
+        }
+
+        return {
+          ...message,
+          my_emojis: nextMyEmojis,
+          reactions: nextReactions,
+        }
+      })
+    )
+
     try {
       const res = await fetch(`/api/admin/workspace/messages/${messageId}/reactions`, {
         method: "POST",
@@ -1564,14 +1629,15 @@ export default function AdminWorkspacePage() {
       const data = await res.json().catch(() => null)
 
       if (!res.ok || !data?.ok) {
+        setMessages(previousMessages)
         setError(data?.error || "Failed to update reaction.")
         return
       }
 
       setEmojiPickerFor(null)
-      await loadMessages(activePane.slug)
     } catch (err) {
       console.error("WORKSPACE REACT ERROR:", err)
+      setMessages(previousMessages)
       setError("Something went wrong while reacting.")
     }
   }
@@ -1590,6 +1656,7 @@ export default function AdminWorkspacePage() {
         return
       }
       setNoteReactionPickerOpen(false)
+      setMentionPickerOpen(false)
       await loadNoteDetail(activeNote.id)
     } catch (err) {
       console.error("NOTE REACTION ERROR:", err)
@@ -1918,6 +1985,75 @@ export default function AdminWorkspacePage() {
   const canCreateChannels = settings.allow_channel_creation !== false
   const canCreateNotes = settings.allow_note_creation !== false
 
+  const mentionOptions = useMemo(() => {
+    const q = mentionQuery.trim().toLowerCase()
+
+    const groupOptions = [
+      { id: "all", label: "all", description: "Mention everyone in the admin workspace", token: "@all" },
+      { id: "team", label: "team", description: "Mention the admin team", token: "@team" },
+    ].filter((option) => !q || option.label.includes(q))
+
+    const memberOptions = teamMembers
+      .filter((member) => {
+        if (!q) return true
+        return (
+          member.name.toLowerCase().includes(q) ||
+          (member.email || "").toLowerCase().includes(q) ||
+          (member.title || "").toLowerCase().includes(q) ||
+          member.role.toLowerCase().includes(q)
+        )
+      })
+      .slice(0, 8)
+      .map((member) => ({
+        id: member.id,
+        label: member.name,
+        description: member.email || member.title || member.role,
+        token: `@${member.name.replace(/\s+/g, "")}`,
+      }))
+
+    return [...groupOptions, ...memberOptions]
+  }, [mentionQuery, teamMembers])
+
+  function handleComposerChange(nextValue: string, cursorPosition: number | null) {
+    updateActiveComposerValue(nextValue)
+
+    const cursor = typeof cursorPosition === "number" ? cursorPosition : nextValue.length
+    const beforeCursor = nextValue.slice(0, cursor)
+    const match = beforeCursor.match(/(^|\s)@([\p{L}\p{N}._-]*)$/u)
+
+    if (!match) {
+      setMentionPickerOpen(false)
+      setMentionQuery("")
+      setMentionStart(null)
+      return
+    }
+
+    const typed = match[2] || ""
+    setMentionQuery(typed)
+    setMentionStart(cursor - typed.length - 1)
+    setMentionPickerOpen(true)
+  }
+
+  function insertMentionToken(token: string) {
+    const ref = getActiveComposerRef()
+    const el = ref.current
+    const currentValue = activePane.type === "dm" ? dmMessageText : messageText
+    const cursor = el?.selectionStart ?? currentValue.length
+    const start = mentionStart ?? cursor
+
+    const nextValue = `${currentValue.slice(0, start)}${token} ${currentValue.slice(cursor)}`
+    updateActiveComposerValue(nextValue)
+    setMentionPickerOpen(false)
+    setMentionQuery("")
+    setMentionStart(null)
+
+    requestAnimationFrame(() => {
+      const nextCursor = start + token.length + 1
+      el?.focus()
+      el?.setSelectionRange(nextCursor, nextCursor)
+    })
+  }
+
   function renderSharedComposer(kind: "channel" | "dm") {
     const isDm = kind === "dm"
     const value = isDm ? dmMessageText : messageText
@@ -2063,10 +2199,94 @@ export default function AdminWorkspacePage() {
             </div>
           ) : null}
 
+          {mentionPickerOpen && mentionOptions.length > 0 ? (
+            <div
+              onMouseDown={(event) => event.stopPropagation()}
+              style={{
+                position: "absolute",
+                left: 12,
+                bottom: 116,
+                zIndex: 35,
+                width: 280,
+                borderRadius: 12,
+                border: "1px solid rgba(15,23,42,0.08)",
+                background: "#ffffff",
+                boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+                padding: 8,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.8,
+                  color: "#94a3b8",
+                  margin: "4px 6px 8px",
+                  fontFamily: '"DM Mono", ui-monospace, monospace',
+                }}
+              >
+                Mention
+              </div>
+
+              {mentionOptions.map((option) => (
+                <button
+                  key={`mention-${option.id}`}
+                  type="button"
+                  onMouseDown={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    insertMentionToken(option.token)
+                  }}
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    background: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 9px",
+                    borderRadius: 9,
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "50%",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: option.id === "all" || option.id === "team" ? "rgba(99,102,241,0.12)" : "rgba(15,23,42,0.06)",
+                      color: option.id === "all" || option.id === "team" ? "#4f46e5" : "#475569",
+                      fontSize: 12,
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {option.id === "all" ? "@@" : option.id === "team" ? "@T" : getInitials(option.label)}
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 13, color: "#111827", fontWeight: 700 }}>
+                      {option.token}
+                    </span>
+                    <span style={{ display: "block", fontSize: 11.5, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {option.description}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
           <textarea
             ref={ref}
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              setValue(e.target.value)
+              handleComposerChange(e.target.value, e.target.selectionStart)
+            }}
             onKeyDown={isDm ? handleDMComposerKey : handleComposerKey}
             placeholder={composerPlaceholder()}
             rows={3}
@@ -3662,9 +3882,9 @@ export default function AdminWorkspacePage() {
                 </label>
               </div>
 
-              {channelIsHidden ? (
+              {(channelIsHidden || channelIsPrivate) ? (
                 <div style={{ marginBottom: 18 }}>
-                  <div style={labelStyle}>Who can see this hidden channel</div>
+                  <div style={labelStyle}>Channel members</div>
                   <div style={recipientPanelStyle}>
                     {teamMembers.map((member) => {
                       const checked = channelVisibleUserIds.includes(member.id)
@@ -3810,9 +4030,9 @@ export default function AdminWorkspacePage() {
                 </label>
               </div>
 
-              {channelIsHidden ? (
+              {(channelIsHidden || channelIsPrivate) ? (
                 <div style={{ marginBottom: 18 }}>
-                  <div style={labelStyle}>Visible users</div>
+                  <div style={labelStyle}>Channel members</div>
                   <div style={recipientPanelStyle}>
                     {teamMembers.map((member) => {
                       const checked = channelVisibleUserIds.includes(member.id)

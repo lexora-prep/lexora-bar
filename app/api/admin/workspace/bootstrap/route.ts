@@ -52,6 +52,11 @@ export async function GET() {
         icon_symbol: true,
         color_hex: true,
         created_by: true,
+        members: {
+          select: {
+            user_id: true,
+          },
+        },
       },
     })
 
@@ -251,7 +256,20 @@ export async function GET() {
     return NextResponse.json({
       ok: true,
       settings,
-      channels,
+      channels: channels.map((channel) => ({
+        id: channel.id,
+        slug: channel.slug,
+        name: channel.name,
+        description: channel.description,
+        team_id: channel.team_id,
+        is_private: channel.is_private,
+        is_default: channel.is_default,
+        is_hidden: channel.is_hidden,
+        icon_symbol: channel.icon_symbol,
+        color_hex: channel.color_hex,
+        created_by: channel.created_by,
+        member_ids: channel.members.map((member) => member.user_id),
+      })),
       teams: [
         {
           id: team.id,
