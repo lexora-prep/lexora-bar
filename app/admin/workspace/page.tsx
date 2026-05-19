@@ -277,6 +277,29 @@ const EMOJI_SET = [
   "🙌",
 ]
 
+const CHANNEL_SYMBOLS = [
+  "#",
+  "📢",
+  "💬",
+  "🛠️",
+  "🎯",
+  "📌",
+  "📝",
+  "⚖️",
+  "🚀",
+  "🔥",
+  "✅",
+  "👀",
+  "💡",
+  "🔒",
+  "📚",
+  "🧠",
+  "💳",
+  "🧾",
+  "🆘",
+  "⚠️",
+]
+
 const PROFILE_THEMES = ["sunset", "midnight", "violet", "emerald", "clean"]
 
 function getInitials(name: string) {
@@ -1963,7 +1986,9 @@ export default function AdminWorkspacePage() {
                   <button
                     key={`composer-${emoji}`}
                     type="button"
-                    onClick={() => {
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
                       insertText(emoji)
                       setComposerEmojiOpen(false)
                     }}
@@ -2570,7 +2595,34 @@ export default function AdminWorkspacePage() {
                   {channelsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   <span className="lexora-ws-section-text">Channels</span>
                 </span>
-                {canCreateChannels ? <Plus size={12} /> : null}
+                {canCreateChannels ? (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title="Create channel"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      openCreateChannelModal()
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.stopPropagation()
+                        openCreateChannelModal()
+                      }
+                    }}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 5,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "rgba(255,255,255,0.36)",
+                    }}
+                  >
+                    <Plus size={12} />
+                  </span>
+                ) : null}
               </button>
 
               {!channelsCollapsed ? (
@@ -2641,7 +2693,36 @@ export default function AdminWorkspacePage() {
                   {notesCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   <span className="lexora-ws-section-text">Notes</span>
                 </span>
-                {canCreateNotes ? <Plus size={12} /> : null}
+                {canCreateNotes ? (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title="Create note"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      resetNoteForm()
+                      setNoteModalOpen(true)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.stopPropagation()
+                        resetNoteForm()
+                        setNoteModalOpen(true)
+                      }
+                    }}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 5,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "rgba(255,255,255,0.36)",
+                    }}
+                  >
+                    <Plus size={12} />
+                  </span>
+                ) : null}
               </button>
 
               {!notesCollapsed ? (
@@ -2979,36 +3060,75 @@ export default function AdminWorkspacePage() {
                               })}
 
                               {!message.is_deleted ? (
-                                <button type="button" className="lexora-ws-pill-btn" onClick={() => { setReplyingTo(message); setForwardingMessage(null); setForwardingNote(null) }}>
-                                  <CornerDownRight size={13} /> Reply
+                                <button
+                                  type="button"
+                                  title="Reply"
+                                  style={messageActionButtonStyle}
+                                  onClick={() => { setReplyingTo(message); setForwardingMessage(null); setForwardingNote(null) }}
+                                >
+                                  <CornerDownRight size={14} />
                                 </button>
                               ) : null}
                               {!message.is_deleted ? (
-                                <button type="button" className="lexora-ws-pill-btn" onClick={() => openForwardPickerForMessage(message)}>
-                                  <Forward size={13} /> Forward
+                                <button
+                                  type="button"
+                                  title="Forward"
+                                  style={messageActionButtonStyle}
+                                  onClick={() => openForwardPickerForMessage(message)}
+                                >
+                                  <Forward size={14} />
                                 </button>
                               ) : null}
                               {!message.is_deleted && canEditChannelMessage ? (
-                                <button type="button" className="lexora-ws-pill-btn" onClick={() => openChannelMessageEdit(message)}>
-                                  <Edit3 size={13} /> Edit
+                                <button
+                                  type="button"
+                                  title="Edit"
+                                  style={messageActionButtonStyle}
+                                  onClick={() => openChannelMessageEdit(message)}
+                                >
+                                  <Edit3 size={14} />
                                 </button>
                               ) : null}
                               {!message.is_deleted && canDeleteChannelMessage ? (
-                                <button type="button" className="lexora-ws-pill-btn" onClick={() => void deleteMessage(message.id)}>
-                                  <Trash2 size={13} /> Delete
+                                <button
+                                  type="button"
+                                  title="Delete"
+                                  style={{ ...messageActionButtonStyle, color: "#dc2626" }}
+                                  onClick={() => void deleteMessage(message.id)}
+                                >
+                                  <Trash2 size={14} />
                                 </button>
                               ) : null}
                               {!message.is_deleted ? (
                                 <div style={{ position: "relative" }}>
-                                  <button type="button" className="lexora-ws-pill-btn" onClick={() => setEmojiPickerFor((prev) => (prev === message.id ? null : message.id))}>
-                                    <Smile size={13} /> React
+                                  <button
+                                    type="button"
+                                    title="React"
+                                    style={messageActionButtonStyle}
+                                    onMouseDown={(event) => {
+                                      event.stopPropagation()
+                                    }}
+                                    onClick={() => setEmojiPickerFor((prev) => (prev === message.id ? null : message.id))}
+                                  >
+                                    <Smile size={14} />
                                   </button>
                                   {emojiPickerFor === message.id ? (
                                     <div onMouseDown={(event) => event.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 20, width: 248, borderRadius: 12, border: "1px solid rgba(15,23,42,0.08)", background: "#ffffff", boxShadow: "0 16px 40px rgba(15,23,42,0.10)", padding: 12 }}>
                                       <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, color: "#94a3b8", marginBottom: 8 }}>Reactions</div>
                                       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
                                         {EMOJI_SET.map((emoji) => (
-                                          <button key={`${message.id}-${emoji}`} type="button" onClick={() => void react(message.id, emoji)} style={emojiOptionStyle}>{emoji}</button>
+                                          <button
+                                            key={`${message.id}-${emoji}`}
+                                            type="button"
+                                            onMouseDown={(event) => {
+                                              event.preventDefault()
+                                              event.stopPropagation()
+                                              void react(message.id, emoji)
+                                            }}
+                                            style={emojiOptionStyle}
+                                          >
+                                            {emoji}
+                                          </button>
                                         ))}
                                       </div>
                                     </div>
@@ -3162,7 +3282,18 @@ export default function AdminWorkspacePage() {
                         {noteReactionPickerOpen ? (
                           <div style={notePickerStyle}>
                             {EMOJI_SET.map((emoji) => (
-                              <button key={emoji} type="button" onClick={() => void reactToNote(emoji)} style={emojiOptionStyle}>{emoji}</button>
+                              <button
+                                key={emoji}
+                                type="button"
+                                onMouseDown={(event) => {
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                  void reactToNote(emoji)
+                                }}
+                                style={emojiOptionStyle}
+                              >
+                                {emoji}
+                              </button>
                             ))}
                           </div>
                         ) : null}
@@ -3389,6 +3520,52 @@ export default function AdminWorkspacePage() {
                       padding: 4,
                     }}
                   />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <div style={labelStyle}>Pick symbol</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 6 }}>
+                  {CHANNEL_SYMBOLS.map((symbol) => (
+                    <button
+                      key={`edit-channel-symbol-${symbol}`}
+                      type="button"
+                      onClick={() => setChannelSymbol(symbol)}
+                      style={{
+                        height: 34,
+                        borderRadius: 8,
+                        border: channelSymbol === symbol ? "1px solid rgba(108,92,231,0.55)" : "1px solid rgba(15,23,42,0.08)",
+                        background: channelSymbol === symbol ? "rgba(108,92,231,0.10)" : "#ffffff",
+                        cursor: "pointer",
+                        fontSize: 16,
+                      }}
+                    >
+                      {symbol}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <div style={labelStyle}>Pick symbol</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 6 }}>
+                  {CHANNEL_SYMBOLS.map((symbol) => (
+                    <button
+                      key={`create-channel-symbol-${symbol}`}
+                      type="button"
+                      onClick={() => setChannelSymbol(symbol)}
+                      style={{
+                        height: 34,
+                        borderRadius: 8,
+                        border: channelSymbol === symbol ? "1px solid rgba(108,92,231,0.55)" : "1px solid rgba(15,23,42,0.08)",
+                        background: channelSymbol === symbol ? "rgba(108,92,231,0.10)" : "#ffffff",
+                        cursor: "pointer",
+                        fontSize: 16,
+                      }}
+                    >
+                      {symbol}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -3952,27 +4129,62 @@ export default function AdminWorkspacePage() {
 
             <div style={{ padding: 18 }}>
               <div style={{ marginBottom: 14 }}>
-                <div style={labelStyle}>Email</div>
-                <input
-                  value={inviteEmail}
-                  onChange={(event) => setInviteEmail(event.target.value)}
-                  placeholder="member@example.com"
-                  style={inputStyle}
-                />
+                <div style={labelStyle}>Approved admin users</div>
+                <div style={recipientPanelStyle}>
+                  {teamMembers.length === 0 ? (
+                    <div style={{ padding: "8px 10px", fontSize: 12, color: "#94a3b8" }}>
+                      No approved admin users found.
+                    </div>
+                  ) : (
+                    teamMembers.map((member) => (
+                      <button
+                        key={`invite-existing-admin-${member.id}`}
+                        type="button"
+                        onClick={() => {
+                          setInviteMemberOpen(false)
+                          setActivePane({ type: "dm", id: member.id })
+                          setWorkspaceView("messages")
+                        }}
+                        style={{
+                          width: "100%",
+                          border: "none",
+                          background: "#ffffff",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "8px 10px",
+                          borderRadius: 10,
+                          cursor: "pointer",
+                          textAlign: "left",
+                        }}
+                      >
+                        <span style={recipientAvatarStyle(member.name)}>{getInitials(member.name)}</span>
+                        <span style={{ minWidth: 0 }}>
+                          <span style={{ display: "block", fontSize: 13, color: "#111827", fontWeight: 600 }}>
+                            {member.name}
+                          </span>
+                          <span style={{ display: "block", fontSize: 12, color: "#64748b" }}>
+                            {member.email || member.title || member.role}
+                          </span>
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
 
               <div
                 style={{
                   borderRadius: 10,
-                  background: "rgba(217,119,6,0.08)",
-                  color: "#92400e",
+                  background: "rgba(37,99,235,0.08)",
+                  color: "#1d4ed8",
                   padding: "10px 12px",
                   fontSize: 12.5,
                   lineHeight: 1.5,
                   marginBottom: 14,
                 }}
               >
-                Invite UI is ready. Persistent invitations need a backend route, because the current workspace API has no invite endpoint.
+                Workspace members are pulled from approved admin users. Pick a user to open a direct workspace conversation.
               </div>
 
               <div style={{ display: "flex", gap: 10 }}>
@@ -3981,13 +4193,10 @@ export default function AdminWorkspacePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setError("Invite member backend route is not implemented yet.")
-                    setInviteMemberOpen(false)
-                  }}
+                  onClick={() => setInviteMemberOpen(false)}
                   style={primaryActionStyle}
                 >
-                  Continue
+                  Done
                 </button>
               </div>
             </div>
@@ -4167,6 +4376,19 @@ export default function AdminWorkspacePage() {
       ) : null}
     </>
   )
+}
+
+const messageActionButtonStyle: React.CSSProperties = {
+  width: 30,
+  height: 30,
+  borderRadius: 8,
+  border: "1px solid rgba(15,23,42,0.08)",
+  background: "#ffffff",
+  color: "#64748b",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
 }
 
 function ProfileLine({
