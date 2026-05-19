@@ -14,19 +14,27 @@ type RealtimeNotificationPayload = {
   createdAt?: string
 }
 
+type RealtimeDmMessage = {
+  id: string
+  threadId: string
+  authorId: string
+  author: string
+  role: string
+  content: string
+  createdAt: string
+  editedAt: string | null
+  readBy: string[]
+  isDeleted: boolean
+}
+
 type AdminRealtimeEvent = {
   type: string
   recipientId: string
+  senderId?: string
+  senderName?: string
+  threadId?: string
   notification?: RealtimeNotificationPayload
-  dmMessage?: {
-    id: string
-    threadId: string
-    authorId: string
-    author: string
-    role: string
-    content: string
-    createdAt: string
-  }
+  dmMessage?: RealtimeDmMessage
 }
 
 type ToastState = {
@@ -45,6 +53,7 @@ function cleanText(value: unknown, fallback: string) {
 export default function AdminRealtimeBridge() {
   const clientRef = useRef<Ably.Realtime | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const seenEventIdsRef = useRef<Set<string>>(new Set())
   const [toast, setToast] = useState<ToastState | null>(null)
 
   useEffect(() => {
@@ -71,13 +80,39 @@ export default function AdminRealtimeBridge() {
           const data = message.data as AdminRealtimeEvent | null
           if (!data) return
 
+          const eventId =
+            cleanText(data.dmMessage?.id, "") ||
+            cleanText(data.notification?.id, "") ||
+            cleanText(message.id, "") ||
+            `${message.timestamp || Date.now()}`
+
+          if (seenEventIdsRef.current.has(eventId)) return
+
+          seenEventIdsRef.current.add(eventId)
+
+          if (seenEventIdsRef.current.size > 100) {
+            const ids = Array.from(seenEventIdsRef.current)
+            seenEventIdsRef.current = new Set(ids.slice(-50))
+          }
+
+          window.dispatchEvent(
+            new CustomEvent("admin:realtime", {
+              detail: data,
+            }),
+          )
+
+          if (data.notification) {
+            window.dispatchEvent(
+              new CustomEvent("admin:notification-created", {
+                detail: data.notification,
+              }),
+            )
+          }
+
           const notification = data.notification
 
           const nextToast: ToastState = {
-            id:
-              cleanText(notification?.id, "") ||
-              cleanText(data.dmMessage?.id, "") ||
-              `${Date.now()}`,
+            id: eventId,
             title:
               cleanText(notification?.title, "") ||
               (data.type === "team_dm_message" ? "New direct message" : "New notification"),
@@ -88,25 +123,11 @@ export default function AdminRealtimeBridge() {
                 : "Something new happened in the admin workspace."),
             href:
               notification?.href ||
-              (data.dmMessage?.threadId
-                ? `/admin/workspace?dm=${data.dmMessage.threadId}`
-                : null),
+              (data.senderId ? `/admin/workspace?dm=${data.senderId}` : null),
             type: cleanText(notification?.type || data.type, "system_alert"),
           }
 
           setToast(nextToast)
-
-          window.dispatchEvent(
-            new CustomEvent("admin:realtime", {
-              detail: data,
-            }),
-          )
-
-          window.dispatchEvent(
-            new CustomEvent("admin:notification-created", {
-              detail: notification || nextToast,
-            }),
-          )
 
           if (toastTimerRef.current) {
             clearTimeout(toastTimerRef.current)
@@ -153,7 +174,7 @@ export default function AdminRealtimeBridge() {
         className="group flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-2xl shadow-slate-900/15 transition hover:-translate-y-0.5 hover:shadow-slate-900/20"
       >
         <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          {toast.type === "team_dm_message" || toast.type === "team_message" ? (
+          {toast.type === "team_dm_message" || toast.type === "workspace_dm" ? (
             <MessageCircle size={17} />
           ) : (
             <Bell size={17} />

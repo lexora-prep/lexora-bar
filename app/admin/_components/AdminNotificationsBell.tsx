@@ -111,24 +111,8 @@ export default function AdminNotificationsBell() {
           .map((item) => item.id),
       )
 
-      if (initializedRef.current) {
-        const newUnread = nextNotifications.find(
-          (item) => !item.readAt && !knownUnreadIdsRef.current.has(item.id),
-        )
-
-        if (newUnread) {
-          setToast(newUnread)
-
-          if (toastTimerRef.current) {
-            clearTimeout(toastTimerRef.current)
-          }
-
-          toastTimerRef.current = setTimeout(() => {
-            setToast(null)
-          }, 5500)
-        }
-      }
-
+      // Realtime popups are handled by AdminRealtimeBridge.
+      // This bell only maintains the dropdown list and unread badge.
       knownUnreadIdsRef.current = nextUnreadIds
       initializedRef.current = true
 

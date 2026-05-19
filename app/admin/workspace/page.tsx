@@ -211,6 +211,26 @@ type DMMessagesResponse = {
   error?: string
 }
 
+type AdminRealtimeBrowserEvent = {
+  type: string
+  recipientId?: string
+  senderId?: string
+  senderName?: string
+  threadId?: string
+  dmMessage?: {
+    id: string
+    threadId: string
+    authorId: string
+    author: string
+    role: string
+    content: string
+    createdAt: string
+    editedAt: string | null
+    readBy: string[]
+    isDeleted: boolean
+  }
+}
+
 type ActivePane =
   | { type: "channel"; slug: string }
   | { type: "note"; id: string }
@@ -438,6 +458,7 @@ export default function AdminWorkspacePage() {
   const [dmLoading, setDmLoading] = useState(false)
   const [dmPosting, setDmPosting] = useState(false)
   const [dmDeletingId, setDmDeletingId] = useState<string | null>(null)
+  const [dmUnreadByMemberId, setDmUnreadByMemberId] = useState<Record<string, number>>({})
 
   const [composerEmojiOpen, setComposerEmojiOpen] = useState(false)
 
@@ -453,6 +474,7 @@ export default function AdminWorkspacePage() {
 
   const channelComposerRef = useRef<HTMLTextAreaElement | null>(null)
   const dmComposerRef = useRef<HTMLTextAreaElement | null>(null)
+  const dmMessagesEndRef = useRef<HTMLDivElement | null>(null)
 
   const activeChannel = useMemo(() => {
     if (activePane.type !== "channel") return null
@@ -527,6 +549,63 @@ export default function AdminWorkspacePage() {
       void loadOrCreateDMThread(activePane.id)
     }
   }, [activePane, channels.length])
+
+  useEffect(() => {
+    function handleRealtime(event: Event) {
+      const customEvent = event as CustomEvent<AdminRealtimeBrowserEvent>
+      const data = customEvent.detail
+
+      if (!data || data.type !== "team_dm_message" || !data.dmMessage || !data.senderId) {
+        return
+      }
+
+      const incoming: DMMessage = {
+        id: data.dmMessage.id,
+        author: data.dmMessage.author,
+        author_id: data.dmMessage.authorId,
+        role: data.dmMessage.role,
+        content: data.dmMessage.content,
+        created_at: data.dmMessage.createdAt,
+        edited_at: data.dmMessage.editedAt,
+        read_by: data.dmMessage.readBy,
+        is_deleted: data.dmMessage.isDeleted,
+      }
+
+      const isOpenThread = activePane.type === "dm" && activePane.id === data.senderId
+
+      if (isOpenThread) {
+        setDmThreadId(data.threadId || data.dmMessage.threadId)
+        setDmMessages((prev) => {
+          if (prev.some((item) => item.id === incoming.id)) return prev
+          return [...prev, incoming]
+        })
+        setDmUnreadByMemberId((prev) => ({
+          ...prev,
+          [data.senderId as string]: 0,
+        }))
+        return
+      }
+
+      setDmUnreadByMemberId((prev) => ({
+        ...prev,
+        [data.senderId as string]: (prev[data.senderId as string] || 0) + 1,
+      }))
+    }
+
+    window.addEventListener("admin:realtime", handleRealtime)
+    return () => window.removeEventListener("admin:realtime", handleRealtime)
+  }, [activePane])
+
+  useEffect(() => {
+    if (activePane.type !== "dm") return
+
+    requestAnimationFrame(() => {
+      dmMessagesEndRef.current?.scrollIntoView({
+        block: "end",
+        behavior: "smooth",
+      })
+    })
+  }, [activePane, dmMessages.length])
 
   async function bootstrap() {
     try {
@@ -708,6 +787,8 @@ export default function AdminWorkspacePage() {
     try {
       setDmPosting(true)
       setError("")
+      setDmMessageText("")
+      setComposerEmojiOpen(false)
 
       const res = await fetch("/api/admin/workspace/dms", {
         method: "POST",
@@ -722,27 +803,24 @@ export default function AdminWorkspacePage() {
 
       if (!res.ok || !data?.ok || !data?.threadId) {
         setError(data?.error || "Failed to send direct message.")
+        setDmMessageText(message)
         return
       }
 
-      setDmMessageText("")
       setDmThreadId(String(data.threadId))
-      setComposerEmojiOpen(false)
 
-      const threadRes = await fetch(`/api/admin/workspace/dms/${String(data.threadId)}`, {
-        cache: "no-store",
-      })
-      const threadData: DMMessagesResponse | null = await threadRes.json().catch(() => null)
+      if (data.message) {
+        const sentMessage = data.message as DMMessage
 
-      if (!threadRes.ok || !threadData?.ok) {
-        setError(threadData?.error || "Failed to refresh direct messages.")
-        return
+        setDmMessages((prev) => {
+          if (prev.some((item) => item.id === sentMessage.id)) return prev
+          return [...prev, sentMessage]
+        })
       }
-
-      setDmMessages(Array.isArray(threadData.messages) ? threadData.messages : [])
     } catch (err) {
       console.error("SEND DM MESSAGE ERROR:", err)
       setError("Something went wrong while sending the direct message.")
+      setDmMessageText(message)
     } finally {
       setDmPosting(false)
     }
@@ -2028,7 +2106,13 @@ export default function AdminWorkspacePage() {
                           <button
                             key={dm.id}
                             type="button"
-                            onClick={() => setActivePane({ type: "dm", id: dm.id })}
+                            onClick={() => {
+                              setDmUnreadByMemberId((prev) => ({
+                                ...prev,
+                                [dm.id]: 0,
+                              }))
+                              setActivePane({ type: "dm", id: dm.id })
+                            }}
                             style={{
                               height: 40,
                               border: "none",
@@ -2075,10 +2159,31 @@ export default function AdminWorkspacePage() {
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
+                                flex: 1,
                               }}
                             >
                               {dm.name}
                             </span>
+
+                            {(dmUnreadByMemberId[dm.id] || 0) > 0 ? (
+                              <span
+                                style={{
+                                  minWidth: 18,
+                                  height: 18,
+                                  borderRadius: 999,
+                                  background: "#ef4444",
+                                  color: "#ffffff",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  padding: "0 5px",
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                }}
+                              >
+                                {dmUnreadByMemberId[dm.id] > 9 ? "9+" : dmUnreadByMemberId[dm.id]}
+                              </span>
+                            ) : null}
                           </button>
                         )
                       })
@@ -2626,6 +2731,7 @@ export default function AdminWorkspacePage() {
                             </div>
                           )
                         })}
+                        <div ref={dmMessagesEndRef} />
                       </div>
                     </>
                   )}
