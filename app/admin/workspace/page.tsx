@@ -501,6 +501,41 @@ const normalMessageTextStyle: React.CSSProperties = {
   whiteSpace: "pre-wrap",
 }
 
+
+function renderMessageContent(content: string, isDeleted?: boolean) {
+  if (isDeleted) {
+    return content
+  }
+
+  const parts = content.split(/(@(?:all|team|[A-Za-z0-9._-]+))/g)
+
+  return parts.map((part, index) => {
+    if (!part) return null
+
+    if (/^@(?:all|team|[A-Za-z0-9._-]+)$/.test(part)) {
+      return (
+        <span
+          key={`${part}-${index}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            borderRadius: 6,
+            background: "rgba(30,64,175,0.10)",
+            color: "#1d4ed8",
+            fontWeight: 700,
+            padding: "0 4px",
+            lineHeight: 1.45,
+          }}
+        >
+          {part}
+        </span>
+      )
+    }
+
+    return <span key={`text-${index}`}>{part}</span>
+  })
+}
+
 export default function AdminWorkspacePage() {
   const [settings, setSettings] = useState<WorkspaceSettings>({})
   const [channels, setChannels] = useState<WorkspaceChannel[]>([])
@@ -3410,7 +3445,9 @@ export default function AdminWorkspacePage() {
                                 </span>
                                 <span style={{ fontSize: 11, color: "#b0b8cc" }}>{formatTime(message.created_at)}</span>
                               </div>
-                              <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>{message.content}</div>
+                              <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>
+                                {renderMessageContent(message.content, message.is_deleted)}
+                              </div>
                               {!message.is_deleted ? (
                                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                                   <button
@@ -3505,7 +3542,9 @@ export default function AdminWorkspacePage() {
                               <div style={{ fontSize: 12, color: "#7a8099", marginBottom: 6 }}>Forwarded from {message.forwarded_original_author_name}</div>
                             ) : null}
 
-                            <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>{message.content}</div>
+                            <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>
+                                {renderMessageContent(message.content, message.is_deleted)}
+                              </div>
 
                             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                               {!message.is_deleted && message.reactions.map((reaction) => {
