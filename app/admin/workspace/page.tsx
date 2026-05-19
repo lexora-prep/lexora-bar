@@ -1984,7 +1984,7 @@ export default function AdminWorkspacePage() {
         style={{
           height: "100dvh",
           minHeight: "100dvh",
-          background: "#f6f7fb",
+          background: "#ffffff",
           color: "#111827",
           overflow: "hidden",
         }}
@@ -1999,45 +1999,105 @@ export default function AdminWorkspacePage() {
         >
           <aside
             style={{
-              background: "#fbfbfd",
-              borderRight: "1px solid rgba(15,23,42,0.08)",
+              background: "#1f2130",
+              borderRight: "1px solid rgba(255,255,255,0.08)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
               minHeight: 0,
+              color: "#d7d9e6",
             }}
           >
             <div
               style={{
-                padding: "18px 18px 14px",
-                borderBottom: "1px solid rgba(15,23,42,0.08)",
+                padding: "14px 14px 12px",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
                 flexShrink: 0,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  type="button"
                   style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 14,
+                    width: 34,
+                    height: 34,
+                    borderRadius: 9,
+                    border: "none",
+                    background: "#6c5ce7",
+                    color: "#ffffff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    background: "linear-gradient(135deg, #8b5cf6, #6366f1)",
-                    color: "#fff",
+                    cursor: "pointer",
+                    fontSize: 18,
+                    fontWeight: 800,
+                    lineHeight: 1,
                     flexShrink: 0,
                   }}
                 >
-                  O
-                </div>
+                  ≡
+                </button>
 
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#ffffff", lineHeight: 1.2 }}>
+                    Lexora Prep
+                  </div>
+                  <div style={{ fontSize: 11.5, color: "#9ca0b8", marginTop: 2 }}>
+                    Admin Workspace
+                  </div>
+                </div>
+
+                {canCreateChannels ? (
+                  <button
+                    type="button"
+                    onClick={openCreateChannelModal}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 8,
+                      border: "none",
+                      background: "transparent",
+                      color: "#8f94aa",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Plus size={15} />
+                  </button>
+                ) : null}
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <button
+                  type="button"
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    background: "transparent",
+                    color: "#8f94aa",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    padding: 0,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    letterSpacing: 1.1,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <ChevronDown size={13} />
+                  <span>Internal Admin Team</span>
+                </button>
+
+                <div style={{ marginTop: 10, paddingLeft: 20 }}>
+                  <div style={{ fontSize: 12.5, color: "#d7d9e6", fontWeight: 650 }}>
                     {activeTeam?.name || "Internal Admin Team"}
                   </div>
-                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2, lineHeight: 1.45 }}>
+                  <div style={{ fontSize: 11.5, color: "#9ca0b8", marginTop: 3, lineHeight: 1.45 }}>
                     {activeTeam?.description || "Core internal workspace for admins and editors"}
                   </div>
                 </div>
@@ -2045,15 +2105,15 @@ export default function AdminWorkspacePage() {
             </div>
 
             <div style={{ overflowY: "auto", padding: "14px 0", flex: 1, minHeight: 0 }}>
-              <div style={{ padding: "0 18px 16px" }}>
+              <div style={{ padding: "0 14px 16px" }}>
                 <div style={sectionHeaderRow}>
-                  <button type="button" onClick={() => setChannelsCollapsed((v) => !v)} style={sectionToggleStyle}>
+                  <button type="button" onClick={() => setChannelsCollapsed((v) => !v)} style={darkSectionToggleStyle}>
                     {channelsCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                     <span>Channels</span>
                   </button>
 
                   {canCreateChannels ? (
-                    <button type="button" onClick={openCreateChannelModal} style={tinyIconButtonStyle}>
+                    <button type="button" onClick={openCreateChannelModal} style={darkTinyIconButtonStyle}>
                       <Plus size={14} />
                     </button>
                   ) : null}
@@ -2063,7 +2123,7 @@ export default function AdminWorkspacePage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     {channels.map((channel) => {
                       const active = activePane.type === "channel" && activePane.slug === channel.slug
-                      const accent = normalizeColor(channel.color_hex)
+                      const accent = active ? "#ffffff" : "#a4a8bc"
 
                       return (
                         <div
@@ -2093,10 +2153,10 @@ export default function AdminWorkspacePage() {
                               alignItems: "center",
                               gap: 10,
                               padding: "0 12px",
-                              background: active ? "rgba(99,102,241,0.10)" : "transparent",
-                              color: "#475569",
-                              fontWeight: active ? 600 : 500,
-                              borderRadius: 8,
+                              background: active ? "rgba(255,255,255,0.10)" : "transparent",
+                              color: active ? "#ffffff" : "#a4a8bc",
+                              fontWeight: active ? 700 : 500,
+                              borderRadius: 9,
                               fontSize: 12.5,
                             }}
                           >
@@ -2121,14 +2181,14 @@ export default function AdminWorkspacePage() {
                             >
                               {channel.name}
                             </span>
-                            {channel.is_hidden ? <EyeOff size={12} color="#94a3b8" /> : null}
-                            {channel.is_private ? <Lock size={12} color="#94a3b8" /> : null}
+                            {channel.is_hidden ? <EyeOff size={12} color="#8f94aa" /> : null}
+                            {channel.is_private ? <Lock size={12} color="#8f94aa" /> : null}
                           </button>
 
                           <button
                             type="button"
                             onClick={() => openEditChannelModal(channel)}
-                            style={tinyIconButtonStyle}
+                            style={darkTinyIconButtonStyle}
                             title="Edit channel"
                           >
                             <Edit3 size={13} />
@@ -2140,9 +2200,9 @@ export default function AdminWorkspacePage() {
                 ) : null}
               </div>
 
-              <div style={{ padding: "0 18px 16px" }}>
+              <div style={{ padding: "0 14px 16px" }}>
                 <div style={sectionHeaderRow}>
-                  <button type="button" onClick={() => setNotesCollapsed((v) => !v)} style={sectionToggleStyle}>
+                  <button type="button" onClick={() => setNotesCollapsed((v) => !v)} style={darkSectionToggleStyle}>
                     {notesCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                     <span>Notes</span>
                   </button>
@@ -2154,7 +2214,7 @@ export default function AdminWorkspacePage() {
                         resetNoteForm()
                         setNoteModalOpen(true)
                       }}
-                      style={tinyIconButtonStyle}
+                      style={darkTinyIconButtonStyle}
                     >
                       <Plus size={14} />
                     </button>
@@ -2164,7 +2224,7 @@ export default function AdminWorkspacePage() {
                 {!notesCollapsed ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     {notes.length === 0 ? (
-                      <div style={{ padding: "4px 12px", fontSize: 12, color: "#94a3b8" }}>No notes yet</div>
+                      <div style={{ padding: "4px 12px", fontSize: 12, color: "#8f94aa" }}>No notes yet</div>
                     ) : (
                       notes.map((note) => {
                         const active = activePane.type === "note" && activePane.id === note.id
@@ -2184,13 +2244,13 @@ export default function AdminWorkspacePage() {
                               alignItems: "center",
                               gap: 10,
                               padding: "8px 12px",
-                              background: active ? "rgba(99,102,241,0.10)" : "transparent",
-                              color: active ? "#4f46e5" : "#475569",
-                              borderRadius: 8,
+                              background: active ? "rgba(255,255,255,0.10)" : "transparent",
+                              color: active ? "#ffffff" : "#a4a8bc",
+                              borderRadius: 9,
                               fontSize: 12.5,
                             }}
                           >
-                            {isShared ? <FileText size={14} color="#16a34a" /> : <Pin size={14} color="#ca8a04" />}
+                            {isShared ? <FileText size={14} color="#4ade80" /> : <Pin size={14} color="#facc15" />}
 
                             <div style={{ minWidth: 0, flex: 1 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -2198,7 +2258,7 @@ export default function AdminWorkspacePage() {
                                   style={{
                                     fontSize: 12.5,
                                     fontWeight: 500,
-                                    color: active ? "#4f46e5" : "#334155",
+                                    color: active ? "#ffffff" : "#c6cada",
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
                                     whiteSpace: "nowrap",
@@ -2212,8 +2272,8 @@ export default function AdminWorkspacePage() {
                                   style={{
                                     fontSize: 10,
                                     fontWeight: 700,
-                                    color: isShared ? "#16a34a" : "#64748b",
-                                    background: isShared ? "rgba(22,163,74,0.10)" : "rgba(100,116,139,0.10)",
+                                    color: isShared ? "#4ade80" : "#9ca0b8",
+                                    background: isShared ? "rgba(34,197,94,0.14)" : "rgba(255,255,255,0.08)",
                                     padding: "2px 6px",
                                     borderRadius: 999,
                                   }}
@@ -2230,9 +2290,9 @@ export default function AdminWorkspacePage() {
                 ) : null}
               </div>
 
-              <div style={{ padding: "0 18px" }}>
+              <div style={{ padding: "0 14px" }}>
                 <div style={sectionHeaderRow}>
-                  <button type="button" onClick={() => setDmsCollapsed((v) => !v)} style={sectionToggleStyle}>
+                  <button type="button" onClick={() => setDmsCollapsed((v) => !v)} style={darkSectionToggleStyle}>
                     {dmsCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                     <span>Direct Messages</span>
                   </button>
@@ -2244,8 +2304,8 @@ export default function AdminWorkspacePage() {
                     style={{
                       border: "none",
                       borderRadius: 999,
-                      background: workspaceDmPopupsEnabled ? "rgba(22,163,74,0.12)" : "rgba(148,163,184,0.16)",
-                      color: workspaceDmPopupsEnabled ? "#16a34a" : "#64748b",
+                      background: workspaceDmPopupsEnabled ? "rgba(34,197,94,0.16)" : "rgba(148,163,184,0.14)",
+                      color: workspaceDmPopupsEnabled ? "#4ade80" : "#9ca0b8",
                       height: 22,
                       padding: "0 8px",
                       fontSize: 9,
@@ -2263,7 +2323,7 @@ export default function AdminWorkspacePage() {
                 {!dmsCollapsed ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     {directMembers.length === 0 ? (
-                      <div style={{ padding: "4px 12px", fontSize: 12, color: "#94a3b8" }}>
+                      <div style={{ padding: "4px 12px", fontSize: 12, color: "#8f94aa" }}>
                         No direct members
                       </div>
                     ) : (
@@ -2290,9 +2350,9 @@ export default function AdminWorkspacePage() {
                               alignItems: "center",
                               gap: 10,
                               padding: "0 10px",
-                              background: active ? "rgba(99,102,241,0.10)" : "transparent",
-                              color: active ? "#4f46e5" : "#475569",
-                              borderRadius: 8,
+                              background: active ? "rgba(255,255,255,0.10)" : "transparent",
+                              color: active ? "#ffffff" : "#a4a8bc",
+                              borderRadius: 9,
                               fontSize: 12.5,
                             }}
                           >
@@ -2376,10 +2436,10 @@ export default function AdminWorkspacePage() {
                                 alignItems: "center",
                                 justifyContent: "center",
                                 flexShrink: 0,
-                                color: mutedDmMemberIds.includes(dm.id) ? "#ef4444" : "#94a3b8",
+                                color: mutedDmMemberIds.includes(dm.id) ? "#fca5a5" : "#8f94aa",
                                 background: mutedDmMemberIds.includes(dm.id)
-                                  ? "rgba(239,68,68,0.10)"
-                                  : "rgba(148,163,184,0.10)",
+                                  ? "rgba(248,113,113,0.14)"
+                                  : "rgba(255,255,255,0.08)",
                               }}
                             >
                               <BellOff size={13} />
@@ -2511,908 +2571,6 @@ export default function AdminWorkspacePage() {
                     padding: "18px",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color:
-                        activeNote?.note_type === "shared" || activeNote?.visibility === "shared"
-                          ? "#16a34a"
-                          : "#a16207",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.8,
-                      marginBottom: 8,
-                      fontFamily: '"DM Mono", ui-monospace, monospace',
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    {activeNote?.note_type === "shared" || activeNote?.visibility === "shared" ? (
-                      <FileText size={12} />
-                    ) : (
-                      <Pin size={12} />
-                    )}
-                    {activeNote?.note_type === "shared"
-                      ? activeNote.shared_scope === "specific_users"
-                        ? "Shared Note • Selected Users"
-                        : "Shared Note • Workspace"
-                      : "Personal Note"}
-                  </div>
-
-                  {activeNote?.forwarded_original_author_name ? (
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#64748b",
-                        marginBottom: 10,
-                      }}
-                    >
-                      Forwarded from {activeNote.forwarded_original_author_name}
-                    </div>
-                  ) : null}
-
-                  {editingNote ? (
-                    <>
-                      <input
-                        value={noteTitle}
-                        onChange={(e) => setNoteTitle(e.target.value)}
-                        style={noteTitleInputStyle}
-                      />
-
-                      {activeNote?.note_type === "shared" ? (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-                          <select
-                            value={noteSharedScope}
-                            onChange={(e) =>
-                              setNoteSharedScope(e.target.value as "workspace" | "specific_users")
-                            }
-                            style={inputStyle}
-                          >
-                            <option value="workspace">Whole workspace</option>
-                            <option value="specific_users">Specific users</option>
-                          </select>
-
-                          <div />
-                        </div>
-                      ) : null}
-
-                      {activeNote?.note_type === "shared" && noteSharedScope === "specific_users" ? (
-                        <div style={{ marginBottom: 12 }}>
-                          <input
-                            value={noteRecipientSearch}
-                            onChange={(e) => setNoteRecipientSearch(e.target.value)}
-                            placeholder="Search users..."
-                            style={{ ...inputStyle, marginBottom: 10 }}
-                          />
-
-                          <div style={recipientPanelStyle}>
-                            {filteredRecipientMembers.map((member) => {
-                              const checked = selectedNoteRecipientIds.includes(member.id)
-                              return (
-                                <label key={member.id} style={recipientOptionStyle}>
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => toggleRecipient(member.id)}
-                                  />
-                                  <span style={recipientAvatarStyle(member.name)}>{getInitials(member.name)}</span>
-                                  <span style={{ minWidth: 0 }}>
-                                    <span style={{ display: "block", fontSize: 13, color: "#111827", fontWeight: 600 }}>
-                                      {member.name}
-                                    </span>
-                                    <span style={{ display: "block", fontSize: 12, color: "#64748b" }}>
-                                      {member.email || member.title || member.role}
-                                    </span>
-                                  </span>
-                                </label>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      <textarea
-                        value={noteBody}
-                        onChange={(e) => setNoteBody(e.target.value)}
-                        rows={8}
-                        style={noteBodyInputStyle}
-                      />
-                      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                        <button type="button" style={smallGhostButtonStyle} onClick={() => void updateNote()}>
-                          <Edit3 size={14} />
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          style={smallGhostButtonStyle}
-                          onClick={() => {
-                            setEditingNote(false)
-                            setNoteTitle("")
-                            setNoteBody("")
-                            setNoteRecipientSearch("")
-                          }}
-                        >
-                          <X size={14} />
-                          Cancel
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
-                        {activeNote?.title || "Untitled note"}
-                      </div>
-
-                      <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.7, marginBottom: 16 }}>
-                        {activeNote?.body || activeNote?.description || "No note content."}
-                      </div>
-                    </>
-                  )}
-
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-                    <button type="button" style={smallGhostButtonStyle} onClick={() => setEditingNote(true)}>
-                      <Edit3 size={14} />
-                      Edit
-                    </button>
-                    <button type="button" style={smallGhostButtonStyle} onClick={() => setNoteReactionPickerOpen((v) => !v)}>
-                      <Smile size={14} />
-                      React
-                    </button>
-                    <button
-                      type="button"
-                      style={smallGhostButtonStyle}
-                      onClick={() => {
-                        if (!activeNote) return
-                        openForwardPickerForNote(activeNote)
-                      }}
-                    >
-                      <Forward size={14} />
-                      Forward
-                    </button>
-                    <button type="button" style={smallGhostButtonStyle} onClick={() => void withdrawNote()}>
-                      <Trash2 size={14} />
-                      Withdraw
-                    </button>
-                  </div>
-
-                  {noteReactionPickerOpen ? (
-                    <div style={notePickerStyle}>
-                      {EMOJI_SET.map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => void reactToNote(emoji)}
-                          style={emojiOptionStyle}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  <div style={{ marginTop: 20 }}>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        letterSpacing: 0.8,
-                        color: "#94a3b8",
-                        textTransform: "uppercase",
-                        marginBottom: 10,
-                        fontFamily: '"DM Mono", ui-monospace, monospace',
-                      }}
-                    >
-                      Comments
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
-                      {noteComments.length === 0 ? (
-                        <div style={{ fontSize: 13, color: "#94a3b8" }}>No comments yet.</div>
-                      ) : (
-                        noteComments.map((comment) => (
-                          <div
-                            key={comment.id}
-                            style={{
-                              borderRadius: 10,
-                              background: "#ffffff",
-                              border: "1px solid rgba(15,23,42,0.08)",
-                              padding: "10px 12px",
-                            }}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                              <span style={{ fontWeight: 700, fontSize: 13 }}>{comment.author_name}</span>
-                              <span
-                                style={{
-                                  ...roleTagStyle(comment.author_role),
-                                  fontSize: 9.5,
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  fontFamily: '"DM Mono", ui-monospace, monospace',
-                                  textTransform: "uppercase",
-                                }}
-                              >
-                                {comment.author_role}
-                              </span>
-                              <span style={{ fontSize: 11, color: "#94a3b8" }}>{formatTime(comment.created_at)}</span>
-                              {!comment.is_deleted ? (
-                                <button
-                                  type="button"
-                                  onClick={() => void deleteComment(comment.id)}
-                                  style={{ marginLeft: "auto", ...tinyTextButtonStyle }}
-                                >
-                                  Delete
-                                </button>
-                              ) : null}
-                            </div>
-                            <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{comment.body}</div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <textarea
-                        value={noteCommentText}
-                        onChange={(e) => setNoteCommentText(e.target.value)}
-                        placeholder="Add a comment..."
-                        rows={2}
-                        style={{
-                          flex: 1,
-                          resize: "none",
-                          borderRadius: 10,
-                          border: "1px solid rgba(15,23,42,0.10)",
-                          padding: "10px 12px",
-                          fontSize: 13,
-                          outline: "none",
-                          background: "#ffffff",
-                        }}
-                      />
-                      <button type="button" onClick={() => void addNoteComment()} style={primaryButtonStyle}>
-                        <Send size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : activePane.type === "dm" ? (
-                <>
-                  {dmLoading ? (
-                    <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                      Loading direct messages...
-                    </div>
-                  ) : dmMessages.length === 0 ? (
-                    <div style={{ padding: "40px 0", color: "#64748b", fontSize: 14 }}>
-                      <div style={{ fontWeight: 600, color: "#111827", marginBottom: 6 }}>
-                        Direct message with {activeDm?.name || "Unknown"}
-                      </div>
-                      <div>No messages yet. Send the first message below.</div>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          color: "#94a3b8",
-                          fontSize: 11,
-                          fontFamily: '"DM Mono", ui-monospace, monospace',
-                          marginBottom: 18,
-                        }}
-                      >
-                        <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
-                        <span>Direct Message</span>
-                        <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                        {dmMessages.map((message) => {
-                          const initials = getInitials(message.author)
-                          const canDeleteDmMessage =
-                            currentUser?.id === message.author_id ||
-                            currentUser?.role === "super_admin" ||
-                            currentUser?.admin_role === "super_admin"
-                          const canEditDmMessage = canDeleteDmMessage
-
-                          return (
-                            <div key={message.id}>
-                              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                                <div
-                                  style={{
-                                    width: 38,
-                                    height: 38,
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontWeight: 700,
-                                    fontSize: 12,
-                                    flexShrink: 0,
-                                    ...avatarStyle(initials),
-                                  }}
-                                >
-                                  {initials}
-                                </div>
-
-                                <div style={{ minWidth: 0, flex: 1 }}>
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "baseline",
-                                      gap: 8,
-                                      flexWrap: "wrap",
-                                      marginBottom: 6,
-                                    }}
-                                  >
-                                    <span style={{ fontWeight: 700, color: "#111827", fontSize: 13.5 }}>
-                                      {message.author}
-                                    </span>
-                                    <span
-                                      style={{
-                                        ...roleTagStyle(message.role),
-                                        fontSize: 9.5,
-                                        padding: "2px 6px",
-                                        borderRadius: 4,
-                                        fontFamily: '"DM Mono", ui-monospace, monospace',
-                                        textTransform: "uppercase",
-                                        letterSpacing: 0.4,
-                                      }}
-                                    >
-                                      {message.role}
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: 11,
-                                        color: "#94a3b8",
-                                        fontFamily: '"DM Mono", ui-monospace, monospace',
-                                      }}
-                                    >
-                                      {formatTime(message.created_at)}
-                                    </span>
-                                    {message.edited_at ? (
-                                      <span style={{ fontSize: 11, color: "#cbd5e1" }}>(edited)</span>
-                                    ) : null}
-                                  </div>
-
-                                  <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>
-                                    {message.content}
-                                  </div>
-
-                                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-                                    {!message.is_deleted && canEditDmMessage ? (
-                                      <button
-                                        type="button"
-                                        style={smallGhostButtonStyle}
-                                        onClick={() => openDmMessageEdit(message)}
-                                      >
-                                        <Edit3 size={14} />
-                                        Edit
-                                      </button>
-                                    ) : null}
-
-                                    {!message.is_deleted ? (
-                                      <button
-                                        type="button"
-                                        style={smallGhostButtonStyle}
-                                        onClick={() =>
-                                          openForwardPickerForMessage({
-                                            id: message.id,
-                                            author: message.author,
-                                            author_id: message.author_id,
-                                            role: message.role,
-                                            content: message.content,
-                                            created_at: message.created_at,
-                                            updated_at: message.created_at,
-                                            edited_at: message.edited_at,
-                                            is_pinned: false,
-                                            my_emojis: [],
-                                            reactions: [],
-                                            is_deleted: message.is_deleted,
-                                          })
-                                        }
-                                      >
-                                        <Forward size={14} />
-                                        Forward
-                                      </button>
-                                    ) : null}
-
-                                    {!message.is_deleted && canDeleteDmMessage ? (
-                                      <button
-                                        type="button"
-                                        style={smallGhostButtonStyle}
-                                        onClick={() => void deleteDMMessage(message.id)}
-                                        disabled={dmDeletingId === message.id}
-                                      >
-                                        <Trash2 size={14} />
-                                        {dmDeletingId === message.id ? "Deleting..." : "Delete"}
-                                      </button>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                        <div ref={dmMessagesEndRef} />
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : loading ? (
-                <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                  Loading messages...
-                </div>
-              ) : messages.length === 0 ? (
-                <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                  No messages yet in this channel.
-                </div>
-              ) : (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      color: "#94a3b8",
-                      fontSize: 11,
-                      fontFamily: '"DM Mono", ui-monospace, monospace',
-                      marginBottom: 18,
-                    }}
-                  >
-                    <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
-                    <span>Today</span>
-                    <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                    {messages.map((message) => {
-                      const initials = getInitials(message.author)
-                      const canDeleteChannelMessage =
-                        currentUser?.id === message.author_id ||
-                        currentUser?.role === "super_admin" ||
-                        currentUser?.admin_role === "super_admin"
-                      const canEditChannelMessage = canDeleteChannelMessage
-
-                      return (
-                        <div key={message.id}>
-                          <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                            <div
-                              style={{
-                                width: 38,
-                                height: 38,
-                                borderRadius: "50%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontWeight: 700,
-                                fontSize: 12,
-                                flexShrink: 0,
-                                ...avatarStyle(initials),
-                              }}
-                            >
-                              {initials}
-                            </div>
-
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "baseline",
-                                  gap: 8,
-                                  flexWrap: "wrap",
-                                  marginBottom: 6,
-                                }}
-                              >
-                                <span style={{ fontWeight: 700, color: "#111827", fontSize: 13.5 }}>
-                                  {message.author}
-                                </span>
-                                <span
-                                  style={{
-                                    ...roleTagStyle(message.role),
-                                    fontSize: 9.5,
-                                    padding: "2px 6px",
-                                    borderRadius: 4,
-                                    fontFamily: '"DM Mono", ui-monospace, monospace',
-                                    textTransform: "uppercase",
-                                    letterSpacing: 0.4,
-                                  }}
-                                >
-                                  {message.role}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: 11,
-                                    color: "#94a3b8",
-                                    fontFamily: '"DM Mono", ui-monospace, monospace',
-                                  }}
-                                >
-                                  {formatTime(message.created_at)}
-                                </span>
-                                {message.edited_at ? (
-                                  <span style={{ fontSize: 11, color: "#cbd5e1" }}>(edited)</span>
-                                ) : null}
-                              </div>
-
-                              {message.reply_preview ? (
-                                <div
-                                  style={{
-                                    borderLeft: "2px solid rgba(99,102,241,0.22)",
-                                    paddingLeft: 10,
-                                    marginBottom: 8,
-                                    fontSize: 12,
-                                    color: "#64748b",
-                                  }}
-                                >
-                                  <div style={{ fontWeight: 600 }}>{message.reply_preview.author}</div>
-                                  <div
-                                    style={{
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis",
-                                      whiteSpace: "nowrap",
-                                    }}
-                                  >
-                                    {message.reply_preview.content}
-                                  </div>
-                                </div>
-                              ) : null}
-
-                              {message.forwarded_original_author_name ? (
-                                <div
-                                  style={{
-                                    fontSize: 12,
-                                    color: "#64748b",
-                                    marginBottom: 8,
-                                  }}
-                                >
-                                  Forwarded from {message.forwarded_original_author_name}
-                                </div>
-                              ) : null}
-
-                              <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>
-                                {message.content}
-                              </div>
-
-                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-                                {!message.is_deleted &&
-                                  message.reactions.map((reaction) => {
-                                    const mine = message.my_emojis.includes(reaction.emoji)
-
-                                    return (
-                                      <button
-                                        key={`${message.id}-${reaction.emoji}`}
-                                        type="button"
-                                        onClick={() => void react(message.id, reaction.emoji)}
-                                        style={{
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          gap: 5,
-                                          padding: "4px 8px",
-                                          borderRadius: 999,
-                                          border: mine
-                                            ? "1px solid rgba(79,70,229,0.28)"
-                                            : "1px solid rgba(15,23,42,0.10)",
-                                          background: mine ? "rgba(79,70,229,0.08)" : "#ffffff",
-                                          color: mine ? "#4f46e5" : "#475569",
-                                          fontSize: 12,
-                                          cursor: "pointer",
-                                        }}
-                                      >
-                                        <span>{reaction.emoji}</span>
-                                        <span style={{ fontSize: 11, color: mine ? "#4f46e5" : "#64748b" }}>
-                                          {reaction.count}
-                                        </span>
-                                      </button>
-                                    )
-                                  })}
-
-                                {!message.is_deleted ? (
-                                  <button
-                                    type="button"
-                                    style={smallGhostButtonStyle}
-                                    onClick={() => {
-                                      setReplyingTo(message)
-                                      setForwardingMessage(null)
-                                      setForwardingNote(null)
-                                    }}
-                                  >
-                                    <CornerDownRight size={14} />
-                                    Reply
-                                  </button>
-                                ) : null}
-
-                                {!message.is_deleted ? (
-                                  <button
-                                    type="button"
-                                    style={smallGhostButtonStyle}
-                                    onClick={() => openForwardPickerForMessage(message)}
-                                  >
-                                    <Forward size={14} />
-                                    Forward
-                                  </button>
-                                ) : null}
-
-                                {!message.is_deleted && canEditChannelMessage ? (
-                                  <button
-                                    type="button"
-                                    style={smallGhostButtonStyle}
-                                    onClick={() => openChannelMessageEdit(message)}
-                                  >
-                                    <Edit3 size={14} />
-                                    Edit
-                                  </button>
-                                ) : null}
-
-                                {!message.is_deleted && canDeleteChannelMessage ? (
-                                  <button
-                                    type="button"
-                                    style={smallGhostButtonStyle}
-                                    onClick={() => void deleteMessage(message.id)}
-                                  >
-                                    <Trash2 size={14} />
-                                    Delete
-                                  </button>
-                                ) : null}
-
-                                {!message.is_deleted ? (
-                                  <div style={{ position: "relative" }}>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setEmojiPickerFor((prev) => (prev === message.id ? null : message.id))
-                                      }
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 5,
-                                        padding: "4px 8px",
-                                        borderRadius: 999,
-                                        border: "1px solid rgba(15,23,42,0.10)",
-                                        background: "#ffffff",
-                                        color: "#475569",
-                                        fontSize: 12,
-                                        cursor: "pointer",
-                                      }}
-                                    >
-                                      <Smile size={13} />
-                                      React
-                                    </button>
-
-                                    {emojiPickerFor === message.id ? (
-                                      <div
-                                        style={{
-                                          position: "absolute",
-                                          top: "calc(100% + 8px)",
-                                          left: 0,
-                                          zIndex: 20,
-                                          width: 248,
-                                          borderRadius: 12,
-                                          border: "1px solid rgba(15,23,42,0.08)",
-                                          background: "#ffffff",
-                                          boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-                                          padding: 12,
-                                        }}
-                                      >
-                                        <div
-                                          style={{
-                                            fontSize: 10,
-                                            textTransform: "uppercase",
-                                            letterSpacing: 0.8,
-                                            color: "#94a3b8",
-                                            marginBottom: 8,
-                                            fontFamily: '"DM Mono", ui-monospace, monospace',
-                                          }}
-                                        >
-                                          Reactions
-                                        </div>
-
-                                        <div
-                                          style={{
-                                            display: "grid",
-                                            gridTemplateColumns: "repeat(6, 1fr)",
-                                            gap: 6,
-                                          }}
-                                        >
-                                          {EMOJI_SET.map((emoji) => (
-                                            <button
-                                              key={`${message.id}-${emoji}`}
-                                              type="button"
-                                              onClick={() => void react(message.id, emoji)}
-                                              style={emojiOptionStyle}
-                                            >
-                                              {emoji}
-                                            </button>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    ) : null}
-                                  </div>
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {activePane.type === "channel" ? renderSharedComposer("channel") : null}
-            {activePane.type === "dm" ? renderSharedComposer("dm") : null}
-          </main>
-
-          {membersOpen && (
-            <aside
-              style={{
-                background: "#fbfbfd",
-                borderLeft: "1px solid rgba(15,23,42,0.08)",
-                overflowY: "auto",
-                minHeight: 0,
-              }}
-            >
-              <div
-                style={{
-                  padding: "16px",
-                  borderBottom: "1px solid rgba(15,23,42,0.08)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                    textTransform: "uppercase",
-                    color: "#94a3b8",
-                    marginBottom: 12,
-                    fontFamily: '"DM Mono", ui-monospace, monospace',
-                  }}
-                >
-                  Presence
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <div
-                    style={{
-                      position: "relative",
-                      width: 38,
-                      height: 38,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 700,
-                        fontSize: 12,
-                        ...avatarStyle(getInitials(currentUserDisplayName)),
-                      }}
-                    >
-                      {getInitials(currentUserDisplayName)}
-                    </div>
-
-                    <span
-                      style={{
-                        position: "absolute",
-                        right: 0,
-                        bottom: 0,
-                        width: 12,
-                        height: 12,
-                        borderRadius: "50%",
-                        border: "2px solid #ffffff",
-                        boxSizing: "border-box",
-                        ...statusDot(currentUserStatus),
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
-                      {currentUserDisplayName}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: "#6b7280" }}>
-                      {currentUser?.admin_role || currentUser?.role || "Admin"}
-                    </div>
-                  </div>
-                </div>
-
-                <select
-                  value={currentUserStatus}
-                  onChange={(e) =>
-                    setCurrentUserStatus(e.target.value as "online" | "away" | "busy" | "offline")
-                  }
-                  style={{
-                    width: "100%",
-                    height: 40,
-                    borderRadius: 10,
-                    border: "1px solid rgba(15,23,42,0.10)",
-                    background: "#ffffff",
-                    color: "#111827",
-                    padding: "0 12px",
-                    fontSize: 13,
-                    outline: "none",
-                  }}
-                >
-                  <option value="online">Online</option>
-                  <option value="away">Away</option>
-                  <option value="busy">Busy</option>
-                  <option value="offline">Offline</option>
-                </select>
-              </div>
-
-              <div style={{ padding: "14px 0" }}>
-                <SectionLabel>Members</SectionLabel>
-
-                <div style={{ padding: "0 16px 10px" }}>
-                  <button type="button" style={inviteButtonStyle}>
-                    <UserPlus size={14} />
-                    Invite member
-                  </button>
-                </div>
-
-                {teamMembers.length === 0 ? (
-                  <div style={{ padding: "0 16px", fontSize: 12, color: "#94a3b8" }}>No members loaded</div>
-                ) : (
-                  teamMembers.map((member) => (
-                    <button
-                      key={member.id}
-                      type="button"
-                      onClick={() => openMemberProfile(member)}
-                      style={{
-                        width: "100%",
-                        border: "none",
-                        background: "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "10px 16px",
-                        cursor: "pointer",
-                        textAlign: "left",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          flexShrink: 0,
-                          ...statusDot(member.status),
-                        }}
-                      />
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          fontSize: 11,
-                          flexShrink: 0,
-                          ...avatarStyle(getInitials(member.name)),
-                        }}
-                      >
-                        {getInitials(member.name)}
-                      </div>
-
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 13, color: "#111827", fontWeight: 600 }}>{member.name}</div>
-                        <div style={{ fontSize: 11.5, color: "#6b7280" }}>
-                          {member.title || member.role}
-                        </div>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </aside>
-          )}
-        </div>
-      </div>
-
       {channelModalOpen && (
         <div
           onClick={() => {
@@ -4222,6 +3380,34 @@ function ProfileLine({
       <span>{label}</span>
     </div>
   )
+}
+
+const darkTinyIconButtonStyle: React.CSSProperties = {
+  width: 22,
+  height: 22,
+  border: "none",
+  borderRadius: 6,
+  background: "transparent",
+  color: "#8f94aa",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+}
+
+const darkSectionToggleStyle: React.CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "#8f94aa",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  cursor: "pointer",
+  fontSize: 10.5,
+  fontWeight: 800,
+  letterSpacing: 1.1,
+  textTransform: "uppercase",
+  fontFamily: '"DM Mono", ui-monospace, monospace',
 }
 
 const iconButtonStyle: React.CSSProperties = {
