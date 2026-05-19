@@ -401,10 +401,15 @@ const deletedMessageTextStyle: React.CSSProperties = {
 }
 
 const normalMessageTextStyle: React.CSSProperties = {
-  color: "#111827",
+  color: "#0f172a",
   fontSize: 14,
   lineHeight: 1.65,
   whiteSpace: "pre-wrap",
+  background: "#ffffff",
+  border: "1px solid rgba(15,23,42,0.08)",
+  borderRadius: 16,
+  padding: "12px 14px",
+  boxShadow: "0 10px 28px rgba(15,23,42,0.045)",
 }
 
 export default function AdminWorkspacePage() {
@@ -1787,9 +1792,9 @@ export default function AdminWorkspacePage() {
     return (
       <div
         style={{
-          padding: "12px 26px 16px",
+          padding: "14px 28px 18px",
           borderTop: "1px solid rgba(15,23,42,0.08)",
-          background: "#ffffff",
+          background: "linear-gradient(180deg, rgba(248,250,252,0.90), #ffffff)",
           flexShrink: 0,
         }}
       >
@@ -1837,10 +1842,11 @@ export default function AdminWorkspacePage() {
 
         <div
           style={{
-            borderRadius: 16,
-            border: "1px solid rgba(15,23,42,0.12)",
-            background: "#f8f9fd",
+            borderRadius: 22,
+            border: "1px solid rgba(15,23,42,0.10)",
+            background: "#ffffff",
             position: "relative",
+            boxShadow: "0 18px 45px rgba(15,23,42,0.08)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "10px 12px 0" }}>
@@ -1935,7 +1941,7 @@ export default function AdminWorkspacePage() {
               fontSize: 14,
               lineHeight: 1.6,
               color: "#111827",
-              minHeight: 90,
+              minHeight: 84,
             }}
           />
 
@@ -1984,7 +1990,7 @@ export default function AdminWorkspacePage() {
         style={{
           height: "100dvh",
           minHeight: "100dvh",
-          background: "#f6f7fb",
+          background: "linear-gradient(135deg, #eef2ff 0%, #f8fafc 42%, #ffffff 100%)",
           color: "#111827",
           overflow: "hidden",
         }}
@@ -1992,59 +1998,128 @@ export default function AdminWorkspacePage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: membersOpen ? "280px minmax(0,1fr) 300px" : "280px minmax(0,1fr)",
+            gridTemplateColumns: membersOpen ? "304px minmax(0,1fr) 324px" : "304px minmax(0,1fr)",
             height: "100%",
             transition: "grid-template-columns 0.2s ease",
+            padding: 14,
+            gap: 14,
+            boxSizing: "border-box",
           }}
         >
           <aside
             style={{
-              background: "#fbfbfd",
-              borderRight: "1px solid rgba(15,23,42,0.08)",
+              background: "rgba(255,255,255,0.86)",
+              border: "1px solid rgba(15,23,42,0.08)",
+              borderRadius: 26,
+              boxShadow: "0 24px 70px rgba(15,23,42,0.10)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
               minHeight: 0,
+              backdropFilter: "blur(18px)",
             }}
           >
             <div
               style={{
-                padding: "18px 18px 14px",
+                padding: "18px 18px 16px",
                 borderBottom: "1px solid rgba(15,23,42,0.08)",
                 flexShrink: 0,
+                background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.88))",
               }}
             >
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  height: 24,
+                  padding: "0 9px",
+                  borderRadius: 999,
+                  background: "rgba(15,23,42,0.05)",
+                  color: "#64748b",
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: 0.7,
+                  textTransform: "uppercase",
+                  marginBottom: 14,
+                }}
+              >
+                Admin Console
+              </div>
+
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div
                   style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 14,
+                    width: 46,
+                    height: 46,
+                    borderRadius: 18,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    background: "linear-gradient(135deg, #8b5cf6, #6366f1)",
+                    fontWeight: 800,
+                    fontSize: 15,
+                    background: "linear-gradient(135deg, #111827, #4f46e5)",
                     color: "#fff",
                     flexShrink: 0,
+                    boxShadow: "0 16px 36px rgba(79,70,229,0.24)",
                   }}
                 >
-                  O
+                  LA
                 </div>
 
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
+                  <div style={{ fontSize: 15.5, fontWeight: 800, color: "#0f172a" }}>
                     {activeTeam?.name || "Internal Admin Team"}
                   </div>
-                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2, lineHeight: 1.45 }}>
-                    {activeTeam?.description || "Core internal workspace for admins and editors"}
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, lineHeight: 1.45 }}>
+                    {activeTeam?.description || "Private admin workspace for team coordination"}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 8,
+                  marginTop: 16,
+                }}
+              >
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: "1px solid rgba(15,23,42,0.08)",
+                    background: "#ffffff",
+                    padding: "9px 10px",
+                  }}
+                >
+                  <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase" }}>
+                    Members
+                  </div>
+                  <div style={{ fontSize: 15, color: "#0f172a", fontWeight: 800, marginTop: 2 }}>
+                    {teamMembers.length}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: "1px solid rgba(15,23,42,0.08)",
+                    background: "#ffffff",
+                    padding: "9px 10px",
+                  }}
+                >
+                  <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase" }}>
+                    Alerts
+                  </div>
+                  <div style={{ fontSize: 15, color: workspaceDmPopupsEnabled ? "#16a34a" : "#64748b", fontWeight: 800, marginTop: 2 }}>
+                    {workspaceDmPopupsEnabled ? "On" : "Off"}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ overflowY: "auto", padding: "14px 0", flex: 1, minHeight: 0 }}>
+            <div style={{ overflowY: "auto", padding: "16px 0", flex: 1, minHeight: 0 }}>
               <div style={{ padding: "0 18px 16px" }}>
                 <div style={sectionHeaderRow}>
                   <button type="button" onClick={() => setChannelsCollapsed((v) => !v)} style={sectionToggleStyle}>
@@ -2399,24 +2474,45 @@ export default function AdminWorkspacePage() {
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
-              background: "#ffffff",
+              background: "rgba(255,255,255,0.92)",
+              border: "1px solid rgba(15,23,42,0.08)",
+              borderRadius: 26,
+              boxShadow: "0 24px 70px rgba(15,23,42,0.08)",
               minHeight: 0,
+              backdropFilter: "blur(18px)",
             }}
           >
             <div
               style={{
-                height: 72,
+                minHeight: 82,
                 borderBottom: "1px solid rgba(15,23,42,0.08)",
                 display: "flex",
                 alignItems: "center",
-                padding: "0 26px",
-                gap: 12,
+                padding: "0 28px",
+                gap: 14,
                 flexShrink: 0,
+                background: "linear-gradient(180deg, #ffffff, rgba(248,250,252,0.92))",
               }}
             >
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>{renderCenterTitle()}</div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{renderCenterSubtitle()}</div>
+              <div
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 15,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: activePane.type === "dm" ? "rgba(79,70,229,0.10)" : "rgba(15,23,42,0.05)",
+                  color: activePane.type === "dm" ? "#4f46e5" : "#334155",
+                  flexShrink: 0,
+                }}
+              >
+                {activePane.type === "dm" ? <MessageCircle size={18} /> : activePane.type === "note" ? <FileText size={18} /> : <Users size={18} />}
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 18, fontWeight: 850, color: "#0f172a", letterSpacing: -0.3 }}>{renderCenterTitle()}</div>
+                <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 3 }}>{renderCenterSubtitle()}</div>
               </div>
 
               <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
@@ -2476,8 +2572,8 @@ export default function AdminWorkspacePage() {
                 flex: 1,
                 minHeight: 0,
                 overflowY: "auto",
-                padding: "18px 26px 16px",
-                background: "#ffffff",
+                padding: "22px 28px 18px",
+                background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
               }}
             >
               {error ? (
@@ -3243,10 +3339,13 @@ export default function AdminWorkspacePage() {
           {membersOpen && (
             <aside
               style={{
-                background: "#fbfbfd",
-                borderLeft: "1px solid rgba(15,23,42,0.08)",
+                background: "rgba(255,255,255,0.86)",
+                border: "1px solid rgba(15,23,42,0.08)",
+                borderRadius: 26,
+                boxShadow: "0 24px 70px rgba(15,23,42,0.08)",
                 overflowY: "auto",
                 minHeight: 0,
+                backdropFilter: "blur(18px)",
               }}
             >
               <div
@@ -4225,9 +4324,9 @@ function ProfileLine({
 }
 
 const iconButtonStyle: React.CSSProperties = {
-  width: 36,
-  height: 36,
-  borderRadius: 10,
+  width: 38,
+  height: 38,
+  borderRadius: 14,
   border: "1px solid rgba(15,23,42,0.08)",
   background: "#ffffff",
   color: "#64748b",
@@ -4235,6 +4334,7 @@ const iconButtonStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
+  boxShadow: "0 8px 20px rgba(15,23,42,0.045)",
 }
 
 const tinyIconButtonStyle: React.CSSProperties = {
@@ -4254,13 +4354,14 @@ const smallGhostButtonStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 5,
-  padding: "4px 8px",
+  padding: "5px 9px",
   borderRadius: 999,
   border: "1px solid rgba(15,23,42,0.10)",
   background: "#ffffff",
   color: "#475569",
   fontSize: 12,
   cursor: "pointer",
+  boxShadow: "0 6px 16px rgba(15,23,42,0.035)",
 }
 
 const tinyTextButtonStyle: React.CSSProperties = {
@@ -4272,16 +4373,17 @@ const tinyTextButtonStyle: React.CSSProperties = {
 }
 
 const primaryButtonStyle: React.CSSProperties = {
-  width: 40,
-  height: 40,
-  borderRadius: 10,
+  width: 42,
+  height: 42,
+  borderRadius: 14,
   border: "none",
-  background: "#6c72ff",
+  background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
   color: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
+  boxShadow: "0 14px 30px rgba(79,70,229,0.24)",
 }
 
 const notePickerStyle: React.CSSProperties = {
@@ -4468,13 +4570,14 @@ const sectionHeaderRow: React.CSSProperties = {
 const sectionToggleStyle: React.CSSProperties = {
   border: "none",
   background: "transparent",
-  color: "#94a3b8",
+  color: "#64748b",
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
   cursor: "pointer",
-  fontSize: 10,
-  letterSpacing: 1.2,
+  fontSize: 10.5,
+  fontWeight: 850,
+  letterSpacing: 1.1,
   textTransform: "uppercase",
   fontFamily: '"DM Mono", ui-monospace, monospace',
 }
