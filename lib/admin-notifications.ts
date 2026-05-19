@@ -42,13 +42,55 @@ export type CreateManyAdminNotificationsInput = {
   excludeActor?: boolean
 }
 
+export type CreatedAdminNotification = {
+  id: string
+  adminId: string
+  actorAdminId: string | null
+  type: string
+  title: string
+  body: string
+  href: string | null
+  metadata: unknown
+  severity: AdminNotificationSeverity
+  readAt: string | null
+  createdAt: string
+}
+
+export type CreateAdminNotificationResult = {
+  ok: boolean
+  skipped: boolean
+  reason?: string
+  notification: CreatedAdminNotification | null
+  id: string
+  title: string
+  body: string
+  href: string | null
+  type: string
+  severity: AdminNotificationSeverity
+  createdAt: string
+}
+
+type AdminNotificationRow = {
+  id: string
+  admin_id: string
+  actor_admin_id: string | null
+  type: string
+  title: string
+  body: string
+  href: string | null
+  metadata: unknown
+  severity: string | null
+  read_at: Date | null
+  created_at: Date
+}
+
 function cleanText(value: string | null | undefined, fallback: string) {
   const cleaned = String(value || "").trim()
   return cleaned || fallback
 }
 
 function normalizeSeverity(
-  value: AdminNotificationSeverity | undefined,
+  value: AdminNotificationSeverity | string | null | undefined,
 ): AdminNotificationSeverity {
   if (
     value === "normal" ||
@@ -73,17 +115,45 @@ function uniqueIds(ids: string[]) {
   )
 }
 
+function emptyNotificationResult(reason: string): CreateAdminNotificationResult {
+  return {
+    ok: false,
+    skipped: true,
+    reason,
+    notification: null,
+    id: "",
+    title: "",
+    body: "",
+    href: null,
+    type: "",
+    severity: "normal",
+    createdAt: "",
+  }
+}
+
+function mapNotificationRow(row: AdminNotificationRow): CreatedAdminNotification {
+  return {
+    id: row.id,
+    adminId: row.admin_id,
+    actorAdminId: row.actor_admin_id,
+    type: row.type,
+    title: row.title,
+    body: row.body,
+    href: row.href,
+    metadata: row.metadata,
+    severity: normalizeSeverity(row.severity),
+    readAt: row.read_at ? row.read_at.toISOString() : null,
+    createdAt: row.created_at.toISOString(),
+  }
+}
+
 export async function createAdminNotification(
   input: CreateAdminNotificationInput,
-) {
+): Promise<CreateAdminNotificationResult> {
   const adminId = String(input.adminId || "").trim()
 
   if (!adminId) {
-    return {
-      ok: false,
-      skipped: true,
-      reason: "Missing adminId",
-    }
+    return emptyNotificationResult("Missing adminId")
   }
 
   const actorAdminId = input.actorAdminId
@@ -97,7 +167,7 @@ export async function createAdminNotification(
   const severity = normalizeSeverity(input.severity)
   const metadata = input.metadata || {}
 
-  await prisma.$executeRaw`
+  const rows = await prisma.$queryRaw<AdminNotificationRow[]>`
     insert into public.admin_notifications (
       admin_id,
       actor_admin_id,
@@ -122,11 +192,39 @@ export async function createAdminNotification(
       null,
       now()
     )
+    returning
+      id::text,
+      admin_id::text,
+      actor_admin_id::text,
+      type,
+      title,
+      body,
+      href,
+      metadata,
+      severity,
+      read_at,
+      created_at
   `
+
+  const row = rows[0]
+
+  if (!row) {
+    return emptyNotificationResult("Notification insert returned no row")
+  }
+
+  const notification = mapNotificationRow(row)
 
   return {
     ok: true,
     skipped: false,
+    notification,
+    id: notification.id,
+    title: notification.title,
+    body: notification.body,
+    href: notification.href,
+    type: notification.type,
+    severity: notification.severity,
+    createdAt: notification.createdAt,
   }
 }
 
@@ -148,6 +246,7 @@ export async function createManyAdminNotifications(
       created: 0,
       skipped: true,
       reason: "No target admins",
+      notifications: [] as CreatedAdminNotification[],
     }
   }
 
@@ -158,7 +257,7 @@ export async function createManyAdminNotifications(
   const severity = normalizeSeverity(input.severity)
   const metadata = input.metadata || {}
 
-  await prisma.$executeRaw`
+  const rows = await prisma.$queryRaw<AdminNotificationRow[]>`
     insert into public.admin_notifications (
       admin_id,
       actor_admin_id,
@@ -183,12 +282,25 @@ export async function createManyAdminNotifications(
       null,
       now()
     from unnest(${targetAdminIds}::uuid[]) as target_admin_id
+    returning
+      id::text,
+      admin_id::text,
+      actor_admin_id::text,
+      type,
+      title,
+      body,
+      href,
+      metadata,
+      severity,
+      read_at,
+      created_at
   `
 
   return {
     ok: true,
-    created: targetAdminIds.length,
+    created: rows.length,
     skipped: false,
+    notifications: rows.map(mapNotificationRow),
   }
 }
 
