@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { createAdminNotification } from "@/lib/admin-notifications"
+import { publishAdminRealtimeEvent } from "@/lib/ably-server"
 import {
   ensureWorkspaceSeedData,
   findAccessibleChannelBySlug,
@@ -180,6 +182,169 @@ export async function GET(req: Request) {
   }
 }
 
+
+type MentionAdminProfile = {
+  id: string
+  email: string
+  full_name: string | null
+  role: string | null
+  admin_role: string | null
+}
+
+type MentionChannel = {
+  id: string
+  slug: string
+  name: string
+  is_private: boolean
+  is_hidden: boolean
+}
+
+function normalizeMentionValue(value: string | null | undefined) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/^@+/, "")
+    .replace(/[^\p{L}\p{N}\s._-]/gu, "")
+    .replace(/\s+/g, " ")
+}
+
+function messageContainsMention(content: string, value: string | null | undefined) {
+  const normalizedValue = normalizeMentionValue(value)
+  if (!normalizedValue) return false
+
+  const normalizedContent = normalizeMentionValue(content)
+
+  if (!normalizedContent) return false
+
+  return (
+    normalizedContent.includes(`@${normalizedValue}`) ||
+    normalizedContent.includes(normalizedValue)
+  )
+}
+
+function hasGroupMention(content: string) {
+  return /(^|\s)@(all|admins|admin|team|everyone)(?=\s|$|[.,!?;:])/i.test(content)
+}
+
+function truncateMentionBody(value: string, limit = 120) {
+  const text = value.replace(/\s+/g, " ").trim()
+  if (text.length <= limit) return text
+  return `${text.slice(0, limit - 3)}...`
+}
+
+function getMentionDisplayName(profile: Pick<MentionAdminProfile, "email" | "full_name">) {
+  return profile.full_name?.trim() || profile.email.split("@")[0] || "Admin"
+}
+
+async function notifyChannelMentions(input: {
+  content: string
+  channel: MentionChannel
+  senderId: string
+  senderName: string
+  messageId: string
+}) {
+  const content = input.content.trim()
+  if (!content.includes("@")) return
+
+  const admins = await prisma.profiles.findMany({
+    where: {
+      is_blocked: false,
+      OR: [{ is_admin: true }, { role: "admin" }, { role: "super_admin" }],
+    },
+    select: {
+      id: true,
+      email: true,
+      full_name: true,
+      role: true,
+      admin_role: true,
+    },
+  })
+
+  if (!admins.length) return
+
+  let accessibleAdminIds = new Set(admins.map((admin) => admin.id))
+
+  if (input.channel.is_private || input.channel.is_hidden) {
+    const channelMembers = await prisma.workspace_channel_members.findMany({
+      where: {
+        channel_id: input.channel.id,
+      },
+      select: {
+        user_id: true,
+      },
+    })
+
+    accessibleAdminIds = new Set(channelMembers.map((member) => member.user_id))
+  }
+
+  const targetIds = new Set<string>()
+
+  if (hasGroupMention(content)) {
+    for (const admin of admins) {
+      if (admin.id !== input.senderId && accessibleAdminIds.has(admin.id)) {
+        targetIds.add(admin.id)
+      }
+    }
+  }
+
+  for (const admin of admins) {
+    if (admin.id === input.senderId) continue
+    if (!accessibleAdminIds.has(admin.id)) continue
+
+    const fullName = admin.full_name?.trim() || ""
+    const emailPrefix = admin.email.split("@")[0] || ""
+
+    if (
+      messageContainsMention(content, fullName) ||
+      messageContainsMention(content, emailPrefix) ||
+      messageContainsMention(content, admin.email)
+    ) {
+      targetIds.add(admin.id)
+    }
+  }
+
+  if (!targetIds.size) return
+
+  const href = `/admin/workspace?channel=${encodeURIComponent(input.channel.slug)}`
+  const body = `${input.senderName}: ${truncateMentionBody(content)}`
+
+  for (const adminId of targetIds) {
+    const notification = await createAdminNotification({
+      adminId,
+      actorAdminId: input.senderId,
+      type: "team_mention",
+      title: `You were mentioned in #${input.channel.name || input.channel.slug}`,
+      body,
+      href,
+      severity: "info",
+      metadata: {
+        module: "workspace",
+        event: "channel_mention",
+        channelId: input.channel.id,
+        channelSlug: input.channel.slug,
+        messageId: input.messageId,
+        senderId: input.senderId,
+      },
+    })
+
+    if (notification.ok && !notification.skipped) {
+      await publishAdminRealtimeEvent({
+        type: "admin_notification",
+        recipientId: adminId,
+        notification: {
+          id: notification.id,
+          title: notification.title,
+          body: notification.body,
+          href: notification.href,
+          severity: notification.severity,
+          createdAt: notification.createdAt,
+        },
+      })
+    }
+  }
+}
+
+
 export async function POST(req: Request) {
   const auth = await getWorkspaceActor()
   if (!auth.ok) {
@@ -308,6 +473,25 @@ export async function POST(req: Request) {
       },
     })
 
+    const senderName =
+      author?.full_name?.trim() ||
+      author?.email?.split("@")[0] ||
+      "Unknown"
+
+    await notifyChannelMentions({
+      content: created.content,
+      channel: {
+        id: channel.id,
+        slug: channel.slug,
+        name: channel.name,
+        is_private: channel.is_private,
+        is_hidden: channel.is_hidden,
+      },
+      senderId: created.author_id,
+      senderName,
+      messageId: created.id,
+    })
+
     let replyPreview: {
       id: string
       content: string
@@ -353,7 +537,7 @@ export async function POST(req: Request) {
       ok: true,
       message: {
         id: created.id,
-        author: author?.full_name?.trim() || author?.email?.split("@")[0] || "Unknown",
+        author: senderName,
         author_id: created.author_id,
         role: author?.admin_role || author?.role || "admin",
         content: created.content,
