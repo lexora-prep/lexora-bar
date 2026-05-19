@@ -123,9 +123,7 @@ export async function PATCH(
       return NextResponse.json({ ok: false, error: "Title is required." }, { status: 400 })
     }
 
-    if (noteBody !== undefined && !noteBody) {
-      return NextResponse.json({ ok: false, error: "Body is required." }, { status: 400 })
-    }
+    // Empty body is allowed because notes work like editable documents.
 
     if (
       note.note_type === "shared" &&

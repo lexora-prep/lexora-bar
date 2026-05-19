@@ -50,8 +50,8 @@ export async function POST(req: Request) {
         ? body.forwardedOriginalAuthorName.trim()
         : null
 
-    if (!title || !noteBody) {
-      return NextResponse.json({ ok: false, error: "Title and body are required." }, { status: 400 })
+    if (!title) {
+      return NextResponse.json({ ok: false, error: "Title is required." }, { status: 400 })
     }
 
     if (!settings.allow_note_creation && !actor.isSuperAdmin) {
