@@ -669,7 +669,7 @@ export default function AdminShell({
               </div>
             </div>
 
-            <div className="flex-1" />
+            <div className="min-h-0 flex-1 overflow-y-auto" />
 
             <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
               DEV
