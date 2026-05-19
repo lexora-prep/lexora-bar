@@ -562,7 +562,7 @@ export default async function AdminDashboardPage() {
 
     optionalTableCount("reported_rules", "status NOT IN ('closed', 'resolved', 'dismissed')"),
 
-    optionalTableCount("admin_notifications", `admin_id = '${user.id}'::uuid AND read_at IS NULL`),
+    optionalTableCount("admin_notifications", `user_id = '${user.id}'::uuid AND is_read = false`),
 
     getRecentAdminActivity(user.id),
   ])
