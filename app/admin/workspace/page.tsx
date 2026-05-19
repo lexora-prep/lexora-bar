@@ -643,6 +643,11 @@ export default function AdminWorkspacePage() {
   const [taskTag, setTaskTag] = useState("general")
   const [taskDueLabel, setTaskDueLabel] = useState("")
   const [taskPriority, setTaskPriority] = useState<"low" | "medium" | "high">("medium")
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+  const [editingTaskTitle, setEditingTaskTitle] = useState("")
+  const [editingTaskTag, setEditingTaskTag] = useState("")
+  const [editingTaskDueLabel, setEditingTaskDueLabel] = useState("")
+  const [editingTaskPriority, setEditingTaskPriority] = useState<"low" | "medium" | "high">("medium")
 
   const [workspaceView, setWorkspaceView] = useState<"messages" | "tasks" | "notes" | "files">("messages")
   const [rightPanelTab, setRightPanelTab] = useState<"members" | "pinned" | "files">("members")
@@ -813,10 +818,123 @@ export default function AdminWorkspacePage() {
     )
   }
 
+  function openWorkspaceTaskEdit(task: WorkspaceTaskItem) {
+    setEditingTaskId(task.id)
+    setEditingTaskTitle(task.title)
+    setEditingTaskTag(task.tag)
+    setEditingTaskDueLabel(task.dueLabel.replace(/^Done · /, ""))
+    setEditingTaskPriority(task.priority)
+  }
+
+  function cancelWorkspaceTaskEdit() {
+    setEditingTaskId(null)
+    setEditingTaskTitle("")
+    setEditingTaskTag("")
+    setEditingTaskDueLabel("")
+    setEditingTaskPriority("medium")
+  }
+
+  function saveWorkspaceTaskEdit() {
+    const title = editingTaskTitle.trim()
+
+    if (!editingTaskId || !title) {
+      setError("Task title is required.")
+      return
+    }
+
+    setWorkspaceTasks((prev) =>
+      prev.map((task) =>
+        task.id === editingTaskId
+          ? {
+              ...task,
+              title,
+              tag: editingTaskTag.trim() || "general",
+              dueLabel:
+                task.status === "completed"
+                  ? `Done · ${editingTaskDueLabel.trim() || "Today"}`
+                  : editingTaskDueLabel.trim() || "No due date",
+              priority: editingTaskPriority,
+            }
+          : task
+      )
+    )
+
+    cancelWorkspaceTaskEdit()
+    setError("")
+  }
+
+  function deleteWorkspaceTask(taskId: string) {
+    setWorkspaceTasks((prev) => prev.filter((task) => task.id !== taskId))
+
+    if (editingTaskId === taskId) {
+      cancelWorkspaceTaskEdit()
+    }
+  }
+
   function renderWorkspaceTaskRow(task: WorkspaceTaskItem) {
     const done = task.status === "completed"
+    const isEditing = editingTaskId === task.id
     const priorityColor =
       task.priority === "high" ? "#dc2626" : task.priority === "medium" ? "#d97706" : "#b0b8cc"
+
+    if (isEditing) {
+      return (
+        <div
+          key={task.id}
+          className="lexora-ws-task-row"
+          style={{
+            alignItems: "stretch",
+            gap: 8,
+            padding: "10px 0",
+          }}
+        >
+          <input
+            value={editingTaskTitle}
+            onChange={(event) => setEditingTaskTitle(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault()
+                saveWorkspaceTaskEdit()
+              }
+            }}
+            placeholder="Task title"
+            style={{ ...inputStyle, flex: 1, height: 38, marginBottom: 0 }}
+          />
+
+          <input
+            value={editingTaskDueLabel}
+            onChange={(event) => setEditingTaskDueLabel(event.target.value)}
+            placeholder="Due date"
+            style={{ ...inputStyle, width: 130, height: 38, marginBottom: 0 }}
+          />
+
+          <input
+            value={editingTaskTag}
+            onChange={(event) => setEditingTaskTag(event.target.value)}
+            placeholder="Tag"
+            style={{ ...inputStyle, width: 110, height: 38, marginBottom: 0 }}
+          />
+
+          <select
+            value={editingTaskPriority}
+            onChange={(event) => setEditingTaskPriority(event.target.value as "low" | "medium" | "high")}
+            style={{ ...inputStyle, width: 120, height: 38, marginBottom: 0 }}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+
+          <button type="button" className="lexora-ws-pill-btn" onClick={saveWorkspaceTaskEdit}>
+            Save
+          </button>
+
+          <button type="button" className="lexora-ws-pill-btn" onClick={cancelWorkspaceTaskEdit}>
+            Cancel
+          </button>
+        </div>
+      )
+    }
 
     return (
       <div key={task.id} className="lexora-ws-task-row" style={done ? { color: "#b0b8cc" } : undefined}>
@@ -829,14 +947,35 @@ export default function AdminWorkspacePage() {
         >
           {done ? "✓" : ""}
         </button>
+
         {!done ? <span style={{ width: 8, height: 8, borderRadius: "50%", background: priorityColor }} /> : null}
-        <span style={{ flex: 1, textDecoration: done ? "line-through" : "none" }}>{task.title}</span>
+
+        <button
+          type="button"
+          onClick={() => openWorkspaceTaskEdit(task)}
+          title="Edit task"
+          style={{
+            flex: 1,
+            border: "none",
+            background: "transparent",
+            textAlign: "left",
+            cursor: "text",
+            color: done ? "#b0b8cc" : "#111318",
+            textDecoration: done ? "line-through" : "none",
+            fontSize: 14,
+          }}
+        >
+          {task.title}
+        </button>
+
         <span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle(task.assigneeInitial) }}>
           {task.assigneeInitial}
         </span>
+
         <span style={{ color: done ? "#b0b8cc" : task.dueLabel.toLowerCase().includes("overdue") || task.dueLabel.toLowerCase().includes("today") ? "#dc2626" : "#b0b8cc", fontSize: 11.5 }}>
           {task.dueLabel}
         </span>
+
         {task.tag ? (
           <span
             className="lexora-ws-badge"
@@ -848,6 +987,14 @@ export default function AdminWorkspacePage() {
             {task.tag}
           </span>
         ) : null}
+
+        <button type="button" title="Edit task" style={messageActionButtonStyle} onClick={() => openWorkspaceTaskEdit(task)}>
+          <Edit3 size={13} />
+        </button>
+
+        <button type="button" title="Delete task" style={{ ...messageActionButtonStyle, color: "#dc2626" }} onClick={() => deleteWorkspaceTask(task.id)}>
+          <Trash2 size={13} />
+        </button>
       </div>
     )
   }

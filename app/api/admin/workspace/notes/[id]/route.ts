@@ -1,6 +1,41 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { createAdminNotification } from "@/lib/admin-notifications"
+import { publishAdminRealtimeEvent } from "@/lib/ably-server"
 import { canEditWithin, findAccessibleNoteById, getWorkspaceActor, getWorkspaceSettings } from "../../_lib"
+
+function stripHtml(value: string) {
+  return String(value || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&#039;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function isAdminMentioned(text: string, admin: { full_name: string | null; email: string }) {
+  const plain = stripHtml(text).toLowerCase()
+  const email = admin.email.toLowerCase()
+  const local = email.split("@")[0]
+  const fullName = (admin.full_name || "").trim().toLowerCase()
+
+  const candidates = [email, local, fullName].filter(Boolean)
+
+  return candidates.some((candidate) => {
+    const pattern = new RegExp(`@${escapeRegExp(candidate)}(?=$|\\s|[.,;:!?)\\]])`, "i")
+    return pattern.test(plain)
+  })
+}
+
+function actorDisplayName(actor: { full_name?: string | null; email?: string | null }) {
+  return actor.full_name?.trim() || actor.email?.split("@")[0] || "Admin"
+}
 
 export async function GET(
   _req: Request,
@@ -80,6 +115,8 @@ export async function PATCH(
         created_at: true,
         status: true,
         note_type: true,
+        title: true,
+        body: true,
       },
     })
 
@@ -205,6 +242,61 @@ export async function PATCH(
       where: { id },
       data: updateData,
     })
+
+    if (noteBody !== undefined) {
+      const admins = await prisma.profiles.findMany({
+        where: {
+          is_blocked: false,
+          id: { not: auth.actor.id },
+          OR: [{ is_admin: true }, { role: "admin" }, { role: "super_admin" }],
+        },
+        select: {
+          id: true,
+          full_name: true,
+          email: true,
+        },
+      })
+
+      const mentionedAdmins = admins.filter((admin) => {
+        return isAdminMentioned(noteBody, admin) && !isAdminMentioned(note.body || "", admin)
+      })
+
+      const senderName = actorDisplayName(auth.actor)
+
+      for (const admin of mentionedAdmins) {
+        const notification = await createAdminNotification({
+          adminId: admin.id,
+          actorAdminId: auth.actor.id,
+          type: "team_mention",
+          title: `${senderName} mentioned you in a note`,
+          body: `${senderName} mentioned you in "${title || note.title || "Untitled note"}".`,
+          href: `/admin/workspace?note=${id}`,
+          severity: "info",
+          metadata: {
+            module: "workspace",
+            event: "note_mention",
+            noteId: id,
+            senderId: auth.actor.id,
+            senderName,
+          },
+        })
+
+        if (notification.ok && !notification.skipped) {
+          await publishAdminRealtimeEvent({
+            type: "admin_notification",
+            recipientId: admin.id,
+            notification: {
+              id: notification.id,
+              title: notification.title,
+              body: notification.body,
+              href: notification.href,
+              severity: notification.severity,
+              createdAt: notification.createdAt,
+            },
+          })
+        }
+      }
+    }
 
     return NextResponse.json({ ok: true })
   } catch (error) {

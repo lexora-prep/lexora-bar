@@ -8,6 +8,7 @@ import Underline from "@tiptap/extension-underline"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import {
+  AtSign,
   Bold,
   Italic,
   Link2,
@@ -24,6 +25,13 @@ import {
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
+type RichTextMentionMember = {
+  id: string
+  name: string
+  email?: string | null
+  role?: string | null
+}
+
 type RichTextEditorProps = {
   value: string
   onChange: (value: string) => void
@@ -31,6 +39,7 @@ type RichTextEditorProps = {
   minHeight?: number
   compact?: boolean
   frameless?: boolean
+  mentionMembers?: RichTextMentionMember[]
 }
 
 const SYMBOLS = [
@@ -71,6 +80,15 @@ const COLORS = [
   "#be123c",
 ]
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
 function editorButtonStyle(active?: boolean): React.CSSProperties {
   return {
     height: 30,
@@ -97,9 +115,11 @@ export default function RichTextEditor({
   minHeight = 180,
   compact = false,
   frameless = false,
+  mentionMembers = [],
 }: RichTextEditorProps) {
   const [symbolPickerOpen, setSymbolPickerOpen] = useState(false)
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
 
   const extensions = useMemo(
     () => [
@@ -133,6 +153,16 @@ export default function RichTextEditor({
     },
     onUpdate({ editor }) {
       onChange(editor.getHTML())
+
+      const from = editor.state.selection.from
+      const textBefore = editor.state.doc.textBetween(Math.max(0, from - 80), from, "\n", "\n")
+      const match = textBefore.match(/(?:^|\s)@([A-Za-z0-9._ -]{0,40})$/)
+
+      if (match) {
+        setMentionQuery(match[1] || "")
+      } else {
+        setMentionQuery(null)
+      }
     },
   })
 
@@ -148,6 +178,38 @@ export default function RichTextEditor({
   }, [editor, value])
 
   if (!editor) return null
+
+  const filteredMentionMembers = useMemo(() => {
+    const q = (mentionQuery || "").trim().toLowerCase()
+
+    return mentionMembers
+      .filter((member) => {
+        if (!q) return true
+
+        return (
+          member.name.toLowerCase().includes(q) ||
+          (member.email || "").toLowerCase().includes(q) ||
+          (member.role || "").toLowerCase().includes(q)
+        )
+      })
+      .slice(0, 8)
+  }, [mentionMembers, mentionQuery])
+
+  function insertMention(member: RichTextMentionMember) {
+    const from = editor.state.selection.from
+    const query = mentionQuery || ""
+    const start = Math.max(0, from - query.length - 1)
+    const safeName = escapeHtml(member.name || member.email || "Admin")
+
+    editor
+      .chain()
+      .focus()
+      .deleteRange({ from: start, to: from })
+      .insertContent(`<span style="color:#1d4ed8;font-weight:700;">@${safeName}</span>&nbsp;`)
+      .run()
+
+    setMentionQuery(null)
+  }
 
   function setLink() {
     const previousUrl = editor.getAttributes("link").href as string | undefined
@@ -275,6 +337,18 @@ export default function RichTextEditor({
           <Smile size={14} />
         </button>
 
+        <button
+          type="button"
+          style={editorButtonStyle(mentionQuery !== null)}
+          onClick={() => {
+            editor.chain().focus().insertContent("@").run()
+            setMentionQuery("")
+          }}
+          title="Mention admin"
+        >
+          <AtSign size={14} />
+        </button>
+
         <button type="button" style={editorButtonStyle()} onClick={() => editor.chain().focus().setParagraph().run()}>
           <Pilcrow size={14} />
         </button>
@@ -320,6 +394,73 @@ export default function RichTextEditor({
                   cursor: "pointer",
                 }}
               />
+            ))}
+          </div>
+        ) : null}
+
+        {mentionQuery !== null && filteredMentionMembers.length > 0 ? (
+          <div
+            style={{
+              position: "absolute",
+              top: 46,
+              left: 12,
+              zIndex: 35,
+              width: 280,
+              padding: 8,
+              borderRadius: 14,
+              border: "1px solid rgba(15,23,42,0.10)",
+              background: "#ffffff",
+              boxShadow: "0 18px 45px rgba(15,23,42,0.15)",
+            }}
+          >
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, color: "#94a3b8", marginBottom: 6 }}>
+              Mention admin
+            </div>
+
+            {filteredMentionMembers.map((member) => (
+              <button
+                key={member.id}
+                type="button"
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  insertMention(member)
+                }}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  background: "transparent",
+                  borderRadius: 10,
+                  padding: "8px 9px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 9,
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                <span
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 999,
+                    background: "#eef2ff",
+                    color: "#1d4ed8",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  {(member.name || member.email || "A").slice(0, 2).toUpperCase()}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#111827" }}>{member.name}</span>
+                  <span style={{ display: "block", fontSize: 11.5, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {member.email || member.role || "admin"}
+                  </span>
+                </span>
+              </button>
             ))}
           </div>
         ) : null}
