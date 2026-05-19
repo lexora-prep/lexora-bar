@@ -226,6 +226,16 @@ function hasGroupMention(content: string) {
   return /(^|\s)@(all|admins|admin|team|everyone)(?=\s|$|[.,!?;:])/i.test(content)
 }
 
+function extractExplicitMentionIds(content: string) {
+  return Array.from(
+    new Set(
+      Array.from(content.matchAll(/@\[[^\]]+\]\(admin:([0-9a-fA-F-]{36})\)/g))
+        .map((match) => match[1])
+        .filter(Boolean)
+    )
+  )
+}
+
 function truncateMentionBody(value: string, limit = 120) {
   const text = value.replace(/\s+/g, " ").trim()
   if (text.length <= limit) return text
@@ -278,6 +288,12 @@ async function notifyChannelMentions(input: {
   }
 
   const targetIds = new Set<string>()
+
+  for (const mentionedAdminId of extractExplicitMentionIds(content)) {
+    if (mentionedAdminId !== input.senderId && accessibleAdminIds.has(mentionedAdminId)) {
+      targetIds.add(mentionedAdminId)
+    }
+  }
 
   if (hasGroupMention(content)) {
     for (const admin of admins) {

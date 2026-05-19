@@ -509,33 +509,56 @@ function renderMessageContent(content: string, isDeleted?: boolean) {
     return content
   }
 
-  const parts = content.split(/(@(?:all|team|[A-Za-z0-9._-]+))/g)
+  const mentionPattern = /(@\[[^\]]+\]\(admin:[0-9a-fA-F-]{36}\)|@(all|team|admins|everyone))/g
+  const parts: React.ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
 
-  return parts.map((part, index) => {
-    if (!part) return null
-
-    if (/^@(?:all|team|[A-Za-z0-9._-]+)$/.test(part)) {
-      return (
-        <span
-          key={`${part}-${index}`}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            borderRadius: 6,
-            background: "rgba(30,64,175,0.10)",
-            color: "#1d4ed8",
-            fontWeight: 700,
-            padding: "0 4px",
-            lineHeight: 1.45,
-          }}
-        >
-          {part}
+  while ((match = mentionPattern.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(
+        <span key={`text-${lastIndex}`}>
+          {content.slice(lastIndex, match.index)}
         </span>
       )
     }
 
-    return <span key={`text-${index}`}>{part}</span>
-  })
+    const raw = match[0]
+    const labelMatch = raw.match(/^@\[([^\]]+)\]\(admin:([0-9a-fA-F-]{36})\)$/)
+    const label = labelMatch ? `@${labelMatch[1]}` : raw
+
+    parts.push(
+      <span
+        key={`mention-${match.index}-${raw}`}
+        data-admin-mention-id={labelMatch ? labelMatch[2] : undefined}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          borderRadius: 6,
+          background: "rgba(30,64,175,0.10)",
+          color: "#1d4ed8",
+          fontWeight: 700,
+          padding: "0 4px",
+          lineHeight: 1.45,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label}
+      </span>
+    )
+
+    lastIndex = mentionPattern.lastIndex
+  }
+
+  if (lastIndex < content.length) {
+    parts.push(
+      <span key={`text-${lastIndex}`}>
+        {content.slice(lastIndex)}
+      </span>
+    )
+  }
+
+  return parts.length ? parts : content
 }
 
 type WorkspaceTaskStatus = "todo" | "in_progress" | "completed"
@@ -2588,7 +2611,7 @@ export default function AdminWorkspacePage() {
         id: member.id,
         label: member.name,
         description: member.email || member.title || member.role,
-        token: `@${member.name.replace(/\s+/g, "")}`,
+        token: `@[${member.name.replace(/[\$begin:math:display$\$end:math:display$\\]/g, "").trim() || member.email || "Admin"}](admin:${member.id})`,
       }))
 
     return [...groupOptions, ...memberOptions]
@@ -2782,7 +2805,13 @@ export default function AdminWorkspacePage() {
             <ToolbarIconButton onClick={() => setComposerEmojiOpen((prev) => !prev)}>
               <Smile size={14} />
             </ToolbarIconButton>
-            <ToolbarIconButton onClick={() => insertText("@")}>
+            <ToolbarIconButton
+              onClick={() => {
+                insertText("@")
+                setMentionPickerOpen(true)
+                setMentionQuery("")
+              }}
+            >
               <AtSign size={14} />
             </ToolbarIconButton>
           </div>
@@ -2911,7 +2940,7 @@ export default function AdminWorkspacePage() {
                   </span>
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "block", fontSize: 13, color: "#111827", fontWeight: 700 }}>
-                      {option.token}
+                      {option.id === "all" || option.id === "team" ? option.token : `@${option.label}`}
                     </span>
                     <span style={{ display: "block", fontSize: 11.5, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {option.description}
