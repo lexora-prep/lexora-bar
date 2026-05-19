@@ -258,23 +258,23 @@ type PendingForward =
 
 const EMOJI_SET = [
   "👍",
-  "👎",
-  "❤️",
-  "😂",
-  "😮",
-  "😢",
-  "👏",
   "🔥",
-  "🎯",
   "✅",
-  "👀",
-  "🚀",
-  "🙌",
-  "🤝",
-  "💯",
+  "😂",
+  "🙏",
+  "👏",
+  "❤️",
   "😎",
-  "🤔",
-  "😅",
+  "🚀",
+  "👀",
+  "💯",
+  "🎯",
+  "⚠️",
+  "❗",
+  "💡",
+  "📌",
+  "📝",
+  "🙌",
 ]
 
 const PROFILE_THEMES = ["sunset", "midnight", "violet", "emerald", "clean"]
@@ -425,9 +425,18 @@ export default function AdminWorkspacePage() {
   const [composerMode, setComposerMode] = useState<"message" | "note">("message")
   const [emojiPickerFor, setEmojiPickerFor] = useState<string | null>(null)
   const [membersOpen, setMembersOpen] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [workspaceSearch, setWorkspaceSearch] = useState("")
+  const [chatSearchOpen, setChatSearchOpen] = useState(false)
+  const [chatSearch, setChatSearch] = useState("")
+  const [inviteMemberOpen, setInviteMemberOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState("")
   const [currentUserStatus, setCurrentUserStatus] = useState<"online" | "away" | "busy" | "offline">(
     "online"
   )
+
+  const [workspaceView, setWorkspaceView] = useState<"messages" | "tasks" | "notes" | "files">("messages")
+  const [rightPanelTab, setRightPanelTab] = useState<"members" | "pinned" | "files">("members")
 
   const [replyingTo, setReplyingTo] = useState<WorkspaceMessage | null>(null)
   const [forwardingMessage, setForwardingMessage] = useState<WorkspaceMessage | null>(null)
@@ -564,6 +573,43 @@ export default function AdminWorkspacePage() {
     })
   }, [forwardSearch, directMembers])
 
+  const filteredSidebarChannels = useMemo(() => {
+    const q = workspaceSearch.trim().toLowerCase()
+    if (!q) return channels
+    return channels.filter((channel) => {
+      return (
+        channel.name.toLowerCase().includes(q) ||
+        channel.slug.toLowerCase().includes(q) ||
+        (channel.description || "").toLowerCase().includes(q)
+      )
+    })
+  }, [workspaceSearch, channels])
+
+  const filteredSidebarNotes = useMemo(() => {
+    const q = workspaceSearch.trim().toLowerCase()
+    if (!q) return notes
+    return notes.filter((note) => {
+      return (
+        note.title.toLowerCase().includes(q) ||
+        (note.description || "").toLowerCase().includes(q) ||
+        (note.body || "").toLowerCase().includes(q)
+      )
+    })
+  }, [workspaceSearch, notes])
+
+  const filteredSidebarDms = useMemo(() => {
+    const q = workspaceSearch.trim().toLowerCase()
+    if (!q) return directMembers
+    return directMembers.filter((member) => {
+      return (
+        member.name.toLowerCase().includes(q) ||
+        (member.email || "").toLowerCase().includes(q) ||
+        (member.title || "").toLowerCase().includes(q) ||
+        member.role.toLowerCase().includes(q)
+      )
+    })
+  }, [workspaceSearch, directMembers])
+
   useEffect(() => {
     void bootstrap()
   }, [])
@@ -598,6 +644,17 @@ export default function AdminWorkspacePage() {
       JSON.stringify(mutedDmMemberIds),
     )
   }, [mutedDmMemberIds])
+
+  useEffect(() => {
+    function closeFloatingWorkspaceMenus() {
+      setComposerEmojiOpen(false)
+      setEmojiPickerFor(null)
+      setNoteReactionPickerOpen(false)
+    }
+
+    document.addEventListener("mousedown", closeFloatingWorkspaceMenus)
+    return () => document.removeEventListener("mousedown", closeFloatingWorkspaceMenus)
+  }, [])
 
   useEffect(() => {
     if (activePane.type === "channel" && channels.length > 0) {
@@ -1869,6 +1926,7 @@ export default function AdminWorkspacePage() {
 
           {composerEmojiOpen ? (
             <div
+              onMouseDown={(event) => event.stopPropagation()}
               style={{
                 position: "absolute",
                 top: 42,
@@ -1948,7 +2006,7 @@ export default function AdminWorkspacePage() {
             }}
           >
             <span style={{ fontSize: 11, color: "#94a3b8" }}>
-              ↵ to send · Shift+↵ newline · @ to mention
+               to send · Shift+ newline · @ to mention
             </span>
 
             <button
@@ -1980,1437 +2038,1293 @@ export default function AdminWorkspacePage() {
 
   return (
     <>
-      <div
-        style={{
-          height: "100dvh",
-          minHeight: "100dvh",
-          background: "#f6f7fb",
-          color: "#111827",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: membersOpen ? "280px minmax(0,1fr) 300px" : "280px minmax(0,1fr)",
-            height: "100%",
-            transition: "grid-template-columns 0.2s ease",
-          }}
-        >
-          <aside
-            style={{
-              background: "#fbfbfd",
-              borderRight: "1px solid rgba(15,23,42,0.08)",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              minHeight: 0,
-            }}
-          >
-            <div
-              style={{
-                padding: "18px 18px 14px",
-                borderBottom: "1px solid rgba(15,23,42,0.08)",
-                flexShrink: 0,
-              }}
+      <style jsx global>{`
+        .lexora-ws-shell, .lexora-ws-shell * {
+          box-sizing: border-box;
+        }
+        .lexora-ws-shell {
+          --ws-bg: #1a1d27;
+          --sidebar-bg: #1e2130;
+          --sidebar-hover: rgba(255,255,255,0.05);
+          --sidebar-active: rgba(255,255,255,0.10);
+          --content-bg: #ffffff;
+          --right-bg: #fbfbfd;
+          --ink: #111318;
+          --ink-2: #3d4257;
+          --ink-3: #7a8099;
+          --ink-4: #b0b8cc;
+          --border: rgba(17,19,24,0.08);
+          --border-med: rgba(17,19,24,0.12);
+          --purple: #6c5ce7;
+          --purple-light: #8b7cf8;
+          --purple-dim: rgba(108,92,231,0.12);
+          --blue: #2563eb;
+          --blue-dim: rgba(37,99,235,0.09);
+          --green: #059669;
+          --green-dim: rgba(5,150,105,0.10);
+          --amber: #d97706;
+          --amber-dim: rgba(217,119,6,0.10);
+          --red: #dc2626;
+          --red-dim: rgba(220,38,38,0.09);
+          height: 100dvh;
+          min-height: 100dvh;
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: ${membersOpen ? `${sidebarCollapsed ? "64px" : "240px"} minmax(0, 1fr) 260px` : `${sidebarCollapsed ? "64px" : "240px"} minmax(0, 1fr)`};
+          background: var(--ws-bg);
+          color: var(--ink);
+          font-family: Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 13px;
+          -webkit-font-smoothing: antialiased;
+        }
+        .lexora-ws-sidebar {
+          background: var(--sidebar-bg);
+          color: rgba(255,255,255,0.72);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border-right: 1px solid rgba(255,255,255,0.05);
+          min-height: 0;
+        }
+        .lexora-ws-sidebar.collapsed .lexora-ws-search {
+          justify-content: center;
+          padding: 0;
+        }
+        .lexora-ws-sidebar.collapsed .lexora-ws-search input,
+        .lexora-ws-sidebar.collapsed .lexora-ws-kbd,
+        .lexora-ws-sidebar.collapsed .lexora-ws-nav-name,
+        .lexora-ws-sidebar.collapsed .lexora-ws-badge,
+        .lexora-ws-sidebar.collapsed .lexora-ws-section-text,
+        .lexora-ws-sidebar.collapsed .lexora-ws-footer {
+          display: none;
+        }
+        .lexora-ws-sidebar.collapsed .lexora-ws-nav {
+          justify-content: center;
+          padding: 0;
+        }
+        .lexora-ws-sidebar.collapsed .lexora-ws-nav-left {
+          gap: 0;
+        }
+        .lexora-ws-sidebar.collapsed .lexora-ws-sidebar-scroll {
+          padding-left: 6px;
+          padding-right: 6px;
+        }
+        .lexora-ws-top {
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 12px;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+          flex-shrink: 0;
+        }
+        .lexora-ws-logo {
+          width: 26px;
+          height: 26px;
+          border-radius: 7px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--purple);
+          color: #fff;
+          flex-shrink: 0;
+        }
+        .lexora-ws-search {
+          margin: 10px 10px 6px;
+          height: 34px;
+          border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.07);
+          background: rgba(255,255,255,0.05);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 10px;
+          color: rgba(255,255,255,0.24);
+          flex-shrink: 0;
+        }
+        .lexora-ws-search input {
+          flex: 1;
+          border: none;
+          outline: none;
+          background: transparent;
+          color: rgba(255,255,255,0.72);
+          font-size: 12.5px;
+        }
+        .lexora-ws-search input::placeholder {
+          color: rgba(255,255,255,0.22);
+        }
+        .lexora-ws-kbd {
+          font-size: 10px;
+          color: rgba(255,255,255,0.18);
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 4px;
+          padding: 1px 5px;
+        }
+        .lexora-ws-sidebar-scroll {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          padding: 4px 8px 16px;
+        }
+        .lexora-ws-section-row {
+          width: 100%;
+          border: none;
+          background: transparent;
+          color: rgba(255,255,255,0.36);
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 6px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 11.5px;
+          font-weight: 500;
+          text-align: left;
+        }
+        .lexora-ws-section-row:hover {
+          background: rgba(255,255,255,0.04);
+        }
+        .lexora-ws-nav {
+          width: 100%;
+          border: none;
+          background: transparent;
+          color: rgba(255,255,255,0.48);
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 0 8px;
+          border-radius: 7px;
+          cursor: pointer;
+          text-align: left;
+          font-size: 13px;
+        }
+        .lexora-ws-nav:hover {
+          background: var(--sidebar-hover);
+          color: rgba(255,255,255,0.78);
+        }
+        .lexora-ws-nav.active {
+          background: var(--sidebar-active);
+          color: rgba(255,255,255,0.94);
+          font-weight: 600;
+        }
+        .lexora-ws-nav-left {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+        }
+        .lexora-ws-nav-name {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .lexora-ws-badge {
+          border-radius: 999px;
+          padding: 1px 6px;
+          font-size: 10.5px;
+          font-weight: 600;
+          background: rgba(255,255,255,0.10);
+          color: rgba(255,255,255,0.48);
+          white-space: nowrap;
+        }
+        .lexora-ws-status-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          display: inline-block;
+          flex-shrink: 0;
+        }
+        .lexora-ws-footer {
+          border-top: 1px solid rgba(255,255,255,0.05);
+          padding: 10px 10px 12px;
+          flex-shrink: 0;
+        }
+        .lexora-ws-main {
+          min-width: 0;
+          min-height: 0;
+          background: var(--content-bg);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .lexora-ws-main-top {
+          height: 48px;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 20px;
+          gap: 12px;
+          flex-shrink: 0;
+          background: #fff;
+        }
+        .lexora-ws-tabs {
+          height: 40px;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: flex-end;
+          gap: 2px;
+          padding: 0 20px;
+          background: #fff;
+          flex-shrink: 0;
+        }
+        .lexora-ws-tab {
+          border: none;
+          border-bottom: 2px solid transparent;
+          background: transparent;
+          color: var(--ink-3);
+          padding: 0 10px 10px;
+          height: 40px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+        .lexora-ws-tab:hover {
+          color: var(--ink-2);
+        }
+        .lexora-ws-tab.active {
+          color: var(--ink);
+          border-bottom-color: var(--purple);
+        }
+        .lexora-ws-content {
+          flex: 1;
+          min-height: 0;
+          overflow: hidden;
+          background: #fff;
+          display: flex;
+          flex-direction: column;
+        }
+        .lexora-ws-scroll {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          padding: 16px 20px;
+        }
+        .lexora-ws-notice {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          border: 1px solid rgba(217,119,6,0.16);
+          background: var(--amber-dim);
+          color: var(--amber);
+          border-radius: 9px;
+          padding: 8px 12px;
+          margin-bottom: 16px;
+          font-size: 12.5px;
+        }
+        .lexora-ws-divider {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: var(--ink-4);
+          font-size: 11.5px;
+          margin: 8px 0 14px;
+        }
+        .lexora-ws-divider::before,
+        .lexora-ws-divider::after {
+          content: "";
+          height: 1px;
+          background: var(--border);
+          flex: 1;
+        }
+        .lexora-ws-message {
+          display: flex;
+          gap: 10px;
+          padding: 4px;
+          border-radius: 8px;
+          margin-bottom: 2px;
+          position: relative;
+        }
+        .lexora-ws-message:hover {
+          background: #fafaf8;
+        }
+        .lexora-ws-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-weight: 700;
+          font-size: 12px;
+          flex-shrink: 0;
+        }
+        .lexora-ws-role {
+          font-size: 10px;
+          font-weight: 700;
+          padding: 1px 6px;
+          border-radius: 4px;
+          letter-spacing: 0.04em;
+          color: var(--purple);
+          background: var(--purple-dim);
+          text-transform: uppercase;
+        }
+        .lexora-ws-pill-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          border-radius: 999px;
+          border: 1px solid var(--border);
+          background: #fff;
+          color: var(--ink-3);
+          font-size: 12px;
+          padding: 4px 8px;
+          cursor: pointer;
+        }
+        .lexora-ws-pill-btn:hover {
+          background: var(--purple-dim);
+          color: var(--purple);
+          border-color: rgba(108,92,231,0.22);
+        }
+        .lexora-ws-two-col {
+          flex: 1;
+          min-height: 0;
+          display: grid;
+          grid-template-columns: 220px minmax(0, 1fr);
+          overflow: hidden;
+        }
+        .lexora-ws-note-list {
+          border-right: 1px solid var(--border);
+          padding: 12px 8px;
+          overflow-y: auto;
+        }
+        .lexora-ws-note-item {
+          width: 100%;
+          border: none;
+          background: transparent;
+          border-radius: 8px;
+          text-align: left;
+          padding: 9px 10px;
+          margin-bottom: 2px;
+          cursor: pointer;
+        }
+        .lexora-ws-note-item:hover {
+          background: #f5f5f3;
+        }
+        .lexora-ws-note-item.active {
+          background: var(--purple-dim);
+        }
+        .lexora-ws-task-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-height: 38px;
+          padding: 8px 10px;
+          border-radius: 8px;
+          cursor: default;
+        }
+        .lexora-ws-task-row:hover {
+          background: #f7f7f5;
+        }
+        .lexora-ws-check {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          border: 1.5px solid var(--border-med);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          flex-shrink: 0;
+        }
+        .lexora-ws-check.done {
+          background: var(--green);
+          border-color: var(--green);
+        }
+        .lexora-ws-file-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(240px, 1fr));
+          gap: 12px;
+          max-width: 720px;
+        }
+        .lexora-ws-file-card {
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: #fff;
+        }
+        .lexora-ws-right {
+          min-height: 0;
+          background: var(--right-bg);
+          border-left: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .lexora-ws-rp-tabs {
+          height: 48px;
+          display: flex;
+          align-items: flex-end;
+          border-bottom: 1px solid var(--border);
+          background: #fff;
+          padding: 0 12px;
+          flex-shrink: 0;
+        }
+        .lexora-ws-rp-tab {
+          border: none;
+          border-bottom: 2px solid transparent;
+          background: transparent;
+          height: 48px;
+          padding: 0 8px 10px;
+          color: var(--ink-3);
+          font-size: 12.5px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+        .lexora-ws-rp-tab.active {
+          color: var(--ink);
+          border-bottom-color: var(--purple);
+        }
+        .lexora-ws-rp-scroll {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          padding: 14px 12px;
+        }
+        .lexora-ws-card {
+          background: #fff;
+          border: 1px solid var(--border);
+          border-radius: 9px;
+          padding: 10px;
+          margin-bottom: 7px;
+        }
+        .lexora-ws-icon-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          border: 1px solid var(--border);
+          background: #fff;
+          color: var(--ink-3);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+        .lexora-ws-icon-btn:hover,
+        .lexora-ws-icon-btn.active {
+          background: var(--purple-dim);
+          color: var(--purple);
+          border-color: rgba(108,92,231,0.20);
+        }
+        @media (max-width: 1100px) {
+          .lexora-ws-shell {
+            grid-template-columns: ${sidebarCollapsed ? "64px" : "220px"} minmax(0, 1fr) !important;
+          }
+          .lexora-ws-right {
+            display: none;
+          }
+        }
+      `}</style>
+
+      <div className="lexora-ws-shell">
+        <aside className={`lexora-ws-sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
+          <div className="lexora-ws-top">
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed((prev) => !prev)}
+              className="lexora-ws-icon-btn"
+              title={sidebarCollapsed ? "Expand menu" : "Collapse menu"}
+              style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.50)" }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 14,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    background: "linear-gradient(135deg, #8b5cf6, #6366f1)",
-                    color: "#fff",
-                    flexShrink: 0,
-                  }}
-                >
-                  O
-                </div>
+              {sidebarCollapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
+            </button>
 
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
-                    {activeTeam?.name || "Internal Admin Team"}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2, lineHeight: 1.45 }}>
-                    {activeTeam?.description || "Core internal workspace for admins and editors"}
-                  </div>
-                </div>
-              </div>
-            </div>
+            {!sidebarCollapsed && canCreateChannels ? (
+              <button
+                type="button"
+                onClick={openCreateChannelModal}
+                className="lexora-ws-icon-btn"
+                title="Create channel"
+                style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.50)" }}
+              >
+                <Plus size={15} />
+              </button>
+            ) : null}
+          </div>
 
-            <div style={{ overflowY: "auto", padding: "14px 0", flex: 1, minHeight: 0 }}>
-              <div style={{ padding: "0 18px 16px" }}>
-                <div style={sectionHeaderRow}>
-                  <button type="button" onClick={() => setChannelsCollapsed((v) => !v)} style={sectionToggleStyle}>
-                    {channelsCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                    <span>Channels</span>
-                  </button>
+          <div className="lexora-ws-search">
+            <Search size={13} />
+            <input
+              value={workspaceSearch}
+              onChange={(event) => setWorkspaceSearch(event.target.value)}
+              placeholder={sidebarCollapsed ? "" : "Search channels, notes, people..."}
+            />
+            <span className="lexora-ws-kbd">⌘K</span>
+          </div>
 
-                  {canCreateChannels ? (
-                    <button type="button" onClick={openCreateChannelModal} style={tinyIconButtonStyle}>
-                      <Plus size={14} />
-                    </button>
-                  ) : null}
-                </div>
+          <div className="lexora-ws-sidebar-scroll">
+            <div style={{ marginBottom: 8 }}>
+              <button type="button" onClick={() => setChannelsCollapsed((v) => !v)} className="lexora-ws-section-row">
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  {channelsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                  <span className="lexora-ws-section-text">Channels</span>
+                </span>
+                {canCreateChannels ? <Plus size={12} /> : null}
+              </button>
 
-                {!channelsCollapsed ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {channels.map((channel) => {
+              {!channelsCollapsed ? (
+                <div>
+                  {filteredSidebarChannels.length === 0 ? (
+                    <div style={{ padding: "6px 10px", color: "rgba(255,255,255,0.32)", fontSize: 12 }}>No channels</div>
+                  ) : (
+                    filteredSidebarChannels.map((channel) => {
                       const active = activePane.type === "channel" && activePane.slug === channel.slug
-                      const accent = normalizeColor(channel.color_hex)
-
                       return (
-                        <div
+                        <button
                           key={channel.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
+                          type="button"
+                          onClick={() => {
+                            setActivePane({ type: "channel", slug: channel.slug })
+                            setWorkspaceView("messages")
                           }}
+                          className={`lexora-ws-nav ${active ? "active" : ""}`}
                         >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setComposerMode("message")
-                              setReplyingTo(null)
-                              setForwardingMessage(null)
-                              setForwardingNote(null)
-                              setActivePane({ type: "channel", slug: channel.slug })
-                            }}
-                            style={{
-                              flex: 1,
-                              height: 40,
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 10,
-                              padding: "0 12px",
-                              background: active ? "rgba(99,102,241,0.10)" : "transparent",
-                              color: "#475569",
-                              fontWeight: active ? 600 : 500,
-                              borderRadius: 8,
-                              fontSize: 12.5,
-                            }}
-                          >
-                            <span
-                              style={{
-                                color: accent,
-                                fontWeight: 700,
-                                width: 14,
-                                textAlign: "center",
-                                flexShrink: 0,
-                              }}
-                            >
+                          <span className="lexora-ws-nav-left">
+                            <span style={{ width: 18, display: "inline-flex", justifyContent: "center", color: active ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.34)" }}>
                               {channel.icon_symbol || "#"}
                             </span>
-                            <span
-                              style={{
-                                color: accent,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {channel.name}
-                            </span>
-                            {channel.is_hidden ? <EyeOff size={12} color="#94a3b8" /> : null}
-                            {channel.is_private ? <Lock size={12} color="#94a3b8" /> : null}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => openEditChannelModal(channel)}
-                            style={tinyIconButtonStyle}
-                            title="Edit channel"
-                          >
-                            <Edit3 size={13} />
-                          </button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : null}
-              </div>
-
-              <div style={{ padding: "0 18px 16px" }}>
-                <div style={sectionHeaderRow}>
-                  <button type="button" onClick={() => setNotesCollapsed((v) => !v)} style={sectionToggleStyle}>
-                    {notesCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                    <span>Notes</span>
-                  </button>
-
-                  {canCreateNotes ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        resetNoteForm()
-                        setNoteModalOpen(true)
-                      }}
-                      style={tinyIconButtonStyle}
-                    >
-                      <Plus size={14} />
-                    </button>
-                  ) : null}
-                </div>
-
-                {!notesCollapsed ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {notes.length === 0 ? (
-                      <div style={{ padding: "4px 12px", fontSize: 12, color: "#94a3b8" }}>No notes yet</div>
-                    ) : (
-                      notes.map((note) => {
-                        const active = activePane.type === "note" && activePane.id === note.id
-                        const isShared = note.note_type === "shared" || note.visibility === "shared"
-
-                        return (
-                          <button
-                            key={note.id}
-                            type="button"
-                            onClick={() => setActivePane({ type: "note", id: note.id })}
-                            style={{
-                              minHeight: 44,
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 10,
-                              padding: "8px 12px",
-                              background: active ? "rgba(99,102,241,0.10)" : "transparent",
-                              color: active ? "#4f46e5" : "#475569",
-                              borderRadius: 8,
-                              fontSize: 12.5,
-                            }}
-                          >
-                            {isShared ? <FileText size={14} color="#16a34a" /> : <Pin size={14} color="#ca8a04" />}
-
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <div
-                                  style={{
-                                    fontSize: 12.5,
-                                    fontWeight: 500,
-                                    color: active ? "#4f46e5" : "#334155",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                    maxWidth: 144,
-                                  }}
-                                >
-                                  {note.title}
-                                </div>
-
-                                <span
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    color: isShared ? "#16a34a" : "#64748b",
-                                    background: isShared ? "rgba(22,163,74,0.10)" : "rgba(100,116,139,0.10)",
-                                    padding: "2px 6px",
-                                    borderRadius: 999,
-                                  }}
-                                >
-                                  {isShared ? "Shared" : "Personal"}
-                                </span>
-                              </div>
-                            </div>
-                          </button>
-                        )
-                      })
-                    )}
-                  </div>
-                ) : null}
-              </div>
-
-              <div style={{ padding: "0 18px" }}>
-                <div style={sectionHeaderRow}>
-                  <button type="button" onClick={() => setDmsCollapsed((v) => !v)} style={sectionToggleStyle}>
-                    {dmsCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                    <span>Direct Messages</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setWorkspaceDmPopupsEnabled((prev) => !prev)}
-                    title={workspaceDmPopupsEnabled ? "Turn DM popups off" : "Turn DM popups on"}
-                    style={{
-                      border: "none",
-                      borderRadius: 999,
-                      background: workspaceDmPopupsEnabled ? "rgba(22,163,74,0.12)" : "rgba(148,163,184,0.16)",
-                      color: workspaceDmPopupsEnabled ? "#16a34a" : "#64748b",
-                      height: 22,
-                      padding: "0 8px",
-                      fontSize: 9,
-                      fontWeight: 800,
-                      letterSpacing: 0.4,
-                      cursor: "pointer",
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {workspaceDmPopupsEnabled ? "Popups on" : "Popups off"}
-                  </button>
-                </div>
-
-                {!dmsCollapsed ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {directMembers.length === 0 ? (
-                      <div style={{ padding: "4px 12px", fontSize: 12, color: "#94a3b8" }}>
-                        No direct members
-                      </div>
-                    ) : (
-                      directMembers.map((dm) => {
-                        const active = activePane.type === "dm" && activePane.id === dm.id
-
-                        return (
-                          <button
-                            key={dm.id}
-                            type="button"
-                            onClick={() => {
-                              setDmUnreadByMemberId((prev) => ({
-                                ...prev,
-                                [dm.id]: 0,
-                              }))
-                              setActivePane({ type: "dm", id: dm.id })
-                            }}
-                            style={{
-                              height: 40,
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 10,
-                              padding: "0 10px",
-                              background: active ? "rgba(99,102,241,0.10)" : "transparent",
-                              color: active ? "#4f46e5" : "#475569",
-                              borderRadius: 8,
-                              fontSize: 12.5,
-                            }}
-                          >
-                            <span
-                              style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: "50%",
-                                flexShrink: 0,
-                                ...statusDot(dm.status),
-                              }}
-                            />
-                            <div
-                              style={{
-                                width: 28,
-                                height: 28,
-                                borderRadius: "50%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontWeight: 700,
-                                fontSize: 11,
-                                flexShrink: 0,
-                                ...avatarStyle(getInitials(dm.name)),
-                              }}
-                            >
-                              {getInitials(dm.name)}
-                            </div>
-                            <span
-                              style={{
-                                minWidth: 0,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                flex: 1,
-                              }}
-                            >
-                              {dm.name}
-                            </span>
-
-                            {(dmUnreadByMemberId[dm.id] || 0) > 0 ? (
+                            <span className="lexora-ws-nav-name">{channel.name}</span>
+                          </span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            {channel.is_private ? <Lock size={12} /> : null}
+                            {!channel.is_default ? (
                               <span
+                                role="button"
+                                tabIndex={0}
+                                title="Edit channel"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  openEditChannelModal(channel)
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter") {
+                                    event.stopPropagation()
+                                    openEditChannelModal(channel)
+                                  }
+                                }}
                                 style={{
-                                  minWidth: 18,
-                                  height: 18,
-                                  borderRadius: 999,
-                                  background: "#ef4444",
-                                  color: "#ffffff",
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: 6,
                                   display: "inline-flex",
                                   alignItems: "center",
                                   justifyContent: "center",
-                                  padding: "0 5px",
-                                  fontSize: 10,
-                                  fontWeight: 800,
+                                  color: "rgba(255,255,255,0.38)",
                                 }}
                               >
-                                {dmUnreadByMemberId[dm.id] > 9 ? "9+" : dmUnreadByMemberId[dm.id]}
+                                <Edit3 size={12} />
                               </span>
                             ) : null}
-
-                            <span
-                              role="button"
-                              tabIndex={0}
-                              title={mutedDmMemberIds.includes(dm.id) ? "Unmute this member" : "Mute this member"}
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                toggleMutedDmMember(dm.id)
-                              }}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter" || event.key === " ") {
-                                  event.preventDefault()
-                                  event.stopPropagation()
-                                  toggleMutedDmMember(dm.id)
-                                }
-                              }}
-                              style={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: 8,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                                color: mutedDmMemberIds.includes(dm.id) ? "#ef4444" : "#94a3b8",
-                                background: mutedDmMemberIds.includes(dm.id)
-                                  ? "rgba(239,68,68,0.10)"
-                                  : "rgba(148,163,184,0.10)",
-                              }}
-                            >
-                              <BellOff size={13} />
-                            </span>
-                          </button>
-                        )
-                      })
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </aside>
-
-          <main
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              background: "#ffffff",
-              minHeight: 0,
-            }}
-          >
-            <div
-              style={{
-                height: 72,
-                borderBottom: "1px solid rgba(15,23,42,0.08)",
-                display: "flex",
-                alignItems: "center",
-                padding: "0 26px",
-                gap: 12,
-                flexShrink: 0,
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>{renderCenterTitle()}</div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{renderCenterSubtitle()}</div>
-              </div>
-
-              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                <button type="button" style={iconButtonStyle} onClick={() => setError("")}>
-                  <Search size={16} />
-                </button>
-
-                <button
-                  type="button"
-                  style={iconButtonStyle}
-                  onClick={() => {
-                    setForwardingNote(null)
-                    setReplyingTo(null)
-                    if (activePane.type === "note" && activeNote) {
-                      setEditingNote(true)
-                      setNoteTitle(activeNote.title)
-                      setNoteBody(activeNote.body || "")
-                      setNoteSharedScope(
-                        activeNote.shared_scope === "specific_users" ? "specific_users" : "workspace"
+                          </span>
+                        </button>
                       )
-                      setSelectedNoteRecipientIds(activeNote.recipient_ids || [])
-                    } else if (activePane.type === "channel") {
-                      setComposerMode("note")
-                    }
-                  }}
-                >
-                  <Pin size={16} />
-                </button>
-
-                {activePane.type === "channel" && activeChannel ? (
-                  <button
-                    type="button"
-                    style={iconButtonStyle}
-                    onClick={() => openEditChannelModal(activeChannel)}
-                    title="Edit channel"
-                  >
-                    <Edit3 size={16} />
-                  </button>
-                ) : null}
-
-                <button
-                  type="button"
-                  style={{
-                    ...iconButtonStyle,
-                    background: membersOpen ? "rgba(99,102,241,0.12)" : "#ffffff",
-                    color: membersOpen ? "#4f46e5" : "#64748b",
-                  }}
-                  onClick={() => setMembersOpen((prev) => !prev)}
-                >
-                  <Users size={16} />
-                </button>
-              </div>
-            </div>
-
-            <div
-              style={{
-                flex: 1,
-                minHeight: 0,
-                overflowY: "auto",
-                padding: "18px 26px 16px",
-                background: "#ffffff",
-              }}
-            >
-              {error ? (
-                <div
-                  style={{
-                    marginBottom: 16,
-                    borderRadius: 10,
-                    border: "1px solid rgba(239,68,68,0.18)",
-                    background: "rgba(239,68,68,0.06)",
-                    color: "#dc2626",
-                    padding: "12px 14px",
-                    fontSize: 13,
-                  }}
-                >
-                  {error}
+                    })
+                  )}
                 </div>
               ) : null}
+            </div>
 
-              {activePane.type === "note" ? (
-                <div
+            <div style={{ marginBottom: 8 }}>
+              <button type="button" onClick={() => setNotesCollapsed((v) => !v)} className="lexora-ws-section-row">
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  {notesCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                  <span className="lexora-ws-section-text">Notes</span>
+                </span>
+                {canCreateNotes ? <Plus size={12} /> : null}
+              </button>
+
+              {!notesCollapsed ? (
+                <div>
+                  {filteredSidebarNotes.slice(0, 8).map((note) => {
+                    const isShared = note.note_type === "shared" || note.visibility === "shared"
+                    const active = activePane.type === "note" && activePane.id === note.id
+                    return (
+                      <button
+                        key={note.id}
+                        type="button"
+                        onClick={() => {
+                          setActivePane({ type: "note", id: note.id })
+                          void loadNoteDetail(note.id)
+                          setWorkspaceView("notes")
+                        }}
+                        className={`lexora-ws-nav ${active ? "active" : ""}`}
+                      >
+                        <span className="lexora-ws-nav-left">
+                          <FileText size={13} />
+                          <span className="lexora-ws-nav-name">{note.title}</span>
+                        </span>
+                        <span className="lexora-ws-badge" style={isShared ? { background: "rgba(5,150,105,0.14)", color: "#10b981" } : undefined}>
+                          {isShared ? "Shared" : "Personal"}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+            </div>
+
+            <div>
+              <button type="button" onClick={() => setDmsCollapsed((v) => !v)} className="lexora-ws-section-row">
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  {dmsCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                  <span className="lexora-ws-section-text">Direct messages</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setWorkspaceDmPopupsEnabled((prev) => !prev)
+                  }}
+                  title={workspaceDmPopupsEnabled ? "Turn DM popups off" : "Turn DM popups on"}
                   style={{
-                    border:
-                      activeNote?.note_type === "shared" || activeNote?.visibility === "shared"
-                        ? "1px solid rgba(22,163,74,0.25)"
-                        : "1px solid rgba(202,138,4,0.25)",
-                    background:
-                      activeNote?.note_type === "shared" || activeNote?.visibility === "shared"
-                        ? "rgba(22,163,74,0.06)"
-                        : "rgba(234,179,8,0.08)",
-                    borderRadius: 12,
-                    padding: "18px",
+                    border: "none",
+                    background: "transparent",
+                    color: workspaceDmPopupsEnabled ? "#10b981" : "rgba(255,255,255,0.26)",
+                    cursor: "pointer",
+                    display: "inline-flex",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color:
-                        activeNote?.note_type === "shared" || activeNote?.visibility === "shared"
-                          ? "#16a34a"
-                          : "#a16207",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.8,
-                      marginBottom: 8,
-                      fontFamily: '"DM Mono", ui-monospace, monospace',
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    {activeNote?.note_type === "shared" || activeNote?.visibility === "shared" ? (
-                      <FileText size={12} />
-                    ) : (
-                      <Pin size={12} />
-                    )}
-                    {activeNote?.note_type === "shared"
-                      ? activeNote.shared_scope === "specific_users"
-                        ? "Shared Note • Selected Users"
-                        : "Shared Note • Workspace"
-                      : "Personal Note"}
-                  </div>
+                  <BellOff size={12} />
+                </button>
+              </button>
 
-                  {activeNote?.forwarded_original_author_name ? (
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#64748b",
-                        marginBottom: 10,
-                      }}
-                    >
-                      Forwarded from {activeNote.forwarded_original_author_name}
-                    </div>
-                  ) : null}
+              {!dmsCollapsed ? (
+                <div>
+                  {filteredSidebarDms.map((dm) => {
+                    const active = activePane.type === "dm" && activePane.id === dm.id
+                    return (
+                      <button
+                        key={dm.id}
+                        type="button"
+                        onClick={() => {
+                          setDmUnreadByMemberId((prev) => ({ ...prev, [dm.id]: 0 }))
+                          setActivePane({ type: "dm", id: dm.id })
+                          setWorkspaceView("messages")
+                        }}
+                        className={`lexora-ws-nav ${active ? "active" : ""}`}
+                      >
+                        <span className="lexora-ws-nav-left">
+                          <span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 9, ...avatarStyle(getInitials(dm.name)) }}>
+                            {getInitials(dm.name)}
+                          </span>
+                          <span className="lexora-ws-nav-name">{dm.name}</span>
+                        </span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                          {mutedDmMemberIds.includes(dm.id) ? (
+                            <EyeOff size={12} style={{ color: "rgba(255,255,255,0.34)" }} />
+                          ) : null}
 
-                  {editingNote ? (
-                    <>
-                      <input
-                        value={noteTitle}
-                        onChange={(e) => setNoteTitle(e.target.value)}
-                        style={noteTitleInputStyle}
-                      />
+                          {(dmUnreadByMemberId[dm.id] || 0) > 0 ? (
+                            <span className="lexora-ws-badge" style={{ background: "#ef4444", color: "#fff" }}>
+                              {dmUnreadByMemberId[dm.id] > 9 ? "9+" : dmUnreadByMemberId[dm.id]}
+                            </span>
+                          ) : (
+                            <span className="lexora-ws-status-dot" style={statusDot(dm.status)} />
+                          )}
 
-                      {activeNote?.note_type === "shared" ? (
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-                          <select
-                            value={noteSharedScope}
-                            onChange={(e) =>
-                              setNoteSharedScope(e.target.value as "workspace" | "specific_users")
-                            }
-                            style={inputStyle}
-                          >
-                            <option value="workspace">Whole workspace</option>
-                            <option value="specific_users">Specific users</option>
-                          </select>
-
-                          <div />
-                        </div>
-                      ) : null}
-
-                      {activeNote?.note_type === "shared" && noteSharedScope === "specific_users" ? (
-                        <div style={{ marginBottom: 12 }}>
-                          <input
-                            value={noteRecipientSearch}
-                            onChange={(e) => setNoteRecipientSearch(e.target.value)}
-                            placeholder="Search users..."
-                            style={{ ...inputStyle, marginBottom: 10 }}
-                          />
-
-                          <div style={recipientPanelStyle}>
-                            {filteredRecipientMembers.map((member) => {
-                              const checked = selectedNoteRecipientIds.includes(member.id)
-                              return (
-                                <label key={member.id} style={recipientOptionStyle}>
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => toggleRecipient(member.id)}
-                                  />
-                                  <span style={recipientAvatarStyle(member.name)}>{getInitials(member.name)}</span>
-                                  <span style={{ minWidth: 0 }}>
-                                    <span style={{ display: "block", fontSize: 13, color: "#111827", fontWeight: 600 }}>
-                                      {member.name}
-                                    </span>
-                                    <span style={{ display: "block", fontSize: 12, color: "#64748b" }}>
-                                      {member.email || member.title || member.role}
-                                    </span>
-                                  </span>
-                                </label>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      <textarea
-                        value={noteBody}
-                        onChange={(e) => setNoteBody(e.target.value)}
-                        rows={8}
-                        style={noteBodyInputStyle}
-                      />
-                      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                        <button type="button" style={smallGhostButtonStyle} onClick={() => void updateNote()}>
-                          <Edit3 size={14} />
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          style={smallGhostButtonStyle}
-                          onClick={() => {
-                            setEditingNote(false)
-                            setNoteTitle("")
-                            setNoteBody("")
-                            setNoteRecipientSearch("")
-                          }}
-                        >
-                          <X size={14} />
-                          Cancel
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
-                        {activeNote?.title || "Untitled note"}
-                      </div>
-
-                      <div style={{ fontSize: 14, color: "#334155", lineHeight: 1.7, marginBottom: 16 }}>
-                        {activeNote?.body || activeNote?.description || "No note content."}
-                      </div>
-                    </>
-                  )}
-
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-                    <button type="button" style={smallGhostButtonStyle} onClick={() => setEditingNote(true)}>
-                      <Edit3 size={14} />
-                      Edit
-                    </button>
-                    <button type="button" style={smallGhostButtonStyle} onClick={() => setNoteReactionPickerOpen((v) => !v)}>
-                      <Smile size={14} />
-                      React
-                    </button>
-                    <button
-                      type="button"
-                      style={smallGhostButtonStyle}
-                      onClick={() => {
-                        if (!activeNote) return
-                        openForwardPickerForNote(activeNote)
-                      }}
-                    >
-                      <Forward size={14} />
-                      Forward
-                    </button>
-                    <button type="button" style={smallGhostButtonStyle} onClick={() => void withdrawNote()}>
-                      <Trash2 size={14} />
-                      Withdraw
-                    </button>
-                  </div>
-
-                  {noteReactionPickerOpen ? (
-                    <div style={notePickerStyle}>
-                      {EMOJI_SET.map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => void reactToNote(emoji)}
-                          style={emojiOptionStyle}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  <div style={{ marginTop: 20 }}>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        letterSpacing: 0.8,
-                        color: "#94a3b8",
-                        textTransform: "uppercase",
-                        marginBottom: 10,
-                        fontFamily: '"DM Mono", ui-monospace, monospace',
-                      }}
-                    >
-                      Comments
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
-                      {noteComments.length === 0 ? (
-                        <div style={{ fontSize: 13, color: "#94a3b8" }}>No comments yet.</div>
-                      ) : (
-                        noteComments.map((comment) => (
-                          <div
-                            key={comment.id}
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            title={mutedDmMemberIds.includes(dm.id) ? "Unmute" : "Mute"}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              toggleMutedDmMember(dm.id)
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.stopPropagation()
+                                toggleMutedDmMember(dm.id)
+                              }
+                            }}
                             style={{
-                              borderRadius: 10,
-                              background: "#ffffff",
-                              border: "1px solid rgba(15,23,42,0.08)",
-                              padding: "10px 12px",
+                              width: 20,
+                              height: 20,
+                              borderRadius: 6,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: mutedDmMemberIds.includes(dm.id) ? "#f97316" : "rgba(255,255,255,0.30)",
                             }}
                           >
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                              <span style={{ fontWeight: 700, fontSize: 13 }}>{comment.author_name}</span>
-                              <span
-                                style={{
-                                  ...roleTagStyle(comment.author_role),
-                                  fontSize: 9.5,
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  fontFamily: '"DM Mono", ui-monospace, monospace',
-                                  textTransform: "uppercase",
-                                }}
-                              >
-                                {comment.author_role}
-                              </span>
-                              <span style={{ fontSize: 11, color: "#94a3b8" }}>{formatTime(comment.created_at)}</span>
-                              {!comment.is_deleted ? (
-                                <button
-                                  type="button"
-                                  onClick={() => void deleteComment(comment.id)}
-                                  style={{ marginLeft: "auto", ...tinyTextButtonStyle }}
-                                >
-                                  Delete
+                            <BellOff size={12} />
+                          </span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+        </aside>
+
+        <main className="lexora-ws-main">
+          <div className="lexora-ws-main-top">
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <span style={{ color: "#7a8099", fontSize: 18, lineHeight: 1 }}>
+                {activePane.type === "dm" ? "@" : activePane.type === "note" ? "□" : activeChannel?.icon_symbol || "#"}
+              </span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#111318", whiteSpace: "nowrap" }}>
+                {activePane.type === "dm"
+                  ? directMembers.find((m) => m.id === activePane.id)?.name || "Direct message"
+                  : activePane.type === "note"
+                    ? activeNote?.title || "Note"
+                    : activeChannel?.name || "general"}
+              </span>
+              <span style={{ color: "#b0b8cc", borderLeft: "1px solid rgba(17,19,24,0.08)", paddingLeft: 12, fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {activePane.type === "dm" ? "Private direct message" : activePane.type === "note" ? "Workspace note" : activeChannel?.description || "Core internal workspace for admins and editors"}
+              </span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", marginRight: 4 }}>
+                {teamMembers.slice(0, 3).map((member, index) => (
+                  <span key={member.id} className="lexora-ws-avatar" style={{ width: 24, height: 24, fontSize: 9, border: "2px solid #fff", marginLeft: index === 0 ? 0 : -6, ...avatarStyle(getInitials(member.name)) }}>
+                    {getInitials(member.name)}
+                  </span>
+                ))}
+                <button type="button" onClick={() => { setRightPanelTab("members"); setMembersOpen(true) }} style={{ border: "none", background: "transparent", color: "#7a8099", fontSize: 12, fontWeight: 600, marginLeft: 6, cursor: "pointer" }}>
+                  {teamMembers.length}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className={`lexora-ws-icon-btn ${chatSearchOpen ? "active" : ""}`}
+                title="Search messages"
+                onClick={() => setChatSearchOpen((prev) => !prev)}
+              >
+                <Search size={15} />
+              </button>
+              <button type="button" className="lexora-ws-icon-btn" title="Pinned" onClick={() => { setRightPanelTab("pinned"); setMembersOpen(true) }}>
+                <Pin size={15} />
+              </button>
+              <button type="button" className="lexora-ws-icon-btn" title="Files" onClick={() => { setRightPanelTab("files"); setMembersOpen(true) }}>
+                <FileText size={15} />
+              </button>
+              <button type="button" className={`lexora-ws-icon-btn ${membersOpen ? "active" : ""}`} title="Members" onClick={() => { setRightPanelTab("members"); setMembersOpen((prev) => !prev) }}>
+                <Users size={15} />
+              </button>
+            </div>
+          </div>
+
+          <div className="lexora-ws-tabs">
+            <button type="button" onClick={() => setWorkspaceView("messages")} className={`lexora-ws-tab ${workspaceView === "messages" ? "active" : ""}`}>
+              <MessageCircle size={13} />
+              Messages
+            </button>
+            <button type="button" onClick={() => setWorkspaceView("tasks")} className={`lexora-ws-tab ${workspaceView === "tasks" ? "active" : ""}`}>
+              ✓ Tasks
+            </button>
+            <button type="button" onClick={() => setWorkspaceView("notes")} className={`lexora-ws-tab ${workspaceView === "notes" ? "active" : ""}`}>
+              <FileText size={13} />
+              Notes
+            </button>
+            <button type="button" onClick={() => setWorkspaceView("files")} className={`lexora-ws-tab ${workspaceView === "files" ? "active" : ""}`}>
+              <Paperclip size={13} />
+              Files
+            </button>
+          </div>
+
+          <div className="lexora-ws-content">
+            {error ? (
+              <div style={{ margin: "12px 20px 0", borderRadius: 9, border: "1px solid rgba(220,38,38,0.16)", background: "rgba(220,38,38,0.06)", color: "#dc2626", padding: "9px 12px", fontSize: 13 }}>
+                {error}
+              </div>
+            ) : null}
+
+            {workspaceView === "messages" ? (
+              <>
+                <div className="lexora-ws-scroll">
+                  {chatSearchOpen ? (
+                    <div style={{ marginBottom: 12 }}>
+                      <input
+                        value={chatSearch}
+                        onChange={(event) => setChatSearch(event.target.value)}
+                        placeholder="Search current conversation..."
+                        style={inputStyle}
+                      />
+                    </div>
+                  ) : null}
+
+                  {activePane.type === "channel" ? (
+                    <div className="lexora-ws-notice">
+                      <Pin size={13} />
+                      <strong>Pinned:</strong>
+                      <span>Welcome to #{activeChannel?.name || "general"} — main admin comms channel. Keep it professional.</span>
+                    </div>
+                  ) : null}
+
+                  <div className="lexora-ws-divider">Today</div>
+
+                  {activePane.type === "dm" ? (
+                    dmLoading ? (
+                      <div style={{ padding: "50px 0", textAlign: "center", color: "#b0b8cc" }}>Loading direct messages...</div>
+                    ) : dmMessages.length === 0 ? (
+                      <div style={{ padding: "50px 0", textAlign: "center", color: "#b0b8cc" }}>No direct messages yet.</div>
+                    ) : (
+                      dmMessages
+                        .filter((message) => {
+                          const q = chatSearch.trim().toLowerCase()
+                          if (!q) return true
+                          return message.content.toLowerCase().includes(q) || message.author.toLowerCase().includes(q)
+                        })
+                        .map((message) => {
+                        const initials = getInitials(message.author)
+                        const canDeleteDmMessage = currentUser?.id === message.author_id || currentUser?.role === "super_admin" || currentUser?.admin_role === "super_admin"
+                        return (
+                          <div key={message.id} className="lexora-ws-message">
+                            <div className="lexora-ws-avatar" style={avatarStyle(initials)}>{initials}</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
+                                <span style={{ fontWeight: 700, color: "#111318" }}>{message.author}</span>
+                                <span className="lexora-ws-role">{message.role}</span>
+                                <span style={{ fontSize: 11, color: "#b0b8cc" }}>{formatTime(message.created_at)}</span>
+                              </div>
+                              <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>{message.content}</div>
+                              {!message.is_deleted ? (
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                                  <button type="button" className="lexora-ws-pill-btn" onClick={() => openForwardPickerForMessage({
+                                    id: message.id,
+                                    author: message.author,
+                                    author_id: message.author_id,
+                                    role: message.role,
+                                    content: message.content,
+                                    created_at: message.created_at,
+                                    updated_at: message.created_at,
+                                    edited_at: message.edited_at,
+                                    is_pinned: false,
+                                    my_emojis: [],
+                                    reactions: [],
+                                    is_deleted: message.is_deleted,
+                                  })}>
+                                    <Forward size={13} /> Forward
+                                  </button>
+                                  {canDeleteDmMessage ? (
+                                    <button type="button" className="lexora-ws-pill-btn" onClick={() => void deleteDMMessage(message.id)} disabled={dmDeletingId === message.id}>
+                                      <Trash2 size={13} /> {dmDeletingId === message.id ? "Deleting..." : "Delete"}
+                                    </button>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        )
+                      })
+                    )
+                  ) : loading ? (
+                    <div style={{ padding: "50px 0", textAlign: "center", color: "#b0b8cc" }}>Loading messages...</div>
+                  ) : messages.length === 0 ? (
+                    <div style={{ padding: "50px 0", textAlign: "center", color: "#b0b8cc" }}>No messages yet in this channel.</div>
+                  ) : (
+                    messages
+                      .filter((message) => {
+                        const q = chatSearch.trim().toLowerCase()
+                        if (!q) return true
+                        return (
+                          message.content.toLowerCase().includes(q) ||
+                          message.author.toLowerCase().includes(q) ||
+                          (message.forwarded_original_author_name || "").toLowerCase().includes(q)
+                        )
+                      })
+                      .map((message) => {
+                      const initials = getInitials(message.author)
+                      const canDeleteChannelMessage = currentUser?.id === message.author_id || currentUser?.role === "super_admin" || currentUser?.admin_role === "super_admin"
+                      const canEditChannelMessage = canDeleteChannelMessage
+                      return (
+                        <div key={message.id} className="lexora-ws-message">
+                          <div className="lexora-ws-avatar" style={avatarStyle(initials)}>{initials}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: 700, color: "#111318" }}>{message.author}</span>
+                              <span className="lexora-ws-role">{message.role}</span>
+                              <span style={{ fontSize: 11, color: "#b0b8cc" }}>{formatTime(message.created_at)}</span>
+                              {message.edited_at ? <span style={{ fontSize: 11, color: "#cbd5e1" }}>(edited)</span> : null}
+                            </div>
+
+                            {message.reply_preview ? (
+                              <div style={{ borderLeft: "2px solid rgba(108,92,231,0.22)", paddingLeft: 10, marginBottom: 6, fontSize: 12, color: "#7a8099" }}>
+                                <div style={{ fontWeight: 600 }}>{message.reply_preview.author}</div>
+                                <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{message.reply_preview.content}</div>
+                              </div>
+                            ) : null}
+
+                            {message.forwarded_original_author_name ? (
+                              <div style={{ fontSize: 12, color: "#7a8099", marginBottom: 6 }}>Forwarded from {message.forwarded_original_author_name}</div>
+                            ) : null}
+
+                            <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>{message.content}</div>
+
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                              {!message.is_deleted && message.reactions.map((reaction) => {
+                                const mine = message.my_emojis.includes(reaction.emoji)
+                                return (
+                                  <button key={`${message.id}-${reaction.emoji}`} type="button" onClick={() => void react(message.id, reaction.emoji)} className="lexora-ws-pill-btn" style={mine ? { background: "rgba(108,92,231,0.12)", color: "#6c5ce7", borderColor: "rgba(108,92,231,0.25)" } : undefined}>
+                                    <span>{reaction.emoji}</span>
+                                    <span>{reaction.count}</span>
+                                  </button>
+                                )
+                              })}
+
+                              {!message.is_deleted ? (
+                                <button type="button" className="lexora-ws-pill-btn" onClick={() => { setReplyingTo(message); setForwardingMessage(null); setForwardingNote(null) }}>
+                                  <CornerDownRight size={13} /> Reply
                                 </button>
                               ) : null}
-                            </div>
-                            <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{comment.body}</div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <textarea
-                        value={noteCommentText}
-                        onChange={(e) => setNoteCommentText(e.target.value)}
-                        placeholder="Add a comment..."
-                        rows={2}
-                        style={{
-                          flex: 1,
-                          resize: "none",
-                          borderRadius: 10,
-                          border: "1px solid rgba(15,23,42,0.10)",
-                          padding: "10px 12px",
-                          fontSize: 13,
-                          outline: "none",
-                          background: "#ffffff",
-                        }}
-                      />
-                      <button type="button" onClick={() => void addNoteComment()} style={primaryButtonStyle}>
-                        <Send size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : activePane.type === "dm" ? (
-                <>
-                  {dmLoading ? (
-                    <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                      Loading direct messages...
-                    </div>
-                  ) : dmMessages.length === 0 ? (
-                    <div style={{ padding: "40px 0", color: "#64748b", fontSize: 14 }}>
-                      <div style={{ fontWeight: 600, color: "#111827", marginBottom: 6 }}>
-                        Direct message with {activeDm?.name || "Unknown"}
-                      </div>
-                      <div>No messages yet. Send the first message below.</div>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          color: "#94a3b8",
-                          fontSize: 11,
-                          fontFamily: '"DM Mono", ui-monospace, monospace',
-                          marginBottom: 18,
-                        }}
-                      >
-                        <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
-                        <span>Direct Message</span>
-                        <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                        {dmMessages.map((message) => {
-                          const initials = getInitials(message.author)
-                          const canDeleteDmMessage =
-                            currentUser?.id === message.author_id ||
-                            currentUser?.role === "super_admin" ||
-                            currentUser?.admin_role === "super_admin"
-                          const canEditDmMessage = canDeleteDmMessage
-
-                          return (
-                            <div key={message.id}>
-                              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                                <div
-                                  style={{
-                                    width: 38,
-                                    height: 38,
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontWeight: 700,
-                                    fontSize: 12,
-                                    flexShrink: 0,
-                                    ...avatarStyle(initials),
-                                  }}
-                                >
-                                  {initials}
-                                </div>
-
-                                <div style={{ minWidth: 0, flex: 1 }}>
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "baseline",
-                                      gap: 8,
-                                      flexWrap: "wrap",
-                                      marginBottom: 6,
-                                    }}
-                                  >
-                                    <span style={{ fontWeight: 700, color: "#111827", fontSize: 13.5 }}>
-                                      {message.author}
-                                    </span>
-                                    <span
-                                      style={{
-                                        ...roleTagStyle(message.role),
-                                        fontSize: 9.5,
-                                        padding: "2px 6px",
-                                        borderRadius: 4,
-                                        fontFamily: '"DM Mono", ui-monospace, monospace',
-                                        textTransform: "uppercase",
-                                        letterSpacing: 0.4,
-                                      }}
-                                    >
-                                      {message.role}
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: 11,
-                                        color: "#94a3b8",
-                                        fontFamily: '"DM Mono", ui-monospace, monospace',
-                                      }}
-                                    >
-                                      {formatTime(message.created_at)}
-                                    </span>
-                                    {message.edited_at ? (
-                                      <span style={{ fontSize: 11, color: "#cbd5e1" }}>(edited)</span>
-                                    ) : null}
-                                  </div>
-
-                                  <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>
-                                    {message.content}
-                                  </div>
-
-                                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-                                    {!message.is_deleted && canEditDmMessage ? (
-                                      <button
-                                        type="button"
-                                        style={smallGhostButtonStyle}
-                                        onClick={() => openDmMessageEdit(message)}
-                                      >
-                                        <Edit3 size={14} />
-                                        Edit
-                                      </button>
-                                    ) : null}
-
-                                    {!message.is_deleted ? (
-                                      <button
-                                        type="button"
-                                        style={smallGhostButtonStyle}
-                                        onClick={() =>
-                                          openForwardPickerForMessage({
-                                            id: message.id,
-                                            author: message.author,
-                                            author_id: message.author_id,
-                                            role: message.role,
-                                            content: message.content,
-                                            created_at: message.created_at,
-                                            updated_at: message.created_at,
-                                            edited_at: message.edited_at,
-                                            is_pinned: false,
-                                            my_emojis: [],
-                                            reactions: [],
-                                            is_deleted: message.is_deleted,
-                                          })
-                                        }
-                                      >
-                                        <Forward size={14} />
-                                        Forward
-                                      </button>
-                                    ) : null}
-
-                                    {!message.is_deleted && canDeleteDmMessage ? (
-                                      <button
-                                        type="button"
-                                        style={smallGhostButtonStyle}
-                                        onClick={() => void deleteDMMessage(message.id)}
-                                        disabled={dmDeletingId === message.id}
-                                      >
-                                        <Trash2 size={14} />
-                                        {dmDeletingId === message.id ? "Deleting..." : "Delete"}
-                                      </button>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                        <div ref={dmMessagesEndRef} />
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : loading ? (
-                <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                  Loading messages...
-                </div>
-              ) : messages.length === 0 ? (
-                <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                  No messages yet in this channel.
-                </div>
-              ) : (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      color: "#94a3b8",
-                      fontSize: 11,
-                      fontFamily: '"DM Mono", ui-monospace, monospace',
-                      marginBottom: 18,
-                    }}
-                  >
-                    <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
-                    <span>Today</span>
-                    <div style={{ height: 1, flex: 1, background: "rgba(15,23,42,0.08)" }} />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                    {messages.map((message) => {
-                      const initials = getInitials(message.author)
-                      const canDeleteChannelMessage =
-                        currentUser?.id === message.author_id ||
-                        currentUser?.role === "super_admin" ||
-                        currentUser?.admin_role === "super_admin"
-                      const canEditChannelMessage = canDeleteChannelMessage
-
-                      return (
-                        <div key={message.id}>
-                          <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                            <div
-                              style={{
-                                width: 38,
-                                height: 38,
-                                borderRadius: "50%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontWeight: 700,
-                                fontSize: 12,
-                                flexShrink: 0,
-                                ...avatarStyle(initials),
-                              }}
-                            >
-                              {initials}
-                            </div>
-
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "baseline",
-                                  gap: 8,
-                                  flexWrap: "wrap",
-                                  marginBottom: 6,
-                                }}
-                              >
-                                <span style={{ fontWeight: 700, color: "#111827", fontSize: 13.5 }}>
-                                  {message.author}
-                                </span>
-                                <span
-                                  style={{
-                                    ...roleTagStyle(message.role),
-                                    fontSize: 9.5,
-                                    padding: "2px 6px",
-                                    borderRadius: 4,
-                                    fontFamily: '"DM Mono", ui-monospace, monospace',
-                                    textTransform: "uppercase",
-                                    letterSpacing: 0.4,
-                                  }}
-                                >
-                                  {message.role}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: 11,
-                                    color: "#94a3b8",
-                                    fontFamily: '"DM Mono", ui-monospace, monospace',
-                                  }}
-                                >
-                                  {formatTime(message.created_at)}
-                                </span>
-                                {message.edited_at ? (
-                                  <span style={{ fontSize: 11, color: "#cbd5e1" }}>(edited)</span>
-                                ) : null}
-                              </div>
-
-                              {message.reply_preview ? (
-                                <div
-                                  style={{
-                                    borderLeft: "2px solid rgba(99,102,241,0.22)",
-                                    paddingLeft: 10,
-                                    marginBottom: 8,
-                                    fontSize: 12,
-                                    color: "#64748b",
-                                  }}
-                                >
-                                  <div style={{ fontWeight: 600 }}>{message.reply_preview.author}</div>
-                                  <div
-                                    style={{
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis",
-                                      whiteSpace: "nowrap",
-                                    }}
-                                  >
-                                    {message.reply_preview.content}
-                                  </div>
-                                </div>
+                              {!message.is_deleted ? (
+                                <button type="button" className="lexora-ws-pill-btn" onClick={() => openForwardPickerForMessage(message)}>
+                                  <Forward size={13} /> Forward
+                                </button>
                               ) : null}
-
-                              {message.forwarded_original_author_name ? (
-                                <div
-                                  style={{
-                                    fontSize: 12,
-                                    color: "#64748b",
-                                    marginBottom: 8,
-                                  }}
-                                >
-                                  Forwarded from {message.forwarded_original_author_name}
-                                </div>
+                              {!message.is_deleted && canEditChannelMessage ? (
+                                <button type="button" className="lexora-ws-pill-btn" onClick={() => openChannelMessageEdit(message)}>
+                                  <Edit3 size={13} /> Edit
+                                </button>
                               ) : null}
-
-                              <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>
-                                {message.content}
-                              </div>
-
-                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-                                {!message.is_deleted &&
-                                  message.reactions.map((reaction) => {
-                                    const mine = message.my_emojis.includes(reaction.emoji)
-
-                                    return (
-                                      <button
-                                        key={`${message.id}-${reaction.emoji}`}
-                                        type="button"
-                                        onClick={() => void react(message.id, reaction.emoji)}
-                                        style={{
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          gap: 5,
-                                          padding: "4px 8px",
-                                          borderRadius: 999,
-                                          border: mine
-                                            ? "1px solid rgba(79,70,229,0.28)"
-                                            : "1px solid rgba(15,23,42,0.10)",
-                                          background: mine ? "rgba(79,70,229,0.08)" : "#ffffff",
-                                          color: mine ? "#4f46e5" : "#475569",
-                                          fontSize: 12,
-                                          cursor: "pointer",
-                                        }}
-                                      >
-                                        <span>{reaction.emoji}</span>
-                                        <span style={{ fontSize: 11, color: mine ? "#4f46e5" : "#64748b" }}>
-                                          {reaction.count}
-                                        </span>
-                                      </button>
-                                    )
-                                  })}
-
-                                {!message.is_deleted ? (
-                                  <button
-                                    type="button"
-                                    style={smallGhostButtonStyle}
-                                    onClick={() => {
-                                      setReplyingTo(message)
-                                      setForwardingMessage(null)
-                                      setForwardingNote(null)
-                                    }}
-                                  >
-                                    <CornerDownRight size={14} />
-                                    Reply
+                              {!message.is_deleted && canDeleteChannelMessage ? (
+                                <button type="button" className="lexora-ws-pill-btn" onClick={() => void deleteMessage(message.id)}>
+                                  <Trash2 size={13} /> Delete
+                                </button>
+                              ) : null}
+                              {!message.is_deleted ? (
+                                <div style={{ position: "relative" }}>
+                                  <button type="button" className="lexora-ws-pill-btn" onClick={() => setEmojiPickerFor((prev) => (prev === message.id ? null : message.id))}>
+                                    <Smile size={13} /> React
                                   </button>
-                                ) : null}
-
-                                {!message.is_deleted ? (
-                                  <button
-                                    type="button"
-                                    style={smallGhostButtonStyle}
-                                    onClick={() => openForwardPickerForMessage(message)}
-                                  >
-                                    <Forward size={14} />
-                                    Forward
-                                  </button>
-                                ) : null}
-
-                                {!message.is_deleted && canEditChannelMessage ? (
-                                  <button
-                                    type="button"
-                                    style={smallGhostButtonStyle}
-                                    onClick={() => openChannelMessageEdit(message)}
-                                  >
-                                    <Edit3 size={14} />
-                                    Edit
-                                  </button>
-                                ) : null}
-
-                                {!message.is_deleted && canDeleteChannelMessage ? (
-                                  <button
-                                    type="button"
-                                    style={smallGhostButtonStyle}
-                                    onClick={() => void deleteMessage(message.id)}
-                                  >
-                                    <Trash2 size={14} />
-                                    Delete
-                                  </button>
-                                ) : null}
-
-                                {!message.is_deleted ? (
-                                  <div style={{ position: "relative" }}>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setEmojiPickerFor((prev) => (prev === message.id ? null : message.id))
-                                      }
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 5,
-                                        padding: "4px 8px",
-                                        borderRadius: 999,
-                                        border: "1px solid rgba(15,23,42,0.10)",
-                                        background: "#ffffff",
-                                        color: "#475569",
-                                        fontSize: 12,
-                                        cursor: "pointer",
-                                      }}
-                                    >
-                                      <Smile size={13} />
-                                      React
-                                    </button>
-
-                                    {emojiPickerFor === message.id ? (
-                                      <div
-                                        style={{
-                                          position: "absolute",
-                                          top: "calc(100% + 8px)",
-                                          left: 0,
-                                          zIndex: 20,
-                                          width: 248,
-                                          borderRadius: 12,
-                                          border: "1px solid rgba(15,23,42,0.08)",
-                                          background: "#ffffff",
-                                          boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-                                          padding: 12,
-                                        }}
-                                      >
-                                        <div
-                                          style={{
-                                            fontSize: 10,
-                                            textTransform: "uppercase",
-                                            letterSpacing: 0.8,
-                                            color: "#94a3b8",
-                                            marginBottom: 8,
-                                            fontFamily: '"DM Mono", ui-monospace, monospace',
-                                          }}
-                                        >
-                                          Reactions
-                                        </div>
-
-                                        <div
-                                          style={{
-                                            display: "grid",
-                                            gridTemplateColumns: "repeat(6, 1fr)",
-                                            gap: 6,
-                                          }}
-                                        >
-                                          {EMOJI_SET.map((emoji) => (
-                                            <button
-                                              key={`${message.id}-${emoji}`}
-                                              type="button"
-                                              onClick={() => void react(message.id, emoji)}
-                                              style={emojiOptionStyle}
-                                            >
-                                              {emoji}
-                                            </button>
-                                          ))}
-                                        </div>
+                                  {emojiPickerFor === message.id ? (
+                                    <div onMouseDown={(event) => event.stopPropagation()} style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 20, width: 248, borderRadius: 12, border: "1px solid rgba(15,23,42,0.08)", background: "#ffffff", boxShadow: "0 16px 40px rgba(15,23,42,0.10)", padding: 12 }}>
+                                      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, color: "#94a3b8", marginBottom: 8 }}>Reactions</div>
+                                      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
+                                        {EMOJI_SET.map((emoji) => (
+                                          <button key={`${message.id}-${emoji}`} type="button" onClick={() => void react(message.id, emoji)} style={emojiOptionStyle}>{emoji}</button>
+                                        ))}
                                       </div>
-                                    ) : null}
-                                  </div>
-                                ) : null}
-                              </div>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : null}
                             </div>
                           </div>
                         </div>
                       )
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {activePane.type === "channel" ? renderSharedComposer("channel") : null}
-            {activePane.type === "dm" ? renderSharedComposer("dm") : null}
-          </main>
-
-          {membersOpen && (
-            <aside
-              style={{
-                background: "#fbfbfd",
-                borderLeft: "1px solid rgba(15,23,42,0.08)",
-                overflowY: "auto",
-                minHeight: 0,
-              }}
-            >
-              <div
-                style={{
-                  padding: "16px",
-                  borderBottom: "1px solid rgba(15,23,42,0.08)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 10,
-                    letterSpacing: 1.2,
-                    textTransform: "uppercase",
-                    color: "#94a3b8",
-                    marginBottom: 12,
-                    fontFamily: '"DM Mono", ui-monospace, monospace',
-                  }}
-                >
-                  Presence
+                    })
+                  )}
+                  {activePane.type === "dm" ? <div ref={dmMessagesEndRef} /> : null}
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <div
-                    style={{
-                      position: "relative",
-                      width: 38,
-                      height: 38,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 38,
-                        height: 38,
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 700,
-                        fontSize: 12,
-                        ...avatarStyle(getInitials(currentUserDisplayName)),
-                      }}
-                    >
-                      {getInitials(currentUserDisplayName)}
-                    </div>
+                {activePane.type === "channel" ? renderSharedComposer("channel") : null}
+                {activePane.type === "dm" ? renderSharedComposer("dm") : null}
+              </>
+            ) : null}
 
-                    <span
-                      style={{
-                        position: "absolute",
-                        right: 0,
-                        bottom: 0,
-                        width: 12,
-                        height: 12,
-                        borderRadius: "50%",
-                        border: "2px solid #ffffff",
-                        boxSizing: "border-box",
-                        ...statusDot(currentUserStatus),
-                      }}
-                    />
+            {workspaceView === "tasks" ? (
+              <div className="lexora-ws-scroll">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: "#111318", letterSpacing: -0.3 }}>
+                    Tasks — {activePane.type === "channel" ? `#${activeChannel?.name || "general"}` : "Workspace"}
                   </div>
-
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
-                      {currentUserDisplayName}
-                    </div>
-                    <div style={{ fontSize: 11.5, color: "#6b7280" }}>
-                      {currentUser?.admin_role || currentUser?.role || "Admin"}
-                    </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button type="button" className="lexora-ws-pill-btn">☰ Filter</button>
+                    <button type="button" className="lexora-ws-pill-btn" style={{ borderRadius: 8, background: "#6c5ce7", color: "#fff", borderColor: "#6c5ce7" }}>
+                      <Plus size={13} /> Add task
+                    </button>
                   </div>
                 </div>
 
-                <select
-                  value={currentUserStatus}
-                  onChange={(e) =>
-                    setCurrentUserStatus(e.target.value as "online" | "away" | "busy" | "offline")
-                  }
-                  style={{
-                    width: "100%",
-                    height: 40,
-                    borderRadius: 10,
-                    border: "1px solid rgba(15,23,42,0.10)",
-                    background: "#ffffff",
-                    color: "#111827",
-                    padding: "0 12px",
-                    fontSize: 13,
-                    outline: "none",
-                  }}
-                >
-                  <option value="online">Online</option>
-                  <option value="away">Away</option>
-                  <option value="busy">Busy</option>
-                  <option value="offline">Offline</option>
-                </select>
+                <div style={{ marginBottom: 22 }}>
+                  <div style={{ borderBottom: "1px solid rgba(17,19,24,0.08)", paddingBottom: 8, marginBottom: 8, color: "#7a8099", textTransform: "uppercase", letterSpacing: 0.8, fontSize: 12, fontWeight: 700 }}>○ In Progress <span style={{ color: "#b0b8cc", fontWeight: 400 }}>2</span></div>
+                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#dc2626" }} /><span style={{ flex: 1 }}>Fix mobile overflow on billing card</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("V") }}>V</span><span style={{ color: "#dc2626", fontSize: 11.5 }}>Due today</span><span className="lexora-ws-badge" style={{ background: "rgba(220,38,38,0.09)", color: "#dc2626" }}>bug</span></div>
+                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#d97706" }} /><span style={{ flex: 1 }}>Cache Copilot answers per ticket_id</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("A") }}>A</span><span style={{ color: "#b0b8cc", fontSize: 11.5 }}>May 22</span><span className="lexora-ws-badge" style={{ background: "rgba(37,99,235,0.09)", color: "#2563eb" }}>feature</span></div>
+                </div>
+
+                <div style={{ marginBottom: 22 }}>
+                  <div style={{ borderBottom: "1px solid rgba(17,19,24,0.08)", paddingBottom: 8, marginBottom: 8, color: "#7a8099", textTransform: "uppercase", letterSpacing: 0.8, fontSize: 12, fontWeight: 700 }}>□ Todo <span style={{ color: "#b0b8cc", fontWeight: 400 }}>3</span></div>
+                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#d97706" }} /><span style={{ flex: 1 }}>Write onboarding email sequence for new subscribers</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("T") }}>T</span><span style={{ color: "#b0b8cc", fontSize: 11.5 }}>May 25</span><span className="lexora-ws-badge" style={{ background: "rgba(217,119,6,0.10)", color: "#d97706" }}>content</span></div>
+                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#b0b8cc" }} /><span style={{ flex: 1 }}>Add pagination to admin user table</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("A") }}>A</span><span style={{ color: "#b0b8cc", fontSize: 11.5 }}>May 28</span><span className="lexora-ws-badge">improvement</span></div>
+                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#dc2626" }} /><span style={{ flex: 1 }}>Set up Paddle webhook for billing sync</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("V") }}>V</span><span style={{ color: "#dc2626", fontSize: 11.5 }}>Overdue · May 17</span><span className="lexora-ws-badge" style={{ background: "rgba(220,38,38,0.09)", color: "#dc2626" }}>critical</span></div>
+                </div>
+
+                <div>
+                  <div style={{ borderBottom: "1px solid rgba(17,19,24,0.08)", paddingBottom: 8, marginBottom: 8, color: "#059669", textTransform: "uppercase", letterSpacing: 0.8, fontSize: 12, fontWeight: 700 }}>✓ Completed <span style={{ color: "#b0b8cc", fontWeight: 400 }}>1</span></div>
+                  <div className="lexora-ws-task-row" style={{ color: "#b0b8cc" }}><span className="lexora-ws-check done">✓</span><span style={{ flex: 1, textDecoration: "line-through" }}>Redesign subscription page</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("V") }}>V</span><span style={{ fontSize: 11.5 }}>Done · May 17</span></div>
+                </div>
               </div>
+            ) : null}
 
-              <div style={{ padding: "14px 0" }}>
-                <SectionLabel>Members</SectionLabel>
+            {workspaceView === "notes" ? (
+              <div className="lexora-ws-two-col">
+                <div className="lexora-ws-note-list">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 6px 10px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#7a8099", letterSpacing: 0.8, textTransform: "uppercase" }}>Notes</div>
+                    {canCreateNotes ? (
+                      <button type="button" onClick={() => setNoteModalOpen(true)} className="lexora-ws-icon-btn" style={{ width: 22, height: 22, background: "rgba(108,92,231,0.12)", color: "#6c5ce7", border: "none" }}>
+                        <Plus size={13} />
+                      </button>
+                    ) : null}
+                  </div>
 
-                <div style={{ padding: "0 16px 10px" }}>
-                  <button type="button" style={inviteButtonStyle}>
-                    <UserPlus size={14} />
-                    Invite member
+                  {notes.map((note) => {
+                    const active = activePane.type === "note" && activePane.id === note.id
+                    const isShared = note.note_type === "shared" || note.visibility === "shared"
+                    return (
+                      <button key={note.id} type="button" className={`lexora-ws-note-item ${active ? "active" : ""}`} onClick={() => void loadNoteDetail(note.id)}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#6c5ce7" : "#111318", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{note.title}</div>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 3 }}>
+                          <span className="lexora-ws-badge" style={isShared ? { background: "rgba(5,150,105,0.10)", color: "#059669" } : { background: "rgba(17,19,24,0.06)", color: "#7a8099" }}>{isShared ? "Shared" : "Personal"}</span>
+                          <span style={{ fontSize: 11, color: "#b0b8cc" }}>{formatDate(note.updated_at || note.created_at)}</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
+                  {activeNote ? (
+                    <>
+                      <div style={{ padding: "20px 28px 12px", borderBottom: "1px solid rgba(17,19,24,0.08)" }}>
+                        {editingNote ? (
+                          <input value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} style={noteTitleInputStyle} />
+                        ) : (
+                          <div style={{ fontFamily: "Georgia, serif", fontSize: 28, color: "#111318", letterSpacing: -0.4 }}>{activeNote.title || "Untitled note"}</div>
+                        )}
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, color: "#b0b8cc", fontSize: 12 }}>
+                          <span>Edited {formatDate(activeNote.updated_at || activeNote.created_at)}</span>
+                          <span>{currentUserDisplayName}</span>
+                          <span className="lexora-ws-badge" style={(activeNote.note_type === "shared" || activeNote.visibility === "shared") ? { background: "rgba(5,150,105,0.10)", color: "#059669" } : undefined}>
+                            {(activeNote.note_type === "shared" || activeNote.visibility === "shared") ? "Shared" : "Personal"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="lexora-ws-scroll" style={{ fontSize: 14, lineHeight: 1.75, color: "#3d4257" }}>
+                        {editingNote ? (
+                          <>
+                            {activeNote.note_type === "shared" ? (
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                                <select value={noteSharedScope} onChange={(e) => setNoteSharedScope(e.target.value as "workspace" | "specific_users")} style={inputStyle}>
+                                  <option value="workspace">Whole workspace</option>
+                                  <option value="specific_users">Specific users</option>
+                                </select>
+                                <div />
+                              </div>
+                            ) : null}
+
+                            {activeNote.note_type === "shared" && noteSharedScope === "specific_users" ? (
+                              <div style={{ marginBottom: 12 }}>
+                                <input value={noteRecipientSearch} onChange={(e) => setNoteRecipientSearch(e.target.value)} placeholder="Search users..." style={{ ...inputStyle, marginBottom: 10 }} />
+                                <div style={recipientPanelStyle}>
+                                  {filteredRecipientMembers.map((member) => {
+                                    const checked = selectedNoteRecipientIds.includes(member.id)
+                                    return (
+                                      <label key={member.id} style={recipientOptionStyle}>
+                                        <input type="checkbox" checked={checked} onChange={() => toggleRecipient(member.id)} />
+                                        <span style={recipientAvatarStyle(member.name)}>{getInitials(member.name)}</span>
+                                        <span style={{ minWidth: 0 }}>
+                                          <span style={{ display: "block", fontSize: 13, color: "#111827", fontWeight: 600 }}>{member.name}</span>
+                                          <span style={{ display: "block", fontSize: 12, color: "#64748b" }}>{member.email || member.title || member.role}</span>
+                                        </span>
+                                      </label>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            ) : null}
+
+                            <textarea value={noteBody} onChange={(e) => setNoteBody(e.target.value)} rows={10} style={noteBodyInputStyle} />
+                            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                              <button type="button" className="lexora-ws-pill-btn" onClick={() => void updateNote()}><Edit3 size={13} /> Save</button>
+                              <button type="button" className="lexora-ws-pill-btn" onClick={() => { setEditingNote(false); setNoteTitle(""); setNoteBody(""); setNoteRecipientSearch("") }}><X size={13} /> Cancel</button>
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ whiteSpace: "pre-wrap" }}>{activeNote.body || activeNote.description || "No note content."}</div>
+                        )}
+
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
+                          <button type="button" className="lexora-ws-pill-btn" onClick={() => setEditingNote(true)}><Edit3 size={13} /> Edit</button>
+                          <button type="button" className="lexora-ws-pill-btn" onClick={() => setNoteReactionPickerOpen((v) => !v)}><Smile size={13} /> React</button>
+                          <button type="button" className="lexora-ws-pill-btn" onClick={() => openForwardPickerForNote(activeNote)}><Forward size={13} /> Forward</button>
+                          <button type="button" className="lexora-ws-pill-btn" onClick={() => void withdrawNote()}><Trash2 size={13} /> Withdraw</button>
+                        </div>
+
+                        {noteReactionPickerOpen ? (
+                          <div style={notePickerStyle}>
+                            {EMOJI_SET.map((emoji) => (
+                              <button key={emoji} type="button" onClick={() => void reactToNote(emoji)} style={emojiOptionStyle}>{emoji}</button>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        <div style={{ marginTop: 20 }}>
+                          <div style={{ fontSize: 11, letterSpacing: 0.8, color: "#94a3b8", textTransform: "uppercase", marginBottom: 8 }}>Comments</div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {noteComments.map((comment) => (
+                              <div key={comment.id} style={{ display: "flex", gap: 10 }}>
+                                <span className="lexora-ws-avatar" style={{ width: 28, height: 28, fontSize: 10, ...avatarStyle(getInitials(comment.author_name || "A")) }}>{getInitials(comment.author_name || "A")}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700 }}>{comment.author_name}</span>
+                                    <span style={{ fontSize: 11, color: "#94a3b8" }}>{formatTime(comment.created_at)}</span>
+                                    <button type="button" onClick={() => void deleteComment(comment.id)} style={{ border: "none", background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer" }}>Delete</button>
+                                  </div>
+                                  <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{comment.body}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                            <input value={noteCommentText} onChange={(e) => setNoteCommentText(e.target.value)} placeholder="Add a comment..." style={{ ...inputStyle, flex: 1 }} />
+                            <button type="button" onClick={() => void addNoteComment()} className="lexora-ws-pill-btn" style={{ borderRadius: 8, background: "#6c5ce7", color: "#fff", borderColor: "#6c5ce7" }}>Comment</button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ padding: 40, color: "#b0b8cc" }}>Select a note from the list.</div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {workspaceView === "files" ? (
+              <div className="lexora-ws-scroll">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: "#111318" }}>
+                    Files — {activePane.type === "channel" ? `#${activeChannel?.name || "general"}` : "Workspace"}
+                  </div>
+                  <button type="button" className="lexora-ws-pill-btn" style={{ borderRadius: 8, background: "#6c5ce7", color: "#fff", borderColor: "#6c5ce7" }}>
+                    <Paperclip size={13} /> Upload file
                   </button>
                 </div>
 
-                {teamMembers.length === 0 ? (
-                  <div style={{ padding: "0 16px", fontSize: 12, color: "#94a3b8" }}>No members loaded</div>
-                ) : (
-                  teamMembers.map((member) => (
-                    <button
-                      key={member.id}
-                      type="button"
-                      onClick={() => openMemberProfile(member)}
-                      style={{
-                        width: "100%",
-                        border: "none",
-                        background: "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "10px 16px",
-                        cursor: "pointer",
-                        textAlign: "left",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          flexShrink: 0,
-                          ...statusDot(member.status),
-                        }}
-                      />
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          fontSize: 11,
-                          flexShrink: 0,
-                          ...avatarStyle(getInitials(member.name)),
-                        }}
-                      >
-                        {getInitials(member.name)}
+                <div className="lexora-ws-file-grid">
+                  {[
+                    ["PDF", "UBE_Subject_Outline.pdf", "Vladimir · May 17 · 2.4 MB", "#dbeafe", "#2563eb"],
+                    ["XLS", "Rule_Bank_Export.xlsx", "admin 2 · May 16 · 840 KB", "#dcfce7", "#059669"],
+                    ["DOC", "Onboarding_Brief.docx", "Test Account · May 15 · 156 KB", "#fef3c7", "#d97706"],
+                    ["IMG", "design_mockups_v3.png", "Vladimir · May 14 · 1.2 MB", "#fce7f3", "#db2777"],
+                  ].map(([type, name, meta, bg, fg]) => (
+                    <div key={name} className="lexora-ws-file-card">
+                      <div style={{ width: 34, height: 34, borderRadius: 8, background: bg, color: fg, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>{type}</div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ color: "#111318", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+                        <div style={{ color: "#b0b8cc", fontSize: 11.5 }}>{meta}</div>
                       </div>
-
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 13, color: "#111827", fontWeight: 600 }}>{member.name}</div>
-                        <div style={{ fontSize: 11.5, color: "#6b7280" }}>
-                          {member.title || member.role}
-                        </div>
-                      </div>
-                    </button>
-                  ))
-                )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </aside>
-          )}
-        </div>
+            ) : null}
+          </div>
+        </main>
+
+        {membersOpen ? (
+          <aside className="lexora-ws-right">
+            <div className="lexora-ws-rp-tabs">
+              <button type="button" onClick={() => setRightPanelTab("members")} className={`lexora-ws-rp-tab ${rightPanelTab === "members" ? "active" : ""}`}>Members</button>
+              <button type="button" onClick={() => setRightPanelTab("pinned")} className={`lexora-ws-rp-tab ${rightPanelTab === "pinned" ? "active" : ""}`}>Pinned</button>
+              <button type="button" onClick={() => setRightPanelTab("files")} className={`lexora-ws-rp-tab ${rightPanelTab === "files" ? "active" : ""}`}>Files</button>
+            </div>
+
+            <div className="lexora-ws-rp-scroll">
+              {rightPanelTab === "members" ? (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.1, color: "#b0b8cc", textTransform: "uppercase", marginBottom: 8 }}>Presence</div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 8, marginBottom: 6 }}>
+                    <span className="lexora-ws-avatar" style={{ width: 30, height: 30, fontSize: 11, ...avatarStyle(getInitials(currentUserDisplayName)), position: "relative" }}>
+                      {getInitials(currentUserDisplayName)}
+                      <span style={{ position: "absolute", right: -1, bottom: -1, width: 9, height: 9, borderRadius: "50%", border: "2px solid #fbfbfd", ...statusDot(currentUserStatus) }} />
+                    </span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#111318" }}>{currentUserDisplayName}</div>
+                      <div style={{ fontSize: 11, color: "#b0b8cc" }}>{currentUser?.admin_role || currentUser?.role || "Admin"}</div>
+                    </div>
+                    <select value={currentUserStatus} onChange={(e) => setCurrentUserStatus(e.target.value as "online" | "away" | "busy" | "offline")} style={{ fontSize: 11.5, color: "#7a8099", background: "rgba(17,19,24,0.04)", border: "none", borderRadius: 6, padding: "4px 6px", outline: "none" }}>
+                      <option value="online">Online</option>
+                      <option value="away">Away</option>
+                      <option value="busy">Busy</option>
+                      <option value="offline">Offline</option>
+                    </select>
+                  </div>
+
+                  {teamMembers.map((member) => (
+                    <button key={member.id} type="button" onClick={() => openMemberProfile(member)} style={{ width: "100%", border: "none", background: "transparent", display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 8, cursor: "pointer", textAlign: "left" }}>
+                      <span className="lexora-ws-avatar" style={{ width: 30, height: 30, fontSize: 11, ...avatarStyle(getInitials(member.name)), position: "relative" }}>
+                        {getInitials(member.name)}
+                        <span style={{ position: "absolute", right: -1, bottom: -1, width: 9, height: 9, borderRadius: "50%", border: "2px solid #fbfbfd", ...statusDot(member.status) }} />
+                      </span>
+                      <span style={{ minWidth: 0, flex: 1 }}>
+                        <span style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#111318", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{member.name}</span>
+                        <span style={{ display: "block", fontSize: 11, color: "#b0b8cc" }}>{member.title || member.role}</span>
+                      </span>
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setInviteMemberOpen(true)}
+                    style={{ width: "100%", marginTop: 12, borderRadius: 9, border: "1.5px dashed rgba(17,19,24,0.12)", background: "transparent", color: "#7a8099", height: 34, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, cursor: "pointer", fontSize: 12.5 }}
+                  >
+                    <UserPlus size={13} /> Invite member
+                  </button>
+                </>
+              ) : null}
+
+              {rightPanelTab === "pinned" ? (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.1, color: "#b0b8cc", textTransform: "uppercase", marginBottom: 8 }}>Pinned messages</div>
+                  <div className="lexora-ws-card">
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 5 }}>
+                      <span className="lexora-ws-avatar" style={{ width: 18, height: 18, fontSize: 8, ...avatarStyle("V") }}>V</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#3d4257" }}>Vladimir</span>
+                      <span style={{ marginLeft: "auto", fontSize: 11, color: "#b0b8cc" }}>May 17</span>
+                    </div>
+                    <div style={{ fontSize: 12.5, color: "#7a8099", lineHeight: 1.5 }}>Welcome to #general — main admin comms channel. Keep it professional.</div>
+                  </div>
+                  <div className="lexora-ws-card">
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 5 }}>
+                      <span className="lexora-ws-avatar" style={{ width: 18, height: 18, fontSize: 8, ...avatarStyle("T") }}>T</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#3d4257" }}>Test Account</span>
+                      <span style={{ marginLeft: "auto", fontSize: 11, color: "#b0b8cc" }}>May 16</span>
+                    </div>
+                    <div style={{ fontSize: 12.5, color: "#7a8099", lineHeight: 1.5 }}>Staging URL and credentials are in the shared vault.</div>
+                  </div>
+                </>
+              ) : null}
+
+              {rightPanelTab === "files" ? (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.1, color: "#b0b8cc", textTransform: "uppercase", marginBottom: 8 }}>Files</div>
+                  {["UBE_Subject_Outline.pdf", "Rule_Bank_Export.xlsx", "Onboarding_Brief.docx", "design_mockups_v3.png"].map((name) => (
+                    <div key={name} className="lexora-ws-card" style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 7, background: "rgba(37,99,235,0.09)", color: "#2563eb", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>
+                        {name.split(".").pop()?.toUpperCase()}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: "#111318", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+                        <div style={{ fontSize: 11, color: "#b0b8cc" }}>Workspace file</div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : null}
+            </div>
+          </aside>
+        ) : null}
       </div>
 
       {channelModalOpen && (
@@ -4026,6 +3940,61 @@ export default function AdminWorkspacePage() {
         </div>
       )}
 
+      {inviteMemberOpen ? (
+        <div onClick={() => setInviteMemberOpen(false)} style={modalOverlayStyle}>
+          <div onClick={(event) => event.stopPropagation()} style={{ ...modalCardStyle, width: 460 }}>
+            <div style={modalHeaderStyle}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Invite member</div>
+              <button type="button" onClick={() => setInviteMemberOpen(false)} style={modalCloseStyle}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: 18 }}>
+              <div style={{ marginBottom: 14 }}>
+                <div style={labelStyle}>Email</div>
+                <input
+                  value={inviteEmail}
+                  onChange={(event) => setInviteEmail(event.target.value)}
+                  placeholder="member@example.com"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div
+                style={{
+                  borderRadius: 10,
+                  background: "rgba(217,119,6,0.08)",
+                  color: "#92400e",
+                  padding: "10px 12px",
+                  fontSize: 12.5,
+                  lineHeight: 1.5,
+                  marginBottom: 14,
+                }}
+              >
+                Invite UI is ready. Persistent invitations need a backend route, because the current workspace API has no invite endpoint.
+              </div>
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button type="button" onClick={() => setInviteMemberOpen(false)} style={secondaryActionStyle}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError("Invite member backend route is not implemented yet.")
+                    setInviteMemberOpen(false)
+                  }}
+                  style={primaryActionStyle}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {forwardPickerOpen && pendingForward ? (
         <div
           onClick={() => {
@@ -4463,6 +4432,35 @@ const sectionHeaderRow: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   marginBottom: 10,
+}
+
+
+const darkSectionToggleStyle: React.CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "#7c869d",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  cursor: "pointer",
+  fontSize: 10,
+  fontWeight: 800,
+  letterSpacing: 1.1,
+  textTransform: "uppercase",
+  fontFamily: '"DM Mono", ui-monospace, monospace',
+}
+
+const darkTinyIconButtonStyle: React.CSSProperties = {
+  width: 24,
+  height: 24,
+  border: "none",
+  borderRadius: 8,
+  background: "rgba(255,255,255,0.06)",
+  color: "#94a3b8",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
 }
 
 const sectionToggleStyle: React.CSSProperties = {
