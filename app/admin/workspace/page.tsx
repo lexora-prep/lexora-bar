@@ -1475,8 +1475,8 @@ export default function AdminWorkspacePage() {
     const title = noteTitle.trim()
     const body = noteBody.trim()
 
-    if (!title || !body) {
-      setError("Note title and body are required.")
+    if (!title) {
+      setError("Note title is required.")
       return
     }
 
@@ -1524,6 +1524,11 @@ export default function AdminWorkspacePage() {
       if (createdNote) {
         setNotes((prev) => [createdNote, ...prev])
         setActivePane({ type: "note", id: createdNote.id })
+        setNoteTitle(createdNote.title || "")
+        setNoteBody(createdNote.body || "")
+        setNoteSharedScope(createdNote.shared_scope === "specific_users" ? "specific_users" : "workspace")
+        setSelectedNoteRecipientIds(Array.isArray(createdNote.recipient_ids) ? createdNote.recipient_ids : [])
+        setEditingNote(true)
       } else {
         await bootstrap()
       }
@@ -3780,14 +3785,54 @@ export default function AdminWorkspacePage() {
                               </div>
                             ) : null}
 
-                            <RichTextEditor value={noteBody} onChange={setNoteBody} placeholder="Write the note here..." minHeight={260} />
+                            <div style={{ maxWidth: 820, margin: "0 auto 16px", background: "#ffffff", borderRadius: 18, padding: "18px 20px", border: "1px solid rgba(15,23,42,0.06)", boxShadow: "0 12px 34px rgba(15,23,42,0.04)" }}>
+                              <RichTextEditor
+                                value={noteBody}
+                                onChange={setNoteBody}
+                                placeholder="Start typing your note..."
+                                minHeight={520}
+                              />
+                            </div>
                             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                               <button type="button" className="lexora-ws-pill-btn" onClick={() => void updateNote()}><Edit3 size={13} /> Save</button>
                               <button type="button" className="lexora-ws-pill-btn" onClick={() => { setEditingNote(false); setNoteTitle(""); setNoteBody(""); setNoteRecipientSearch("") }}><X size={13} /> Cancel</button>
                             </div>
                           </>
                         ) : (
-                          <RichTextContent content={activeNote.body || activeNote.description || ""} emptyText="No note content." />
+                          activeNote.body ? (
+                            <div style={{ maxWidth: 820, margin: "0 auto", background: "#ffffff", borderRadius: 18, padding: "22px 24px", border: "1px solid rgba(15,23,42,0.06)", boxShadow: "0 12px 34px rgba(15,23,42,0.04)" }}>
+                              <RichTextContent content={activeNote.body || activeNote.description || ""} emptyText="No note content." />
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNoteTitle(activeNote.title || "")
+                                setNoteBody(activeNote.body || "")
+                                setNoteSharedScope(activeNote.shared_scope === "specific_users" ? "specific_users" : "workspace")
+                                setSelectedNoteRecipientIds(Array.isArray(activeNote.recipient_ids) ? activeNote.recipient_ids : [])
+                                setEditingNote(true)
+                              }}
+                              style={{
+                                display: "block",
+                                maxWidth: 820,
+                                width: "100%",
+                                minHeight: 520,
+                                margin: "0 auto",
+                                border: "1px solid rgba(15,23,42,0.06)",
+                                borderRadius: 18,
+                                background: "#ffffff",
+                                boxShadow: "0 12px 34px rgba(15,23,42,0.04)",
+                                color: "#94a3b8",
+                                fontSize: 16,
+                                cursor: "text",
+                                padding: "26px 28px",
+                                textAlign: "left",
+                              }}
+                            >
+                              Start typing your note...
+                            </button>
+                          )
                         )}
 
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
@@ -4394,59 +4439,8 @@ export default function AdminWorkspacePage() {
                 </div>
               ) : null}
 
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                  <div style={labelStyle}>Body</div>
-                  <button
-                    type="button"
-                    onClick={() => setNoteSymbolPickerOpen((prev) => !prev)}
-                    title="Insert symbol into note"
-                    style={{
-                      height: 28,
-                      borderRadius: 8,
-                      border: "1px solid rgba(15,23,42,0.08)",
-                      background: "#ffffff",
-                      color: "#64748b",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "0 9px",
-                      cursor: "pointer",
-                      fontSize: 12,
-                    }}
-                  >
-                    <Smile size={13} /> Symbols
-                  </button>
-                </div>
-
-                {noteSymbolPickerOpen ? (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 6, marginBottom: 10 }}>
-                    {CHANNEL_SYMBOLS.map((symbol) => (
-                      <button
-                        key={`note-symbol-${symbol}`}
-                        type="button"
-                        onClick={() => setNoteBody((prev) => `${prev}${symbol} `)}
-                        style={{
-                          height: 32,
-                          borderRadius: 8,
-                          border: "1px solid rgba(15,23,42,0.08)",
-                          background: "#ffffff",
-                          cursor: "pointer",
-                          fontSize: 15,
-                        }}
-                      >
-                        {symbol}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-
-                <RichTextEditor
-                  value={noteBody}
-                  onChange={setNoteBody}
-                  placeholder="Write the note here..."
-                  minHeight={180}
-                />
+              <div style={{ marginBottom: 18, borderRadius: 14, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.14)", padding: "12px 14px", color: "#475569", fontSize: 13, lineHeight: 1.55 }}>
+                Create the note first. It will open as a clean editable page where you can type directly and use formatting tools.
               </div>
 
               <div style={{ display: "flex", gap: 10 }}>
