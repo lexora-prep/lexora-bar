@@ -538,6 +538,77 @@ function renderMessageContent(content: string, isDeleted?: boolean) {
   })
 }
 
+type WorkspaceTaskStatus = "todo" | "in_progress" | "completed"
+
+type WorkspaceTaskItem = {
+  id: string
+  title: string
+  status: WorkspaceTaskStatus
+  priority: "low" | "medium" | "high"
+  tag: string
+  assigneeInitial: string
+  dueLabel: string
+  completedAt?: string
+}
+
+const INITIAL_WORKSPACE_TASKS: WorkspaceTaskItem[] = [
+  {
+    id: "task-mobile-overflow",
+    title: "Fix mobile overflow on billing card",
+    status: "in_progress",
+    priority: "high",
+    tag: "bug",
+    assigneeInitial: "V",
+    dueLabel: "Due today",
+  },
+  {
+    id: "task-cache-copilot",
+    title: "Cache Copilot answers per ticket_id",
+    status: "in_progress",
+    priority: "medium",
+    tag: "feature",
+    assigneeInitial: "A",
+    dueLabel: "May 22",
+  },
+  {
+    id: "task-onboarding-email",
+    title: "Write onboarding email sequence for new subscribers",
+    status: "todo",
+    priority: "medium",
+    tag: "content",
+    assigneeInitial: "T",
+    dueLabel: "May 25",
+  },
+  {
+    id: "task-admin-pagination",
+    title: "Add pagination to admin user table",
+    status: "todo",
+    priority: "low",
+    tag: "improvement",
+    assigneeInitial: "A",
+    dueLabel: "May 28",
+  },
+  {
+    id: "task-paddle-webhook",
+    title: "Set up Paddle webhook for billing sync",
+    status: "todo",
+    priority: "high",
+    tag: "critical",
+    assigneeInitial: "V",
+    dueLabel: "Overdue · May 17",
+  },
+  {
+    id: "task-redesign-subscription",
+    title: "Redesign subscription page",
+    status: "completed",
+    priority: "low",
+    tag: "done",
+    assigneeInitial: "V",
+    dueLabel: "Done · May 17",
+    completedAt: "May 17",
+  },
+]
+
 export default function AdminWorkspacePage() {
   const [settings, setSettings] = useState<WorkspaceSettings>({})
   const [channels, setChannels] = useState<WorkspaceChannel[]>([])
@@ -565,6 +636,13 @@ export default function AdminWorkspacePage() {
   const [currentUserStatus, setCurrentUserStatus] = useState<"online" | "away" | "busy" | "offline">(
     "online"
   )
+
+  const [workspaceTasks, setWorkspaceTasks] = useState<WorkspaceTaskItem[]>(INITIAL_WORKSPACE_TASKS)
+  const [taskComposerOpen, setTaskComposerOpen] = useState(false)
+  const [taskTitle, setTaskTitle] = useState("")
+  const [taskTag, setTaskTag] = useState("general")
+  const [taskDueLabel, setTaskDueLabel] = useState("")
+  const [taskPriority, setTaskPriority] = useState<"low" | "medium" | "high">("medium")
 
   const [workspaceView, setWorkspaceView] = useState<"messages" | "tasks" | "notes" | "files">("messages")
   const [rightPanelTab, setRightPanelTab] = useState<"members" | "pinned" | "files">("members")
@@ -673,6 +751,106 @@ export default function AdminWorkspacePage() {
     if (activePane.type !== "dm") return null
     return directMembers.find((dm) => dm.id === activePane.id) || null
   }, [directMembers, activePane])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const raw = window.localStorage.getItem("lexora:admin:workspace-tasks")
+
+    if (!raw) return
+
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        setWorkspaceTasks(parsed)
+      }
+    } catch {
+      // Ignore broken local task cache.
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem("lexora:admin:workspace-tasks", JSON.stringify(workspaceTasks))
+  }, [workspaceTasks])
+
+  function createWorkspaceTask() {
+    const title = taskTitle.trim()
+
+    if (!title) {
+      setError("Task title is required.")
+      return
+    }
+
+    const nextTask: WorkspaceTaskItem = {
+      id: `task-${Date.now()}`,
+      title,
+      status: "todo",
+      priority: taskPriority,
+      tag: taskTag.trim() || "general",
+      assigneeInitial: getInitials(currentUserDisplayName).slice(0, 2) || "V",
+      dueLabel: taskDueLabel.trim() || "No due date",
+    }
+
+    setWorkspaceTasks((prev) => [nextTask, ...prev])
+    setTaskTitle("")
+    setTaskTag("general")
+    setTaskDueLabel("")
+    setTaskPriority("medium")
+    setTaskComposerOpen(false)
+    setError("")
+  }
+
+  function toggleWorkspaceTaskCompleted(taskId: string) {
+    setWorkspaceTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId
+          ? task.status === "completed"
+            ? { ...task, status: "todo", completedAt: undefined, dueLabel: task.dueLabel.replace(/^Done · /, "") || "No due date" }
+            : { ...task, status: "completed", completedAt: "Today", dueLabel: "Done · Today" }
+          : task
+      )
+    )
+  }
+
+  function renderWorkspaceTaskRow(task: WorkspaceTaskItem) {
+    const done = task.status === "completed"
+    const priorityColor =
+      task.priority === "high" ? "#dc2626" : task.priority === "medium" ? "#d97706" : "#b0b8cc"
+
+    return (
+      <div key={task.id} className="lexora-ws-task-row" style={done ? { color: "#b0b8cc" } : undefined}>
+        <button
+          type="button"
+          onClick={() => toggleWorkspaceTaskCompleted(task.id)}
+          title={done ? "Mark as not done" : "Mark as completed"}
+          className={`lexora-ws-check ${done ? "done" : ""}`}
+          style={{ border: done ? "none" : undefined }}
+        >
+          {done ? "✓" : ""}
+        </button>
+        {!done ? <span style={{ width: 8, height: 8, borderRadius: "50%", background: priorityColor }} /> : null}
+        <span style={{ flex: 1, textDecoration: done ? "line-through" : "none" }}>{task.title}</span>
+        <span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle(task.assigneeInitial) }}>
+          {task.assigneeInitial}
+        </span>
+        <span style={{ color: done ? "#b0b8cc" : task.dueLabel.toLowerCase().includes("overdue") || task.dueLabel.toLowerCase().includes("today") ? "#dc2626" : "#b0b8cc", fontSize: 11.5 }}>
+          {task.dueLabel}
+        </span>
+        {task.tag ? (
+          <span
+            className="lexora-ws-badge"
+            style={{
+              background: task.priority === "high" ? "rgba(220,38,38,0.09)" : task.priority === "medium" ? "rgba(217,119,6,0.10)" : "rgba(37,99,235,0.09)",
+              color: task.priority === "high" ? "#dc2626" : task.priority === "medium" ? "#d97706" : "#2563eb",
+            }}
+          >
+            {task.tag}
+          </span>
+        ) : null}
+      </div>
+    )
+  }
 
   useEffect(() => {
     if (!activeNote || !editingNote) return
@@ -3770,29 +3948,120 @@ export default function AdminWorkspacePage() {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button type="button" className="lexora-ws-pill-btn">☰ Filter</button>
-                    <button type="button" className="lexora-ws-pill-btn" style={{ borderRadius: 8, background: "#6c5ce7", color: "#fff", borderColor: "#6c5ce7" }}>
+                    <button
+                      type="button"
+                      onClick={() => setTaskComposerOpen((prev) => !prev)}
+                      className="lexora-ws-pill-btn"
+                      style={{ borderRadius: 8, background: "#6c5ce7", color: "#fff", borderColor: "#6c5ce7" }}
+                    >
                       <Plus size={13} /> Add task
                     </button>
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 22 }}>
-                  <div style={{ borderBottom: "1px solid rgba(17,19,24,0.08)", paddingBottom: 8, marginBottom: 8, color: "#7a8099", textTransform: "uppercase", letterSpacing: 0.8, fontSize: 12, fontWeight: 700 }}>○ In Progress <span style={{ color: "#b0b8cc", fontWeight: 400 }}>2</span></div>
-                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#dc2626" }} /><span style={{ flex: 1 }}>Fix mobile overflow on billing card</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("V") }}>V</span><span style={{ color: "#dc2626", fontSize: 11.5 }}>Due today</span><span className="lexora-ws-badge" style={{ background: "rgba(220,38,38,0.09)", color: "#dc2626" }}>bug</span></div>
-                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#d97706" }} /><span style={{ flex: 1 }}>Cache Copilot answers per ticket_id</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("A") }}>A</span><span style={{ color: "#b0b8cc", fontSize: 11.5 }}>May 22</span><span className="lexora-ws-badge" style={{ background: "rgba(37,99,235,0.09)", color: "#2563eb" }}>feature</span></div>
-                </div>
+                {taskComposerOpen ? (
+                  <div
+                    style={{
+                      border: "1px solid rgba(15,23,42,0.08)",
+                      borderRadius: 14,
+                      background: "#ffffff",
+                      boxShadow: "0 12px 34px rgba(15,23,42,0.04)",
+                      padding: 14,
+                      marginBottom: 22,
+                    }}
+                  >
+                    <input
+                      value={taskTitle}
+                      onChange={(event) => setTaskTitle(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault()
+                          createWorkspaceTask()
+                        }
+                      }}
+                      placeholder="Task title"
+                      style={{ ...inputStyle, marginBottom: 10 }}
+                    />
 
-                <div style={{ marginBottom: 22 }}>
-                  <div style={{ borderBottom: "1px solid rgba(17,19,24,0.08)", paddingBottom: 8, marginBottom: 8, color: "#7a8099", textTransform: "uppercase", letterSpacing: 0.8, fontSize: 12, fontWeight: 700 }}>□ Todo <span style={{ color: "#b0b8cc", fontWeight: 400 }}>3</span></div>
-                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#d97706" }} /><span style={{ flex: 1 }}>Write onboarding email sequence for new subscribers</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("T") }}>T</span><span style={{ color: "#b0b8cc", fontSize: 11.5 }}>May 25</span><span className="lexora-ws-badge" style={{ background: "rgba(217,119,6,0.10)", color: "#d97706" }}>content</span></div>
-                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#b0b8cc" }} /><span style={{ flex: 1 }}>Add pagination to admin user table</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("A") }}>A</span><span style={{ color: "#b0b8cc", fontSize: 11.5 }}>May 28</span><span className="lexora-ws-badge">improvement</span></div>
-                  <div className="lexora-ws-task-row"><span className="lexora-ws-check" /><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#dc2626" }} /><span style={{ flex: 1 }}>Set up Paddle webhook for billing sync</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("V") }}>V</span><span style={{ color: "#dc2626", fontSize: 11.5 }}>Overdue · May 17</span><span className="lexora-ws-badge" style={{ background: "rgba(220,38,38,0.09)", color: "#dc2626" }}>critical</span></div>
-                </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 8 }}>
+                      <input
+                        value={taskDueLabel}
+                        onChange={(event) => setTaskDueLabel(event.target.value)}
+                        placeholder="Due date, e.g. May 25"
+                        style={inputStyle}
+                      />
 
-                <div>
-                  <div style={{ borderBottom: "1px solid rgba(17,19,24,0.08)", paddingBottom: 8, marginBottom: 8, color: "#059669", textTransform: "uppercase", letterSpacing: 0.8, fontSize: 12, fontWeight: 700 }}>✓ Completed <span style={{ color: "#b0b8cc", fontWeight: 400 }}>1</span></div>
-                  <div className="lexora-ws-task-row" style={{ color: "#b0b8cc" }}><span className="lexora-ws-check done">✓</span><span style={{ flex: 1, textDecoration: "line-through" }}>Redesign subscription page</span><span className="lexora-ws-avatar" style={{ width: 20, height: 20, fontSize: 8, ...avatarStyle("V") }}>V</span><span style={{ fontSize: 11.5 }}>Done · May 17</span></div>
-                </div>
+                      <input
+                        value={taskTag}
+                        onChange={(event) => setTaskTag(event.target.value)}
+                        placeholder="Tag, e.g. bug"
+                        style={inputStyle}
+                      />
+
+                      <select value={taskPriority} onChange={(event) => setTaskPriority(event.target.value as "low" | "medium" | "high")} style={inputStyle}>
+                        <option value="low">Low priority</option>
+                        <option value="medium">Medium priority</option>
+                        <option value="high">High priority</option>
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={createWorkspaceTask}
+                        style={{
+                          height: 44,
+                          borderRadius: 10,
+                          border: "1px solid #6c5ce7",
+                          background: "#6c5ce7",
+                          color: "#fff",
+                          padding: "0 14px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Create
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {(["in_progress", "todo", "completed"] as WorkspaceTaskStatus[]).map((status) => {
+                  const sectionTasks = workspaceTasks.filter((task) => task.status === status)
+                  const title =
+                    status === "in_progress"
+                      ? "○ In Progress"
+                      : status === "todo"
+                        ? "□ Todo"
+                        : "✓ Completed"
+
+                  const titleColor = status === "completed" ? "#059669" : "#7a8099"
+
+                  return (
+                    <div key={status} style={{ marginBottom: 22 }}>
+                      <div
+                        style={{
+                          borderBottom: "1px solid rgba(17,19,24,0.08)",
+                          paddingBottom: 8,
+                          marginBottom: 8,
+                          color: titleColor,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.8,
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {title} <span style={{ color: "#b0b8cc", fontWeight: 400 }}>{sectionTasks.length}</span>
+                      </div>
+
+                      {sectionTasks.length ? (
+                        sectionTasks.map((task) => renderWorkspaceTaskRow(task))
+                      ) : (
+                        <div style={{ padding: "12px 0", color: "#b0b8cc", fontSize: 13 }}>
+                          No tasks here.
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             ) : null}
 
@@ -3812,7 +4081,22 @@ export default function AdminWorkspacePage() {
                     const active = activePane.type === "note" && activePane.id === note.id
                     const isShared = note.note_type === "shared" || note.visibility === "shared"
                     return (
-                      <button key={note.id} type="button" className={`lexora-ws-note-item ${active ? "active" : ""}`} onClick={() => void loadNoteDetail(note.id)}>
+                      <button
+                        key={note.id}
+                        type="button"
+                        className={`lexora-ws-note-item ${active ? "active" : ""}`}
+                        onClick={() => {
+                          setActivePane({ type: "note", id: note.id })
+                          setWorkspaceView("notes")
+                          setNoteTitle(note.title || "")
+                          setNoteBody(note.body || "")
+                          setNoteSharedScope(note.shared_scope === "specific_users" ? "specific_users" : "workspace")
+                          setSelectedNoteRecipientIds(Array.isArray(note.recipient_ids) ? note.recipient_ids : [])
+                          setNoteRecipientSearch("")
+                          setEditingNote(true)
+                          void loadNoteDetail(note.id)
+                        }}
+                      >
                         <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#6c5ce7" : "#111318", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{note.title}</div>
                         <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 3 }}>
                           <span className="lexora-ws-badge" style={isShared ? { background: "rgba(5,150,105,0.10)", color: "#059669" } : { background: "rgba(17,19,24,0.06)", color: "#7a8099" }}>{isShared ? "Shared" : "Personal"}</span>
