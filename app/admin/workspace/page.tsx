@@ -298,6 +298,16 @@ const CHANNEL_SYMBOLS = [
   "🧾",
   "🆘",
   "⚠️",
+  "⭐",
+  "👑",
+  "🏛️",
+  "📁",
+  "📊",
+  "📅",
+  "🔔",
+  "🧩",
+  "🧪",
+  "🌐",
 ]
 
 const PROFILE_THEMES = ["sunset", "midnight", "violet", "emerald", "clean"]
@@ -310,6 +320,56 @@ function getInitials(name: string) {
       .map((p) => p[0]?.toUpperCase() || "")
       .join("") || "A"
   )
+}
+
+function roleVisualBadge(role: string) {
+  const normalized = role.toUpperCase()
+
+  if (normalized.includes("SUPER_ADMIN")) {
+    return {
+      icon: "👑",
+      label: "Super admin",
+      style: {
+        background: "rgba(250,204,21,0.18)",
+        color: "#a16207",
+        border: "1px solid rgba(250,204,21,0.40)",
+      } as React.CSSProperties,
+    }
+  }
+
+  if (normalized.includes("ADMIN")) {
+    return {
+      icon: "♛",
+      label: "Admin",
+      style: {
+        background: "rgba(148,163,184,0.18)",
+        color: "#475569",
+        border: "1px solid rgba(148,163,184,0.35)",
+      } as React.CSSProperties,
+    }
+  }
+
+  if (normalized.includes("EDITOR") || normalized.includes("PRODUCT")) {
+    return {
+      icon: "◆",
+      label: "Editor",
+      style: {
+        background: "rgba(34,197,94,0.12)",
+        color: "#15803d",
+        border: "1px solid rgba(34,197,94,0.25)",
+      } as React.CSSProperties,
+    }
+  }
+
+  return {
+    icon: "●",
+    label: "Member",
+    style: {
+      background: "rgba(99,102,241,0.10)",
+      color: "#4f46e5",
+      border: "1px solid rgba(99,102,241,0.22)",
+    } as React.CSSProperties,
+  }
 }
 
 function roleTagStyle(role: string): React.CSSProperties {
@@ -495,6 +555,7 @@ export default function AdminWorkspacePage() {
   const [noteComments, setNoteComments] = useState<NoteComment[]>([])
   const [noteCommentText, setNoteCommentText] = useState("")
   const [noteReactionPickerOpen, setNoteReactionPickerOpen] = useState(false)
+  const [noteSymbolPickerOpen, setNoteSymbolPickerOpen] = useState(false)
 
   const [memberProfileOpen, setMemberProfileOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<WorkspaceMember | null>(null)
@@ -1361,6 +1422,7 @@ export default function AdminWorkspacePage() {
     setNoteSharedScope("workspace")
     setSelectedNoteRecipientIds([])
     setNoteRecipientSearch("")
+    setNoteSymbolPickerOpen(false)
     setForwardingNote(null)
   }
 
@@ -2971,31 +3033,54 @@ export default function AdminWorkspacePage() {
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
                                 <span style={{ fontWeight: 700, color: "#111318" }}>{message.author}</span>
-                                <span className="lexora-ws-role">{message.role}</span>
+                                <span
+                                  title={roleVisualBadge(message.role).label}
+                                  className="lexora-ws-role"
+                                  style={{
+                                    ...roleVisualBadge(message.role).style,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                  }}
+                                >
+                                  <span>{roleVisualBadge(message.role).icon}</span>
+                                  <span>{roleVisualBadge(message.role).label}</span>
+                                </span>
                                 <span style={{ fontSize: 11, color: "#b0b8cc" }}>{formatTime(message.created_at)}</span>
                               </div>
                               <div style={message.is_deleted ? deletedMessageTextStyle : normalMessageTextStyle}>{message.content}</div>
                               {!message.is_deleted ? (
                                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                                  <button type="button" className="lexora-ws-pill-btn" onClick={() => openForwardPickerForMessage({
-                                    id: message.id,
-                                    author: message.author,
-                                    author_id: message.author_id,
-                                    role: message.role,
-                                    content: message.content,
-                                    created_at: message.created_at,
-                                    updated_at: message.created_at,
-                                    edited_at: message.edited_at,
-                                    is_pinned: false,
-                                    my_emojis: [],
-                                    reactions: [],
-                                    is_deleted: message.is_deleted,
-                                  })}>
-                                    <Forward size={13} /> Forward
+                                  <button
+                                    type="button"
+                                    title="Forward"
+                                    style={messageActionButtonStyle}
+                                    onClick={() => openForwardPickerForMessage({
+                                      id: message.id,
+                                      author: message.author,
+                                      author_id: message.author_id,
+                                      role: message.role,
+                                      content: message.content,
+                                      created_at: message.created_at,
+                                      updated_at: message.created_at,
+                                      edited_at: message.edited_at,
+                                      is_pinned: false,
+                                      my_emojis: [],
+                                      reactions: [],
+                                      is_deleted: message.is_deleted,
+                                    })}
+                                  >
+                                    <Forward size={14} />
                                   </button>
                                   {canDeleteDmMessage ? (
-                                    <button type="button" className="lexora-ws-pill-btn" onClick={() => void deleteDMMessage(message.id)} disabled={dmDeletingId === message.id}>
-                                      <Trash2 size={13} /> {dmDeletingId === message.id ? "Deleting..." : "Delete"}
+                                    <button
+                                      type="button"
+                                      title={dmDeletingId === message.id ? "Deleting..." : "Delete"}
+                                      style={{ ...messageActionButtonStyle, color: "#dc2626", opacity: dmDeletingId === message.id ? 0.55 : 1 }}
+                                      onClick={() => void deleteDMMessage(message.id)}
+                                      disabled={dmDeletingId === message.id}
+                                    >
+                                      <Trash2 size={14} />
                                     </button>
                                   ) : null}
                                 </div>
@@ -3030,7 +3115,19 @@ export default function AdminWorkspacePage() {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
                               <span style={{ fontWeight: 700, color: "#111318" }}>{message.author}</span>
-                              <span className="lexora-ws-role">{message.role}</span>
+                              <span
+                                  title={roleVisualBadge(message.role).label}
+                                  className="lexora-ws-role"
+                                  style={{
+                                    ...roleVisualBadge(message.role).style,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                  }}
+                                >
+                                  <span>{roleVisualBadge(message.role).icon}</span>
+                                  <span>{roleVisualBadge(message.role).label}</span>
+                                </span>
                               <span style={{ fontSize: 11, color: "#b0b8cc" }}>{formatTime(message.created_at)}</span>
                               {message.edited_at ? <span style={{ fontSize: 11, color: "#cbd5e1" }}>(edited)</span> : null}
                             </div>
@@ -3546,29 +3643,6 @@ export default function AdminWorkspacePage() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <div style={labelStyle}>Pick symbol</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 6 }}>
-                  {CHANNEL_SYMBOLS.map((symbol) => (
-                    <button
-                      key={`create-channel-symbol-${symbol}`}
-                      type="button"
-                      onClick={() => setChannelSymbol(symbol)}
-                      style={{
-                        height: 34,
-                        borderRadius: 8,
-                        border: channelSymbol === symbol ? "1px solid rgba(108,92,231,0.55)" : "1px solid rgba(15,23,42,0.08)",
-                        background: channelSymbol === symbol ? "rgba(108,92,231,0.10)" : "#ffffff",
-                        cursor: "pointer",
-                        fontSize: 16,
-                      }}
-                    >
-                      {symbol}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
                 <label style={checkboxLabelStyle}>
                   <input
@@ -3691,6 +3765,29 @@ export default function AdminWorkspacePage() {
                       padding: 4,
                     }}
                   />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <div style={labelStyle}>Pick symbol</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 6 }}>
+                  {CHANNEL_SYMBOLS.map((symbol) => (
+                    <button
+                      key={`edit-channel-symbol-${symbol}`}
+                      type="button"
+                      onClick={() => setChannelSymbol(symbol)}
+                      style={{
+                        height: 34,
+                        borderRadius: 8,
+                        border: channelSymbol === symbol ? "1px solid rgba(108,92,231,0.55)" : "1px solid rgba(15,23,42,0.08)",
+                        background: channelSymbol === symbol ? "rgba(108,92,231,0.10)" : "#ffffff",
+                        cursor: "pointer",
+                        fontSize: 16,
+                      }}
+                    >
+                      {symbol}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -3877,7 +3974,52 @@ export default function AdminWorkspacePage() {
               ) : null}
 
               <div style={{ marginBottom: 18 }}>
-                <div style={labelStyle}>Body</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <div style={labelStyle}>Body</div>
+                  <button
+                    type="button"
+                    onClick={() => setNoteSymbolPickerOpen((prev) => !prev)}
+                    title="Insert symbol into note"
+                    style={{
+                      height: 28,
+                      borderRadius: 8,
+                      border: "1px solid rgba(15,23,42,0.08)",
+                      background: "#ffffff",
+                      color: "#64748b",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "0 9px",
+                      cursor: "pointer",
+                      fontSize: 12,
+                    }}
+                  >
+                    <Smile size={13} /> Symbols
+                  </button>
+                </div>
+
+                {noteSymbolPickerOpen ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 6, marginBottom: 10 }}>
+                    {CHANNEL_SYMBOLS.map((symbol) => (
+                      <button
+                        key={`note-symbol-${symbol}`}
+                        type="button"
+                        onClick={() => setNoteBody((prev) => `${prev}${symbol} `)}
+                        style={{
+                          height: 32,
+                          borderRadius: 8,
+                          border: "1px solid rgba(15,23,42,0.08)",
+                          background: "#ffffff",
+                          cursor: "pointer",
+                          fontSize: 15,
+                        }}
+                      >
+                        {symbol}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+
                 <textarea
                   value={noteBody}
                   onChange={(e) => setNoteBody(e.target.value)}
