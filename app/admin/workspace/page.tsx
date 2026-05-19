@@ -1,5 +1,7 @@
 "use client"
 
+import RichTextContent from "./_components/RichTextContent"
+import RichTextEditor from "./_components/RichTextEditor"
 import {
   AtSign,
   BellOff,
@@ -3778,14 +3780,14 @@ export default function AdminWorkspacePage() {
                               </div>
                             ) : null}
 
-                            <textarea value={noteBody} onChange={(e) => setNoteBody(e.target.value)} rows={10} style={noteBodyInputStyle} />
+                            <RichTextEditor value={noteBody} onChange={setNoteBody} placeholder="Write the note here..." minHeight={260} />
                             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                               <button type="button" className="lexora-ws-pill-btn" onClick={() => void updateNote()}><Edit3 size={13} /> Save</button>
                               <button type="button" className="lexora-ws-pill-btn" onClick={() => { setEditingNote(false); setNoteTitle(""); setNoteBody(""); setNoteRecipientSearch("") }}><X size={13} /> Cancel</button>
                             </div>
                           </>
                         ) : (
-                          <div style={{ whiteSpace: "pre-wrap" }}>{activeNote.body || activeNote.description || "No note content."}</div>
+                          <RichTextContent content={activeNote.body || activeNote.description || ""} emptyText="No note content." />
                         )}
 
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
@@ -4439,18 +4441,11 @@ export default function AdminWorkspacePage() {
                   </div>
                 ) : null}
 
-                <textarea
+                <RichTextEditor
                   value={noteBody}
-                  onChange={(e) => setNoteBody(e.target.value)}
+                  onChange={setNoteBody}
                   placeholder="Write the note here..."
-                  rows={6}
-                  style={{
-                    ...inputStyle,
-                    height: "auto",
-                    minHeight: 140,
-                    paddingTop: 10,
-                    resize: "vertical",
-                  }}
+                  minHeight={180}
                 />
               </div>
 
