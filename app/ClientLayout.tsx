@@ -90,45 +90,37 @@ function AuthenticatedShell({
           return
         }
 
-        const [profileRes, dashboardRes] = await Promise.all([
-          fetch(`/api/profile?userId=${user.id}`, {
-            cache: "no-store",
-          }),
-          fetch(`/api/dashboard-analytics?userId=${user.id}`, {
-            cache: "no-store",
-          }),
-        ])
+        const snapshotRes = await fetch(`/api/dashboard-snapshot?userId=${user.id}`, {
+          cache: "no-store",
+        })
 
-        if (profileRes.ok) {
-          const profile = await profileRes.json()
-
-          if (profile?.full_name) {
-            setUserName(profile.full_name)
-          } else if (profile?.email) {
-            setUserName(profile.email)
-          } else {
-            setUserName("User")
-          }
-
-          setMbeAccess(!!profile?.mbe_access)
-        } else {
+        if (!snapshotRes.ok) {
           setUserName("User")
-          setMbeAccess(false)
-        }
-
-        if (dashboardRes.ok) {
-          const dashboard = await dashboardRes.json()
-
-          setStudyStreak(Number(dashboard?.streak ?? 0))
-          setStreakDays(
-            Array.isArray(dashboard?.streakDays) ? dashboard.streakDays : []
-          )
-          setWeakAreasCount(Number(dashboard?.weakAreasCount ?? 0))
-        } else {
           setStudyStreak(0)
           setStreakDays([])
+          setMbeAccess(false)
           setWeakAreasCount(0)
+          return
         }
+
+        const snapshot = await snapshotRes.json().catch(() => null)
+        const profile = snapshot?.profile
+        const dashboard = snapshot?.dashboard
+
+        if (profile?.full_name) {
+          setUserName(profile.full_name)
+        } else if (profile?.email) {
+          setUserName(profile.email)
+        } else {
+          setUserName("User")
+        }
+
+        setMbeAccess(!!profile?.mbe_access)
+        setStudyStreak(Number(dashboard?.streak ?? 0))
+        setStreakDays(
+          Array.isArray(dashboard?.streakDays) ? dashboard.streakDays : []
+        )
+        setWeakAreasCount(Number(dashboard?.weakAreasCount ?? 0))
       } catch (err) {
         console.error("CLIENT LAYOUT LOAD ERROR:", err)
 
