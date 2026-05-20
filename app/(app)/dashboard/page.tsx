@@ -318,76 +318,121 @@ export default function Dashboard() {
   async function loadDashboardBundle(userId: string, selectedState: string) {
     try {
       setCoreLoaded(false)
+      setStudyPlanLoaded(false)
 
-      const requests: Promise<Response>[] = [
-        fetch(`/api/dashboard-analytics?userId=${userId}`, {
-          cache: "no-store",
-        }),
-        fetch(`/api/bll-subject-analytics?userId=${userId}`, {
-          cache: "no-store",
-        }),
-      ]
+      const url = selectedState
+        ? `/api/dashboard-snapshot?userId=${userId}&state=${encodeURIComponent(
+            selectedState
+          )}`
+        : `/api/dashboard-snapshot?userId=${userId}`
 
-      if (selectedState) {
-        requests.push(
-          fetch(
-            `/api/dashboard-analytics?userId=${userId}&state=${encodeURIComponent(
-              selectedState
-            )}`,
-            { cache: "no-store" }
-          )
-        )
-        requests.push(
-          fetch(
-            `/api/state-comparison?state=${encodeURIComponent(
-              selectedState
-            )}&userId=${userId}`,
-            { cache: "no-store" }
-          )
-        )
+      const res = await fetch(url)
+
+      if (!res.ok) {
+        console.error("DASHBOARD SNAPSHOT LOAD ERROR:", await res.text())
+        setDashboard(null)
+        setBllSubjects([])
+        setMbeSubjects([])
+        setStateData(null)
+        setTrendData([])
+        return
       }
 
-      const responses = await Promise.all(requests)
-      const jsons = await Promise.all(
-        responses.map(async (res) => {
-          if (!res.ok) return null
-          return res.json().catch(() => null)
+      const data = await res.json().catch(() => null)
+
+      const profile = data?.profile
+
+      if (profile?.full_name) {
+        setUserName(profile.full_name)
+      } else if (profile?.email) {
+        setUserName(profile.email)
+      }
+
+      setIsPremium(!!profile?.mbe_access)
+
+      if (profile?.jurisdiction && String(profile.jurisdiction).trim()) {
+        const profileState = String(profile.jurisdiction).trim()
+
+        if (!selectedState && profileState !== state) {
+          setState(profileState)
+        }
+      }
+
+      setDashboard(data?.dashboard ?? null)
+      setBllSubjects(Array.isArray(data?.subjects) ? data.subjects : [])
+      setMbeSubjects(Array.isArray(data?.mbeSubjects) ? data.mbeSubjects : [])
+      setStateData(data?.stateData ?? null)
+      setTrendData(Array.isArray(data?.trend) ? data.trend : [])
+
+      const plan = data?.plan
+
+      if (!plan || !plan.startDate || !plan.examDate) {
+        setPlanData(null)
+        setCalendarDays([])
+        setCalendarMonth(null)
+        setSavedOffMap({})
+        setStartDate("")
+        setExamDate("")
+        setStudyWeekends(true)
+        setHasShownPlanThisSession(false)
+        return
+      }
+
+      const start = plan.startDate?.slice(0, 10) || ""
+      const exam = plan.examDate?.slice(0, 10) || ""
+
+      setStartDate(start)
+      setExamDate(exam)
+      setStudyWeekends(plan.studyWeekends ?? true)
+
+      const totalRules = 1200
+      const safeDailyRules =
+        plan?.dailyRules && plan.dailyRules > 0
+          ? plan.dailyRules
+          : Math.ceil(totalRules / Math.max(plan?.totalDays || 1, 1))
+
+      const offMap: Record<string, boolean> = {}
+
+      if (Array.isArray(plan?.offDates)) {
+        plan.offDates.forEach((d: string) => {
+          offMap[d] = true
         })
+      }
+
+      setSavedOffMap(offMap)
+
+      const distributedRules = buildDistributedRuleMap(
+        start,
+        exam,
+        totalRules,
+        offMap
       )
 
-      const dashboardJson = jsons[0]
-      const subjectsJson = jsons[1]
-      const stateDashboardJson = selectedState ? jsons[2] : null
-      const stateComparisonJson = selectedState ? jsons[3] : null
+      setPlanData({
+        ...plan,
+        totalRules,
+        dailyRules: safeDailyRules,
+        rulesByDate: distributedRules,
+      })
 
-      setDashboard(dashboardJson)
-      setBllSubjects(
-        Array.isArray(subjectsJson?.subjects) ? subjectsJson.subjects : []
-      )
-      setMbeSubjects(
-        Array.isArray(subjectsJson?.mbeSubjects) ? subjectsJson.mbeSubjects : []
-      )
+      setHasShownPlanThisSession(true)
 
-      if (selectedState) {
-        setStateData({
-          ...(stateDashboardJson ?? {}),
-          ...(stateComparisonJson ?? {}),
-        })
+      if (start && exam) {
+        const month = new Date(start)
+        const viewMonth = new Date(month.getFullYear(), month.getMonth(), 1)
+        setCalendarMonth(viewMonth)
+        setCalendarDays(buildCalendarDays(start, exam, viewMonth, offMap))
       } else {
-        setStateData(null)
+        setCalendarDays([])
+        setCalendarMonth(new Date())
       }
     } catch (err) {
-      console.error("LOAD DASHBOARD BUNDLE ERROR:", err)
+      console.error("LOAD DASHBOARD SNAPSHOT ERROR:", err)
     } finally {
       setCoreLoaded(true)
+      setStudyPlanLoaded(true)
     }
   }
-
-  useEffect(() => {
-    if (!currentUserId) return
-
-    void loadStudyPlanOnly(currentUserId)
-  }, [currentUserId])
 
   useEffect(() => {
     if (!currentUserId) return
