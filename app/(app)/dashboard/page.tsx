@@ -442,7 +442,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function loadTrendData() {
-      if (!currentUserId) return
+      if (!currentUserId || !coreLoaded) return
 
       try {
         let url = `/api/trend-analytics?userId=${currentUserId}&range=${analyticsRange}`
@@ -468,7 +468,7 @@ export default function Dashboard() {
     }
 
     loadTrendData()
-  }, [currentUserId, analyticsRange, customFrom, customTo])
+  }, [currentUserId, coreLoaded, analyticsRange, customFrom, customTo])
 
   useEffect(() => {
     if (analyticsRange === "custom") {
