@@ -946,13 +946,59 @@ export async function GET(req: Request) {
       }
     }
 
-    const results = await Promise.allSettled([
-      timedSection("profile", () => getProfile(userId)),
-      timedSection("studyPlan", () => getStudyPlan(userId)),
-      timedSection("dashboardMetrics", () => getDashboardMetrics(userId)),
-      timedSection("subjectSummaries", () => getSubjectSummaries(userId)),
-      timedSection("weakAreas", () => getWeakAreasSummary(userId)),
-    ])
+    /*
+      IMPORTANT:
+      The production DB currently has connection_limit=1.
+      Running all dashboard summary sections in parallel causes Prisma P2024
+      connection pool timeouts. Keep these sections sequential until the DB
+      pool/connection strategy is upgraded.
+    */
+    const results = []
+
+    results.push(
+      await Promise.resolve()
+        .then(() => timedSection("profile", () => getProfile(userId)))
+        .then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          (reason) => ({ status: "rejected" as const, reason })
+        )
+    )
+
+    results.push(
+      await Promise.resolve()
+        .then(() => timedSection("studyPlan", () => getStudyPlan(userId)))
+        .then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          (reason) => ({ status: "rejected" as const, reason })
+        )
+    )
+
+    results.push(
+      await Promise.resolve()
+        .then(() => timedSection("dashboardMetrics", () => getDashboardMetrics(userId)))
+        .then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          (reason) => ({ status: "rejected" as const, reason })
+        )
+    )
+
+    results.push(
+      await Promise.resolve()
+        .then(() => timedSection("subjectSummaries", () => getSubjectSummaries(userId)))
+        .then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          (reason) => ({ status: "rejected" as const, reason })
+        )
+    )
+
+    results.push(
+      await Promise.resolve()
+        .then(() => timedSection("weakAreas", () => getWeakAreasSummary(userId)))
+        .then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          (reason) => ({ status: "rejected" as const, reason })
+        )
+    )
 
     console.log(`[dashboard-summary] total: ${Date.now() - summaryStart}ms`)
 
