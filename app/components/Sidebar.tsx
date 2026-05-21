@@ -101,51 +101,8 @@ export default function Sidebar({
   }, [pathname])
 
   useEffect(() => {
-    setLiveWeakAreasCount((current) => Math.max(current, weakAreasCount))
+    setLiveWeakAreasCount(Number.isFinite(weakAreasCount) ? weakAreasCount : 0)
   }, [weakAreasCount])
-
-  useEffect(() => {
-    let isMounted = true
-
-    async function syncWeakAreasCount() {
-      try {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser()
-
-        if (error || !user) return
-
-        const res = await fetch(`/api/weak-areas?userId=${user.id}`, {
-          cache: "no-store",
-        })
-
-        const result = await res.json().catch(() => null)
-        if (!isMounted) return
-
-        let nextCount = 0
-
-        if (typeof result?.count === "number") {
-          nextCount = result.count
-        } else if (Array.isArray(result?.weakAreas)) {
-          nextCount = result.weakAreas.length
-        } else if (Array.isArray(result)) {
-          nextCount = result.length
-        }
-
-        setLiveWeakAreasCount(nextCount)
-      } catch (error) {
-        console.error("SIDEBAR WEAK AREAS COUNT ERROR:", error)
-      }
-    }
-
-    syncWeakAreasCount()
-
-    return () => {
-      isMounted = false
-    }
-  }, [pathname, supabase])
-
   async function handleLogout() {
     try {
       setProfileMenuOpen(false)
@@ -216,61 +173,6 @@ export default function Sidebar({
     if (streakDays.length > 0) return streakDays
     return Array.from({ length: 7 }, () => ({ status: "none" }))
   }, [streakDays])
-
-  // SIDEBAR_REAL_WEAK_AREAS_COUNT_FIX
-  useEffect(() => {
-    let cancelled = false
-
-    async function refreshWeakAreasCount() {
-      try {
-        const response = await supabase.auth.getUser()
-        const user = response.data.user
-
-        if (!user) return
-
-        const res = await fetch(`/api/weak-areas?userId=${user.id}`, {
-          cache: "no-store",
-        })
-
-        if (!res.ok) return
-
-        const result = await res.json()
-        const nextCount =
-          typeof result?.count === "number"
-            ? result.count
-            : Array.isArray(result?.weakAreas)
-              ? result.weakAreas.length
-              : Array.isArray(result)
-                ? result.length
-                : 0
-
-        if (!cancelled) {
-          setLiveWeakAreasCount(nextCount)
-        }
-      } catch (error) {
-        console.error("SIDEBAR WEAK AREAS COUNT ERROR:", error)
-      }
-    }
-
-    refreshWeakAreasCount()
-
-    const handleFocus = () => refreshWeakAreasCount()
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        refreshWeakAreasCount()
-      }
-    }
-
-    window.addEventListener("focus", handleFocus)
-    document.addEventListener("visibilitychange", handleVisibility)
-
-    return () => {
-      cancelled = true
-      window.removeEventListener("focus", handleFocus)
-      document.removeEventListener("visibilitychange", handleVisibility)
-    }
-  }, [supabase])
-
   return (
     <div
       className={`flex h-screen flex-col justify-between border-r border-[#1E2330] bg-[#13161E] text-white transition-all duration-300 ${
