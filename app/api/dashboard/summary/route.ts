@@ -722,7 +722,6 @@ async function getWeakAreasSummary(userId: string): Promise<WeakAreasSummary> {
         created_at: "desc",
       },
     ],
-    take: 5,
   })
 
   const weakAreas = stats
@@ -731,6 +730,7 @@ async function getWeakAreasSummary(userId: string): Promise<WeakAreasSummary> {
       const correctCount = Number(row.correct_count ?? 0)
       const accuracy = calculateAccuracy(correctCount, attempts)
       const masteryLevel = Number(row.mastery_level ?? accuracy)
+      const needsPractice = !!row.needs_practice
 
       return {
         id: row.rule_id,
@@ -741,14 +741,22 @@ async function getWeakAreasSummary(userId: string): Promise<WeakAreasSummary> {
         title: row.rules?.title || "Untitled",
         accuracy,
         attempts,
-        needsPractice: !!row.needs_practice,
+        needsPractice,
         mastery: masteryLevel,
+        updatedAt: row.updated_at ?? row.created_at ?? null,
       }
     })
     .filter((row) => row.needsPractice || row.accuracy < 70)
+    .sort((a, b) => {
+      if (a.accuracy !== b.accuracy) {
+        return a.accuracy - b.accuracy
+      }
+
+      return b.attempts - a.attempts
+    })
 
   return {
-    weakAreas,
+    weakAreas: weakAreas.slice(0, 5).map(({ updatedAt, ...row }) => row),
     count: weakAreas.length,
   }
 }
