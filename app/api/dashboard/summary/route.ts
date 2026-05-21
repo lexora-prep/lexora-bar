@@ -598,6 +598,10 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
 
       prisma.rules.groupBy({
         by: ["subject_id"],
+        where: {
+          is_active: true,
+          rule_type: null,
+        },
         _count: {
           id: true,
         },
@@ -606,6 +610,10 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
       prisma.user_rule_progress.findMany({
         where: {
           user_id: userId,
+          rules: {
+            is_active: true,
+            rule_type: null,
+          },
         },
         select: {
           rule_id: true,
@@ -730,23 +738,25 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
     }
   }
 
-  const subjects = Array.from(bllMap.values()).map((row) => {
-    const accuracy =
-      row.completed === 0
-        ? 0
-        : Math.round(row.masterySum / Math.max(row.completed, 1))
+  const subjects = Array.from(bllMap.values())
+    .filter((row) => row.total > 0)
+    .map((row) => {
+      const accuracy =
+        row.completed === 0
+          ? 0
+          : Math.round(row.masterySum / Math.max(row.completed, 1))
 
-    const derived = buildLevelAndProgress(row.completed, accuracy)
+      const derived = buildLevelAndProgress(row.completed, accuracy)
 
-    return {
-      name: row.name,
-      accuracy,
-      completed: row.completed,
-      total: row.total,
-      level: derived.level,
-      progressWidth: derived.progressWidth,
-    }
-  })
+      return {
+        name: row.name,
+        accuracy,
+        completed: row.completed,
+        total: row.total,
+        level: derived.level,
+        progressWidth: derived.progressWidth,
+      }
+    })
 
   const mbeTotalBySubjectName = new Map<string, number>()
 
@@ -915,13 +925,36 @@ export async function GET(req: Request) {
     const requestedState = searchParams.get("state")
     const userId = auth.user.id
 
+    const summaryStart = Date.now()
+
+    const timedSection = async <T,>(
+      name: string,
+      fn: () => Promise<T>
+    ): Promise<T> => {
+      const startedAt = Date.now()
+
+      try {
+        const result = await fn()
+        console.log(`[dashboard-summary] ${name}: ${Date.now() - startedAt}ms`)
+        return result
+      } catch (error) {
+        console.error(
+          `[dashboard-summary] ${name} failed after ${Date.now() - startedAt}ms`,
+          error
+        )
+        throw error
+      }
+    }
+
     const results = await Promise.allSettled([
-      getProfile(userId),
-      getStudyPlan(userId),
-      getDashboardMetrics(userId),
-      getSubjectSummaries(userId),
-      getWeakAreasSummary(userId),
+      timedSection("profile", () => getProfile(userId)),
+      timedSection("studyPlan", () => getStudyPlan(userId)),
+      timedSection("dashboardMetrics", () => getDashboardMetrics(userId)),
+      timedSection("subjectSummaries", () => getSubjectSummaries(userId)),
+      timedSection("weakAreas", () => getWeakAreasSummary(userId)),
     ])
+
+    console.log(`[dashboard-summary] total: ${Date.now() - summaryStart}ms`)
 
     const debugErrors = results
       .map((result, index) => {
