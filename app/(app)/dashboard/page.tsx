@@ -462,12 +462,19 @@ export default function Dashboard() {
       const stateComparisonJson = selectedState ? jsons[3] : null
 
       setDashboard(dashboardJson)
-      setBllSubjects(
-        Array.isArray(subjectsJson?.subjects) ? subjectsJson.subjects : []
-      )
-      setMbeSubjects(
-        Array.isArray(subjectsJson?.mbeSubjects) ? subjectsJson.mbeSubjects : []
-      )
+      // Subject analytics now come from /api/dashboard/summary.
+      // Do not overwrite them here with the older /api/bll-subject-analytics payload.
+      if (!Array.isArray(bllSubjects) || bllSubjects.length === 0) {
+        setBllSubjects(
+          Array.isArray(subjectsJson?.subjects) ? subjectsJson.subjects : []
+        )
+      }
+
+      if (!Array.isArray(mbeSubjects) || mbeSubjects.length === 0) {
+        setMbeSubjects(
+          Array.isArray(subjectsJson?.mbeSubjects) ? subjectsJson.mbeSubjects : []
+        )
+      }
 
       if (selectedState) {
         setStateData({
@@ -498,7 +505,11 @@ export default function Dashboard() {
       return
     }
 
-    void loadDashboardBundle(currentUserId, state)
+    // Dashboard first-screen data now comes from /api/dashboard/summary.
+    // Do not run the old heavy dashboard bundle automatically.
+    // State comparison is marked Coming Soon and should be reconnected later
+    // through a lightweight state-only request, not the old full bundle.
+    return
   }, [currentUserId, state, authReady])
 
   useEffect(() => {
@@ -569,21 +580,23 @@ export default function Dashboard() {
     return { level, progressWidth }
   }
 
-  const subjectRows: SubjectAnalyticsRow[] = BLL_SUBJECTS.map((name) => {
-    const apiRow = bllSubjects.find((s: any) => s.name === name)
-    const attempts = apiRow?.completed ?? 0
-    const accuracy = apiRow?.accuracy ?? 0
-    const derived = buildLevelAndProgress(attempts, accuracy)
+  const subjectRows: SubjectAnalyticsRow[] = bllSubjects
+    .filter((row: any) => Number(row?.total ?? 0) > 0)
+    .map((row: any) => {
+      const attempts = Number(row?.completed ?? 0)
+      const accuracy = Number(row?.accuracy ?? 0)
+      const total = Number(row?.total ?? 0)
+      const derived = buildLevelAndProgress(attempts, accuracy)
 
-    return {
-      name,
-      accuracy,
-      completed: attempts,
-      total: apiRow?.total ?? 0,
-      level: derived.level,
-      progressWidth: derived.progressWidth,
-    }
-  })
+      return {
+        name: String(row?.name ?? "Unknown"),
+        accuracy,
+        completed: attempts,
+        total,
+        level: derived.level,
+        progressWidth: derived.progressWidth,
+      }
+    })
 
   const mbeRows: SubjectAnalyticsRow[] = MBE_SUBJECTS.map((name) => {
     const apiRow = mbeSubjects.find((s: any) => s.name === name)
@@ -834,6 +847,7 @@ export default function Dashboard() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          userId: currentUserId,
           jurisdiction: nextState,
         }),
       })
@@ -1391,18 +1405,18 @@ export default function Dashboard() {
                 title="MBE Questions"
                 value={isPremium ? `${todayMbe}` : "—"}
                 suffix={isPremium ? `/ ${goalMbe}` : ""}
-                subtitle={isPremium ? "Today progress" : "Unlock MBE analytics"}
+                subtitle="Coming soon"
                 accent="blue"
                 progress={
                   isPremium
                     ? Number((todayMbe / Math.max(goalMbe, 1)) * 100)
                     : 0
                 }
-                locked={!isPremium}
+                locked={true}
                 premiumTag={true}
-                delta={isPremium ? mbeGoalDelta : null}
+                delta={null}
                 deltaMode="goal"
-                onClickLocked={() => router.push("/subscription")}
+                onClickLocked={() => undefined}
               />
 
               <MetricCard
@@ -1424,7 +1438,7 @@ export default function Dashboard() {
                     : "—"
                 }
                 subtitle={
-                  isPremium ? "Your MBE accuracy" : "Unlock to see accuracy"
+                  "Coming soon"
                 }
                 accent="blue"
                 progress={
@@ -1432,11 +1446,11 @@ export default function Dashboard() {
                     ? stateData?.userMBE ?? dashboard?.userMBE ?? 0
                     : 0
                 }
-                locked={!isPremium}
+                locked={true}
                 premiumTag={true}
-                delta={isPremium ? mbeDiff : null}
+                delta={null}
                 deltaMode="average"
-                onClickLocked={() => router.push("/subscription")}
+                onClickLocked={() => undefined}
               />
 
               <MetricCard
@@ -1502,21 +1516,17 @@ export default function Dashboard() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!isPremium) {
-                        router.push("/subscription")
-                        return
-                      }
-                      setAnalyticsMode("MBE")
-                    }}
+                    onClick={() => undefined}
                     className={`inline-flex items-center gap-1 rounded-full px-4 py-2 text-[12px] font-semibold transition ${
-                      analyticsMode === "MBE" && isPremium
+                      false
                         ? "bg-white text-blue-700 shadow-[0_4px_14px_rgba(15,23,42,0.10)] ring-1 ring-slate-200"
                         : "text-slate-500 hover:bg-slate-100"
                     }`}
                   >
                     MBE
-                    {!isPremium && <Lock size={11} className="text-amber-500" />}
+                    <span className="ml-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-amber-700">
+                      Coming Soon
+                    </span>
                   </button>
                 </div>
 
@@ -1576,7 +1586,7 @@ export default function Dashboard() {
 
             {analyticsMode === "MBE" && !isPremium ? (
               <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white">
-                <LockedChartCard onClick={() => router.push("/subscription")} />
+                <LockedChartCard onClick={() => undefined} />
               </div>
             ) : (
               <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white">
@@ -1614,7 +1624,7 @@ export default function Dashboard() {
                 premium
               >
                 {analyticsMode === "MBE" && !isPremium ? (
-                  <LockedChartCard onClick={() => router.push("/subscription")} />
+                  <LockedChartCard onClick={() => undefined} />
                 ) : trendSeries.labels.length > 0 ? (
                   <SimpleLineChart
                     labels={trendSeries.labels}
@@ -1641,7 +1651,7 @@ export default function Dashboard() {
                   isPremium ? (
                     <SimpleBarChart rows={selectedSubjectBars} showAverage={true} />
                   ) : (
-                    <LockedChartCard onClick={() => router.push("/subscription")} />
+                    <LockedChartCard onClick={() => undefined} />
                   )
                 ) : (
                   <SimpleBarChart rows={selectedSubjectBars} showAverage={true} />
@@ -1770,13 +1780,9 @@ export default function Dashboard() {
 
               <QuickStartCard
                 title="MBE Practice"
-                subtitle={isPremium ? "Go to MBE drills" : "Premium only"}
-                onClick={() =>
-                  isPremium
-                    ? router.push("/mbe")
-                    : router.push("/subscription")
-                }
-                locked={!isPremium}
+                subtitle="Coming soon"
+                onClick={() => undefined}
+                locked={false}
               />
               <QuickStartCard
                 title="Rule Training"
@@ -2118,7 +2124,7 @@ export default function Dashboard() {
                               </span>
                             ) : (
                               <PremiumBadge
-                                onClick={() => router.push("/subscription")}
+                                onClick={() => undefined}
                               />
                             )
                           }
@@ -2189,7 +2195,7 @@ export default function Dashboard() {
                             </span>
                           ) : (
                             <PremiumBadge
-                              onClick={() => router.push("/subscription")}
+                              onClick={() => undefined}
                             />
                           )
                         }
