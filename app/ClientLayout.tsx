@@ -25,6 +25,8 @@ type ShellData = {
   streakDays: StreakDay[]
   mbeAccess: boolean
   weakAreasCount: number
+  daysLeft: number | null
+  hasStudyPlan: boolean
 }
 
 function buildFallbackShellData(): ShellData {
@@ -34,13 +36,36 @@ function buildFallbackShellData(): ShellData {
     streakDays: buildFallbackStreakDays(),
     mbeAccess: false,
     weakAreasCount: 0,
+    daysLeft: null,
+    hasStudyPlan: false,
   }
+}
+
+function calculateDaysLeft(examDate: unknown): number | null {
+  if (!examDate) return null
+
+  const exam = new Date(String(examDate))
+  if (Number.isNaN(exam.getTime())) return null
+
+  const today = new Date()
+
+  exam.setHours(0, 0, 0, 0)
+  today.setHours(0, 0, 0, 0)
+
+  const diffMs = exam.getTime() - today.getTime()
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+  return diffDays >= 0 ? diffDays : 0
 }
 
 function normalizeShellData(data: any): ShellData {
   const profile = data?.profile ?? null
   const dashboard = data?.dashboard ?? null
   const weakAreas = data?.weakAreas ?? null
+  const studyPlan = data?.studyPlan ?? null
+
+  const daysLeft = calculateDaysLeft(studyPlan?.examDate)
+  const hasStudyPlan = !!studyPlan?.examDate
 
   let weakAreasCount = 0
 
@@ -60,6 +85,8 @@ function normalizeShellData(data: any): ShellData {
       : buildFallbackStreakDays(),
     mbeAccess: !!profile?.mbe_access,
     weakAreasCount,
+    daysLeft,
+    hasStudyPlan,
   }
 }
 
@@ -134,7 +161,7 @@ function AuthenticatedShell({
 
   const shellQuery = useQuery({
     queryKey: ["layout-shell-summary"],
-    enabled: pathname !== "/dashboard",
+    enabled: true,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
@@ -216,7 +243,12 @@ function AuthenticatedShell({
       <div className="flex min-w-0 flex-1 flex-col bg-white">
         {showTopNavbar && (
           <div onClickCapture={handleProtectedNavigationCapture}>
-            <TopNavbar collapsed={collapsed} />
+            <TopNavbar
+              collapsed={collapsed}
+              userName={shellData.userName}
+              daysLeft={shellData.daysLeft}
+              hasStudyPlan={shellData.hasStudyPlan}
+            />
           </div>
         )}
 
