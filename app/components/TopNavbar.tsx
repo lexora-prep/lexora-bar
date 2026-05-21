@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Bell, X } from "lucide-react"
-import { createClient } from "@/utils/supabase/client"
 
 type TopNavbarProps = {
   collapsed?: boolean
+  userName?: string
+  daysLeft?: number | null
+  hasStudyPlan?: boolean
 }
 
 type AnnouncementItem = {
@@ -15,79 +17,19 @@ type AnnouncementItem = {
   created_at?: string
 }
 
-export default function TopNavbar({ collapsed }: TopNavbarProps) {
-  const supabase = useMemo(() => createClient(), [])
-
-  const [userName, setUserName] = useState("there")
-  const [daysLeft, setDaysLeft] = useState<number | null>(null)
-  const [hasStudyPlan, setHasStudyPlan] = useState(false)
-  const [loading, setLoading] = useState(true)
+export default function TopNavbar({
+  collapsed,
+  userName = "there",
+  daysLeft = null,
+  hasStudyPlan = false,
+}: TopNavbarProps) {
+  const loading = false
 
   const [announcementOpen, setAnnouncementOpen] = useState(false)
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([])
   const [announcementsLoading, setAnnouncementsLoading] = useState(false)
 
   const announcementRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    async function loadTopbarData() {
-      try {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser()
-
-        if (error || !user) {
-          setLoading(false)
-          return
-        }
-
-        const profileRes = await fetch(`/api/profile?userId=${user.id}`)
-        if (profileRes.ok) {
-          const profile = await profileRes.json()
-
-          if (profile?.full_name) {
-            setUserName(profile.full_name)
-          } else if (profile?.email) {
-            const emailName = String(profile.email).split("@")[0]
-            setUserName(emailName)
-          }
-        }
-
-        const planRes = await fetch(`/api/study-plan?userId=${user.id}`)
-        if (planRes.ok) {
-          const plan = await planRes.json()
-
-          if (plan?.examDate) {
-            setHasStudyPlan(true)
-
-            const exam = new Date(plan.examDate)
-            const today = new Date()
-
-            exam.setHours(0, 0, 0, 0)
-            today.setHours(0, 0, 0, 0)
-
-            const diffMs = exam.getTime() - today.getTime()
-            const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-
-            setDaysLeft(diffDays >= 0 ? diffDays : 0)
-          } else {
-            setHasStudyPlan(false)
-            setDaysLeft(null)
-          }
-        } else {
-          setHasStudyPlan(false)
-          setDaysLeft(null)
-        }
-      } catch (err) {
-        console.error("TOP NAVBAR LOAD ERROR:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadTopbarData()
-  }, [supabase])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

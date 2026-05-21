@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   ClipboardList,
   Globe,
@@ -157,12 +158,13 @@ export default function Dashboard() {
   const [hasShownPlanThisSession, setHasShownPlanThisSession] =
     useState(false)
 
-  const [analyticsRange, setAnalyticsRange] = useState<AnalyticsRange>("30d")
+  const [analyticsRange, setAnalyticsRange] = useState<AnalyticsRange>("14d")
   const [analyticsMode, setAnalyticsMode] = useState<AnalyticsMode>("BLL")
   const [customFrom, setCustomFrom] = useState("")
   const [customTo, setCustomTo] = useState("")
   const [showCustomRangePicker, setShowCustomRangePicker] = useState(false)
   const customRangeRef = useRef<HTMLDivElement | null>(null)
+  const hasSkippedInitialDashboardBundle = useRef(false)
 
   const filteredStates = STATES.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
@@ -185,6 +187,9 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadCurrentUser() {
       try {
+        setCoreLoaded(false)
+        setStudyPlanLoaded(false)
+
         const {
           data: { user },
           error,
@@ -193,43 +198,139 @@ export default function Dashboard() {
         if (error) {
           console.error("SUPABASE GET USER ERROR:", error)
           setAuthReady(true)
+          setCoreLoaded(true)
+          setStudyPlanLoaded(true)
           return
         }
 
         if (!user) {
           setAuthReady(true)
+          setCoreLoaded(true)
+          setStudyPlanLoaded(true)
           router.push("/login")
           return
         }
 
         setCurrentUserId(user.id)
 
-        const profileRes = await fetch(`/api/profile?userId=${user.id}`, {
+        const summaryRes = await fetch("/api/dashboard/summary", {
           cache: "no-store",
         })
 
-        if (profileRes.ok) {
-          const profile = await profileRes.json()
+        const summary = await summaryRes.json().catch(() => null)
 
-          if (profile?.full_name) {
-            setUserName(profile.full_name)
-          } else if (profile?.email) {
-            setUserName(profile.email)
+        if (!summaryRes.ok || !summary) {
+          console.error("DASHBOARD SUMMARY LOAD ERROR:", summary)
+          setAuthReady(true)
+          setCoreLoaded(true)
+          setStudyPlanLoaded(true)
+          return
+        }
+
+        const profile = summary?.profile ?? null
+        const studyPlan = summary?.studyPlan ?? null
+
+        if (profile?.full_name) {
+          setUserName(profile.full_name)
+        } else if (profile?.email) {
+          setUserName(profile.email)
+        }
+
+        setIsPremium(!!profile?.mbe_access)
+
+        if (profile?.jurisdiction && String(profile.jurisdiction).trim()) {
+          setState(String(profile.jurisdiction).trim())
+        } else {
+          setState("")
+        }
+
+        setDashboard(summary?.dashboard ?? null)
+        setBllSubjects(Array.isArray(summary?.subjects) ? summary.subjects : [])
+        setMbeSubjects(
+          Array.isArray(summary?.mbeSubjects) ? summary.mbeSubjects : []
+        )
+
+        if (profile?.jurisdiction && String(profile.jurisdiction).trim()) {
+          setStateData({
+            userMBE: summary?.dashboard?.userMBE ?? 0,
+            userBLL: summary?.dashboard?.userBLL ?? 0,
+            stateMBEAvg: summary?.dashboard?.stateMBEAvg ?? 0,
+            stateBLLAvg: summary?.dashboard?.stateBLLAvg ?? 0,
+            topMBE: summary?.dashboard?.topMBE ?? 0,
+            topBLL: summary?.dashboard?.topBLL ?? 0,
+          })
+        } else {
+          setStateData(null)
+        }
+
+        if (!studyPlan || !studyPlan.startDate || !studyPlan.examDate) {
+          setPlanData(null)
+          setCalendarDays([])
+          setCalendarMonth(null)
+          setSavedOffMap({})
+          setStartDate("")
+          setExamDate("")
+          setStudyWeekends(true)
+          setHasShownPlanThisSession(false)
+        } else {
+          const start = studyPlan.startDate?.slice(0, 10) || ""
+          const exam = studyPlan.examDate?.slice(0, 10) || ""
+
+          setStartDate(start)
+          setExamDate(exam)
+          setStudyWeekends(studyPlan.studyWeekends ?? true)
+
+          const totalRules = 1200
+          const safeDailyRules =
+            studyPlan?.dailyRules && studyPlan.dailyRules > 0
+              ? studyPlan.dailyRules
+              : Math.ceil(totalRules / Math.max(studyPlan?.totalDays || 1, 1))
+
+          const offMap: Record<string, boolean> = {}
+
+          if (Array.isArray(studyPlan?.offDates)) {
+            studyPlan.offDates.forEach((d: string) => {
+              offMap[d] = true
+            })
           }
 
-          setIsPremium(!!profile?.mbe_access)
+          setSavedOffMap(offMap)
 
-          if (profile?.jurisdiction && String(profile.jurisdiction).trim()) {
-            setState(String(profile.jurisdiction).trim())
+          const distributedRules = buildDistributedRuleMap(
+            start,
+            exam,
+            totalRules,
+            offMap
+          )
+
+          setPlanData({
+            ...studyPlan,
+            totalRules,
+            dailyRules: safeDailyRules,
+            rulesByDate: distributedRules,
+          })
+
+          setHasShownPlanThisSession(true)
+
+          if (start && exam) {
+            const month = new Date(start)
+            const viewMonth = new Date(month.getFullYear(), month.getMonth(), 1)
+            setCalendarMonth(viewMonth)
+            setCalendarDays(buildCalendarDays(start, exam, viewMonth, offMap))
           } else {
-            setState("")
+            setCalendarDays([])
+            setCalendarMonth(new Date())
           }
         }
 
         setAuthReady(true)
+        setCoreLoaded(true)
+        setStudyPlanLoaded(true)
       } catch (err) {
-        console.error("LOAD CURRENT USER ERROR:", err)
+        console.error("LOAD DASHBOARD SUMMARY ERROR:", err)
         setAuthReady(true)
+        setCoreLoaded(true)
+        setStudyPlanLoaded(true)
       }
     }
 
@@ -383,17 +484,22 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => {
-    if (!currentUserId) return
+  /*
+    Study plan is loaded during the first dashboard summary request.
+    Keep loadStudyPlanOnly available for modal refreshes and save/reset actions,
+    but do not run it again automatically on first dashboard render.
+  */
 
-    void loadStudyPlanOnly(currentUserId)
-  }, [currentUserId])
-
   useEffect(() => {
-    if (!currentUserId) return
+    if (!currentUserId || !authReady) return
+
+    if (!hasSkippedInitialDashboardBundle.current) {
+      hasSkippedInitialDashboardBundle.current = true
+      return
+    }
 
     void loadDashboardBundle(currentUserId, state)
-  }, [currentUserId, state])
+  }, [currentUserId, state, authReady])
 
   useEffect(() => {
     async function loadTrendData() {
@@ -728,7 +834,6 @@ export default function Dashboard() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: currentUserId,
           jurisdiction: nextState,
         }),
       })
