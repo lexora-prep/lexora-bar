@@ -2363,7 +2363,7 @@ function MetricCard({
         {premiumTag && (
           <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-amber-700">
             <Lock size={9} />
-            Premium
+            Coming Soon
           </span>
         )}
       </div>
@@ -2581,7 +2581,7 @@ function CompactCompareMetric({
         {locked ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
             <Lock size={10} />
-            Premium
+            Coming Soon
           </span>
         ) : (
           <div className="flex items-center gap-2 text-[11px]">
@@ -2617,7 +2617,7 @@ function CompactCompareMetric({
       <div className="text-[11px] leading-5 text-slate-500">
         {locked ? (
           <span className="premium-glow-text font-medium">
-            Upgrade to Premium to unlock MBE state comparison
+            MBE state comparison coming soon
           </span>
         ) : (
           `Difference: ${

@@ -4,6 +4,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
 
+type DayStatus = "fire" | "ice" | "empty"
+
 export const dynamic = "force-dynamic"
 
 type SettledSection<T> = {
@@ -27,6 +29,9 @@ type DashboardMetrics = {
   weeklyRulesDone: number
   weeklySessions: number
   weeklyWeakAreas: number
+  streak: number
+  bestStreak: number
+  streakDays: Array<{ status: DayStatus }>
 }
 
 type SubjectDiagnostics = {
@@ -89,6 +94,9 @@ const fallbackDashboard: DashboardMetrics = {
   weeklyRulesDone: 0,
   weeklySessions: 0,
   weeklyWeakAreas: 0,
+  streak: 0,
+  bestStreak: 0,
+  streakDays: [],
 }
 
 const fallbackSubjects: SubjectSummaries = {
@@ -122,6 +130,79 @@ function jsonSection<T>(
   return {
     ok: false,
     data: fallback,
+  }
+}
+
+function startOfDay(date: Date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function dayKey(date: Date) {
+  const d = startOfDay(date)
+  return d.toISOString().slice(0, 10)
+}
+
+function daysBetween(a: Date, b: Date) {
+  const ms = startOfDay(a).getTime() - startOfDay(b).getTime()
+  return Math.round(ms / (1000 * 60 * 60 * 24))
+}
+
+function buildCurrentAndBestStreak(activityDates: Date[]) {
+  const uniqueSorted = Array.from(new Set(activityDates.map((d) => dayKey(d))))
+    .map((key) => new Date(key))
+    .sort((a, b) => a.getTime() - b.getTime())
+
+  if (uniqueSorted.length === 0) {
+    return {
+      currentStreak: 0,
+      bestStreak: 0,
+      activitySet: new Set<string>(),
+    }
+  }
+
+  const activitySet = new Set(uniqueSorted.map((d) => dayKey(d)))
+
+  let bestStreak = 1
+  let running = 1
+
+  for (let i = 1; i < uniqueSorted.length; i++) {
+    const diff = daysBetween(uniqueSorted[i], uniqueSorted[i - 1])
+
+    if (diff === 1) {
+      running++
+      if (running > bestStreak) bestStreak = running
+    } else {
+      running = 1
+    }
+  }
+
+  const today = startOfDay(new Date())
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  let currentStreak = 0
+  let cursor: Date | null = null
+
+  if (activitySet.has(dayKey(today))) {
+    cursor = today
+  } else if (activitySet.has(dayKey(yesterday))) {
+    cursor = yesterday
+  }
+
+  while (cursor && activitySet.has(dayKey(cursor))) {
+    currentStreak++
+
+    const previous = new Date(cursor)
+    previous.setDate(previous.getDate() - 1)
+    cursor = previous
+  }
+
+  return {
+    currentStreak,
+    bestStreak,
+    activitySet,
   }
 }
 
@@ -403,6 +484,67 @@ async function getDashboardMetrics(userId: string): Promise<DashboardMetrics> {
   const safeSpacedReviews =
     spacedReviews.status === "fulfilled" ? spacedReviews.value : 0
 
+  const activityDateResults = await Promise.allSettled([
+    prisma.user_rule_attempts.findMany({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        created_at: true,
+      },
+      orderBy: {
+        created_at: "asc",
+      },
+    }),
+
+    prisma.user_mbe_attempts.findMany({
+      where: {
+        user_id: userId,
+      },
+      select: {
+        created_at: true,
+      },
+      orderBy: {
+        created_at: "asc",
+      },
+    }),
+  ])
+
+  const ruleActivityDates =
+    activityDateResults[0].status === "fulfilled"
+      ? activityDateResults[0].value
+          .map((row) => row.created_at)
+          .filter((date): date is Date => date instanceof Date)
+      : []
+
+  const mbeActivityDates =
+    activityDateResults[1].status === "fulfilled"
+      ? activityDateResults[1].value
+          .map((row) => row.created_at)
+          .filter((date): date is Date => date instanceof Date)
+      : []
+
+  const {
+    currentStreak,
+    bestStreak,
+    activitySet,
+  } = buildCurrentAndBestStreak([...ruleActivityDates, ...mbeActivityDates])
+
+  const streakDays: Array<{ status: DayStatus }> = []
+
+  for (let i = 6; i >= 0; i--) {
+    const date = startOfDay(new Date())
+    date.setDate(date.getDate() - i)
+
+    if (activitySet.has(dayKey(date))) {
+      streakDays.push({ status: "fire" })
+    } else if (date < startOfDay(new Date())) {
+      streakDays.push({ status: "ice" })
+    } else {
+      streakDays.push({ status: "empty" })
+    }
+  }
+
   const allMbeCorrect = safeAllMbe.filter((attempt) => attempt.is_correct).length
 
   const allRuleScoreSum = safeAllRules.reduce(
@@ -438,6 +580,9 @@ async function getDashboardMetrics(userId: string): Promise<DashboardMetrics> {
       Math.ceil((safeWeeklyMbe.length + safeWeeklyRules.length) / 25)
     ),
     weeklyWeakAreas: safeWeakRuleCount,
+    streak: currentStreak,
+    bestStreak,
+    streakDays,
   }
 }
 
