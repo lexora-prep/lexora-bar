@@ -1,7 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { usePathname } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
 
 import Sidebar from "./components/Sidebar"
 import TopNavbar from "./components/TopNavbar"
@@ -13,6 +14,54 @@ import {
   UnsavedChangesProvider,
   useUnsavedChanges,
 } from "./_providers/UnsavedChangesProvider"
+
+type StreakDay = {
+  status?: "fire" | "ice" | "none" | "empty" | string
+}
+
+type ShellData = {
+  userName: string
+  studyStreak: number
+  streakDays: StreakDay[]
+  mbeAccess: boolean
+  weakAreasCount: number
+}
+
+function buildFallbackShellData(): ShellData {
+  return {
+    userName: "User",
+    studyStreak: 0,
+    streakDays: buildFallbackStreakDays(),
+    mbeAccess: false,
+    weakAreasCount: 0,
+  }
+}
+
+function normalizeShellData(data: any): ShellData {
+  const profile = data?.profile ?? null
+  const dashboard = data?.dashboard ?? null
+  const weakAreas = data?.weakAreas ?? null
+
+  let weakAreasCount = 0
+
+  if (typeof dashboard?.weakAreasCount === "number") {
+    weakAreasCount = dashboard.weakAreasCount
+  } else if (typeof weakAreas?.count === "number") {
+    weakAreasCount = weakAreas.count
+  } else if (Array.isArray(weakAreas?.weakAreas)) {
+    weakAreasCount = weakAreas.weakAreas.length
+  }
+
+  return {
+    userName: normalizeUserName(profile),
+    studyStreak: Number(dashboard?.streak ?? 0),
+    streakDays: Array.isArray(dashboard?.streakDays)
+      ? dashboard.streakDays
+      : buildFallbackStreakDays(),
+    mbeAccess: !!profile?.mbe_access,
+    weakAreasCount,
+  }
+}
 
 function isModifiedClick(event: React.MouseEvent<HTMLElement>) {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
@@ -57,91 +106,67 @@ function extractNavigationTarget(target: EventTarget | null): string | null {
   return null
 }
 
+function buildFallbackStreakDays(): StreakDay[] {
+  return Array.from({ length: 7 }, () => ({ status: "none" }))
+}
+
+function normalizeUserName(profile: any) {
+  if (profile?.full_name && String(profile.full_name).trim()) {
+    return String(profile.full_name).trim()
+  }
+
+  if (profile?.email && String(profile.email).trim()) {
+    return String(profile.email).trim()
+  }
+
+  return "User"
+}
+
 function AuthenticatedShell({
   children,
 }: {
   children: React.ReactNode
 }) {
   const [collapsed, setCollapsed] = useState(false)
-  const [userName, setUserName] = useState("User")
-  const [studyStreak, setStudyStreak] = useState(0)
-  const [streakDays, setStreakDays] = useState<any[]>([])
-  const [mbeAccess, setMbeAccess] = useState(false)
-  const [weakAreasCount, setWeakAreasCount] = useState(0)
-
   const pathname = usePathname()
   const supabase = useMemo(() => createClient(), [])
   const { requestNavigation } = useUnsavedChanges()
 
-  useEffect(() => {
-    async function loadSidebarData() {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser()
+  const shellQuery = useQuery({
+    queryKey: ["layout-shell-summary"],
+    enabled: pathname !== "/dashboard",
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
-        if (userError || !user) {
-          setUserName("User")
-          setStudyStreak(0)
-          setStreakDays([])
-          setMbeAccess(false)
-          setWeakAreasCount(0)
-          return
-        }
-
-        const [profileRes, dashboardRes] = await Promise.all([
-          fetch(`/api/profile?userId=${user.id}`, {
-            cache: "no-store",
-          }),
-          fetch(`/api/dashboard-analytics?userId=${user.id}`, {
-            cache: "no-store",
-          }),
-        ])
-
-        if (profileRes.ok) {
-          const profile = await profileRes.json()
-
-          if (profile?.full_name) {
-            setUserName(profile.full_name)
-          } else if (profile?.email) {
-            setUserName(profile.email)
-          } else {
-            setUserName("User")
-          }
-
-          setMbeAccess(!!profile?.mbe_access)
-        } else {
-          setUserName("User")
-          setMbeAccess(false)
-        }
-
-        if (dashboardRes.ok) {
-          const dashboard = await dashboardRes.json()
-
-          setStudyStreak(Number(dashboard?.streak ?? 0))
-          setStreakDays(
-            Array.isArray(dashboard?.streakDays) ? dashboard.streakDays : []
-          )
-          setWeakAreasCount(Number(dashboard?.weakAreasCount ?? 0))
-        } else {
-          setStudyStreak(0)
-          setStreakDays([])
-          setWeakAreasCount(0)
-        }
-      } catch (err) {
-        console.error("CLIENT LAYOUT LOAD ERROR:", err)
-
-        setUserName("User")
-        setStudyStreak(0)
-        setStreakDays([])
-        setMbeAccess(false)
-        setWeakAreasCount(0)
+      if (userError || !user) {
+        return buildFallbackShellData()
       }
-    }
 
-    loadSidebarData()
-  }, [supabase, pathname])
+      /*
+        Dashboard page owns its own first-screen dashboard fetch.
+        This shell query is cached and reused when moving between app pages.
+      */
+      const res = await fetch("/api/dashboard/summary", {
+        cache: "no-store",
+      })
+
+      if (!res.ok) {
+        return buildFallbackShellData()
+      }
+
+      const data = await res.json().catch(() => null)
+
+      return normalizeShellData(data)
+    },
+  })
+
+  const shellData = shellQuery.data ?? buildFallbackShellData()
 
   const handleProtectedNavigationCapture = useCallback(
     (event: React.MouseEvent<HTMLElement>) => {
@@ -180,11 +205,11 @@ function AuthenticatedShell({
         <Sidebar
           collapsed={collapsed}
           setCollapsed={setCollapsed}
-          userName={userName}
-          studyStreak={studyStreak}
-          streakDays={streakDays}
-          mbeAccess={mbeAccess}
-          weakAreasCount={weakAreasCount}
+          userName={shellData.userName}
+          studyStreak={shellData.studyStreak}
+          streakDays={shellData.streakDays}
+          mbeAccess={shellData.mbeAccess}
+          weakAreasCount={shellData.weakAreasCount}
         />
       </div>
 

@@ -22,6 +22,7 @@
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.100.0",
+    "@tanstack/react-query": "^5.100.11",
     "@tiptap/extension-color": "^3.23.5",
     "@tiptap/extension-link": "^3.23.5",
     "@tiptap/extension-mention": "^3.23.5",
@@ -53,6 +54,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tanstack/react-query-devtools": "^5.100.11",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -1,5 +1,5 @@
 import ClientLayout from "../ClientLayout"
-import { UnsavedChangesProvider } from "../_providers/UnsavedChangesProvider"
+import QueryProvider from "../_providers/QueryProvider"
 
 export default function AppLayout({
   children,
@@ -7,8 +7,8 @@ export default function AppLayout({
   children: React.ReactNode
 }) {
   return (
-    <UnsavedChangesProvider>
+    <QueryProvider>
       <ClientLayout>{children}</ClientLayout>
-    </UnsavedChangesProvider>
+    </QueryProvider>
   )
 }
