@@ -2,12 +2,6 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(
-    value
-  )
-}
-
 function normalizeNullableString(value: unknown) {
   if (typeof value !== "string") return null
   const trimmed = value.trim()
@@ -17,7 +11,7 @@ function normalizeNullableString(value: unknown) {
 function normalizeNullableNumber(value: unknown, min: number, max: number) {
   if (value === null || value === undefined || value === "") return null
   const num = Number(value)
-  if (!Number.isFinite(num)) return null
+  if (Number.isFinite(num) === false) return null
   if (num < min || num > max) return null
   return Math.round(num)
 }
@@ -30,7 +24,7 @@ async function getAuthorizedUser() {
     error,
   } = await supabase.auth.getUser()
 
-  if (error || !user) {
+  if (error || user === null) {
     return {
       user: null,
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
@@ -72,10 +66,9 @@ async function getOrCreateProfile(user: { id: string; email?: string | null }) {
 export async function GET(req: Request) {
   try {
     const auth = await getAuthorizedUser()
-    if (auth.error || !auth.user) return auth.error
+    if (auth.error || auth.user === null) return auth.error
 
     const { user } = auth
-
     const profile = await getOrCreateProfile(user)
 
     return NextResponse.json({
@@ -133,15 +126,6 @@ export async function PATCH(req: Request) {
     const { user } = auth
     const body = (await req.json()) as Record<string, unknown>
 
-    const targetUserId = user.id
-
-    if (isUuid(targetUserId) === false) {
-      return NextResponse.json(
-        { error: "Invalid authenticated userId format" },
-        { status: 400 }
-      )
-    }
-
     await getOrCreateProfile(user)
 
     const updateData: {
@@ -176,7 +160,7 @@ export async function PATCH(req: Request) {
     }
 
     const updated = await prisma.profiles.update({
-      where: { id: targetUserId },
+      where: { id: user.id },
       data: updateData,
     })
 
