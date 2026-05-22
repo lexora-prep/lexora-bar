@@ -838,35 +838,70 @@ export default function Dashboard() {
   }
 
   async function handleStateSelect(nextState: string) {
-    if (!currentUserId) return
+  const cleanState = String(nextState || "").trim()
 
-    try {
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: currentUserId,
-          jurisdiction: nextState,
-        }),
-      })
+  if (!cleanState) return
 
-      const data = await res.json().catch(() => null)
+  try {
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jurisdiction: cleanState,
+      }),
+    })
 
-      if (!res.ok) {
-        console.error("STATE UPDATE ERROR:", data)
-        alert(data?.error || data?.message || "Failed to save state.")
-        return
-      }
+    const data = await res.json().catch(() => null)
 
-      setState(nextState)
-      setOpen(false)
-    } catch (err) {
-      console.error("STATE UPDATE ERROR:", err)
-      alert("Failed to save state.")
+    if (!res.ok) {
+      console.error("STATE UPDATE ERROR:", data)
+      alert(data?.error || data?.message || "Failed to save state.")
+      return
     }
+
+    setState(cleanState)
+    setOpen(false)
+    setSearch("")
+
+    const summaryRes = await fetch(
+      `/api/dashboard/summary?state=${encodeURIComponent(cleanState)}`,
+      {
+        cache: "no-store",
+      }
+    )
+
+    const summary = await summaryRes.json().catch(() => null)
+
+    if (!summaryRes.ok || !summary) {
+      console.error("STATE SUMMARY RELOAD ERROR:", summary)
+      return
+    }
+
+    setDashboard(summary?.dashboard ?? null)
+
+    setStateData({
+      userMBE: summary?.dashboard?.userMBE ?? 0,
+      userBLL: summary?.dashboard?.userBLL ?? 0,
+      stateMBEAvg: summary?.dashboard?.stateMBEAvg ?? 0,
+      stateBLLAvg: summary?.dashboard?.stateBLLAvg ?? 0,
+      topMBE: summary?.dashboard?.topMBE ?? 0,
+      topBLL: summary?.dashboard?.topBLL ?? 0,
+    })
+
+    if (Array.isArray(summary?.subjects)) {
+      setBllSubjects(summary.subjects)
+    }
+
+    if (Array.isArray(summary?.mbeSubjects)) {
+      setMbeSubjects(summary.mbeSubjects)
+    }
+  } catch (err) {
+    console.error("HANDLE STATE SELECT ERROR:", err)
+    alert("Failed to save state.")
   }
+}
 
   async function openStudyPlanModal() {
     setOpenPlan(true)
