@@ -213,7 +213,7 @@ export default function Dashboard() {
 
         setCurrentUserId(user.id)
 
-        const dashboardCacheKey = `lexora-dashboard-summary:${user.id}`
+        const dashboardCacheKey = `lexora-dashboard-batch-v1:${user.id}`
         const dashboardStateKey = `lexora-dashboard-state:${user.id}`
 
         try {
@@ -268,8 +268,8 @@ export default function Dashboard() {
 
         const summaryUrl =
           preferredState && preferredState.trim()
-            ? `/api/dashboard/summary?state=${encodeURIComponent(preferredState.trim())}`
-            : "/api/dashboard/summary"
+            ? `/api/dashboard/batch?state=${encodeURIComponent(preferredState.trim())}`
+            : "/api/dashboard/batch"
 
         const summaryRes = await fetch(summaryUrl, {
           cache: "no-store",
@@ -378,7 +378,7 @@ export default function Dashboard() {
 
         try {
           sessionStorage.setItem(
-            `lexora-dashboard-summary:${user.id}`,
+            `lexora-dashboard-batch-v1:${user.id}`,
             JSON.stringify({
               ...summary,
               selectedState: selectedDashboardState,
@@ -587,7 +587,7 @@ export default function Dashboard() {
       const stateComparisonJson = selectedState ? jsons[3] : null
 
       setDashboard(dashboardJson)
-      // Subject analytics now come from /api/dashboard/summary.
+      // Subject analytics now come from /api/dashboard/batch.
       // Do not overwrite them here with the older /api/bll-subject-analytics payload.
       if (!Array.isArray(bllSubjects) || bllSubjects.length === 0) {
         setBllSubjects(
@@ -630,7 +630,7 @@ export default function Dashboard() {
       return
     }
 
-    // Dashboard first-screen data now comes from /api/dashboard/summary.
+    // Dashboard first-screen data now comes from /api/dashboard/batch.
     // Do not run the old heavy dashboard bundle automatically.
     // State comparison is marked Coming Soon and should be reconnected later
     // through a lightweight state-only request, not the old full bundle.
@@ -999,7 +999,7 @@ export default function Dashboard() {
       }
 
       const summaryRes = await fetch(
-        `/api/dashboard/summary?state=${encodeURIComponent(cleanState)}`,
+        `/api/dashboard/batch?state=${encodeURIComponent(cleanState)}`,
         {
           cache: "no-store",
         }
@@ -1026,7 +1026,7 @@ export default function Dashboard() {
       if (currentUserId) {
         try {
           sessionStorage.setItem(
-            `lexora-dashboard-summary:${currentUserId}`,
+            `lexora-dashboard-batch-v1:${currentUserId}`,
             JSON.stringify({
               ...summary,
               selectedState: cleanState,
