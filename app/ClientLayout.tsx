@@ -59,6 +59,22 @@ function calculateDaysLeft(examDate: unknown): number | null {
 }
 
 function normalizeShellData(data: any): ShellData {
+  if (data?.userName) {
+    return {
+      userName: String(data.userName || "User"),
+      studyStreak: Number(data.studyStreak ?? 0),
+      streakDays: Array.isArray(data.streakDays)
+        ? data.streakDays
+        : buildFallbackStreakDays(),
+      mbeAccess: !!data.mbeAccess,
+      weakAreasCount: Number(data.weakAreasCount ?? 0),
+      daysLeft:
+        typeof data.daysLeft === "number" && Number.isFinite(data.daysLeft)
+          ? data.daysLeft
+          : null,
+      hasStudyPlan: !!data.hasStudyPlan,
+    }
+  }
   const profile = data?.profile ?? data ?? null
   const dashboard = data?.dashboard ?? null
   const weakAreas = data?.weakAreas ?? null
@@ -180,7 +196,7 @@ function AuthenticatedShell({
         It only needs the user's profile for the sidebar and top navbar name.
         Dashboard analytics are loaded by the dashboard page itself.
       */
-      const res = await fetch("/api/profile", {
+      const res = await fetch("/api/dashboard/shell", {
         cache: "no-store",
       })
 
