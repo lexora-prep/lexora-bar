@@ -59,7 +59,7 @@ function calculateDaysLeft(examDate: unknown): number | null {
 }
 
 function normalizeShellData(data: any): ShellData {
-  const profile = data?.profile ?? null
+  const profile = data?.profile ?? data ?? null
   const dashboard = data?.dashboard ?? null
   const weakAreas = data?.weakAreas ?? null
   const studyPlan = data?.studyPlan ?? null
@@ -176,10 +176,11 @@ function AuthenticatedShell({
       }
 
       /*
-        Dashboard page owns its own first-screen dashboard fetch.
-        This shell query is cached and reused when moving between app pages.
+        The global app shell must not wait for the heavy dashboard summary.
+        It only needs the user's profile for the sidebar and top navbar name.
+        Dashboard analytics are loaded by the dashboard page itself.
       */
-      const res = await fetch("/api/dashboard/summary", {
+      const res = await fetch("/api/profile", {
         cache: "no-store",
       })
 
@@ -187,9 +188,9 @@ function AuthenticatedShell({
         return buildFallbackShellData()
       }
 
-      const data = await res.json().catch(() => null)
+      const profile = await res.json().catch(() => null)
 
-      return normalizeShellData(data)
+      return normalizeShellData(profile)
     },
   })
 
