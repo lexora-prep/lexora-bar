@@ -190,7 +190,7 @@ function AuthenticatedShell({
 
       const profile = await res.json().catch(() => null)
 
-      return normalizeShellData(profile)
+      return normalizeShellData({ profile })
     },
   })
 

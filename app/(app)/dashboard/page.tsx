@@ -245,10 +245,53 @@ export default function Dashboard() {
         }
 
         setDashboard(summary?.dashboard ?? null)
-        setBllSubjects(Array.isArray(summary?.subjects) ? summary.subjects : [])
-        setMbeSubjects(
-          Array.isArray(summary?.mbeSubjects) ? summary.mbeSubjects : []
-        )
+
+        const nextBllSubjects = Array.isArray(summary?.subjects)
+          ? summary.subjects
+          : []
+
+        const nextMbeSubjects = Array.isArray(summary?.mbeSubjects)
+          ? summary.mbeSubjects
+          : []
+
+        if (nextBllSubjects.length > 0) {
+          setBllSubjects(nextBllSubjects)
+        }
+
+        if (nextMbeSubjects.length > 0) {
+          setMbeSubjects(nextMbeSubjects)
+        }
+
+        if (nextBllSubjects.length === 0) {
+          const subjectFallbackRes = await fetch(
+            `/api/bll-subject-analytics?userId=${user.id}`,
+            {
+              cache: "no-store",
+            }
+          )
+
+          const subjectFallback = await subjectFallbackRes
+            .json()
+            .catch(() => null)
+
+          const fallbackBllSubjects = Array.isArray(subjectFallback?.subjects)
+            ? subjectFallback.subjects
+            : []
+
+          const fallbackMbeSubjects = Array.isArray(
+            subjectFallback?.mbeSubjects
+          )
+            ? subjectFallback.mbeSubjects
+            : []
+
+          if (fallbackBllSubjects.length > 0) {
+            setBllSubjects(fallbackBllSubjects)
+          }
+
+          if (fallbackMbeSubjects.length > 0) {
+            setMbeSubjects(fallbackMbeSubjects)
+          }
+        }
 
         if (profile?.jurisdiction && String(profile.jurisdiction).trim()) {
           setStateData({
@@ -890,12 +933,20 @@ export default function Dashboard() {
       topBLL: summary?.dashboard?.topBLL ?? 0,
     })
 
-    if (Array.isArray(summary?.subjects)) {
-      setBllSubjects(summary.subjects)
+    const nextStateBllSubjects = Array.isArray(summary?.subjects)
+      ? summary.subjects
+      : []
+
+    const nextStateMbeSubjects = Array.isArray(summary?.mbeSubjects)
+      ? summary.mbeSubjects
+      : []
+
+    if (nextStateBllSubjects.length > 0) {
+      setBllSubjects(nextStateBllSubjects)
     }
 
-    if (Array.isArray(summary?.mbeSubjects)) {
-      setMbeSubjects(summary.mbeSubjects)
+    if (nextStateMbeSubjects.length > 0) {
+      setMbeSubjects(nextStateMbeSubjects)
     }
   } catch (err) {
     console.error("HANDLE STATE SELECT ERROR:", err)
