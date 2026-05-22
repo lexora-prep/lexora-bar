@@ -128,25 +128,18 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const auth = await getAuthorizedUser()
-    if (auth.error || !auth.user) return auth.error
+    if (auth.error || auth.user === null) return auth.error
 
     const { user } = auth
     const body = (await req.json()) as Record<string, unknown>
 
-    const targetUserId =
-      typeof body.userId === "string" && body.userId.trim()
-        ? body.userId.trim()
-        : user.id
+    const targetUserId = user.id
 
-    if (!isUuid(targetUserId)) {
+    if (isUuid(targetUserId) === false) {
       return NextResponse.json(
-        { error: "Invalid userId format" },
+        { error: "Invalid authenticated userId format" },
         { status: 400 }
       )
-    }
-
-    if (targetUserId !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     await getOrCreateProfile(user)
@@ -183,7 +176,7 @@ export async function PATCH(req: Request) {
     }
 
     const updated = await prisma.profiles.update({
-      where: { id: user.id },
+      where: { id: targetUserId },
       data: updateData,
     })
 
