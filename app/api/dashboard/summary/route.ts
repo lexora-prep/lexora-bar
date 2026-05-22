@@ -769,7 +769,6 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
         by: ["subject_id"],
         where: {
           is_active: true,
-          rule_type: null,
         },
         _count: {
           id: true,
@@ -781,7 +780,6 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
           user_id: userId,
           rules: {
             is_active: true,
-            rule_type: null,
           },
         },
         select: {
