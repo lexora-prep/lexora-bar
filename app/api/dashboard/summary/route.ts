@@ -85,10 +85,10 @@ const fallbackDashboard: DashboardMetrics = {
   goalBLL: 20,
   userMBE: 0,
   userBLL: 0,
-  stateMBEAvg: 62,
-  stateBLLAvg: 65,
-  topMBE: 85,
-  topBLL: 88,
+  stateMBEAvg: 0,
+  stateBLLAvg: 0,
+  topMBE: 0,
+  topBLL: 0,
   spacedReviewsDue: 0,
   weeklyStudyTimeHours: 0,
   weeklyRulesDone: 0,
@@ -358,7 +358,7 @@ async function getStudyPlan(userId: string) {
   return normalizePlan(plan)
 }
 
-async function getDashboardMetrics(userId: string): Promise<DashboardMetrics> {
+async function getDashboardMetrics(userId: string, requestedState?: string | null): Promise<DashboardMetrics> {
   const today = startOfToday()
   const weekStart = startOfSevenDaysAgo()
 
@@ -559,6 +559,8 @@ async function getDashboardMetrics(userId: string): Promise<DashboardMetrics> {
       ? 0
       : Math.round(allRuleScoreSum / safeAllRules.length)
 
+  const comparisonMetrics = await getStateComparisonMetrics(userId, requestedState)
+
   return {
     todayMBE: safeTodayMbe.length,
     todayBLL: safeTodayRules.length,
@@ -566,10 +568,10 @@ async function getDashboardMetrics(userId: string): Promise<DashboardMetrics> {
     goalBLL: 20,
     userMBE,
     userBLL,
-    stateMBEAvg: 62,
-    stateBLLAvg: 65,
-    topMBE: Math.max(userMBE, 85),
-    topBLL: Math.max(userBLL, 88),
+    stateMBEAvg: comparisonMetrics.stateMBEAvg,
+    stateBLLAvg: comparisonMetrics.stateBLLAvg,
+    topMBE: Math.max(userMBE, comparisonMetrics.topMBE),
+    topBLL: Math.max(userBLL, comparisonMetrics.topBLL),
     spacedReviewsDue: safeSpacedReviews,
     weeklyStudyTimeHours: Number(
       (((safeWeeklyMbe.length + safeWeeklyRules.length) * 1.5) / 60).toFixed(1)
@@ -583,6 +585,173 @@ async function getDashboardMetrics(userId: string): Promise<DashboardMetrics> {
     streak: currentStreak,
     bestStreak,
     streakDays,
+  }
+}
+
+
+type StateComparisonMetrics = {
+  stateMBEAvg: number
+  stateBLLAvg: number
+  topMBE: number
+  topBLL: number
+}
+
+function percentFromParts(correct: number, total: number) {
+  if (!total) return 0
+  return Math.round((correct / total) * 100)
+}
+
+async function getStateComparisonMetrics(
+  userId: string,
+  requestedState?: string | null
+): Promise<StateComparisonMetrics> {
+  const profile = await prisma.profiles.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      jurisdiction: true,
+    },
+  })
+
+  const jurisdiction =
+    requestedState?.trim() || profile?.jurisdiction?.trim() || null
+
+  if (!jurisdiction) {
+    return {
+      stateMBEAvg: 0,
+      stateBLLAvg: 0,
+      topMBE: 0,
+      topBLL: 0,
+    }
+  }
+
+  const stateProfiles = await prisma.profiles.findMany({
+    where: {
+      jurisdiction,
+      id: {
+        not: userId,
+      },
+    },
+    select: {
+      id: true,
+    },
+  })
+
+  const stateUserIds = stateProfiles.map((profile) => profile.id)
+
+  if (stateUserIds.length === 0) {
+    return {
+      stateMBEAvg: 0,
+      stateBLLAvg: 0,
+      topMBE: 0,
+      topBLL: 0,
+    }
+  }
+
+  const [stateMbeAttempts, stateRuleProgress] = await Promise.all([
+    prisma.user_mbe_attempts.findMany({
+      where: {
+        user_id: {
+          in: stateUserIds,
+        },
+      },
+      select: {
+        user_id: true,
+        is_correct: true,
+      },
+    }),
+
+    prisma.user_rule_progress.findMany({
+      where: {
+        user_id: {
+          in: stateUserIds,
+        },
+      },
+      select: {
+        user_id: true,
+        correct_count: true,
+        attempts: true,
+      },
+    }),
+  ])
+
+  const stateMbeCorrect = stateMbeAttempts.reduce(
+    (sum, attempt) => sum + (attempt.is_correct ? 1 : 0),
+    0
+  )
+
+  const stateMBEAvg = percentFromParts(
+    stateMbeCorrect,
+    stateMbeAttempts.length
+  )
+
+  const stateRuleCorrect = stateRuleProgress.reduce(
+    (sum, row) => sum + Number(row.correct_count ?? 0),
+    0
+  )
+
+  const stateRuleTotal = stateRuleProgress.reduce(
+    (sum, row) => sum + Number(row.attempts ?? 0),
+    0
+  )
+
+  const stateBLLAvg = percentFromParts(stateRuleCorrect, stateRuleTotal)
+
+  const mbeByUser: Record<string, { correct: number; total: number }> = {}
+
+  for (const attempt of stateMbeAttempts) {
+    if (!mbeByUser[attempt.user_id]) {
+      mbeByUser[attempt.user_id] = {
+        correct: 0,
+        total: 0,
+      }
+    }
+
+    mbeByUser[attempt.user_id].total += 1
+
+    if (attempt.is_correct) {
+      mbeByUser[attempt.user_id].correct += 1
+    }
+  }
+
+  let topMBE = 0
+
+  for (const score of Object.values(mbeByUser)) {
+    const accuracy = percentFromParts(score.correct, score.total)
+    if (accuracy > topMBE) {
+      topMBE = accuracy
+    }
+  }
+
+  const bllByUser: Record<string, { correct: number; total: number }> = {}
+
+  for (const row of stateRuleProgress) {
+    if (!bllByUser[row.user_id]) {
+      bllByUser[row.user_id] = {
+        correct: 0,
+        total: 0,
+      }
+    }
+
+    bllByUser[row.user_id].correct += Number(row.correct_count ?? 0)
+    bllByUser[row.user_id].total += Number(row.attempts ?? 0)
+  }
+
+  let topBLL = 0
+
+  for (const score of Object.values(bllByUser)) {
+    const accuracy = percentFromParts(score.correct, score.total)
+    if (accuracy > topBLL) {
+      topBLL = accuracy
+    }
+  }
+
+  return {
+    stateMBEAvg,
+    stateBLLAvg,
+    topMBE,
+    topBLL,
   }
 }
 
@@ -949,7 +1118,7 @@ export async function GET(req: Request) {
     const results = await Promise.allSettled([
       timedSection("profile", () => getProfile(userId)),
       timedSection("studyPlan", () => getStudyPlan(userId)),
-      timedSection("dashboardMetrics", () => getDashboardMetrics(userId)),
+      timedSection("dashboardMetrics", () => getDashboardMetrics(userId, requestedState)),
       timedSection("subjectSummaries", () => getSubjectSummaries(userId)),
       timedSection("weakAreas", () => getWeakAreasSummary(userId)),
     ])
