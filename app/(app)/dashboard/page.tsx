@@ -213,7 +213,65 @@ export default function Dashboard() {
 
         setCurrentUserId(user.id)
 
-        const summaryRes = await fetch("/api/dashboard/summary", {
+        const dashboardCacheKey = `lexora-dashboard-summary:${user.id}`
+        const dashboardStateKey = `lexora-dashboard-state:${user.id}`
+
+        try {
+          const cachedRaw = sessionStorage.getItem(dashboardCacheKey)
+          const cachedState = localStorage.getItem(dashboardStateKey)
+
+          if (cachedRaw) {
+            const cached = JSON.parse(cachedRaw)
+
+            if (cached?.profile?.full_name) {
+              setUserName(cached.profile.full_name)
+            } else if (cached?.profile?.email) {
+              setUserName(cached.profile.email)
+            }
+
+            setIsPremium(!!cached?.profile?.mbe_access)
+            setDashboard(cached?.dashboard ?? null)
+            setBllSubjects(Array.isArray(cached?.subjects) ? cached.subjects : [])
+            setMbeSubjects(
+              Array.isArray(cached?.mbeSubjects) ? cached.mbeSubjects : []
+            )
+
+            const cachedSelectedState =
+              cachedState ||
+              cached?.selectedState ||
+              cached?.profile?.jurisdiction ||
+              ""
+
+            if (cachedSelectedState && String(cachedSelectedState).trim()) {
+              setState(String(cachedSelectedState).trim())
+              setStateData({
+                userMBE: cached?.dashboard?.userMBE ?? 0,
+                userBLL: cached?.dashboard?.userBLL ?? 0,
+                stateMBEAvg: cached?.dashboard?.stateMBEAvg ?? 0,
+                stateBLLAvg: cached?.dashboard?.stateBLLAvg ?? 0,
+                topMBE: cached?.dashboard?.topMBE ?? 0,
+                topBLL: cached?.dashboard?.topBLL ?? 0,
+              })
+            }
+
+            setAuthReady(true)
+            setCoreLoaded(true)
+          }
+        } catch (cacheErr) {
+          console.error("DASHBOARD CACHE READ ERROR:", cacheErr)
+        }
+
+        const preferredState =
+          typeof window !== "undefined"
+            ? localStorage.getItem(dashboardStateKey)
+            : null
+
+        const summaryUrl =
+          preferredState && preferredState.trim()
+            ? `/api/dashboard/summary?state=${encodeURIComponent(preferredState.trim())}`
+            : "/api/dashboard/summary"
+
+        const summaryRes = await fetch(summaryUrl, {
           cache: "no-store",
         })
 
@@ -238,8 +296,20 @@ export default function Dashboard() {
 
         setIsPremium(!!profile?.mbe_access)
 
-        if (profile?.jurisdiction && String(profile.jurisdiction).trim()) {
-          setState(String(profile.jurisdiction).trim())
+        const savedLocalState =
+          typeof window !== "undefined"
+            ? localStorage.getItem(`lexora-dashboard-state:${user.id}`)
+            : null
+
+        const selectedDashboardState =
+          savedLocalState && savedLocalState.trim()
+            ? savedLocalState.trim()
+            : profile?.jurisdiction && String(profile.jurisdiction).trim()
+              ? String(profile.jurisdiction).trim()
+              : ""
+
+        if (selectedDashboardState) {
+          setState(selectedDashboardState)
         } else {
           setState("")
         }
@@ -293,7 +363,7 @@ export default function Dashboard() {
           }
         }
 
-        if (profile?.jurisdiction && String(profile.jurisdiction).trim()) {
+        if (selectedDashboardState) {
           setStateData({
             userMBE: summary?.dashboard?.userMBE ?? 0,
             userBLL: summary?.dashboard?.userBLL ?? 0,
@@ -304,6 +374,18 @@ export default function Dashboard() {
           })
         } else {
           setStateData(null)
+        }
+
+        try {
+          sessionStorage.setItem(
+            `lexora-dashboard-summary:${user.id}`,
+            JSON.stringify({
+              ...summary,
+              selectedState: selectedDashboardState,
+            })
+          )
+        } catch (cacheErr) {
+          console.error("DASHBOARD CACHE WRITE ERROR:", cacheErr)
         }
 
         if (!studyPlan || !studyPlan.startDate || !studyPlan.examDate) {
@@ -881,78 +963,84 @@ export default function Dashboard() {
   }
 
   async function handleStateSelect(nextState: string) {
-  const cleanState = String(nextState || "").trim()
+    const cleanState = String(nextState || "").trim()
 
-  if (!cleanState) return
-
-  try {
-    const res = await fetch("/api/profile", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        jurisdiction: cleanState,
-      }),
-    })
-
-    const data = await res.json().catch(() => null)
-
-    if (!res.ok) {
-      console.error("STATE UPDATE ERROR:", data)
-      alert(data?.error || data?.message || "Failed to save state.")
-      return
-    }
+    if (!cleanState) return
 
     setState(cleanState)
     setOpen(false)
     setSearch("")
 
-    const summaryRes = await fetch(
-      `/api/dashboard/summary?state=${encodeURIComponent(cleanState)}`,
-      {
-        cache: "no-store",
+    if (currentUserId) {
+      try {
+        localStorage.setItem(`lexora-dashboard-state:${currentUserId}`, cleanState)
+      } catch (cacheErr) {
+        console.error("DASHBOARD STATE CACHE WRITE ERROR:", cacheErr)
       }
-    )
-
-    const summary = await summaryRes.json().catch(() => null)
-
-    if (!summaryRes.ok || !summary) {
-      console.error("STATE SUMMARY RELOAD ERROR:", summary)
-      return
     }
 
-    setDashboard(summary?.dashboard ?? null)
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jurisdiction: cleanState,
+        }),
+      })
 
-    setStateData({
-      userMBE: summary?.dashboard?.userMBE ?? 0,
-      userBLL: summary?.dashboard?.userBLL ?? 0,
-      stateMBEAvg: summary?.dashboard?.stateMBEAvg ?? 0,
-      stateBLLAvg: summary?.dashboard?.stateBLLAvg ?? 0,
-      topMBE: summary?.dashboard?.topMBE ?? 0,
-      topBLL: summary?.dashboard?.topBLL ?? 0,
-    })
+      const data = await res.json().catch(() => null)
 
-    const nextStateBllSubjects = Array.isArray(summary?.subjects)
-      ? summary.subjects
-      : []
+      if (!res.ok) {
+        console.error("STATE UPDATE ERROR:", data)
+        alert(data?.error || data?.message || "Failed to save state.")
+        return
+      }
 
-    const nextStateMbeSubjects = Array.isArray(summary?.mbeSubjects)
-      ? summary.mbeSubjects
-      : []
+      const summaryRes = await fetch(
+        `/api/dashboard/summary?state=${encodeURIComponent(cleanState)}`,
+        {
+          cache: "no-store",
+        }
+      )
 
-    if (nextStateBllSubjects.length > 0) {
-      setBllSubjects(nextStateBllSubjects)
+      const summary = await summaryRes.json().catch(() => null)
+
+      if (!summaryRes.ok || !summary) {
+        console.error("STATE SUMMARY RELOAD ERROR:", summary)
+        return
+      }
+
+      setDashboard(summary?.dashboard ?? null)
+
+      setStateData({
+        userMBE: summary?.dashboard?.userMBE ?? 0,
+        userBLL: summary?.dashboard?.userBLL ?? 0,
+        stateMBEAvg: summary?.dashboard?.stateMBEAvg ?? 0,
+        stateBLLAvg: summary?.dashboard?.stateBLLAvg ?? 0,
+        topMBE: summary?.dashboard?.topMBE ?? 0,
+        topBLL: summary?.dashboard?.topBLL ?? 0,
+      })
+
+      if (currentUserId) {
+        try {
+          sessionStorage.setItem(
+            `lexora-dashboard-summary:${currentUserId}`,
+            JSON.stringify({
+              ...summary,
+              selectedState: cleanState,
+            })
+          )
+        } catch (cacheErr) {
+          console.error("DASHBOARD CACHE WRITE ERROR:", cacheErr)
+        }
+      }
+    } catch (err) {
+      console.error("HANDLE STATE SELECT ERROR:", err)
+      alert("Failed to save state.")
     }
-
-    if (nextStateMbeSubjects.length > 0) {
-      setMbeSubjects(nextStateMbeSubjects)
-    }
-  } catch (err) {
-    console.error("HANDLE STATE SELECT ERROR:", err)
-    alert("Failed to save state.")
   }
-}
 
   async function openStudyPlanModal() {
     setOpenPlan(true)
