@@ -358,7 +358,11 @@ async function getStudyPlan(userId: string) {
   return normalizePlan(plan)
 }
 
-async function getDashboardMetrics(userId: string, requestedState?: string | null): Promise<DashboardMetrics> {
+async function getDashboardMetrics(
+  userId: string,
+  requestedState?: string | null,
+  includeStateComparison = false
+): Promise<DashboardMetrics> {
   const today = startOfToday()
   const weekStart = startOfSevenDaysAgo()
 
@@ -559,7 +563,14 @@ async function getDashboardMetrics(userId: string, requestedState?: string | nul
       ? 0
       : Math.round(allRuleScoreSum / safeAllRules.length)
 
-  const comparisonMetrics = await getStateComparisonMetrics(userId, requestedState)
+  const comparisonMetrics = includeStateComparison
+    ? await getStateComparisonMetrics(userId, requestedState)
+    : {
+        stateMBEAvg: 0,
+        stateBLLAvg: 0,
+        topMBE: 0,
+        topBLL: 0,
+      }
 
   return {
     todayMBE: safeTodayMbe.length,
@@ -1090,6 +1101,7 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const requestedState = searchParams.get("state")
+    const includeStateComparison = searchParams.get("includeState") === "1"
     const userId = auth.user.id
 
     const summaryStart = Date.now()
@@ -1116,7 +1128,9 @@ export async function GET(req: Request) {
     const results = await Promise.allSettled([
       timedSection("profile", () => getProfile(userId)),
       timedSection("studyPlan", () => getStudyPlan(userId)),
-      timedSection("dashboardMetrics", () => getDashboardMetrics(userId, requestedState)),
+      timedSection("dashboardMetrics", () =>
+        getDashboardMetrics(userId, requestedState, includeStateComparison)
+      ),
       timedSection("subjectSummaries", () => getSubjectSummaries(userId)),
       timedSection("weakAreas", () => getWeakAreasSummary(userId)),
     ])
