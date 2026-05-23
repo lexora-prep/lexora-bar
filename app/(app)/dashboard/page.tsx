@@ -127,6 +127,7 @@ type TrendPoint = {
 export default function Dashboard() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const queryClient = useQueryClient()
 
   const [state, setState] = useState("")
   const [open, setOpen] = useState(false)
@@ -185,15 +186,16 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+
     async function loadCurrentUser() {
       try {
-        setCoreLoaded(false)
-        setStudyPlanLoaded(false)
-
         const {
           data: { user },
           error,
         } = await supabase.auth.getUser()
+
+        if (cancelled) return
 
         if (error) {
           console.error("SUPABASE GET USER ERROR:", error)
@@ -212,247 +214,10 @@ export default function Dashboard() {
         }
 
         setCurrentUserId(user.id)
-
-        const dashboardCacheKey = `lexora-dashboard-batch-v1:${user.id}`
-        const dashboardStateKey = `lexora-dashboard-state:${user.id}`
-
-        try {
-          const cachedRaw = sessionStorage.getItem(dashboardCacheKey)
-          const cachedState = localStorage.getItem(dashboardStateKey)
-
-          if (cachedRaw) {
-            const cached = JSON.parse(cachedRaw)
-
-            if (cached?.profile?.full_name) {
-              setUserName(cached.profile.full_name)
-            } else if (cached?.profile?.email) {
-              setUserName(cached.profile.email)
-            }
-
-            setIsPremium(!!cached?.profile?.mbe_access)
-            setDashboard(cached?.dashboard ?? null)
-            setBllSubjects(Array.isArray(cached?.subjects) ? cached.subjects : [])
-            setMbeSubjects(
-              Array.isArray(cached?.mbeSubjects) ? cached.mbeSubjects : []
-            )
-
-            const cachedSelectedState =
-              cachedState ||
-              cached?.selectedState ||
-              cached?.profile?.jurisdiction ||
-              ""
-
-            if (cachedSelectedState && String(cachedSelectedState).trim()) {
-              setState(String(cachedSelectedState).trim())
-              setStateData({
-                userMBE: cached?.dashboard?.userMBE ?? 0,
-                userBLL: cached?.dashboard?.userBLL ?? 0,
-                stateMBEAvg: cached?.dashboard?.stateMBEAvg ?? 0,
-                stateBLLAvg: cached?.dashboard?.stateBLLAvg ?? 0,
-                topMBE: cached?.dashboard?.topMBE ?? 0,
-                topBLL: cached?.dashboard?.topBLL ?? 0,
-              })
-            }
-
-            setAuthReady(true)
-            setCoreLoaded(true)
-          }
-        } catch (cacheErr) {
-          console.error("DASHBOARD CACHE READ ERROR:", cacheErr)
-        }
-
-        const preferredState =
-          typeof window !== "undefined"
-            ? localStorage.getItem(dashboardStateKey)
-            : null
-
-        const summaryUrl =
-          preferredState && preferredState.trim()
-            ? `/api/dashboard/batch?state=${encodeURIComponent(preferredState.trim())}`
-            : "/api/dashboard/batch"
-
-        const summaryRes = await fetch(summaryUrl, {
-          cache: "no-store",
-        })
-
-        const summary = await summaryRes.json().catch(() => null)
-
-        if (!summaryRes.ok || !summary) {
-          console.error("DASHBOARD SUMMARY LOAD ERROR:", summary)
-          setAuthReady(true)
-          setCoreLoaded(true)
-          setStudyPlanLoaded(true)
-          return
-        }
-
-        const profile = summary?.profile ?? null
-        const studyPlan = summary?.studyPlan ?? null
-
-        if (profile?.full_name) {
-          setUserName(profile.full_name)
-        } else if (profile?.email) {
-          setUserName(profile.email)
-        }
-
-        setIsPremium(!!profile?.mbe_access)
-
-        const savedLocalState =
-          typeof window !== "undefined"
-            ? localStorage.getItem(`lexora-dashboard-state:${user.id}`)
-            : null
-
-        const selectedDashboardState =
-          savedLocalState && savedLocalState.trim()
-            ? savedLocalState.trim()
-            : profile?.jurisdiction && String(profile.jurisdiction).trim()
-              ? String(profile.jurisdiction).trim()
-              : ""
-
-        if (selectedDashboardState) {
-          setState(selectedDashboardState)
-        } else {
-          setState("")
-        }
-
-        setDashboard(summary?.dashboard ?? null)
-
-        const nextBllSubjects = Array.isArray(summary?.subjects)
-          ? summary.subjects
-          : []
-
-        const nextMbeSubjects = Array.isArray(summary?.mbeSubjects)
-          ? summary.mbeSubjects
-          : []
-
-        if (nextBllSubjects.length > 0) {
-          setBllSubjects(nextBllSubjects)
-        }
-
-        if (nextMbeSubjects.length > 0) {
-          setMbeSubjects(nextMbeSubjects)
-        }
-
-        if (nextBllSubjects.length === 0) {
-          const subjectFallbackRes = await fetch(
-            `/api/bll-subject-analytics?userId=${user.id}`,
-            {
-              cache: "no-store",
-            }
-          )
-
-          const subjectFallback = await subjectFallbackRes
-            .json()
-            .catch(() => null)
-
-          const fallbackBllSubjects = Array.isArray(subjectFallback?.subjects)
-            ? subjectFallback.subjects
-            : []
-
-          const fallbackMbeSubjects = Array.isArray(
-            subjectFallback?.mbeSubjects
-          )
-            ? subjectFallback.mbeSubjects
-            : []
-
-          if (fallbackBllSubjects.length > 0) {
-            setBllSubjects(fallbackBllSubjects)
-          }
-
-          if (fallbackMbeSubjects.length > 0) {
-            setMbeSubjects(fallbackMbeSubjects)
-          }
-        }
-
-        if (selectedDashboardState) {
-          setStateData({
-            userMBE: summary?.dashboard?.userMBE ?? 0,
-            userBLL: summary?.dashboard?.userBLL ?? 0,
-            stateMBEAvg: summary?.dashboard?.stateMBEAvg ?? 0,
-            stateBLLAvg: summary?.dashboard?.stateBLLAvg ?? 0,
-            topMBE: summary?.dashboard?.topMBE ?? 0,
-            topBLL: summary?.dashboard?.topBLL ?? 0,
-          })
-        } else {
-          setStateData(null)
-        }
-
-        try {
-          sessionStorage.setItem(
-            `lexora-dashboard-batch-v1:${user.id}`,
-            JSON.stringify({
-              ...summary,
-              selectedState: selectedDashboardState,
-            })
-          )
-        } catch (cacheErr) {
-          console.error("DASHBOARD CACHE WRITE ERROR:", cacheErr)
-        }
-
-        if (!studyPlan || !studyPlan.startDate || !studyPlan.examDate) {
-          setPlanData(null)
-          setCalendarDays([])
-          setCalendarMonth(null)
-          setSavedOffMap({})
-          setStartDate("")
-          setExamDate("")
-          setStudyWeekends(true)
-          setHasShownPlanThisSession(false)
-        } else {
-          const start = studyPlan.startDate?.slice(0, 10) || ""
-          const exam = studyPlan.examDate?.slice(0, 10) || ""
-
-          setStartDate(start)
-          setExamDate(exam)
-          setStudyWeekends(studyPlan.studyWeekends ?? true)
-
-          const totalRules = 1200
-          const safeDailyRules =
-            studyPlan?.dailyRules && studyPlan.dailyRules > 0
-              ? studyPlan.dailyRules
-              : Math.ceil(totalRules / Math.max(studyPlan?.totalDays || 1, 1))
-
-          const offMap: Record<string, boolean> = {}
-
-          if (Array.isArray(studyPlan?.offDates)) {
-            studyPlan.offDates.forEach((d: string) => {
-              offMap[d] = true
-            })
-          }
-
-          setSavedOffMap(offMap)
-
-          const distributedRules = buildDistributedRuleMap(
-            start,
-            exam,
-            totalRules,
-            offMap
-          )
-
-          setPlanData({
-            ...studyPlan,
-            totalRules,
-            dailyRules: safeDailyRules,
-            rulesByDate: distributedRules,
-          })
-
-          setHasShownPlanThisSession(true)
-
-          if (start && exam) {
-            const month = new Date(start)
-            const viewMonth = new Date(month.getFullYear(), month.getMonth(), 1)
-            setCalendarMonth(viewMonth)
-            setCalendarDays(buildCalendarDays(start, exam, viewMonth, offMap))
-          } else {
-            setCalendarDays([])
-            setCalendarMonth(new Date())
-          }
-        }
-
         setAuthReady(true)
-        setCoreLoaded(true)
-        setStudyPlanLoaded(true)
       } catch (err) {
-        console.error("LOAD DASHBOARD SUMMARY ERROR:", err)
+        if (cancelled) return
+        console.error("LOAD CURRENT USER ERROR:", err)
         setAuthReady(true)
         setCoreLoaded(true)
         setStudyPlanLoaded(true)
@@ -460,7 +225,167 @@ export default function Dashboard() {
     }
 
     loadCurrentUser()
+
+    return () => {
+      cancelled = true
+    }
   }, [router, supabase])
+
+  const dashboardBatchQuery = useQuery({
+    queryKey: ["dashboard-batch", currentUserId, state || ""],
+    queryFn: async () => {
+      const selectedState = String(state || "").trim()
+      const url = selectedState
+        ? `/api/dashboard/batch?state=${encodeURIComponent(selectedState)}`
+        : "/api/dashboard/batch"
+
+      const res = await fetch(url)
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || !data) {
+        throw new Error(data?.message || data?.error || "Failed to load dashboard batch.")
+      }
+
+      return data
+    },
+    enabled: authReady && !!currentUserId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
+    retry: 1,
+  })
+
+  useEffect(() => {
+    const summary = dashboardBatchQuery.data
+
+    if (!summary) return
+
+    try {
+      const profile = summary?.profile ?? null
+      const studyPlan = summary?.studyPlan ?? null
+
+      if (profile?.full_name) {
+        setUserName(profile.full_name)
+      } else if (profile?.email) {
+        setUserName(profile.email)
+      } else {
+        setUserName("User")
+      }
+
+      setIsPremium(!!profile?.mbe_access)
+
+      const selectedDashboardState =
+        state && String(state).trim()
+          ? String(state).trim()
+          : summary?.dashboard?.selectedState && String(summary.dashboard.selectedState).trim()
+            ? String(summary.dashboard.selectedState).trim()
+            : profile?.jurisdiction && String(profile.jurisdiction).trim()
+              ? String(profile.jurisdiction).trim()
+              : ""
+
+      if (selectedDashboardState && selectedDashboardState !== state) {
+        setState(selectedDashboardState)
+      }
+
+      setDashboard(summary?.dashboard ?? null)
+
+      setBllSubjects(Array.isArray(summary?.subjects) ? summary.subjects : [])
+      setMbeSubjects(Array.isArray(summary?.mbeSubjects) ? summary.mbeSubjects : [])
+
+      if (selectedDashboardState) {
+        setStateData(
+          summary?.stateData ?? {
+            userMBE: summary?.dashboard?.userMBE ?? 0,
+            userBLL: summary?.dashboard?.userBLL ?? 0,
+            stateMBEAvg: summary?.dashboard?.stateMBEAvg ?? 0,
+            stateBLLAvg: summary?.dashboard?.stateBLLAvg ?? 0,
+            topMBE: summary?.dashboard?.topMBE ?? 0,
+            topBLL: summary?.dashboard?.topBLL ?? 0,
+          }
+        )
+      } else {
+        setStateData(null)
+      }
+
+      if (!studyPlan || !studyPlan.startDate || !studyPlan.examDate) {
+        setPlanData(null)
+        setCalendarDays([])
+        setCalendarMonth(null)
+        setSavedOffMap({})
+        setStartDate("")
+        setExamDate("")
+        setStudyWeekends(true)
+        setHasShownPlanThisSession(false)
+      } else {
+        const start = studyPlan.startDate?.slice(0, 10) || ""
+        const exam = studyPlan.examDate?.slice(0, 10) || ""
+
+        setStartDate(start)
+        setExamDate(exam)
+        setStudyWeekends(studyPlan.studyWeekends ?? true)
+
+        const totalRules = 1200
+        const safeDailyRules =
+          studyPlan?.dailyRules && studyPlan.dailyRules > 0
+            ? studyPlan.dailyRules
+            : Math.ceil(totalRules / Math.max(studyPlan?.totalDays || 1, 1))
+
+        const offMap: Record<string, boolean> = {}
+
+        if (Array.isArray(studyPlan?.offDates)) {
+          studyPlan.offDates.forEach((d: string) => {
+            offMap[d] = true
+          })
+        }
+
+        setSavedOffMap(offMap)
+
+        const distributedRules = buildDistributedRuleMap(
+          start,
+          exam,
+          totalRules,
+          offMap
+        )
+
+        setPlanData({
+          ...studyPlan,
+          totalRules,
+          dailyRules: safeDailyRules,
+          rulesByDate: distributedRules,
+        })
+
+        setHasShownPlanThisSession(true)
+
+        if (start && exam) {
+          const month = new Date(start)
+          const viewMonth = new Date(month.getFullYear(), month.getMonth(), 1)
+          setCalendarMonth(viewMonth)
+          setCalendarDays(buildCalendarDays(start, exam, viewMonth, offMap))
+        } else {
+          setCalendarDays([])
+          setCalendarMonth(new Date())
+        }
+      }
+
+      setCoreLoaded(true)
+      setStudyPlanLoaded(true)
+    } catch (err) {
+      console.error("APPLY DASHBOARD BATCH ERROR:", err)
+      setCoreLoaded(true)
+      setStudyPlanLoaded(true)
+    }
+  }, [dashboardBatchQuery.data])
+
+  useEffect(() => {
+    if (dashboardBatchQuery.isError) {
+      console.error("DASHBOARD BATCH QUERY ERROR:", dashboardBatchQuery.error)
+      setCoreLoaded(true)
+      setStudyPlanLoaded(true)
+    }
+  }, [dashboardBatchQuery.isError, dashboardBatchQuery.error])
 
   async function loadStudyPlanOnly(userId: string) {
     try {
@@ -972,11 +897,34 @@ export default function Dashboard() {
     setSearch("")
 
     if (currentUserId) {
-      try {
-        localStorage.setItem(`lexora-dashboard-state:${currentUserId}`, cleanState)
-      } catch (cacheErr) {
-        console.error("DASHBOARD STATE CACHE WRITE ERROR:", cacheErr)
-      }
+      queryClient.setQueryData(
+        ["dashboard-batch", currentUserId, state || ""],
+        (oldData: any) => {
+          if (!oldData) return oldData
+
+          return {
+            ...oldData,
+            profile: {
+              ...(oldData.profile ?? {}),
+              jurisdiction: cleanState,
+            },
+            dashboard: {
+              ...(oldData.dashboard ?? {}),
+              selectedState: cleanState,
+            },
+            stateData:
+              oldData.stateData ??
+              {
+                userMBE: oldData?.dashboard?.userMBE ?? 0,
+                userBLL: oldData?.dashboard?.userBLL ?? 0,
+                stateMBEAvg: oldData?.dashboard?.stateMBEAvg ?? 0,
+                stateBLLAvg: oldData?.dashboard?.stateBLLAvg ?? 0,
+                topMBE: oldData?.dashboard?.topMBE ?? 0,
+                topBLL: oldData?.dashboard?.topBLL ?? 0,
+              },
+          }
+        }
+      )
     }
 
     try {
@@ -998,43 +946,10 @@ export default function Dashboard() {
         return
       }
 
-      const summaryRes = await fetch(
-        `/api/dashboard/batch?state=${encodeURIComponent(cleanState)}`,
-        {
-          cache: "no-store",
-        }
-      )
-
-      const summary = await summaryRes.json().catch(() => null)
-
-      if (!summaryRes.ok || !summary) {
-        console.error("STATE SUMMARY RELOAD ERROR:", summary)
-        return
-      }
-
-      setDashboard(summary?.dashboard ?? null)
-
-      setStateData({
-        userMBE: summary?.dashboard?.userMBE ?? 0,
-        userBLL: summary?.dashboard?.userBLL ?? 0,
-        stateMBEAvg: summary?.dashboard?.stateMBEAvg ?? 0,
-        stateBLLAvg: summary?.dashboard?.stateBLLAvg ?? 0,
-        topMBE: summary?.dashboard?.topMBE ?? 0,
-        topBLL: summary?.dashboard?.topBLL ?? 0,
-      })
-
       if (currentUserId) {
-        try {
-          sessionStorage.setItem(
-            `lexora-dashboard-batch-v1:${currentUserId}`,
-            JSON.stringify({
-              ...summary,
-              selectedState: cleanState,
-            })
-          )
-        } catch (cacheErr) {
-          console.error("DASHBOARD CACHE WRITE ERROR:", cacheErr)
-        }
+        await queryClient.invalidateQueries({
+          queryKey: ["dashboard-batch", currentUserId],
+        })
       }
     } catch (err) {
       console.error("HANDLE STATE SELECT ERROR:", err)
