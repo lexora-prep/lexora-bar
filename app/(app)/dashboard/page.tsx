@@ -165,7 +165,6 @@ export default function Dashboard() {
   const [customTo, setCustomTo] = useState("")
   const [showCustomRangePicker, setShowCustomRangePicker] = useState(false)
   const customRangeRef = useRef<HTMLDivElement | null>(null)
-  const hasSkippedInitialDashboardBundle = useRef(false)
 
   const filteredStates = STATES.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
@@ -466,101 +465,11 @@ export default function Dashboard() {
     }
   }
 
-  async function loadDashboardBundle(userId: string, selectedState: string) {
-    try {
-      setCoreLoaded(false)
-
-      const requests: Promise<Response>[] = [
-        fetch(`/api/dashboard-analytics?userId=${userId}`, {
-          cache: "no-store",
-        }),
-        fetch(`/api/bll-subject-analytics?userId=${userId}`, {
-          cache: "no-store",
-        }),
-      ]
-
-      if (selectedState) {
-        requests.push(
-          fetch(
-            `/api/dashboard-analytics?userId=${userId}&state=${encodeURIComponent(
-              selectedState
-            )}`,
-            { cache: "no-store" }
-          )
-        )
-        requests.push(
-          fetch(
-            `/api/state-comparison?state=${encodeURIComponent(
-              selectedState
-            )}&userId=${userId}`,
-            { cache: "no-store" }
-          )
-        )
-      }
-
-      const responses = await Promise.all(requests)
-      const jsons = await Promise.all(
-        responses.map(async (res) => {
-          if (!res.ok) return null
-          return res.json().catch(() => null)
-        })
-      )
-
-      const dashboardJson = jsons[0]
-      const subjectsJson = jsons[1]
-      const stateDashboardJson = selectedState ? jsons[2] : null
-      const stateComparisonJson = selectedState ? jsons[3] : null
-
-      setDashboard(dashboardJson)
-      // Subject analytics now come from /api/dashboard/batch.
-      // Do not overwrite them here with the older /api/bll-subject-analytics payload.
-      if (!Array.isArray(bllSubjects) || bllSubjects.length === 0) {
-        setBllSubjects(
-          Array.isArray(subjectsJson?.subjects) ? subjectsJson.subjects : []
-        )
-      }
-
-      if (!Array.isArray(mbeSubjects) || mbeSubjects.length === 0) {
-        setMbeSubjects(
-          Array.isArray(subjectsJson?.mbeSubjects) ? subjectsJson.mbeSubjects : []
-        )
-      }
-
-      if (selectedState) {
-        setStateData({
-          ...(stateDashboardJson ?? {}),
-          ...(stateComparisonJson ?? {}),
-        })
-      } else {
-        setStateData(null)
-      }
-    } catch (err) {
-      console.error("LOAD DASHBOARD BUNDLE ERROR:", err)
-    } finally {
-      setCoreLoaded(true)
-    }
-  }
-
   /*
     Study plan is loaded during the first dashboard summary request.
     Keep loadStudyPlanOnly available for modal refreshes and save/reset actions,
     but do not run it again automatically on first dashboard render.
   */
-
-  useEffect(() => {
-    if (!currentUserId || !authReady) return
-
-    if (!hasSkippedInitialDashboardBundle.current) {
-      hasSkippedInitialDashboardBundle.current = true
-      return
-    }
-
-    // Dashboard first-screen data now comes from /api/dashboard/batch.
-    // Do not run the old heavy dashboard bundle automatically.
-    // State comparison is marked Coming Soon and should be reconnected later
-    // through a lightweight state-only request, not the old full bundle.
-    return
-  }, [currentUserId, state, authReady])
 
   useEffect(() => {
     async function loadTrendData() {
@@ -892,39 +801,61 @@ export default function Dashboard() {
 
     if (!cleanState) return
 
+    const previousState = String(state || "").trim()
+    const previousQueryKey = ["dashboard-batch", currentUserId, previousState]
+    const nextQueryKey = ["dashboard-batch", currentUserId, cleanState]
+
     setState(cleanState)
     setOpen(false)
     setSearch("")
 
-    if (currentUserId) {
-      queryClient.setQueryData(
-        ["dashboard-batch", currentUserId, state || ""],
-        (oldData: any) => {
-          if (!oldData) return oldData
+    setDashboard((prev: any) => ({
+      ...(prev ?? {}),
+      selectedState: cleanState,
+    }))
 
-          return {
-            ...oldData,
-            profile: {
-              ...(oldData.profile ?? {}),
-              jurisdiction: cleanState,
+    setStateData((prev: any) =>
+      prev ?? {
+        userMBE: dashboard?.userMBE ?? 0,
+        userBLL: dashboard?.userBLL ?? 0,
+        stateMBEAvg: dashboard?.stateMBEAvg ?? 0,
+        stateBLLAvg: dashboard?.stateBLLAvg ?? 0,
+        topMBE: dashboard?.topMBE ?? 0,
+        topBLL: dashboard?.topBLL ?? 0,
+      }
+    )
+
+    if (currentUserId) {
+      const currentCachedData =
+        queryClient.getQueryData(previousQueryKey) ??
+        queryClient.getQueryData(nextQueryKey)
+
+      if (currentCachedData) {
+        const optimisticData = {
+          ...(currentCachedData as any),
+          profile: {
+            ...((currentCachedData as any).profile ?? {}),
+            jurisdiction: cleanState,
+          },
+          dashboard: {
+            ...((currentCachedData as any).dashboard ?? {}),
+            selectedState: cleanState,
+          },
+          stateData:
+            (currentCachedData as any).stateData ??
+            {
+              userMBE: (currentCachedData as any)?.dashboard?.userMBE ?? 0,
+              userBLL: (currentCachedData as any)?.dashboard?.userBLL ?? 0,
+              stateMBEAvg: (currentCachedData as any)?.dashboard?.stateMBEAvg ?? 0,
+              stateBLLAvg: (currentCachedData as any)?.dashboard?.stateBLLAvg ?? 0,
+              topMBE: (currentCachedData as any)?.dashboard?.topMBE ?? 0,
+              topBLL: (currentCachedData as any)?.dashboard?.topBLL ?? 0,
             },
-            dashboard: {
-              ...(oldData.dashboard ?? {}),
-              selectedState: cleanState,
-            },
-            stateData:
-              oldData.stateData ??
-              {
-                userMBE: oldData?.dashboard?.userMBE ?? 0,
-                userBLL: oldData?.dashboard?.userBLL ?? 0,
-                stateMBEAvg: oldData?.dashboard?.stateMBEAvg ?? 0,
-                stateBLLAvg: oldData?.dashboard?.stateBLLAvg ?? 0,
-                topMBE: oldData?.dashboard?.topMBE ?? 0,
-                topBLL: oldData?.dashboard?.topBLL ?? 0,
-              },
-          }
         }
-      )
+
+        queryClient.setQueryData(previousQueryKey, optimisticData)
+        queryClient.setQueryData(nextQueryKey, optimisticData)
+      }
     }
 
     try {
@@ -940,20 +871,18 @@ export default function Dashboard() {
 
       const data = await res.json().catch(() => null)
 
-      if (!res.ok) {
-        console.error("STATE UPDATE ERROR:", data)
-        alert(data?.error || data?.message || "Failed to save state.")
+      if (!res.ok || data?.error) {
+        console.error("SAVE STATE ERROR:", data)
         return
       }
 
       if (currentUserId) {
         await queryClient.invalidateQueries({
-          queryKey: ["dashboard-batch", currentUserId],
+          queryKey: ["dashboard-batch", currentUserId, cleanState],
         })
       }
     } catch (err) {
-      console.error("HANDLE STATE SELECT ERROR:", err)
-      alert("Failed to save state.")
+      console.error("SAVE STATE ERROR:", err)
     }
   }
 

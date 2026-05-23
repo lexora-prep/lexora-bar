@@ -4,6 +4,51 @@ import { createClient } from "@/utils/supabase/server"
 
 type DayStatus = "fire" | "ice" | "none"
 
+type SubjectAnalyticsResult = {
+  subjects: Array<{
+    name: string
+    accuracy: number
+    completed: number
+    total: number
+    level: string
+    progressWidth: number
+  }>
+  mbeSubjects: Array<{
+    name: string
+    accuracy: number
+    completed: number
+    total: number
+    level: string
+    progressWidth: number
+  }>
+}
+
+type DashboardMetricsResult = {
+  todayBLL: number
+  todayMBE: number
+  goalBLL: number
+  goalMBE: number
+  userBLL: number
+  userMBE: number
+  stateBLLAvg: number
+  stateMBEAvg: number
+  topBLL: number
+  topMBE: number
+  spacedReviewsDue: number
+  weeklyStudyTimeHours: number
+  weeklyRulesDone: number
+  weeklySessions: number
+  weeklyWeakAreas: number
+  weakAreasCount: number
+  currentStreak: number
+  bestStreak: number
+  streakDays: Array<{
+    date?: string
+    status: DayStatus
+  }>
+  selectedState: string
+}
+
 function percent(correct: number, total: number) {
   if (!total) return 0
   return Math.round((correct / total) * 100)
@@ -94,9 +139,12 @@ function buildStreak(activityDates: Date[]) {
   const streakDays = Array.from({ length: 7 }, (_, index) => {
     const d = new Date(today)
     d.setDate(today.getDate() - (6 - index))
+
     return {
       date: dayKey(d),
-      status: activitySet.has(dayKey(d)) ? ("fire" as DayStatus) : ("none" as DayStatus),
+      status: activitySet.has(dayKey(d))
+        ? ("fire" as DayStatus)
+        : ("none" as DayStatus),
     }
   })
 
@@ -141,6 +189,38 @@ function buildLevelAndProgress(attempts: number, accuracy: number) {
   return {
     level: "Strong",
     progressWidth: Math.max(48, Math.round((accuracy / 100) * 100)),
+  }
+}
+
+function getEmptySubjectAnalytics(): SubjectAnalyticsResult {
+  return {
+    subjects: [],
+    mbeSubjects: [],
+  }
+}
+
+function getEmptyDashboardMetrics(profileState: string | null): DashboardMetricsResult {
+  return {
+    todayBLL: 0,
+    todayMBE: 0,
+    goalBLL: 20,
+    goalMBE: 60,
+    userBLL: 0,
+    userMBE: 0,
+    stateBLLAvg: 0,
+    stateMBEAvg: 0,
+    topBLL: 0,
+    topMBE: 0,
+    spacedReviewsDue: 0,
+    weeklyStudyTimeHours: 0,
+    weeklyRulesDone: 0,
+    weeklySessions: 0,
+    weeklyWeakAreas: 0,
+    weakAreasCount: 0,
+    currentStreak: 0,
+    bestStreak: 0,
+    streakDays: buildFallbackStreakDays(),
+    selectedState: profileState || "",
   }
 }
 
@@ -192,15 +272,39 @@ async function getOrCreateProfile(user: { id: string; email?: string | null }) {
   })
 }
 
-async function getSubjectAnalytics(userId: string) {
-  const [
-    subjects,
-    rulesCountBySubject,
-    userRuleProgress,
-    mbeQuestionCountBySubject,
-    userMbeAttempts,
-  ] = await Promise.all([
-    prisma.subjects.findMany({
+async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResult> {
+  let subjects: Array<{
+    id: string
+    name: string
+    order_index: number | null
+  }> = []
+
+  let activeRuleRows: Array<{
+    subject_id: string | null
+  }> = []
+
+  let userRuleProgress: Array<{
+    attempts: number | null
+    correct_count: number | null
+    mastery_level: number | null
+    rules: {
+      subject_id: string | null
+    } | null
+  }> = []
+
+  let activeMbeQuestionRows: Array<{
+    subject_id: string | null
+  }> = []
+
+  let userMbeAttempts: Array<{
+    is_correct: boolean | null
+    mbe_question: {
+      subject_id: string | null
+    } | null
+  }> = []
+
+  try {
+    subjects = await prisma.subjects.findMany({
       select: {
         id: true,
         name: true,
@@ -209,19 +313,27 @@ async function getSubjectAnalytics(userId: string) {
       orderBy: {
         order_index: "asc",
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH SUBJECTS ERROR:", err)
+    return getEmptySubjectAnalytics()
+  }
 
-    prisma.rules.groupBy({
-      by: ["subject_id"],
+  try {
+    activeRuleRows = await prisma.rules.findMany({
       where: {
         is_active: true,
       },
-      _count: {
-        _all: true,
+      select: {
+        subject_id: true,
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH RULES COUNT ERROR:", err)
+  }
 
-    prisma.user_rule_progress.findMany({
+  try {
+    userRuleProgress = await prisma.user_rule_progress.findMany({
       where: {
         user_id: userId,
       },
@@ -235,19 +347,26 @@ async function getSubjectAnalytics(userId: string) {
           },
         },
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH USER RULE PROGRESS ERROR:", err)
+  }
 
-    prisma.mBEQuestion.groupBy({
-      by: ["subject_id"],
+  try {
+    activeMbeQuestionRows = await prisma.mBEQuestion.findMany({
       where: {
         is_active: true,
       },
-      _count: {
-        _all: true,
+      select: {
+        subject_id: true,
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH MBE QUESTION COUNT ERROR:", err)
+  }
 
-    prisma.user_mbe_attempts.findMany({
+  try {
+    userMbeAttempts = await prisma.user_mbe_attempts.findMany({
       where: {
         user_id: userId,
       },
@@ -259,20 +378,28 @@ async function getSubjectAnalytics(userId: string) {
           },
         },
       },
-    }),
-  ])
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH USER MBE ATTEMPTS ERROR:", err)
+  }
 
   const rulesTotalBySubjectId = new Map<string, number>()
-  for (const row of rulesCountBySubject) {
+  for (const row of activeRuleRows) {
     if (row.subject_id) {
-      rulesTotalBySubjectId.set(row.subject_id, row._count._all)
+      rulesTotalBySubjectId.set(
+        row.subject_id,
+        (rulesTotalBySubjectId.get(row.subject_id) ?? 0) + 1
+      )
     }
   }
 
   const mbeTotalBySubjectId = new Map<string, number>()
-  for (const row of mbeQuestionCountBySubject) {
+  for (const row of activeMbeQuestionRows) {
     if (row.subject_id) {
-      mbeTotalBySubjectId.set(row.subject_id, row._count._all)
+      mbeTotalBySubjectId.set(
+        row.subject_id,
+        (mbeTotalBySubjectId.get(row.subject_id) ?? 0) + 1
+      )
     }
   }
 
@@ -395,27 +522,60 @@ async function getSubjectAnalytics(userId: string) {
   }
 }
 
-async function getDashboardMetrics(userId: string, profileState: string | null) {
+async function getDashboardMetrics(
+  userId: string,
+  profileState: string | null
+): Promise<DashboardMetricsResult> {
   const now = new Date()
   const today = startOfDay(now)
   const todayEnd = endOfDay(now)
   const weekStart = startOfDay(new Date(now))
   weekStart.setDate(weekStart.getDate() - 6)
 
-  const [
-    todayBLL,
-    todayMBE,
-    userRuleProgress,
-    userMbeAttempts,
-    weeklyRuleAttempts,
-    weeklyStudySessionAgg,
-    weeklyStudySessionsCount,
-    spacedReviewsDue,
-    ruleAttemptDates,
-    mbeAttemptDates,
-    weakRows,
-  ] = await Promise.all([
-    prisma.user_rule_attempts.count({
+  let todayBLL = 0
+  let todayMBE = 0
+
+  let userRuleProgress: Array<{
+    attempts: number | null
+    correct_count: number | null
+    needs_practice: boolean | null
+  }> = []
+
+  let userMbeAttempts: Array<{
+    is_correct: boolean | null
+  }> = []
+
+  let weeklyRuleAttempts = 0
+
+  let weeklyStudySessionAgg: {
+    _sum: {
+      durationSeconds: number | null
+    }
+  } = {
+    _sum: {
+      durationSeconds: 0,
+    },
+  }
+
+  let weeklyStudySessionsCount = 0
+  let spacedReviewsDue = 0
+
+  let ruleAttemptDates: Array<{
+    created_at: Date | null
+  }> = []
+
+  let mbeAttemptDates: Array<{
+    created_at: Date | null
+  }> = []
+
+  let weakRows: Array<{
+    attempts: number | null
+    correct_count: number | null
+    needs_practice: boolean | null
+  }> = []
+
+  try {
+    todayBLL = await prisma.user_rule_attempts.count({
       where: {
         user_id: userId,
         created_at: {
@@ -423,9 +583,13 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
           lte: todayEnd,
         },
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH TODAY BLL ERROR:", err)
+  }
 
-    prisma.user_mbe_attempts.count({
+  try {
+    todayMBE = await prisma.user_mbe_attempts.count({
       where: {
         user_id: userId,
         created_at: {
@@ -433,9 +597,13 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
           lte: todayEnd,
         },
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH TODAY MBE ERROR:", err)
+  }
 
-    prisma.user_rule_progress.findMany({
+  try {
+    userRuleProgress = await prisma.user_rule_progress.findMany({
       where: {
         user_id: userId,
       },
@@ -444,18 +612,26 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
         correct_count: true,
         needs_practice: true,
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH METRICS RULE PROGRESS ERROR:", err)
+  }
 
-    prisma.user_mbe_attempts.findMany({
+  try {
+    userMbeAttempts = await prisma.user_mbe_attempts.findMany({
       where: {
         user_id: userId,
       },
       select: {
         is_correct: true,
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH METRICS MBE ATTEMPTS ERROR:", err)
+  }
 
-    prisma.user_rule_attempts.count({
+  try {
+    weeklyRuleAttempts = await prisma.user_rule_attempts.count({
       where: {
         user_id: userId,
         created_at: {
@@ -463,9 +639,13 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
           lte: todayEnd,
         },
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH WEEKLY RULE ATTEMPTS ERROR:", err)
+  }
 
-    prisma.studySession.aggregate({
+  try {
+    weeklyStudySessionAgg = await prisma.studySession.aggregate({
       where: {
         userId,
         startedAt: {
@@ -476,9 +656,13 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
       _sum: {
         durationSeconds: true,
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH WEEKLY STUDY TIME ERROR:", err)
+  }
 
-    prisma.studySession.count({
+  try {
+    weeklyStudySessionsCount = await prisma.studySession.count({
       where: {
         userId,
         startedAt: {
@@ -486,18 +670,26 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
           lte: todayEnd,
         },
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH WEEKLY STUDY SESSIONS ERROR:", err)
+  }
 
-    prisma.user_rule_progress.count({
+  try {
+    spacedReviewsDue = await prisma.user_rule_progress.count({
       where: {
         user_id: userId,
         next_review_at: {
           lte: todayEnd,
         },
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH SPACED REVIEWS ERROR:", err)
+  }
 
-    prisma.user_rule_attempts.findMany({
+  try {
+    ruleAttemptDates = await prisma.user_rule_attempts.findMany({
       where: {
         user_id: userId,
       },
@@ -507,9 +699,13 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
       orderBy: {
         created_at: "asc",
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH RULE ATTEMPT DATES ERROR:", err)
+  }
 
-    prisma.user_mbe_attempts.findMany({
+  try {
+    mbeAttemptDates = await prisma.user_mbe_attempts.findMany({
       where: {
         user_id: userId,
       },
@@ -519,9 +715,13 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
       orderBy: {
         created_at: "asc",
       },
-    }),
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH MBE ATTEMPT DATES ERROR:", err)
+  }
 
-    prisma.user_rule_progress.findMany({
+  try {
+    weakRows = await prisma.user_rule_progress.findMany({
       where: {
         user_id: userId,
       },
@@ -530,8 +730,10 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
         correct_count: true,
         needs_practice: true,
       },
-    }),
-  ])
+    })
+  } catch (err) {
+    console.error("DASHBOARD BATCH WEAK ROWS ERROR:", err)
+  }
 
   const bllCorrect = userRuleProgress.reduce(
     (sum, row) => sum + Number(row.correct_count ?? 0),
@@ -588,7 +790,7 @@ async function getDashboardMetrics(userId: string, profileState: string | null) 
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await getAuthorizedUser()
     if (auth.error || !auth.user) return auth.error
@@ -596,22 +798,41 @@ export async function GET() {
     const user = auth.user
     const profile = await getOrCreateProfile(user)
 
-    const profileState =
+    const url = new URL(request.url)
+    const requestedState = url.searchParams.get("state")?.trim() || null
+
+    const savedProfileState =
       typeof profile.jurisdiction === "string" && profile.jurisdiction.trim()
         ? profile.jurisdiction.trim()
         : null
 
-    const [studyPlan, subjectAnalytics, dashboardMetrics] = await Promise.all([
-      prisma.studyPlan.findUnique({
+    const profileState = requestedState || savedProfileState
+
+    let studyPlan = null
+    let subjectAnalytics = getEmptySubjectAnalytics()
+    let dashboardMetrics = getEmptyDashboardMetrics(profileState)
+
+    try {
+      studyPlan = await prisma.studyPlan.findUnique({
         where: {
           userId: user.id,
         },
-      }),
+      })
+    } catch (err) {
+      console.error("DASHBOARD BATCH STUDY PLAN ERROR:", err)
+    }
 
-      getSubjectAnalytics(user.id),
+    try {
+      subjectAnalytics = await getSubjectAnalytics(user.id)
+    } catch (err) {
+      console.error("DASHBOARD BATCH SUBJECT ANALYTICS ERROR:", err)
+    }
 
-      getDashboardMetrics(user.id, profileState),
-    ])
+    try {
+      dashboardMetrics = await getDashboardMetrics(user.id, profileState)
+    } catch (err) {
+      console.error("DASHBOARD BATCH METRICS ERROR:", err)
+    }
 
     return NextResponse.json({
       ok: true,
@@ -621,7 +842,7 @@ export async function GET() {
         email: profile.email,
         full_name: profile.full_name,
         law_school: profile.law_school,
-        jurisdiction: profile.jurisdiction,
+        jurisdiction: profileState,
         exam_month: profile.exam_month,
         exam_year: profile.exam_year,
         mbe_access: profile.mbe_access,
