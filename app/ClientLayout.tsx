@@ -29,6 +29,10 @@ type ShellData = {
   hasStudyPlan: boolean
 }
 
+function buildFallbackStreakDays(): StreakDay[] {
+  return Array.from({ length: 7 }, () => ({ status: "none" }))
+}
+
 function buildFallbackShellData(): ShellData {
   return {
     userName: "User",
@@ -58,8 +62,32 @@ function calculateDaysLeft(examDate: unknown): number | null {
   return diffDays >= 0 ? diffDays : 0
 }
 
+function normalizeUserName(profile: any) {
+  if (profile?.full_name && String(profile.full_name).trim()) {
+    return String(profile.full_name).trim()
+  }
+
+  if (profile?.email && String(profile.email).trim()) {
+    return String(profile.email).trim()
+  }
+
+  if (profile?.userName && String(profile.userName).trim()) {
+    return String(profile.userName).trim()
+  }
+
+  return "User"
+}
+
 function normalizeShellData(data: any): ShellData {
-  if (data?.userName) {
+  if (!data) {
+    return buildFallbackShellData()
+  }
+
+  if (
+    typeof data.userName !== "undefined" ||
+    typeof data.studyStreak !== "undefined" ||
+    typeof data.daysLeft !== "undefined"
+  ) {
     return {
       userName: String(data.userName || "User"),
       studyStreak: Number(data.studyStreak ?? 0),
@@ -75,6 +103,7 @@ function normalizeShellData(data: any): ShellData {
       hasStudyPlan: !!data.hasStudyPlan,
     }
   }
+
   const profile = data?.profile ?? data ?? null
   const dashboard = data?.dashboard ?? null
   const weakAreas = data?.weakAreas ?? null
@@ -95,11 +124,16 @@ function normalizeShellData(data: any): ShellData {
 
   return {
     userName: normalizeUserName(profile),
-    studyStreak: Number(dashboard?.streak ?? 0),
+    studyStreak: Number(
+      dashboard?.studyStreak ??
+        dashboard?.currentStreak ??
+        dashboard?.streak ??
+        0
+    ),
     streakDays: Array.isArray(dashboard?.streakDays)
       ? dashboard.streakDays
       : buildFallbackStreakDays(),
-    mbeAccess: !!profile?.mbe_access,
+    mbeAccess: !!profile?.mbe_access || !!profile?.mbeAccess,
     weakAreasCount,
     daysLeft,
     hasStudyPlan,
@@ -149,22 +183,6 @@ function extractNavigationTarget(target: EventTarget | null): string | null {
   return null
 }
 
-function buildFallbackStreakDays(): StreakDay[] {
-  return Array.from({ length: 7 }, () => ({ status: "none" }))
-}
-
-function normalizeUserName(profile: any) {
-  if (profile?.full_name && String(profile.full_name).trim()) {
-    return String(profile.full_name).trim()
-  }
-
-  if (profile?.email && String(profile.email).trim()) {
-    return String(profile.email).trim()
-  }
-
-  return "User"
-}
-
 function AuthenticatedShell({
   children,
 }: {
@@ -181,6 +199,7 @@ function AuthenticatedShell({
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
+    retry: 1,
     queryFn: async () => {
       const {
         data: { user },
@@ -191,11 +210,6 @@ function AuthenticatedShell({
         return buildFallbackShellData()
       }
 
-      /*
-        The global app shell must not wait for the heavy dashboard summary.
-        It only needs the user's profile for the sidebar and top navbar name.
-        Dashboard analytics are loaded by the dashboard page itself.
-      */
       const res = await fetch("/api/dashboard/shell", {
         cache: "no-store",
       })
@@ -204,9 +218,9 @@ function AuthenticatedShell({
         return buildFallbackShellData()
       }
 
-      const profile = await res.json().catch(() => null)
+      const data = await res.json().catch(() => null)
 
-      return normalizeShellData({ profile })
+      return normalizeShellData(data)
     },
   })
 

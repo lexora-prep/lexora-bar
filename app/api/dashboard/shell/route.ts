@@ -26,9 +26,17 @@ function daysBetween(a: Date, b: Date) {
   return Math.round((aStart - bStart) / (1000 * 60 * 60 * 24))
 }
 
+function buildFallbackStreakDays() {
+  return Array.from({ length: 7 }, () => ({ status: "none" as DayStatus }))
+}
+
 function buildStreak(activityDates: Date[]) {
   const uniqueSorted = Array.from(
-    new Set(activityDates.map((date) => dayKey(date)))
+    new Set(
+      activityDates
+        .filter((date) => date instanceof Date && !Number.isNaN(date.getTime()))
+        .map((date) => dayKey(date))
+    )
   )
     .map((key) => new Date(key))
     .sort((a, b) => a.getTime() - b.getTime())
@@ -36,7 +44,7 @@ function buildStreak(activityDates: Date[]) {
   if (uniqueSorted.length === 0) {
     return {
       studyStreak: 0,
-      streakDays: Array.from({ length: 7 }, () => ({ status: "none" as DayStatus })),
+      streakDays: buildFallbackStreakDays(),
     }
   }
 
@@ -67,7 +75,9 @@ function buildStreak(activityDates: Date[]) {
     d.setDate(today.getDate() - (6 - index))
 
     return {
-      status: activitySet.has(dayKey(d)) ? ("fire" as DayStatus) : ("none" as DayStatus),
+      status: activitySet.has(dayKey(d))
+        ? ("fire" as DayStatus)
+        : ("none" as DayStatus),
     }
   })
 
@@ -103,69 +113,107 @@ export async function GET() {
     const user = auth.user
     const now = new Date()
     const todayEnd = endOfDay(now)
+
     const lookbackStart = startOfDay(new Date(now))
     lookbackStart.setDate(lookbackStart.getDate() - 60)
 
-    const [profile, ruleAttemptDates, mbeAttemptDates, studyPlan, weakAreasCount] =
-      await Promise.all([
-        prisma.profiles.findUnique({
-          where: { id: user.id },
-          select: {
-            id: true,
-            email: true,
-            full_name: true,
-            mbe_access: true,
-          },
-        }),
+    let profile: {
+      id: string
+      email: string | null
+      full_name: string | null
+      mbe_access: boolean | null
+    } | null = null
 
-        prisma.user_rule_attempts.findMany({
-          where: {
-            user_id: user.id,
-            created_at: {
-              gte: lookbackStart,
-              lte: todayEnd,
-            },
-          },
-          select: {
-            created_at: true,
-          },
-        }),
+    let ruleAttemptDates: Array<{ created_at: Date | null }> = []
+    let mbeAttemptDates: Array<{ created_at: Date | null }> = []
+    let studyPlan: { examDate: Date | null } | null = null
+    let weakAreasCount = 0
 
-        prisma.user_mbe_attempts.findMany({
-          where: {
-            user_id: user.id,
-            created_at: {
-              gte: lookbackStart,
-              lte: todayEnd,
-            },
-          },
-          select: {
-            created_at: true,
-          },
-        }),
+    try {
+      profile = await prisma.profiles.findUnique({
+        where: { id: user.id },
+        select: {
+          id: true,
+          email: true,
+          full_name: true,
+          mbe_access: true,
+        },
+      })
+    } catch (err) {
+      console.error("DASHBOARD SHELL PROFILE ERROR:", err)
+    }
 
-        prisma.studyPlan.findUnique({
-          where: { userId: user.id },
-          select: {
-            examDate: true,
-          },
-        }),
+    try {
+      studyPlan = await prisma.studyPlan.findUnique({
+        where: { userId: user.id },
+        select: {
+          examDate: true,
+        },
+      })
+    } catch (err) {
+      console.error("DASHBOARD SHELL STUDY PLAN ERROR:", err)
+    }
 
-        prisma.user_rule_progress.count({
-          where: {
-            user_id: user.id,
-            needs_practice: true,
+    try {
+      weakAreasCount = await prisma.user_rule_progress.count({
+        where: {
+          user_id: user.id,
+          needs_practice: true,
+        },
+      })
+    } catch (err) {
+      console.error("DASHBOARD SHELL WEAK AREAS ERROR:", err)
+    }
+
+    try {
+      ruleAttemptDates = await prisma.user_rule_attempts.findMany({
+        where: {
+          user_id: user.id,
+          created_at: {
+            gte: lookbackStart,
+            lte: todayEnd,
           },
-        }),
-      ])
+        },
+        select: {
+          created_at: true,
+        },
+        orderBy: {
+          created_at: "desc",
+        },
+        take: 200,
+      })
+    } catch (err) {
+      console.error("DASHBOARD SHELL RULE ATTEMPT DATES ERROR:", err)
+    }
+
+    try {
+      mbeAttemptDates = await prisma.user_mbe_attempts.findMany({
+        where: {
+          user_id: user.id,
+          created_at: {
+            gte: lookbackStart,
+            lte: todayEnd,
+          },
+        },
+        select: {
+          created_at: true,
+        },
+        orderBy: {
+          created_at: "desc",
+        },
+        take: 200,
+      })
+    } catch (err) {
+      console.error("DASHBOARD SHELL MBE ATTEMPT DATES ERROR:", err)
+    }
 
     const activityDates = [
       ...ruleAttemptDates
         .map((row) => row.created_at)
-        .filter((date): date is Date => !!date),
+        .filter((date): date is Date => date instanceof Date),
       ...mbeAttemptDates
         .map((row) => row.created_at)
-        .filter((date): date is Date => !!date),
+        .filter((date): date is Date => date instanceof Date),
     ]
 
     const streak = buildStreak(activityDates)
