@@ -62,13 +62,16 @@ export default function Sidebar({
 
   const [time, setTime] = useState("")
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
-  const [liveWeakAreasCount, setLiveWeakAreasCount] = useState<number>(weakAreasCount)
+  const [liveWeakAreasCount, setLiveWeakAreasCount] = useState<number>(
+    weakAreasCount
+  )
 
   const profileMenuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const update = () => {
       const now = new Date()
+
       setTime(
         now.toLocaleTimeString("en-US", {
           hour: "2-digit",
@@ -78,7 +81,9 @@ export default function Sidebar({
     }
 
     update()
+
     const interval = setInterval(update, 1000)
+
     return () => clearInterval(interval)
   }, [])
 
@@ -93,6 +98,7 @@ export default function Sidebar({
     }
 
     document.addEventListener("mousedown", handleClickOutside)
+
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
@@ -103,6 +109,7 @@ export default function Sidebar({
   useEffect(() => {
     setLiveWeakAreasCount(Number.isFinite(weakAreasCount) ? weakAreasCount : 0)
   }, [weakAreasCount])
+
   async function handleLogout() {
     try {
       setProfileMenuOpen(false)
@@ -129,10 +136,30 @@ export default function Sidebar({
   }
 
   const menu: MenuItem[] = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, locked: false },
-    { name: "Rule Training", href: "/rule-training", icon: Brain, locked: false },
-    { name: "MBE Practice", href: "/mbe", icon: BookOpen, locked: !mbeAccess },
-    { name: "Flashcard Trainer", href: "/flashcards", icon: Layers, locked: false },
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      locked: false,
+    },
+    {
+      name: "Rule Training",
+      href: "/rule-training",
+      icon: Brain,
+      locked: false,
+    },
+    {
+      name: "MBE Practice",
+      href: "/mbe",
+      icon: BookOpen,
+      locked: !mbeAccess,
+    },
+    {
+      name: "Flashcard Trainer",
+      href: "/flashcards",
+      icon: Layers,
+      locked: false,
+    },
     {
       name: "Weak Areas",
       href: "/weak-areas",
@@ -140,16 +167,48 @@ export default function Sidebar({
       locked: false,
       badge: liveWeakAreasCount > 0 ? liveWeakAreasCount : null,
     },
-    { name: "Rule Bank", href: "/rule-bank", icon: Library, locked: false },
-    { name: "Analytics", href: "/analytics", icon: BarChart3, locked: false },
-    { name: "Review", href: "/review", icon: RotateCcw, locked: false },
-    { name: "Settings", href: "/settings", icon: Settings, locked: false },
+    {
+      name: "Rule Bank",
+      href: "/rule-bank",
+      icon: Library,
+      locked: false,
+    },
+    {
+      name: "Analytics",
+      href: "/analytics",
+      icon: BarChart3,
+      locked: false,
+    },
+    {
+      name: "Review",
+      href: "/review",
+      icon: RotateCcw,
+      locked: false,
+    },
+    {
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+      locked: false,
+    },
   ]
 
   const profileMenuItems = [
-    { name: "Profile", href: "/profile", icon: User },
-    { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Subscription", href: "/subscription", icon: CreditCard },
+    {
+      name: "Profile",
+      href: "/profile",
+      icon: User,
+    },
+    {
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+    },
+    {
+      name: "Subscription",
+      href: "/subscription",
+      icon: CreditCard,
+    },
   ]
 
   const date = new Date().toLocaleDateString("en-US", {
@@ -170,9 +229,13 @@ export default function Sidebar({
       : "U"
 
   const renderedStreakDays = useMemo(() => {
-    if (streakDays.length > 0) return streakDays
-    return Array.from({ length: 7 }, () => ({ status: "none" }))
+    if (Array.isArray(streakDays) && streakDays.length > 0) {
+      return streakDays.slice(0, 7)
+    }
+
+    return Array.from({ length: 7 }, () => ({ status: "empty" }))
   }, [streakDays])
+
   return (
     <div
       className={`flex h-screen flex-col justify-between border-r border-[#1E2330] bg-[#13161E] text-white transition-all duration-300 ${
@@ -214,7 +277,7 @@ export default function Sidebar({
 
                 <div className="min-w-0 leading-tight">
                   <div className="text-[18px] font-semibold leading-none text-white">
-                    {studyStreak}
+                    {Number.isFinite(studyStreak) ? studyStreak : 0}
                   </div>
 
                   <div className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#8892A4]">
@@ -224,15 +287,18 @@ export default function Sidebar({
               </div>
 
               <div className="mt-3 grid grid-cols-7 gap-1.5">
-                {renderedStreakDays.map((d, i) => {
-                  const label = ["S", "M", "T", "W", "T", "F", "S"][i]
+                {renderedStreakDays.map((day, index) => {
+                  const label = ["S", "M", "T", "W", "T", "F", "S"][index]
 
-                  const isFire = d?.status === "fire"
-                  const isIce = d?.status === "ice"
-                  const isNeutral = !isFire && !isIce
+                  const isFire = day?.status === "fire"
+                  const isIce = day?.status === "ice"
+                  const isEmpty =
+                    day?.status === "empty" ||
+                    day?.status === "none" ||
+                    !day?.status
 
                   return (
-                    <div key={i} className="flex flex-col items-center gap-1">
+                    <div key={index} className="flex flex-col items-center gap-1">
                       <div
                         className={[
                           "flex h-9 w-full items-center justify-center rounded-[12px] border text-[10px] font-semibold transition-all duration-200",
@@ -242,7 +308,7 @@ export default function Sidebar({
                           isIce
                             ? "border-blue-300/20 bg-blue-400/10 text-blue-200"
                             : "",
-                          isNeutral
+                          isEmpty
                             ? "border-[#2A3142] bg-[#13161E] text-[#5E677C]"
                             : "",
                         ].join(" ")}
@@ -270,7 +336,7 @@ export default function Sidebar({
                   key={item.href}
                   type="button"
                   onClick={() => handleMenuClick(item)}
-                  className={`flex w-full items-center gap-3 rounded-[24px] px-3 py-3 text-left transition text-[#A7B0C2] hover:bg-[#1A1E2A] hover:text-white ${
+                  className={`flex w-full items-center gap-3 rounded-[24px] px-3 py-3 text-left text-[#A7B0C2] transition hover:bg-[#1A1E2A] hover:text-white ${
                     collapsed ? "justify-center" : ""
                   }`}
                   title={collapsed ? `${item.name} • Premium` : undefined}
@@ -285,7 +351,9 @@ export default function Sidebar({
 
                       <div className="flex shrink-0 flex-col items-center justify-center leading-none text-amber-300">
                         <Lock size={12} className="mb-1" />
-                        <span className="text-[10px] font-semibold">Premium</span>
+                        <span className="text-[10px] font-semibold">
+                          Premium
+                        </span>
                       </div>
                     </div>
                   )}
@@ -306,9 +374,13 @@ export default function Sidebar({
                 title={collapsed ? item.name : undefined}
               >
                 <Icon size={18} className="shrink-0" />
+
                 {!collapsed && (
                   <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                    <span className="truncate whitespace-nowrap">{item.name}</span>
+                    <span className="truncate whitespace-nowrap">
+                      {item.name}
+                    </span>
+
                     {item.badge ? (
                       <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                         {item.badge}
@@ -333,6 +405,7 @@ export default function Sidebar({
               handleNavigate("/profile")
               return
             }
+
             setProfileMenuOpen((prev) => !prev)
           }}
           className={`flex w-full items-center gap-3 ${
@@ -350,7 +423,10 @@ export default function Sidebar({
                 <div className="truncate text-sm font-semibold text-white">
                   {userName}
                 </div>
-                <div className="text-[11px] text-[#7C8598]">Student account</div>
+
+                <div className="text-[11px] text-[#7C8598]">
+                  Student account
+                </div>
               </div>
             )}
           </div>
