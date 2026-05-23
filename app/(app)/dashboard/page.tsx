@@ -1228,7 +1228,7 @@ export default function Dashboard() {
     !!examDate &&
     hasShownPlanThisSession
 
-  if (!authReady) {
+  if (!authReady || !coreLoaded) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center text-slate-500">
         Loading...
