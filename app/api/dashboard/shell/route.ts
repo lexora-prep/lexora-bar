@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
 
-type DayStatus = "fire" | "ice" | "none"
+type DayStatus = "fire" | "ice" | "empty"
 
 function startOfDay(date: Date) {
   const d = new Date(date)
@@ -23,11 +23,8 @@ function dayKey(date: Date) {
 function daysBetween(a: Date, b: Date) {
   const aStart = startOfDay(a).getTime()
   const bStart = startOfDay(b).getTime()
-  return Math.round((aStart - bStart) / (1000 * 60 * 60 * 24))
-}
 
-function buildFallbackStreakDays() {
-  return Array.from({ length: 7 }, () => ({ status: "none" as DayStatus }))
+  return Math.round((aStart - bStart) / (1000 * 60 * 60 * 24))
 }
 
 function buildStreak(activityDates: Date[]) {
@@ -41,43 +38,54 @@ function buildStreak(activityDates: Date[]) {
     .map((key) => new Date(key))
     .sort((a, b) => a.getTime() - b.getTime())
 
-  if (uniqueSorted.length === 0) {
-    return {
-      studyStreak: 0,
-      streakDays: buildFallbackStreakDays(),
+  const activitySet = new Set(uniqueSorted.map((date) => dayKey(date)))
+
+  let currentStreak = 0
+
+  if (uniqueSorted.length > 0) {
+    const today = startOfDay(new Date())
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    let cursor: Date | null = null
+
+    if (activitySet.has(dayKey(today))) {
+      cursor = today
+    } else if (activitySet.has(dayKey(yesterday))) {
+      cursor = yesterday
+    }
+
+    while (cursor && activitySet.has(dayKey(cursor))) {
+      currentStreak += 1
+
+      const previous = new Date(cursor)
+      previous.setDate(previous.getDate() - 1)
+      cursor = previous
     }
   }
 
-  const activitySet = new Set(uniqueSorted.map((date) => dayKey(date)))
-
   const today = startOfDay(new Date())
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-
-  let currentStreak = 0
-  let cursor: Date | null = null
-
-  if (activitySet.has(dayKey(today))) {
-    cursor = today
-  } else if (activitySet.has(dayKey(yesterday))) {
-    cursor = yesterday
-  }
-
-  while (cursor && activitySet.has(dayKey(cursor))) {
-    currentStreak += 1
-    const previous = new Date(cursor)
-    previous.setDate(previous.getDate() - 1)
-    cursor = previous
-  }
 
   const streakDays = Array.from({ length: 7 }, (_, index) => {
-    const d = new Date(today)
-    d.setDate(today.getDate() - (6 - index))
+    const date = new Date(today)
+    date.setDate(today.getDate() - (6 - index))
+
+    const key = dayKey(date)
+    const isToday = key === dayKey(today)
+
+    let status: DayStatus = "empty"
+
+    if (activitySet.has(key)) {
+      status = "fire"
+    } else if (!isToday) {
+      status = "ice"
+    } else {
+      status = "empty"
+    }
 
     return {
-      status: activitySet.has(dayKey(d))
-        ? ("fire" as DayStatus)
-        : ("none" as DayStatus),
+      date: key,
+      status,
     }
   })
 
@@ -102,7 +110,10 @@ async function getAuthorizedUser() {
     }
   }
 
-  return { user, error: null }
+  return {
+    user,
+    error: null,
+  }
 }
 
 export async function GET() {
@@ -111,101 +122,68 @@ export async function GET() {
     if (auth.error || !auth.user) return auth.error
 
     const user = auth.user
+
     const now = new Date()
     const todayEnd = endOfDay(now)
-
     const lookbackStart = startOfDay(new Date(now))
     lookbackStart.setDate(lookbackStart.getDate() - 60)
 
-    let profile: {
-      id: string
-      email: string | null
-      full_name: string | null
-      mbe_access: boolean | null
-    } | null = null
-
-    let ruleAttemptDates: Array<{ created_at: Date | null }> = []
-    let mbeAttemptDates: Array<{ created_at: Date | null }> = []
-    let studyPlan: { examDate: Date | null } | null = null
-    let weakAreasCount = 0
-
-    try {
-      profile = await prisma.profiles.findUnique({
-        where: { id: user.id },
-        select: {
-          id: true,
-          email: true,
-          full_name: true,
-          mbe_access: true,
-        },
-      })
-    } catch (err) {
-      console.error("DASHBOARD SHELL PROFILE ERROR:", err)
-    }
-
-    try {
-      studyPlan = await prisma.studyPlan.findUnique({
-        where: { userId: user.id },
-        select: {
-          examDate: true,
-        },
-      })
-    } catch (err) {
-      console.error("DASHBOARD SHELL STUDY PLAN ERROR:", err)
-    }
-
-    try {
-      weakAreasCount = await prisma.user_rule_progress.count({
-        where: {
-          user_id: user.id,
-          needs_practice: true,
-        },
-      })
-    } catch (err) {
-      console.error("DASHBOARD SHELL WEAK AREAS ERROR:", err)
-    }
-
-    try {
-      ruleAttemptDates = await prisma.user_rule_attempts.findMany({
-        where: {
-          user_id: user.id,
-          created_at: {
-            gte: lookbackStart,
-            lte: todayEnd,
+    const [profile, ruleAttemptDates, mbeAttemptDates, studyPlan, weakAreasCount] =
+      await Promise.all([
+        prisma.profiles.findUnique({
+          where: {
+            id: user.id,
           },
-        },
-        select: {
-          created_at: true,
-        },
-        orderBy: {
-          created_at: "desc",
-        },
-        take: 200,
-      })
-    } catch (err) {
-      console.error("DASHBOARD SHELL RULE ATTEMPT DATES ERROR:", err)
-    }
-
-    try {
-      mbeAttemptDates = await prisma.user_mbe_attempts.findMany({
-        where: {
-          user_id: user.id,
-          created_at: {
-            gte: lookbackStart,
-            lte: todayEnd,
+          select: {
+            id: true,
+            email: true,
+            full_name: true,
+            mbe_access: true,
           },
-        },
-        select: {
-          created_at: true,
-        },
-        orderBy: {
-          created_at: "desc",
-        },
-        take: 200,
-      })
-    } catch (err) {
-      console.error("DASHBOARD SHELL MBE ATTEMPT DATES ERROR:", err)
-    }
+        }),
+
+        prisma.user_rule_attempts.findMany({
+          where: {
+            user_id: user.id,
+            created_at: {
+              gte: lookbackStart,
+              lte: todayEnd,
+            },
+          },
+          select: {
+            created_at: true,
+          },
+        }),
+
+        prisma.user_mbe_attempts.findMany({
+          where: {
+            user_id: user.id,
+            created_at: {
+              gte: lookbackStart,
+              lte: todayEnd,
+            },
+          },
+          select: {
+            created_at: true,
+          },
+        }),
+
+        prisma.studyPlan.findUnique({
+          where: {
+            userId: user.id,
+          },
+          select: {
+            examDate: true,
+          },
+        }),
+
+        prisma.user_rule_progress.count({
+          where: {
+            user_id: user.id,
+            needs_practice: true,
+          },
+        }),
+      ])
 
     const activityDates = [
       ...ruleAttemptDates
@@ -227,19 +205,26 @@ export async function GET() {
       daysLeft = diff >= 0 ? diff : 0
     }
 
-    return NextResponse.json({
-      userName:
-        profile?.full_name?.trim() ||
-        profile?.email?.trim() ||
-        user.email ||
-        "User",
-      studyStreak: streak.studyStreak,
-      streakDays: streak.streakDays,
-      mbeAccess: !!profile?.mbe_access,
-      weakAreasCount,
-      daysLeft,
-      hasStudyPlan: !!studyPlan?.examDate,
-    })
+    return NextResponse.json(
+      {
+        userName:
+          profile?.full_name?.trim() ||
+          profile?.email?.trim() ||
+          user.email ||
+          "User",
+        studyStreak: streak.studyStreak,
+        streakDays: streak.streakDays,
+        mbeAccess: !!profile?.mbe_access,
+        weakAreasCount,
+        daysLeft,
+        hasStudyPlan: !!studyPlan?.examDate,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    )
   } catch (error: any) {
     console.error("DASHBOARD SHELL ERROR:", error)
 
