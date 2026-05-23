@@ -30,21 +30,6 @@ const MBE_SUBJECTS = [
   "Constitutional Law",
 ]
 
-const BLL_SUBJECTS = [
-  "Contracts",
-  "Torts",
-  "Evidence",
-  "Civil Procedure",
-  "Criminal Law and Procedure",
-  "Real Property",
-  "Constitutional Law",
-  "Business Associations",
-  "Family Law",
-  "Trusts",
-  "Wills",
-  "Secured Transactions",
-]
-
 const STATES = [
   { code: "AL", name: "Alabama" },
   { code: "AK", name: "Alaska" },
@@ -231,19 +216,18 @@ export default function Dashboard() {
   }, [router, supabase])
 
   const dashboardBatchQuery = useQuery({
-    queryKey: ["dashboard-batch", currentUserId, state || ""],
+    queryKey: ["dashboard-batch", currentUserId],
     queryFn: async () => {
-      const selectedState = String(state || "").trim()
-      const url = selectedState
-        ? `/api/dashboard/batch?state=${encodeURIComponent(selectedState)}`
-        : "/api/dashboard/batch"
-
-      const res = await fetch(url)
+      const res = await fetch("/api/dashboard/batch", {
+        cache: "no-store",
+      })
 
       const data = await res.json().catch(() => null)
 
       if (!res.ok || !data) {
-        throw new Error(data?.message || data?.error || "Failed to load dashboard batch.")
+        throw new Error(
+          data?.message || data?.error || "Failed to load dashboard batch."
+        )
       }
 
       return data
@@ -277,22 +261,27 @@ export default function Dashboard() {
       setIsPremium(!!profile?.mbe_access)
 
       const selectedDashboardState =
-        state && String(state).trim()
-          ? String(state).trim()
-          : summary?.dashboard?.selectedState && String(summary.dashboard.selectedState).trim()
-            ? String(summary.dashboard.selectedState).trim()
-            : profile?.jurisdiction && String(profile.jurisdiction).trim()
-              ? String(profile.jurisdiction).trim()
-              : ""
+        summary?.dashboard?.selectedState &&
+        String(summary.dashboard.selectedState).trim()
+          ? String(summary.dashboard.selectedState).trim()
+          : profile?.jurisdiction && String(profile.jurisdiction).trim()
+            ? String(profile.jurisdiction).trim()
+            : ""
 
-      if (selectedDashboardState && selectedDashboardState !== state) {
-        setState(selectedDashboardState)
+      if (selectedDashboardState) {
+        setState((prev) => {
+          const current = String(prev || "").trim()
+          if (current === selectedDashboardState) return prev
+          return selectedDashboardState
+        })
       }
 
       setDashboard(summary?.dashboard ?? null)
 
       setBllSubjects(Array.isArray(summary?.subjects) ? summary.subjects : [])
-      setMbeSubjects(Array.isArray(summary?.mbeSubjects) ? summary.mbeSubjects : [])
+      setMbeSubjects(
+        Array.isArray(summary?.mbeSubjects) ? summary.mbeSubjects : []
+      )
 
       if (selectedDashboardState) {
         setStateData(
@@ -801,9 +790,7 @@ export default function Dashboard() {
 
     if (!cleanState) return
 
-    const previousState = String(state || "").trim()
-    const previousQueryKey = ["dashboard-batch", currentUserId, previousState]
-    const nextQueryKey = ["dashboard-batch", currentUserId, cleanState]
+    const queryKey = ["dashboard-batch", currentUserId]
 
     setState(cleanState)
     setOpen(false)
@@ -826,9 +813,7 @@ export default function Dashboard() {
     )
 
     if (currentUserId) {
-      const currentCachedData =
-        queryClient.getQueryData(previousQueryKey) ??
-        queryClient.getQueryData(nextQueryKey)
+      const currentCachedData = queryClient.getQueryData(queryKey)
 
       if (currentCachedData) {
         const optimisticData = {
@@ -853,8 +838,7 @@ export default function Dashboard() {
             },
         }
 
-        queryClient.setQueryData(previousQueryKey, optimisticData)
-        queryClient.setQueryData(nextQueryKey, optimisticData)
+        queryClient.setQueryData(queryKey, optimisticData)
       }
     }
 
@@ -878,7 +862,7 @@ export default function Dashboard() {
 
       if (currentUserId) {
         await queryClient.invalidateQueries({
-          queryKey: ["dashboard-batch", currentUserId, cleanState],
+          queryKey,
         })
       }
     } catch (err) {
@@ -1140,9 +1124,6 @@ export default function Dashboard() {
   const goalBll = todayRuleTarget
   const todayMbe = dashboard?.todayMBE ?? 0
   const todayBll = dashboard?.todayBLL ?? 0
-
-  const mbeGoalDelta =
-    Math.round((todayMbe / Math.max(goalMbe, 1)) * 100) - 100
 
   const bllGoalDelta =
     Math.round((todayBll / Math.max(goalBll, 1)) * 100) - 100
@@ -1455,9 +1436,7 @@ export default function Dashboard() {
                     ? `${stateData?.userMBE ?? dashboard?.userMBE ?? 0}%`
                     : "—"
                 }
-                subtitle={
-                  "Coming soon"
-                }
+                subtitle="Coming soon"
                 accent="blue"
                 progress={
                   isPremium
@@ -1535,11 +1514,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => undefined}
-                    className={`inline-flex items-center gap-1 rounded-full px-4 py-2 text-[12px] font-semibold transition ${
-                      false
-                        ? "bg-white text-blue-700 shadow-[0_4px_14px_rgba(15,23,42,0.10)] ring-1 ring-slate-200"
-                        : "text-slate-500 hover:bg-slate-100"
-                    }`}
+                    className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-[12px] font-semibold text-slate-500 transition hover:bg-slate-100"
                   >
                     MBE
                     <span className="ml-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-amber-700">
@@ -2141,9 +2116,7 @@ export default function Dashboard() {
                                 {planData?.dailyMBE ?? 50}
                               </span>
                             ) : (
-                              <PremiumBadge
-                                onClick={() => undefined}
-                              />
+                              <PremiumBadge onClick={() => undefined} />
                             )
                           }
                         />
@@ -2212,9 +2185,7 @@ export default function Dashboard() {
                               {planData?.dailyMBE ?? 50}
                             </span>
                           ) : (
-                            <PremiumBadge
-                              onClick={() => undefined}
-                            />
+                            <PremiumBadge onClick={() => undefined} />
                           )
                         }
                       />
