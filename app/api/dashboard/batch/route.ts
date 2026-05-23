@@ -49,6 +49,11 @@ type DashboardMetricsResult = {
   selectedState: string
 }
 
+function mark(label: string, startedAt: number) {
+  const elapsed = Date.now() - startedAt
+  console.log(`[DASHBOARD BATCH TIMING] ${label}: ${elapsed}ms`)
+}
+
 function percent(correct: number, total: number) {
   if (!total) return 0
   return Math.round((correct / total) * 100)
@@ -278,7 +283,11 @@ async function getOrCreateProfile(user: { id: string; email?: string | null }) {
 }
 
 async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResult> {
+  const startedAt = Date.now()
+
   try {
+    console.log(`[DASHBOARD BATCH TIMING] subject analytics start`)
+
     const results = await Promise.allSettled([
       prisma.subjects.findMany({
         select: {
@@ -341,6 +350,21 @@ async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResu
         },
       }),
     ])
+
+    console.log(
+      `[DASHBOARD BATCH TIMING] subject analytics db queries complete: ${
+        Date.now() - startedAt
+      }ms`
+    )
+
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(
+          `[DASHBOARD BATCH TIMING] subject analytics query ${index} failed:`,
+          result.reason
+        )
+      }
+    })
 
     const subjects = valueOrFallback(results[0], [])
     const activeRuleCounts = valueOrFallback(results[1], [])
@@ -477,6 +501,12 @@ async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResu
       })
       .filter((row) => row.total > 0)
 
+    console.log(
+      `[DASHBOARD BATCH TIMING] subject analytics finished: ${
+        Date.now() - startedAt
+      }ms`
+    )
+
     return {
       subjects: bllSubjects,
       mbeSubjects,
@@ -491,6 +521,8 @@ async function getDashboardMetrics(
   userId: string,
   profileState: string | null
 ): Promise<DashboardMetricsResult> {
+  const startedAt = Date.now()
+
   const now = new Date()
   const today = startOfDay(now)
   const todayEnd = endOfDay(now)
@@ -502,6 +534,8 @@ async function getDashboardMetrics(
   streakLookbackStart.setDate(streakLookbackStart.getDate() - 365)
 
   try {
+    console.log(`[DASHBOARD BATCH TIMING] dashboard metrics start`)
+
     const results = await Promise.allSettled([
       prisma.user_rule_attempts.count({
         where: {
@@ -634,6 +668,21 @@ async function getDashboardMetrics(
       }),
     ])
 
+    console.log(
+      `[DASHBOARD BATCH TIMING] dashboard metrics db queries complete: ${
+        Date.now() - startedAt
+      }ms`
+    )
+
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(
+          `[DASHBOARD BATCH TIMING] dashboard metrics query ${index} failed:`,
+          result.reason
+        )
+      }
+    })
+
     const todayBLL = valueOrFallback(results[0], 0)
     const todayMBE = valueOrFallback(results[1], 0)
 
@@ -682,6 +731,12 @@ async function getDashboardMetrics(
 
     const streak = buildStreak(activityDates)
 
+    console.log(
+      `[DASHBOARD BATCH TIMING] dashboard metrics finished: ${
+        Date.now() - startedAt
+      }ms`
+    )
+
     return {
       todayBLL,
       todayMBE,
@@ -713,12 +768,19 @@ async function getDashboardMetrics(
 }
 
 export async function GET(request: Request) {
+  const startedAt = Date.now()
+
   try {
+    mark("request start", startedAt)
+
     const auth = await getAuthorizedUser()
+    mark("auth complete", startedAt)
+
     if (auth.error || !auth.user) return auth.error
 
     const user = auth.user
     const profile = await getOrCreateProfile(user)
+    mark("profile complete", startedAt)
 
     const url = new URL(request.url)
     const requestedState = url.searchParams.get("state")?.trim() || null
@@ -729,6 +791,8 @@ export async function GET(request: Request) {
         : null
 
     const profileState = requestedState || savedProfileState
+
+    mark("before parallel dashboard queries", startedAt)
 
     const [studyPlanResult, subjectAnalyticsResult, dashboardMetricsResult] =
       await Promise.allSettled([
@@ -741,6 +805,26 @@ export async function GET(request: Request) {
         getDashboardMetrics(user.id, profileState),
       ])
 
+    mark("parallel dashboard queries complete", startedAt)
+
+    if (studyPlanResult.status === "rejected") {
+      console.error("DASHBOARD BATCH STUDY PLAN ERROR:", studyPlanResult.reason)
+    }
+
+    if (subjectAnalyticsResult.status === "rejected") {
+      console.error(
+        "DASHBOARD BATCH SUBJECT ANALYTICS OUTER ERROR:",
+        subjectAnalyticsResult.reason
+      )
+    }
+
+    if (dashboardMetricsResult.status === "rejected") {
+      console.error(
+        "DASHBOARD BATCH METRICS OUTER ERROR:",
+        dashboardMetricsResult.reason
+      )
+    }
+
     const studyPlan = valueOrFallback(studyPlanResult, null)
     const subjectAnalytics = valueOrFallback(
       subjectAnalyticsResult,
@@ -751,7 +835,9 @@ export async function GET(request: Request) {
       getEmptyDashboardMetrics(profileState)
     )
 
-    return NextResponse.json({
+    mark("fallback normalization complete", startedAt)
+
+    const response = NextResponse.json({
       ok: true,
       timestamp: new Date().toISOString(),
       profile: {
@@ -781,6 +867,10 @@ export async function GET(request: Request) {
           }
         : null,
     })
+
+    mark("response ready", startedAt)
+
+    return response
   } catch (error: any) {
     console.error("DASHBOARD BATCH ERROR:", error)
 
