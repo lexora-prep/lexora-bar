@@ -49,9 +49,70 @@ type DashboardMetricsResult = {
   selectedState: string
 }
 
-function mark(label: string, startedAt: number) {
-  const elapsed = Date.now() - startedAt
-  console.log(`[DASHBOARD BATCH TIMING] ${label}: ${elapsed}ms`)
+type SubjectRow = {
+  id: string
+  name: string
+  order_index: number | null
+}
+
+type CountBySubjectRow = {
+  subject_id: string | null
+  count: number | bigint | null
+}
+
+type BllSubjectProgressRow = {
+  subject_id: string | null
+  completed: number | bigint | null
+  attempts: number | bigint | null
+  correct: number | bigint | null
+  mastery_sum: number | bigint | null
+}
+
+type MbeSubjectProgressRow = {
+  subject_id: string | null
+  completed: number | bigint | null
+  correct: number | bigint | null
+}
+
+type DashboardRawMetricsRow = {
+  today_bll: number | bigint | null
+  today_mbe: number | bigint | null
+  bll_attempts: number | bigint | null
+  bll_correct: number | bigint | null
+  mbe_total: number | bigint | null
+  mbe_correct: number | bigint | null
+  weekly_rule_attempts: number | bigint | null
+  weekly_study_seconds: number | bigint | null
+  weekly_study_sessions: number | bigint | null
+  spaced_reviews_due: number | bigint | null
+  weak_areas_count: number | bigint | null
+}
+
+type ActivityDateRow = {
+  created_at: Date | string | null
+}
+
+const profileSelect = {
+  id: true,
+  email: true,
+  full_name: true,
+  law_school: true,
+  jurisdiction: true,
+  exam_month: true,
+  exam_year: true,
+  mbe_access: true,
+  subscription_tier: true,
+  billing_status: true,
+} as const
+
+function toNumber(value: number | bigint | string | null | undefined) {
+  if (typeof value === "bigint") return Number(value)
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
 }
 
 function percent(correct: number, total: number) {
@@ -258,6 +319,7 @@ async function getAuthorizedUser() {
 async function getOrCreateProfile(user: { id: string; email?: string | null }) {
   const existing = await prisma.profiles.findUnique({
     where: { id: user.id },
+    select: profileSelect,
   })
 
   if (existing) return existing
@@ -279,15 +341,12 @@ async function getOrCreateProfile(user: { id: string; email?: string | null }) {
       is_blocked: false,
       updated_at: new Date(),
     },
+    select: profileSelect,
   })
 }
 
 async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResult> {
-  const startedAt = Date.now()
-
   try {
-    console.log(`[DASHBOARD BATCH TIMING] subject analytics start`)
-
     const results = await Promise.allSettled([
       prisma.subjects.findMany({
         select: {
@@ -300,83 +359,72 @@ async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResu
         },
       }),
 
-      prisma.rules.groupBy({
-        by: ["subject_id"],
-        where: {
-          is_active: true,
-        },
-        _count: {
-          _all: true,
-        },
-      }),
+      prisma.$queryRaw<CountBySubjectRow[]>`
+        SELECT
+          subject_id,
+          COUNT(*)::int AS count
+        FROM rules
+        WHERE is_active = true
+        GROUP BY subject_id
+      `,
 
-      prisma.user_rule_progress.findMany({
-        where: {
-          user_id: userId,
-        },
-        select: {
-          attempts: true,
-          correct_count: true,
-          mastery_level: true,
-          rules: {
-            select: {
-              subject_id: true,
-            },
-          },
-        },
-      }),
+      prisma.$queryRaw<BllSubjectProgressRow[]>`
+        SELECT
+          r.subject_id,
+          COUNT(*) FILTER (WHERE COALESCE(urp.attempts, 0) > 0)::int AS completed,
+          COALESCE(SUM(urp.attempts), 0)::int AS attempts,
+          COALESCE(SUM(urp.correct_count), 0)::int AS correct,
+          COALESCE(
+            SUM(
+              COALESCE(
+                urp.mastery_level,
+                CASE
+                  WHEN COALESCE(urp.attempts, 0) > 0
+                    THEN ROUND((COALESCE(urp.correct_count, 0)::numeric / NULLIF(urp.attempts, 0)) * 100)
+                  ELSE 0
+                END
+              )
+            ),
+            0
+          )::int AS mastery_sum
+        FROM user_rule_progress urp
+        INNER JOIN rules r ON r.id = urp.rule_id
+        WHERE urp.user_id = ${userId}
+        GROUP BY r.subject_id
+      `,
 
-      prisma.mBEQuestion.groupBy({
-        by: ["subject_id"],
-        where: {
-          is_active: true,
-        },
-        _count: {
-          _all: true,
-        },
-      }),
+      prisma.$queryRaw<CountBySubjectRow[]>`
+        SELECT
+          subject_id,
+          COUNT(*)::int AS count
+        FROM "MBEQuestion"
+        WHERE is_active = true
+        GROUP BY subject_id
+      `,
 
-      prisma.user_mbe_attempts.findMany({
-        where: {
-          user_id: userId,
-        },
-        select: {
-          is_correct: true,
-          mbe_question: {
-            select: {
-              subject_id: true,
-            },
-          },
-        },
-      }),
+      prisma.$queryRaw<MbeSubjectProgressRow[]>`
+        SELECT
+          q.subject_id,
+          COUNT(*)::int AS completed,
+          COUNT(*) FILTER (WHERE uma.is_correct = true)::int AS correct
+        FROM user_mbe_attempts uma
+        INNER JOIN "MBEQuestion" q ON q.id = uma.question_id
+        WHERE uma.user_id = ${userId}
+        GROUP BY q.subject_id
+      `,
     ])
 
-    console.log(
-      `[DASHBOARD BATCH TIMING] subject analytics db queries complete: ${
-        Date.now() - startedAt
-      }ms`
-    )
-
-    results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        console.error(
-          `[DASHBOARD BATCH TIMING] subject analytics query ${index} failed:`,
-          result.reason
-        )
-      }
-    })
-
-    const subjects = valueOrFallback(results[0], [])
-    const activeRuleCounts = valueOrFallback(results[1], [])
-    const userRuleProgress = valueOrFallback(results[2], [])
-    const activeMbeQuestionCounts = valueOrFallback(results[3], [])
-    const userMbeAttempts = valueOrFallback(results[4], [])
+    const subjects = valueOrFallback(results[0], []) as SubjectRow[]
+    const activeRuleCounts = valueOrFallback(results[1], []) as CountBySubjectRow[]
+    const userRuleProgress = valueOrFallback(results[2], []) as BllSubjectProgressRow[]
+    const activeMbeQuestionCounts = valueOrFallback(results[3], []) as CountBySubjectRow[]
+    const userMbeProgress = valueOrFallback(results[4], []) as MbeSubjectProgressRow[]
 
     const rulesTotalBySubjectId = new Map<string, number>()
 
     for (const row of activeRuleCounts) {
       if (row.subject_id) {
-        rulesTotalBySubjectId.set(row.subject_id, row._count._all)
+        rulesTotalBySubjectId.set(row.subject_id, toNumber(row.count))
       }
     }
 
@@ -384,7 +432,7 @@ async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResu
 
     for (const row of activeMbeQuestionCounts) {
       if (row.subject_id) {
-        mbeTotalBySubjectId.set(row.subject_id, row._count._all)
+        mbeTotalBySubjectId.set(row.subject_id, toNumber(row.count))
       }
     }
 
@@ -399,28 +447,14 @@ async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResu
     >()
 
     for (const row of userRuleProgress) {
-      const subjectId = row.rules?.subject_id
-      if (!subjectId) continue
+      if (!row.subject_id) continue
 
-      const current =
-        bllAgg.get(subjectId) ??
-        {
-          completed: 0,
-          attempts: 0,
-          correct: 0,
-          masterySum: 0,
-        }
-
-      const attempts = Number(row.attempts ?? 0)
-      const correct = Number(row.correct_count ?? 0)
-      const mastery = Number(row.mastery_level ?? percent(correct, attempts))
-
-      current.completed += attempts > 0 ? 1 : 0
-      current.attempts += attempts
-      current.correct += correct
-      current.masterySum += mastery
-
-      bllAgg.set(subjectId, current)
+      bllAgg.set(row.subject_id, {
+        completed: toNumber(row.completed),
+        attempts: toNumber(row.attempts),
+        correct: toNumber(row.correct),
+        masterySum: toNumber(row.mastery_sum),
+      })
     }
 
     const mbeAgg = new Map<
@@ -431,21 +465,13 @@ async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResu
       }
     >()
 
-    for (const row of userMbeAttempts) {
-      const subjectId = row.mbe_question?.subject_id
-      if (!subjectId) continue
+    for (const row of userMbeProgress) {
+      if (!row.subject_id) continue
 
-      const current =
-        mbeAgg.get(subjectId) ??
-        {
-          completed: 0,
-          correct: 0,
-        }
-
-      current.completed += 1
-      if (row.is_correct) current.correct += 1
-
-      mbeAgg.set(subjectId, current)
+      mbeAgg.set(row.subject_id, {
+        completed: toNumber(row.completed),
+        correct: toNumber(row.correct),
+      })
     }
 
     const bllSubjects = subjects
@@ -501,12 +527,6 @@ async function getSubjectAnalytics(userId: string): Promise<SubjectAnalyticsResu
       })
       .filter((row) => row.total > 0)
 
-    console.log(
-      `[DASHBOARD BATCH TIMING] subject analytics finished: ${
-        Date.now() - startedAt
-      }ms`
-    )
-
     return {
       subjects: bllSubjects,
       mbeSubjects,
@@ -521,8 +541,6 @@ async function getDashboardMetrics(
   userId: string,
   profileState: string | null
 ): Promise<DashboardMetricsResult> {
-  const startedAt = Date.now()
-
   const now = new Date()
   const today = startOfDay(now)
   const todayEnd = endOfDay(now)
@@ -534,208 +552,148 @@ async function getDashboardMetrics(
   streakLookbackStart.setDate(streakLookbackStart.getDate() - 365)
 
   try {
-    console.log(`[DASHBOARD BATCH TIMING] dashboard metrics start`)
-
     const results = await Promise.allSettled([
-      prisma.user_rule_attempts.count({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: today,
-            lte: todayEnd,
-          },
-        },
-      }),
+      prisma.$queryRaw<DashboardRawMetricsRow[]>`
+        SELECT
+          (
+            SELECT COUNT(*)::int
+            FROM user_rule_attempts
+            WHERE user_id = ${userId}
+              AND created_at >= ${today}
+              AND created_at <= ${todayEnd}
+          ) AS today_bll,
 
-      prisma.user_mbe_attempts.count({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: today,
-            lte: todayEnd,
-          },
-        },
-      }),
+          (
+            SELECT COUNT(*)::int
+            FROM user_mbe_attempts
+            WHERE user_id = ${userId}
+              AND created_at >= ${today}
+              AND created_at <= ${todayEnd}
+          ) AS today_mbe,
 
-      prisma.user_rule_progress.aggregate({
-        where: {
-          user_id: userId,
-        },
-        _sum: {
-          attempts: true,
-          correct_count: true,
-        },
-      }),
+          (
+            SELECT COALESCE(SUM(attempts), 0)::int
+            FROM user_rule_progress
+            WHERE user_id = ${userId}
+          ) AS bll_attempts,
 
-      prisma.user_mbe_attempts.count({
-        where: {
-          user_id: userId,
-        },
-      }),
+          (
+            SELECT COALESCE(SUM(correct_count), 0)::int
+            FROM user_rule_progress
+            WHERE user_id = ${userId}
+          ) AS bll_correct,
 
-      prisma.user_mbe_attempts.count({
-        where: {
-          user_id: userId,
-          is_correct: true,
-        },
-      }),
+          (
+            SELECT COUNT(*)::int
+            FROM user_mbe_attempts
+            WHERE user_id = ${userId}
+          ) AS mbe_total,
 
-      prisma.user_rule_attempts.count({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: weekStart,
-            lte: todayEnd,
-          },
-        },
-      }),
+          (
+            SELECT COUNT(*)::int
+            FROM user_mbe_attempts
+            WHERE user_id = ${userId}
+              AND is_correct = true
+          ) AS mbe_correct,
 
-      prisma.studySession.aggregate({
-        where: {
-          userId,
-          startedAt: {
-            gte: weekStart,
-            lte: todayEnd,
-          },
-        },
-        _sum: {
-          durationSeconds: true,
-        },
-      }),
+          (
+            SELECT COUNT(*)::int
+            FROM user_rule_attempts
+            WHERE user_id = ${userId}
+              AND created_at >= ${weekStart}
+              AND created_at <= ${todayEnd}
+          ) AS weekly_rule_attempts,
 
-      prisma.studySession.count({
-        where: {
-          userId,
-          startedAt: {
-            gte: weekStart,
-            lte: todayEnd,
-          },
-        },
-      }),
+          (
+            SELECT COALESCE(SUM("durationSeconds"), 0)::int
+            FROM "StudySession"
+            WHERE "userId" = ${userId}
+              AND "startedAt" >= ${weekStart}
+              AND "startedAt" <= ${todayEnd}
+          ) AS weekly_study_seconds,
 
-      prisma.user_rule_progress.count({
-        where: {
-          user_id: userId,
-          next_review_at: {
-            lte: todayEnd,
-          },
-        },
-      }),
+          (
+            SELECT COUNT(*)::int
+            FROM "StudySession"
+            WHERE "userId" = ${userId}
+              AND "startedAt" >= ${weekStart}
+              AND "startedAt" <= ${todayEnd}
+          ) AS weekly_study_sessions,
 
-      prisma.user_rule_attempts.findMany({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: streakLookbackStart,
-            lte: todayEnd,
-          },
-        },
-        select: {
-          created_at: true,
-        },
-        orderBy: {
-          created_at: "desc",
-        },
-        take: 500,
-      }),
+          (
+            SELECT COUNT(*)::int
+            FROM user_rule_progress
+            WHERE user_id = ${userId}
+              AND next_review_at <= ${todayEnd}
+          ) AS spaced_reviews_due,
 
-      prisma.user_mbe_attempts.findMany({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: streakLookbackStart,
-            lte: todayEnd,
-          },
-        },
-        select: {
-          created_at: true,
-        },
-        orderBy: {
-          created_at: "desc",
-        },
-        take: 500,
-      }),
+          (
+            SELECT COUNT(*)::int
+            FROM user_rule_progress
+            WHERE user_id = ${userId}
+              AND (
+                needs_practice = true
+                OR (
+                  COALESCE(attempts, 0) >= 3
+                  AND ROUND((COALESCE(correct_count, 0)::numeric / NULLIF(attempts, 0)) * 100) < 70
+                )
+              )
+          ) AS weak_areas_count
+      `,
 
-      prisma.user_rule_progress.findMany({
-        where: {
-          user_id: userId,
-        },
-        select: {
-          attempts: true,
-          correct_count: true,
-          needs_practice: true,
-        },
-      }),
+      prisma.$queryRaw<ActivityDateRow[]>`
+        SELECT created_at
+        FROM (
+          SELECT created_at
+          FROM user_rule_attempts
+          WHERE user_id = ${userId}
+            AND created_at >= ${streakLookbackStart}
+            AND created_at <= ${todayEnd}
+
+          UNION ALL
+
+          SELECT created_at
+          FROM user_mbe_attempts
+          WHERE user_id = ${userId}
+            AND created_at >= ${streakLookbackStart}
+            AND created_at <= ${todayEnd}
+        ) activity
+        WHERE created_at IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 1000
+      `,
     ])
 
-    console.log(
-      `[DASHBOARD BATCH TIMING] dashboard metrics db queries complete: ${
-        Date.now() - startedAt
-      }ms`
-    )
+    const metricRows = valueOrFallback(results[0], []) as DashboardRawMetricsRow[]
+    const metricRow = metricRows[0] ?? null
+    const activityRows = valueOrFallback(results[1], []) as ActivityDateRow[]
 
-    results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        console.error(
-          `[DASHBOARD BATCH TIMING] dashboard metrics query ${index} failed:`,
-          result.reason
-        )
-      }
-    })
+    const todayBLL = toNumber(metricRow?.today_bll)
+    const todayMBE = toNumber(metricRow?.today_mbe)
+    const bllAttempts = toNumber(metricRow?.bll_attempts)
+    const bllCorrect = toNumber(metricRow?.bll_correct)
+    const mbeTotal = toNumber(metricRow?.mbe_total)
+    const mbeCorrect = toNumber(metricRow?.mbe_correct)
+    const weeklyRuleAttempts = toNumber(metricRow?.weekly_rule_attempts)
+    const weeklyStudySeconds = toNumber(metricRow?.weekly_study_seconds)
+    const weeklyStudySessionsCount = toNumber(metricRow?.weekly_study_sessions)
+    const spacedReviewsDue = toNumber(metricRow?.spaced_reviews_due)
+    const weakAreasCount = toNumber(metricRow?.weak_areas_count)
 
-    const todayBLL = valueOrFallback(results[0], 0)
-    const todayMBE = valueOrFallback(results[1], 0)
+    const activityDates = activityRows
+      .map((row) => {
+        if (row.created_at instanceof Date) return row.created_at
 
-    const ruleProgressAggregate = valueOrFallback(results[2], {
-      _sum: {
-        attempts: 0,
-        correct_count: 0,
-      },
-    })
+        if (typeof row.created_at === "string") {
+          const parsed = new Date(row.created_at)
+          return Number.isNaN(parsed.getTime()) ? null : parsed
+        }
 
-    const mbeTotal = valueOrFallback(results[3], 0)
-    const mbeCorrect = valueOrFallback(results[4], 0)
-
-    const weeklyRuleAttempts = valueOrFallback(results[5], 0)
-
-    const weeklyStudySessionAgg = valueOrFallback(results[6], {
-      _sum: {
-        durationSeconds: 0,
-      },
-    })
-
-    const weeklyStudySessionsCount = valueOrFallback(results[7], 0)
-    const spacedReviewsDue = valueOrFallback(results[8], 0)
-
-    const ruleAttemptDates = valueOrFallback(results[9], [])
-    const mbeAttemptDates = valueOrFallback(results[10], [])
-    const weakRows = valueOrFallback(results[11], [])
-
-    const bllCorrect = Number(ruleProgressAggregate._sum.correct_count ?? 0)
-    const bllAttempts = Number(ruleProgressAggregate._sum.attempts ?? 0)
-
-    const weakAreasCount = weakRows.filter((row) => {
-      if (row.needs_practice) return true
-      if (!row.attempts || row.attempts < 3) return false
-      return percent(row.correct_count ?? 0, row.attempts ?? 0) < 70
-    }).length
-
-    const activityDates = [
-      ...ruleAttemptDates
-        .map((row) => row.created_at)
-        .filter((date): date is Date => date instanceof Date),
-      ...mbeAttemptDates
-        .map((row) => row.created_at)
-        .filter((date): date is Date => date instanceof Date),
-    ]
+        return null
+      })
+      .filter((date): date is Date => date instanceof Date)
 
     const streak = buildStreak(activityDates)
-
-    console.log(
-      `[DASHBOARD BATCH TIMING] dashboard metrics finished: ${
-        Date.now() - startedAt
-      }ms`
-    )
 
     return {
       todayBLL,
@@ -749,9 +707,7 @@ async function getDashboardMetrics(
       topBLL: 0,
       topMBE: 0,
       spacedReviewsDue,
-      weeklyStudyTimeHours: Number(
-        ((weeklyStudySessionAgg._sum.durationSeconds ?? 0) / 3600).toFixed(1)
-      ),
+      weeklyStudyTimeHours: Number((weeklyStudySeconds / 3600).toFixed(1)),
       weeklyRulesDone: weeklyRuleAttempts,
       weeklySessions: weeklyStudySessionsCount,
       weeklyWeakAreas: weakAreasCount,
@@ -770,17 +726,21 @@ async function getDashboardMetrics(
 export async function GET(request: Request) {
   const startedAt = Date.now()
 
+  function timing(label: string) {
+    console.log(`[DASHBOARD BATCH TIMING] ${label}: ${Date.now() - startedAt}ms`)
+  }
+
   try {
-    mark("request start", startedAt)
+    timing("request start")
 
     const auth = await getAuthorizedUser()
-    mark("auth complete", startedAt)
+    timing("auth complete")
 
     if (auth.error || !auth.user) return auth.error
 
     const user = auth.user
     const profile = await getOrCreateProfile(user)
-    mark("profile complete", startedAt)
+    timing("profile complete")
 
     const url = new URL(request.url)
     const requestedState = url.searchParams.get("state")?.trim() || null
@@ -792,7 +752,7 @@ export async function GET(request: Request) {
 
     const profileState = requestedState || savedProfileState
 
-    mark("before parallel dashboard queries", startedAt)
+    timing("before parallel dashboard queries")
 
     const [studyPlanResult, subjectAnalyticsResult, dashboardMetricsResult] =
       await Promise.allSettled([
@@ -805,25 +765,7 @@ export async function GET(request: Request) {
         getDashboardMetrics(user.id, profileState),
       ])
 
-    mark("parallel dashboard queries complete", startedAt)
-
-    if (studyPlanResult.status === "rejected") {
-      console.error("DASHBOARD BATCH STUDY PLAN ERROR:", studyPlanResult.reason)
-    }
-
-    if (subjectAnalyticsResult.status === "rejected") {
-      console.error(
-        "DASHBOARD BATCH SUBJECT ANALYTICS OUTER ERROR:",
-        subjectAnalyticsResult.reason
-      )
-    }
-
-    if (dashboardMetricsResult.status === "rejected") {
-      console.error(
-        "DASHBOARD BATCH METRICS OUTER ERROR:",
-        dashboardMetricsResult.reason
-      )
-    }
+    timing("parallel dashboard queries complete")
 
     const studyPlan = valueOrFallback(studyPlanResult, null)
     const subjectAnalytics = valueOrFallback(
@@ -835,7 +777,7 @@ export async function GET(request: Request) {
       getEmptyDashboardMetrics(profileState)
     )
 
-    mark("fallback normalization complete", startedAt)
+    timing("fallback normalization complete")
 
     const response = NextResponse.json({
       ok: true,
@@ -868,7 +810,7 @@ export async function GET(request: Request) {
         : null,
     })
 
-    mark("response ready", startedAt)
+    timing("response ready")
 
     return response
   } catch (error: any) {
