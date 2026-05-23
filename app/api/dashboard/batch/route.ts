@@ -49,6 +49,32 @@ type DashboardMetricsResult = {
   selectedState: string
 }
 
+type ProfileResult = {
+  id: string
+  email: string | null
+  full_name: string | null
+  law_school: string | null
+  jurisdiction: string | null
+  exam_month: number | null
+  exam_year: number | null
+  mbe_access: boolean | null
+  subscription_tier: string | null
+  billing_status: string | null
+}
+
+const profileSelect = {
+  id: true,
+  email: true,
+  full_name: true,
+  law_school: true,
+  jurisdiction: true,
+  exam_month: true,
+  exam_year: true,
+  mbe_access: true,
+  subscription_tier: true,
+  billing_status: true,
+} as const
+
 function percent(correct: number, total: number) {
   if (!total) return 0
   return Math.round((correct / total) * 100)
@@ -262,9 +288,13 @@ async function getAuthorizedUser(log?: (label: string) => void) {
   }
 }
 
-async function getOrCreateProfile(user: { id: string; email?: string | null }) {
+async function getOrCreateProfile(user: {
+  id: string
+  email?: string | null
+}): Promise<ProfileResult> {
   const existing = await prisma.profiles.findUnique({
     where: { id: user.id },
+    select: profileSelect,
   })
 
   if (existing) return existing
@@ -286,125 +316,103 @@ async function getOrCreateProfile(user: { id: string; email?: string | null }) {
       is_blocked: false,
       updated_at: new Date(),
     },
+    select: profileSelect,
   })
 }
 
-async function getSubjectAnalytics(
-  userId: string,
-  log?: (label: string) => void
-): Promise<SubjectAnalyticsResult> {
-  try {
-    log?.("subject analytics start")
+function buildSubjectAnalyticsFromRows({
+  subjects,
+  activeRuleCounts,
+  userRuleProgress,
+  activeMbeQuestionCounts,
+  userMbeAttempts,
+}: {
+  subjects: any[]
+  activeRuleCounts: any[]
+  userRuleProgress: any[]
+  activeMbeQuestionCounts: any[]
+  userMbeAttempts: any[]
+}): SubjectAnalyticsResult {
+  const rulesTotalBySubjectId = new Map<string, number>()
 
-    const results = await Promise.allSettled([
-      prisma.subjects.findMany({
-        select: {
-          id: true,
-          name: true,
-          order_index: true,
-        },
-        orderBy: {
-          order_index: "asc",
-        },
-      }),
-
-      prisma.rules.groupBy({
-        by: ["subject_id"],
-        where: {
-          is_active: true,
-        },
-        _count: {
-          _all: true,
-        },
-      }),
-
-      prisma.user_rule_progress.findMany({
-        where: {
-          user_id: userId,
-        },
-        select: {
-          attempts: true,
-          correct_count: true,
-          mastery_level: true,
-          rules: {
-            select: {
-              subject_id: true,
-            },
-          },
-        },
-      }),
-
-      prisma.mBEQuestion.groupBy({
-        by: ["subject_id"],
-        where: {
-          is_active: true,
-        },
-        _count: {
-          _all: true,
-        },
-      }),
-
-      prisma.user_mbe_attempts.findMany({
-        where: {
-          user_id: userId,
-        },
-        select: {
-          is_correct: true,
-          mbe_question: {
-            select: {
-              subject_id: true,
-            },
-          },
-        },
-      }),
-    ])
-
-    log?.("subject analytics db queries complete")
-
-    results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        console.error(`DASHBOARD BATCH SUBJECT QUERY ${index} ERROR:`, result.reason)
-      }
-    })
-
-    const subjects = valueOrFallback(results[0], [])
-    const activeRuleCounts = valueOrFallback(results[1], [])
-    const userRuleProgress = valueOrFallback(results[2], [])
-    const activeMbeQuestionCounts = valueOrFallback(results[3], [])
-    const userMbeAttempts = valueOrFallback(results[4], [])
-
-    const rulesTotalBySubjectId = new Map<string, number>()
-
-    for (const row of activeRuleCounts) {
-      if (row.subject_id) {
-        rulesTotalBySubjectId.set(row.subject_id, row._count._all)
-      }
+  for (const row of activeRuleCounts) {
+    if (row.subject_id) {
+      rulesTotalBySubjectId.set(row.subject_id, row._count._all)
     }
+  }
 
-    const mbeTotalBySubjectId = new Map<string, number>()
+  const mbeTotalBySubjectId = new Map<string, number>()
 
-    for (const row of activeMbeQuestionCounts) {
-      if (row.subject_id) {
-        mbeTotalBySubjectId.set(row.subject_id, row._count._all)
-      }
+  for (const row of activeMbeQuestionCounts) {
+    if (row.subject_id) {
+      mbeTotalBySubjectId.set(row.subject_id, row._count._all)
     }
+  }
 
-    const bllAgg = new Map<
-      string,
+  const bllAgg = new Map<
+    string,
+    {
+      completed: number
+      attempts: number
+      correct: number
+      masterySum: number
+    }
+  >()
+
+  for (const row of userRuleProgress) {
+    const subjectId = row.rules?.subject_id
+    if (!subjectId) continue
+
+    const current =
+      bllAgg.get(subjectId) ??
       {
-        completed: number
-        attempts: number
-        correct: number
-        masterySum: number
+        completed: 0,
+        attempts: 0,
+        correct: 0,
+        masterySum: 0,
       }
-    >()
 
-    for (const row of userRuleProgress) {
-      const subjectId = row.rules?.subject_id
-      if (!subjectId) continue
+    const attempts = Number(row.attempts ?? 0)
+    const correct = Number(row.correct_count ?? 0)
+    const mastery = Number(row.mastery_level ?? percent(correct, attempts))
 
-      const current =
-        bllAgg.get(subjectId) ??
+    current.completed += attempts > 0 ? 1 : 0
+    current.attempts += attempts
+    current.correct += correct
+    current.masterySum += mastery
+
+    bllAgg.set(subjectId, current)
+  }
+
+  const mbeAgg = new Map<
+    string,
+    {
+      completed: number
+      correct: number
+    }
+  >()
+
+  for (const row of userMbeAttempts) {
+    const subjectId = row.mbe_question?.subject_id
+    if (!subjectId) continue
+
+    const current =
+      mbeAgg.get(subjectId) ??
+      {
+        completed: 0,
+        correct: 0,
+      }
+
+    current.completed += 1
+    if (row.is_correct) current.correct += 1
+
+    mbeAgg.set(subjectId, current)
+  }
+
+  const bllSubjects = subjects
+    .map((subject) => {
+      const stats =
+        bllAgg.get(subject.id) ??
         {
           completed: 0,
           attempts: 0,
@@ -412,343 +420,134 @@ async function getSubjectAnalytics(
           masterySum: 0,
         }
 
-      const attempts = Number(row.attempts ?? 0)
-      const correct = Number(row.correct_count ?? 0)
-      const mastery = Number(row.mastery_level ?? percent(correct, attempts))
+      const total = rulesTotalBySubjectId.get(subject.id) ?? 0
+      const accuracy =
+        stats.completed > 0
+          ? Math.round(stats.masterySum / Math.max(stats.completed, 1))
+          : 0
+      const derived = buildLevelAndProgress(stats.completed, accuracy)
 
-      current.completed += attempts > 0 ? 1 : 0
-      current.attempts += attempts
-      current.correct += correct
-      current.masterySum += mastery
-
-      bllAgg.set(subjectId, current)
-    }
-
-    const mbeAgg = new Map<
-      string,
-      {
-        completed: number
-        correct: number
+      return {
+        name: subject.name,
+        accuracy,
+        completed: stats.completed,
+        total,
+        level: derived.level,
+        progressWidth: derived.progressWidth,
       }
-    >()
+    })
+    .filter((row) => row.total > 0)
 
-    for (const row of userMbeAttempts) {
-      const subjectId = row.mbe_question?.subject_id
-      if (!subjectId) continue
-
-      const current =
-        mbeAgg.get(subjectId) ??
+  const mbeSubjects = subjects
+    .map((subject) => {
+      const stats =
+        mbeAgg.get(subject.id) ??
         {
           completed: 0,
           correct: 0,
         }
 
-      current.completed += 1
-      if (row.is_correct) current.correct += 1
+      const total = mbeTotalBySubjectId.get(subject.id) ?? 0
+      const accuracy = percent(stats.correct, stats.completed)
+      const derived = buildLevelAndProgress(stats.completed, accuracy)
 
-      mbeAgg.set(subjectId, current)
-    }
+      return {
+        name: subject.name,
+        accuracy,
+        completed: stats.completed,
+        total,
+        level: derived.level,
+        progressWidth: derived.progressWidth,
+      }
+    })
+    .filter((row) => row.total > 0)
 
-    const bllSubjects = subjects
-      .map((subject) => {
-        const stats =
-          bllAgg.get(subject.id) ??
-          {
-            completed: 0,
-            attempts: 0,
-            correct: 0,
-            masterySum: 0,
-          }
-
-        const total = rulesTotalBySubjectId.get(subject.id) ?? 0
-        const accuracy =
-          stats.completed > 0
-            ? Math.round(stats.masterySum / Math.max(stats.completed, 1))
-            : 0
-        const derived = buildLevelAndProgress(stats.completed, accuracy)
-
-        return {
-          name: subject.name,
-          accuracy,
-          completed: stats.completed,
-          total,
-          level: derived.level,
-          progressWidth: derived.progressWidth,
-        }
-      })
-      .filter((row) => row.total > 0)
-
-    const mbeSubjects = subjects
-      .map((subject) => {
-        const stats =
-          mbeAgg.get(subject.id) ??
-          {
-            completed: 0,
-            correct: 0,
-          }
-
-        const total = mbeTotalBySubjectId.get(subject.id) ?? 0
-        const accuracy = percent(stats.correct, stats.completed)
-        const derived = buildLevelAndProgress(stats.completed, accuracy)
-
-        return {
-          name: subject.name,
-          accuracy,
-          completed: stats.completed,
-          total,
-          level: derived.level,
-          progressWidth: derived.progressWidth,
-        }
-      })
-      .filter((row) => row.total > 0)
-
-    log?.("subject analytics normalization complete")
-
-    return {
-      subjects: bllSubjects,
-      mbeSubjects,
-    }
-  } catch (err) {
-    console.error("DASHBOARD BATCH SUBJECT ANALYTICS ERROR:", err)
-    return getEmptySubjectAnalytics()
+  return {
+    subjects: bllSubjects,
+    mbeSubjects,
   }
 }
 
-async function getDashboardMetrics(
-  userId: string,
-  profileState: string | null,
-  log?: (label: string) => void
-): Promise<DashboardMetricsResult> {
-  const now = new Date()
-  const today = startOfDay(now)
-  const todayEnd = endOfDay(now)
-
-  const weekStart = startOfDay(new Date(now))
-  weekStart.setDate(weekStart.getDate() - 6)
-
-  const streakLookbackStart = startOfDay(new Date(now))
-  streakLookbackStart.setDate(streakLookbackStart.getDate() - 365)
-
-  try {
-    log?.("dashboard metrics start")
-
-    const results = await Promise.allSettled([
-      prisma.user_rule_attempts.count({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: today,
-            lte: todayEnd,
-          },
-        },
-      }),
-
-      prisma.user_mbe_attempts.count({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: today,
-            lte: todayEnd,
-          },
-        },
-      }),
-
-      prisma.user_rule_progress.aggregate({
-        where: {
-          user_id: userId,
-        },
-        _sum: {
-          attempts: true,
-          correct_count: true,
-        },
-      }),
-
-      prisma.user_mbe_attempts.count({
-        where: {
-          user_id: userId,
-        },
-      }),
-
-      prisma.user_mbe_attempts.count({
-        where: {
-          user_id: userId,
-          is_correct: true,
-        },
-      }),
-
-      prisma.user_rule_attempts.count({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: weekStart,
-            lte: todayEnd,
-          },
-        },
-      }),
-
-      prisma.studySession.aggregate({
-        where: {
-          userId,
-          startedAt: {
-            gte: weekStart,
-            lte: todayEnd,
-          },
-        },
-        _sum: {
-          durationSeconds: true,
-        },
-      }),
-
-      prisma.studySession.count({
-        where: {
-          userId,
-          startedAt: {
-            gte: weekStart,
-            lte: todayEnd,
-          },
-        },
-      }),
-
-      prisma.user_rule_progress.count({
-        where: {
-          user_id: userId,
-          next_review_at: {
-            lte: todayEnd,
-          },
-        },
-      }),
-
-      prisma.user_rule_attempts.findMany({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: streakLookbackStart,
-            lte: todayEnd,
-          },
-        },
-        select: {
-          created_at: true,
-        },
-        orderBy: {
-          created_at: "desc",
-        },
-        take: 500,
-      }),
-
-      prisma.user_mbe_attempts.findMany({
-        where: {
-          user_id: userId,
-          created_at: {
-            gte: streakLookbackStart,
-            lte: todayEnd,
-          },
-        },
-        select: {
-          created_at: true,
-        },
-        orderBy: {
-          created_at: "desc",
-        },
-        take: 500,
-      }),
-
-      prisma.user_rule_progress.findMany({
-        where: {
-          user_id: userId,
-        },
-        select: {
-          attempts: true,
-          correct_count: true,
-          needs_practice: true,
-        },
-      }),
-    ])
-
-    log?.("dashboard metrics db queries complete")
-
-    results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        console.error(`DASHBOARD BATCH METRICS QUERY ${index} ERROR:`, result.reason)
-      }
-    })
-
-    const todayBLL = valueOrFallback(results[0], 0)
-    const todayMBE = valueOrFallback(results[1], 0)
-
-    const ruleProgressAggregate = valueOrFallback(results[2], {
-      _sum: {
-        attempts: 0,
-        correct_count: 0,
-      },
-    })
-
-    const mbeTotal = valueOrFallback(results[3], 0)
-    const mbeCorrect = valueOrFallback(results[4], 0)
-
-    const weeklyRuleAttempts = valueOrFallback(results[5], 0)
-
-    const weeklyStudySessionAgg = valueOrFallback(results[6], {
-      _sum: {
-        durationSeconds: 0,
-      },
-    })
-
-    const weeklyStudySessionsCount = valueOrFallback(results[7], 0)
-    const spacedReviewsDue = valueOrFallback(results[8], 0)
-
-    const ruleAttemptDates = valueOrFallback(results[9], [])
-    const mbeAttemptDates = valueOrFallback(results[10], [])
-    const weakRows = valueOrFallback(results[11], [])
-
-    const bllCorrect = Number(ruleProgressAggregate._sum.correct_count ?? 0)
-    const bllAttempts = Number(ruleProgressAggregate._sum.attempts ?? 0)
-
-    const weakAreasCount = weakRows.filter((row) => {
-      if (row.needs_practice) return true
-      if (!row.attempts || row.attempts < 3) return false
-      return percent(row.correct_count ?? 0, row.attempts ?? 0) < 70
-    }).length
-
-    const activityDates = [
-      ...ruleAttemptDates
-        .map((row) => row.created_at)
-        .filter((date): date is Date => date instanceof Date),
-      ...mbeAttemptDates
-        .map((row) => row.created_at)
-        .filter((date): date is Date => date instanceof Date),
-    ]
-
-    const streak = buildStreak(activityDates)
-
-    log?.("dashboard metrics normalization complete")
-
-    return {
-      todayBLL,
-      todayMBE,
-      goalBLL: 20,
-      goalMBE: 60,
-      userBLL: percent(bllCorrect, bllAttempts),
-      userMBE: percent(mbeCorrect, mbeTotal),
-      stateBLLAvg: 0,
-      stateMBEAvg: 0,
-      topBLL: 0,
-      topMBE: 0,
-      spacedReviewsDue,
-      weeklyStudyTimeHours: Number(
-        ((weeklyStudySessionAgg._sum.durationSeconds ?? 0) / 3600).toFixed(1)
-      ),
-      weeklyRulesDone: weeklyRuleAttempts,
-      weeklySessions: weeklyStudySessionsCount,
-      weeklyWeakAreas: weakAreasCount,
-      weakAreasCount,
-      currentStreak: streak.currentStreak,
-      bestStreak: streak.bestStreak,
-      streakDays: streak.streakDays,
-      selectedState: profileState || "",
+function buildDashboardMetricsFromRows({
+  profileState,
+  todayBLL,
+  todayMBE,
+  weeklyRuleAttempts,
+  weeklyStudySessionAgg,
+  weeklyStudySessionsCount,
+  spacedReviewsDue,
+  userRuleProgress,
+  ruleAttemptDates,
+  userMbeAttempts,
+}: {
+  profileState: string | null
+  todayBLL: number
+  todayMBE: number
+  weeklyRuleAttempts: number
+  weeklyStudySessionAgg: {
+    _sum: {
+      durationSeconds: number | null
     }
-  } catch (err) {
-    console.error("DASHBOARD BATCH METRICS ERROR:", err)
-    return getEmptyDashboardMetrics(profileState)
+  }
+  weeklyStudySessionsCount: number
+  spacedReviewsDue: number
+  userRuleProgress: any[]
+  ruleAttemptDates: any[]
+  userMbeAttempts: any[]
+}): DashboardMetricsResult {
+  const bllCorrect = userRuleProgress.reduce(
+    (sum, row) => sum + Number(row.correct_count ?? 0),
+    0
+  )
+
+  const bllAttempts = userRuleProgress.reduce(
+    (sum, row) => sum + Number(row.attempts ?? 0),
+    0
+  )
+
+  const mbeTotal = userMbeAttempts.length
+  const mbeCorrect = userMbeAttempts.filter((row) => row.is_correct).length
+
+  const weakAreasCount = userRuleProgress.filter((row) => {
+    if (row.needs_practice) return true
+    if (!row.attempts || row.attempts < 3) return false
+    return percent(row.correct_count ?? 0, row.attempts ?? 0) < 70
+  }).length
+
+  const activityDates = [
+    ...ruleAttemptDates
+      .map((row) => row.created_at)
+      .filter((date): date is Date => date instanceof Date),
+    ...userMbeAttempts
+      .map((row) => row.created_at)
+      .filter((date): date is Date => date instanceof Date),
+  ]
+
+  const streak = buildStreak(activityDates)
+
+  return {
+    todayBLL,
+    todayMBE,
+    goalBLL: 20,
+    goalMBE: 60,
+    userBLL: percent(bllCorrect, bllAttempts),
+    userMBE: percent(mbeCorrect, mbeTotal),
+    stateBLLAvg: 0,
+    stateMBEAvg: 0,
+    topBLL: 0,
+    topMBE: 0,
+    spacedReviewsDue,
+    weeklyStudyTimeHours: Number(
+      ((weeklyStudySessionAgg._sum.durationSeconds ?? 0) / 3600).toFixed(1)
+    ),
+    weeklyRulesDone: weeklyRuleAttempts,
+    weeklySessions: weeklyStudySessionsCount,
+    weeklyWeakAreas: weakAreasCount,
+    weakAreasCount,
+    currentStreak: streak.currentStreak,
+    bestStreak: streak.bestStreak,
+    streakDays: streak.streakDays,
+    selectedState: profileState || "",
   }
 }
 
@@ -779,50 +578,222 @@ export async function GET(request: Request) {
 
     const profileState = requestedState || savedProfileState
 
-    log("before parallel dashboard queries")
+    const now = new Date()
+    const today = startOfDay(now)
+    const todayEnd = endOfDay(now)
 
-    const [studyPlanResult, subjectAnalyticsResult, dashboardMetricsResult] =
-      await Promise.allSettled([
-        prisma.studyPlan.findUnique({
-          where: {
-            userId: user.id,
+    const weekStart = startOfDay(new Date(now))
+    weekStart.setDate(weekStart.getDate() - 6)
+
+    const streakLookbackStart = startOfDay(new Date(now))
+    streakLookbackStart.setDate(streakLookbackStart.getDate() - 365)
+
+    log("before combined dashboard queries")
+
+    const results = await Promise.allSettled([
+      prisma.studyPlan.findUnique({
+        where: {
+          userId: user.id,
+        },
+      }),
+
+      prisma.subjects.findMany({
+        select: {
+          id: true,
+          name: true,
+          order_index: true,
+        },
+        orderBy: {
+          order_index: "asc",
+        },
+      }),
+
+      prisma.rules.groupBy({
+        by: ["subject_id"],
+        where: {
+          is_active: true,
+        },
+        _count: {
+          _all: true,
+        },
+      }),
+
+      prisma.user_rule_progress.findMany({
+        where: {
+          user_id: user.id,
+        },
+        select: {
+          attempts: true,
+          correct_count: true,
+          mastery_level: true,
+          needs_practice: true,
+          rules: {
+            select: {
+              subject_id: true,
+            },
           },
-        }),
-        getSubjectAnalytics(user.id, log),
-        getDashboardMetrics(user.id, profileState, log),
-      ])
+        },
+      }),
 
-    log("parallel dashboard queries complete")
+      prisma.mBEQuestion.groupBy({
+        by: ["subject_id"],
+        where: {
+          is_active: true,
+        },
+        _count: {
+          _all: true,
+        },
+      }),
 
-    if (studyPlanResult.status === "rejected") {
-      console.error("DASHBOARD BATCH STUDY PLAN ERROR:", studyPlanResult.reason)
-    }
+      prisma.user_mbe_attempts.findMany({
+        where: {
+          user_id: user.id,
+        },
+        select: {
+          is_correct: true,
+          created_at: true,
+          mbe_question: {
+            select: {
+              subject_id: true,
+            },
+          },
+        },
+      }),
 
-    if (subjectAnalyticsResult.status === "rejected") {
-      console.error(
-        "DASHBOARD BATCH SUBJECT ANALYTICS PROMISE ERROR:",
-        subjectAnalyticsResult.reason
-      )
-    }
+      prisma.user_rule_attempts.count({
+        where: {
+          user_id: user.id,
+          created_at: {
+            gte: today,
+            lte: todayEnd,
+          },
+        },
+      }),
 
-    if (dashboardMetricsResult.status === "rejected") {
-      console.error(
-        "DASHBOARD BATCH METRICS PROMISE ERROR:",
-        dashboardMetricsResult.reason
-      )
-    }
+      prisma.user_mbe_attempts.count({
+        where: {
+          user_id: user.id,
+          created_at: {
+            gte: today,
+            lte: todayEnd,
+          },
+        },
+      }),
 
-    const studyPlan = valueOrFallback(studyPlanResult, null)
-    const subjectAnalytics = valueOrFallback(
-      subjectAnalyticsResult,
-      getEmptySubjectAnalytics()
-    )
-    const dashboardMetrics = valueOrFallback(
-      dashboardMetricsResult,
-      getEmptyDashboardMetrics(profileState)
-    )
+      prisma.user_rule_attempts.count({
+        where: {
+          user_id: user.id,
+          created_at: {
+            gte: weekStart,
+            lte: todayEnd,
+          },
+        },
+      }),
+
+      prisma.studySession.aggregate({
+        where: {
+          userId: user.id,
+          startedAt: {
+            gte: weekStart,
+            lte: todayEnd,
+          },
+        },
+        _sum: {
+          durationSeconds: true,
+        },
+      }),
+
+      prisma.studySession.count({
+        where: {
+          userId: user.id,
+          startedAt: {
+            gte: weekStart,
+            lte: todayEnd,
+          },
+        },
+      }),
+
+      prisma.user_rule_progress.count({
+        where: {
+          user_id: user.id,
+          next_review_at: {
+            lte: todayEnd,
+          },
+        },
+      }),
+
+      prisma.user_rule_attempts.findMany({
+        where: {
+          user_id: user.id,
+          created_at: {
+            gte: streakLookbackStart,
+            lte: todayEnd,
+          },
+        },
+        select: {
+          created_at: true,
+        },
+        orderBy: {
+          created_at: "desc",
+        },
+        take: 500,
+      }),
+    ])
+
+    log("combined dashboard queries complete")
+
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(`DASHBOARD BATCH QUERY ${index} ERROR:`, result.reason)
+      }
+    })
+
+    const studyPlan = valueOrFallback(results[0], null)
+    const subjects = valueOrFallback(results[1], [])
+    const activeRuleCounts = valueOrFallback(results[2], [])
+    const userRuleProgress = valueOrFallback(results[3], [])
+    const activeMbeQuestionCounts = valueOrFallback(results[4], [])
+    const userMbeAttempts = valueOrFallback(results[5], [])
+    const todayBLL = valueOrFallback(results[6], 0)
+    const todayMBE = valueOrFallback(results[7], 0)
+    const weeklyRuleAttempts = valueOrFallback(results[8], 0)
+
+    const weeklyStudySessionAgg = valueOrFallback(results[9], {
+      _sum: {
+        durationSeconds: 0,
+      },
+    })
+
+    const weeklyStudySessionsCount = valueOrFallback(results[10], 0)
+    const spacedReviewsDue = valueOrFallback(results[11], 0)
+    const ruleAttemptDates = valueOrFallback(results[12], [])
 
     log("fallback normalization complete")
+
+    const subjectAnalytics = buildSubjectAnalyticsFromRows({
+      subjects,
+      activeRuleCounts,
+      userRuleProgress,
+      activeMbeQuestionCounts,
+      userMbeAttempts,
+    })
+
+    log("subject analytics normalization complete")
+
+    const dashboardMetrics = buildDashboardMetricsFromRows({
+      profileState,
+      todayBLL,
+      todayMBE,
+      weeklyRuleAttempts,
+      weeklyStudySessionAgg,
+      weeklyStudySessionsCount,
+      spacedReviewsDue,
+      userRuleProgress,
+      ruleAttemptDates,
+      userMbeAttempts,
+    })
+
+    log("dashboard metrics normalization complete")
 
     const response = NextResponse.json({
       ok: true,
