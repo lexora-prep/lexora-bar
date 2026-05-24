@@ -479,6 +479,7 @@ function buildDashboardMetricsFromRows({
   userRuleProgress,
   ruleAttemptDates,
   userMbeAttempts,
+  goalBLL,
 }: {
   profileState: string | null
   todayBLL: number
@@ -494,6 +495,7 @@ function buildDashboardMetricsFromRows({
   userRuleProgress: any[]
   ruleAttemptDates: any[]
   userMbeAttempts: any[]
+  goalBLL: number
 }): DashboardMetricsResult {
   const bllCorrect = userRuleProgress.reduce(
     (sum, row) => sum + Number(row.correct_count ?? 0),
@@ -528,7 +530,7 @@ function buildDashboardMetricsFromRows({
   return {
     todayBLL,
     todayMBE,
-    goalBLL: 20,
+    goalBLL,
     goalMBE: 60,
     userBLL: percent(bllCorrect, bllAttempts),
     userMBE: percent(mbeCorrect, mbeTotal),
@@ -549,6 +551,16 @@ function buildDashboardMetricsFromRows({
     streakDays: streak.streakDays,
     selectedState: profileState || "",
   }
+}
+
+function getStudyPlanDailyRules(studyPlan: any): number {
+  const dailyRules = Number(studyPlan?.dailyRules ?? 0)
+
+  if (Number.isFinite(dailyRules) && dailyRules > 0) {
+    return dailyRules
+  }
+
+  return 20
 }
 
 export async function GET(request: Request) {
@@ -791,6 +803,7 @@ export async function GET(request: Request) {
       userRuleProgress,
       ruleAttemptDates,
       userMbeAttempts,
+      goalBLL: getStudyPlanDailyRules(studyPlan),
     })
 
     log("dashboard metrics normalization complete")
