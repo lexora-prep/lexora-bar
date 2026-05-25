@@ -327,123 +327,21 @@ async function getOrCreateProfile(user: {
   })
 }
 
-function getPlanDateRange(start: string, end: string) {
-  const dates: Date[] = []
-
-  if (!start || !end) return dates
-
-  const cursor = startOfDay(new Date(`${start}T00:00:00`))
-  const endDt = startOfDay(new Date(`${end}T00:00:00`))
-
-  if (Number.isNaN(cursor.getTime()) || Number.isNaN(endDt.getTime())) {
-    return dates
-  }
-
-  while (cursor <= endDt) {
-    dates.push(new Date(cursor))
-    cursor.setDate(cursor.getDate() + 1)
-  }
-
-  return dates
-}
-
-function buildDistributedRuleMap(
-  start: string,
-  end: string,
-  totalRules: number,
-  offMap: Record<string, boolean>,
-  catchUpWindow = 7
-) {
-  const allDates = getPlanDateRange(start, end)
-
-  if (allDates.length === 0) return {}
-
-  const activeDates = allDates.filter((d) => !offMap[formatDateInput(d)])
-
-  if (activeDates.length === 0) return {}
-
-  const base = Math.floor(totalRules / activeDates.length)
-  let remainder = totalRules % activeDates.length
-
-  const ruleMap: Record<string, number> = {}
-
-  for (const d of activeDates) {
-    const key = formatDateInput(d)
-    ruleMap[key] = base + (remainder > 0 ? 1 : 0)
-    if (remainder > 0) remainder--
-  }
-
-  for (const d of allDates) {
-    const key = formatDateInput(d)
-    if (!(key in ruleMap)) {
-      ruleMap[key] = 0
-    }
-  }
-
-  const sortedOffDates = allDates
-    .map((d) => formatDateInput(d))
-    .filter((key) => offMap[key])
-
-  for (const offKey of sortedOffDates) {
-    const offRules = ruleMap[offKey] ?? 0
-    ruleMap[offKey] = 0
-
-    if (offRules <= 0) continue
-
-    const futureTargets = allDates
-      .map((d) => formatDateInput(d))
-      .filter((key) => key > offKey && !offMap[key])
-      .slice(0, catchUpWindow)
-
-    if (futureTargets.length === 0) continue
-
-    const extraBase = Math.floor(offRules / futureTargets.length)
-    let extraRemainder = offRules % futureTargets.length
-
-    for (const key of futureTargets) {
-      ruleMap[key] += extraBase + (extraRemainder > 0 ? 1 : 0)
-      if (extraRemainder > 0) extraRemainder--
-    }
-  }
-
-  return ruleMap
-}
-
 function getEffectiveTodayBLLGoal(studyPlan: any) {
   const totalRules = 1200
+  const fallbackDailyRules = Number(studyPlan?.dailyRules ?? 20)
+  const totalDays = Number(studyPlan?.totalDays ?? 0)
 
-  if (!studyPlan?.startDate || !studyPlan?.examDate) {
-    return 20
+  if (Number.isFinite(totalDays) && totalDays > 0) {
+    const calculatedGoal = Math.floor(totalRules / totalDays)
+
+    if (Number.isFinite(calculatedGoal) && calculatedGoal > 0) {
+      return calculatedGoal
+    }
   }
 
-  const start = String(studyPlan.startDate).slice(0, 10)
-  const exam = String(studyPlan.examDate).slice(0, 10)
-  const today = formatDateInput(startOfDay(new Date()))
-
-  const offMap: Record<string, boolean> = {}
-
-  if (Array.isArray(studyPlan?.offDates)) {
-    studyPlan.offDates.forEach((date: string) => {
-      if (date) offMap[String(date).slice(0, 10)] = true
-    })
-  }
-
-  const ruleMap = buildDistributedRuleMap(start, exam, totalRules, offMap)
-  const todayGoal = Number(ruleMap[today] ?? 0)
-
-  if (Number.isFinite(todayGoal) && todayGoal > 0) {
-    return todayGoal
-  }
-
-  const scheduledGoals = Object.values(ruleMap)
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value) && value > 0)
-
-  if (scheduledGoals.length > 0) {
-    return Math.round(
-      scheduledGoals.reduce((sum, value) => sum + value, 0) /
-        scheduledGoals.length
-    )
+  if (Number.isFinite(fallbackDailyRules) && fallbackDailyRules > 0) {
+    return fallbackDailyRules
   }
 
   return 20
