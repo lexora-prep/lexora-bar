@@ -128,7 +128,7 @@ function getHeartbeatSeconds(previousLastActiveAt: string | null, now: Date) {
 }
 
 async function getExistingProfileActivity(
-  adminClient: ReturnType<typeof createClient>,
+  adminClient: any,
   userId: string
 ): Promise<ExistingProfileActivity> {
   const { data, error } = await adminClient
