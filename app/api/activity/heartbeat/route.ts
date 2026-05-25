@@ -19,6 +19,12 @@ type ExistingProfileActivity = {
   last_active_at: string | null
 }
 
+type SessionDurationUpdateResult = {
+  updated: boolean
+  addedSeconds: number
+  reason: "no_active_delta" | "no_recent_session" | "updated"
+}
+
 function cleanHeaderValue(value: string | null) {
   if (!value) return null
 
@@ -133,11 +139,19 @@ async function getExistingProfileActivity(
 
   if (error) {
     console.error("HEARTBEAT PROFILE READ ERROR:", error)
+
+    return {
+      last_active_at: null,
+    }
   }
+
+  const profileActivity = data as ExistingProfileActivity | null
 
   return {
     last_active_at:
-      typeof data?.last_active_at === "string" ? data.last_active_at : null,
+      typeof profileActivity?.last_active_at === "string"
+        ? profileActivity.last_active_at
+        : null,
   }
 }
 
@@ -149,7 +163,7 @@ async function updateLatestStudySessionDuration({
   userId: string
   heartbeatSeconds: number
   now: Date
-}) {
+}): Promise<SessionDurationUpdateResult> {
   if (heartbeatSeconds <= 0) {
     return {
       updated: false,
@@ -190,7 +204,8 @@ async function updateLatestStudySessionDuration({
       id: latestSession.id,
     },
     data: {
-      durationSeconds: Number(latestSession.durationSeconds ?? 0) + heartbeatSeconds,
+      durationSeconds:
+        Number(latestSession.durationSeconds ?? 0) + heartbeatSeconds,
     },
   })
 
