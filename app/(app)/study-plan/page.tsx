@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 type StudyPlan = {
@@ -22,6 +22,7 @@ type CalendarCell = {
   isExamDay?: boolean
   isToday?: boolean
   inRange?: boolean
+  isWeekend?: boolean
 }
 
 function normalizeDate(date: Date) {
@@ -63,13 +64,21 @@ function isSameDay(a: Date, b: Date) {
   )
 }
 
+function isWeekendDate(date: Date) {
+  return date.getDay() === 0 || date.getDay() === 6
+}
+
 function getDateRange(start?: string, end?: string) {
   if (!start || !end) return []
 
   const startDate = normalizeDate(new Date(start))
   const endDate = normalizeDate(new Date(end))
 
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate > endDate) {
+  if (
+    isNaN(startDate.getTime()) ||
+    isNaN(endDate.getTime()) ||
+    startDate > endDate
+  ) {
     return []
   }
 
@@ -84,17 +93,54 @@ function getDateRange(start?: string, end?: string) {
   return result
 }
 
-function buildRulesByDate(
-  start?: string,
-  end?: string,
+function getActiveStudyDates({
+  start,
+  end,
+  studyWeekends,
+  offDates,
+}: {
+  start?: string
+  end?: string
+  studyWeekends: boolean
+  offDates: string[]
+}) {
+  const offSet = new Set(offDates)
+
+  return getDateRange(start, end).filter((date) => {
+    const key = formatDateKey(date)
+    const manualOff = offSet.has(key)
+    const weekendOff = !studyWeekends && isWeekendDate(date)
+
+    return !manualOff && !weekendOff
+  })
+}
+
+function buildRulesByDate({
+  start,
+  end,
   totalRules = 1200,
-  offDates: string[] = []
-) {
+  studyWeekends,
+  offDates,
+}: {
+  start?: string
+  end?: string
+  totalRules?: number
+  studyWeekends: boolean
+  offDates: string[]
+}) {
   const dates = getDateRange(start, end)
   if (!dates.length) return {}
 
   const offSet = new Set(offDates)
-  const activeDates = dates.filter((d) => !offSet.has(formatDateKey(d)))
+
+  const activeDates = dates.filter((date) => {
+    const key = formatDateKey(date)
+    const manualOff = offSet.has(key)
+    const weekendOff = !studyWeekends && isWeekendDate(date)
+
+    return !manualOff && !weekendOff
+  })
+
   if (!activeDates.length) return {}
 
   const base = Math.floor(totalRules / activeDates.length)
@@ -102,26 +148,33 @@ function buildRulesByDate(
 
   const rulesByDate: Record<string, number> = {}
 
-  for (const d of activeDates) {
-    const key = formatDateKey(d)
+  for (const date of activeDates) {
+    const key = formatDateKey(date)
     rulesByDate[key] = base + (remainder > 0 ? 1 : 0)
     if (remainder > 0) remainder--
   }
 
-  for (const d of dates) {
-    const key = formatDateKey(d)
+  for (const date of dates) {
+    const key = formatDateKey(date)
     if (!(key in rulesByDate)) rulesByDate[key] = 0
   }
 
   return rulesByDate
 }
 
-function buildCalendarCells(
-  monthDate: Date,
-  start?: string,
-  end?: string,
-  offDates: string[] = []
-) {
+function buildCalendarCells({
+  monthDate,
+  start,
+  end,
+  studyWeekends,
+  offDates,
+}: {
+  monthDate: Date
+  start?: string
+  end?: string
+  studyWeekends: boolean
+  offDates: string[]
+}) {
   const viewMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
   const firstDay = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1)
   const lastDay = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0)
@@ -134,28 +187,43 @@ function buildCalendarCells(
   const cells: CalendarCell[] = []
 
   const firstWeekday = firstDay.getDay()
+
   for (let i = 0; i < firstWeekday; i++) {
     cells.push({
-      date: new Date(firstDay.getFullYear(), firstDay.getMonth(), i - firstWeekday + 1),
+      date: new Date(
+        firstDay.getFullYear(),
+        firstDay.getMonth(),
+        i - firstWeekday + 1
+      ),
       isPadding: true,
     })
   }
 
   for (let day = 1; day <= lastDay.getDate(); day++) {
-    const current = normalizeDate(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day))
+    const current = normalizeDate(
+      new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day)
+    )
+
     const key = formatDateKey(current)
+    const weekend = isWeekendDate(current)
+
     const inRange =
       !!startDate &&
       !!endDate &&
       current >= startDate &&
       current <= endDate
 
+    const isExamDay = inRange && endDate ? isSameDay(current, endDate) : false
+    const manualOff = inRange ? offSet.has(key) : false
+    const weekendOff = inRange && !studyWeekends && weekend && !isExamDay
+
     cells.push({
       date: current,
       isPadding: !inRange,
       inRange,
-      isOff: inRange ? offSet.has(key) : false,
-      isExamDay: inRange && endDate ? isSameDay(current, endDate) : false,
+      isWeekend: weekend,
+      isOff: inRange ? manualOff || weekendOff : false,
+      isExamDay,
       isToday: isSameDay(current, today),
     })
   }
@@ -163,12 +231,21 @@ function buildCalendarCells(
   while (cells.length % 7 !== 0) {
     const nextDay = cells.length - (firstWeekday + lastDay.getDate()) + 1
     cells.push({
-      date: new Date(lastDay.getFullYear(), lastDay.getMonth(), lastDay.getDate() + nextDay),
+      date: new Date(
+        lastDay.getFullYear(),
+        lastDay.getMonth(),
+        lastDay.getDate() + nextDay
+      ),
       isPadding: true,
     })
   }
 
   return cells
+}
+
+function getSafeDailyRules(totalRules: number, activeStudyDays: number) {
+  if (!activeStudyDays || activeStudyDays <= 0) return 0
+  return Math.max(1, Math.ceil(totalRules / activeStudyDays))
 }
 
 export default function StudyPlanPage() {
@@ -178,6 +255,7 @@ export default function StudyPlanPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [plan, setPlan] = useState<StudyPlan | null>(null)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
 
   useEffect(() => {
@@ -245,26 +323,138 @@ export default function StudyPlanPage() {
     loadPlan()
   }, [userId])
 
+  const totalRules = 1200
   const offDates = plan?.offDates ?? []
+  const studyWeekends = plan?.studyWeekends ?? true
+
+  const activeStudyDates = useMemo(() => {
+    return getActiveStudyDates({
+      start: plan?.startDate,
+      end: plan?.examDate,
+      studyWeekends,
+      offDates,
+    })
+  }, [plan?.startDate, plan?.examDate, studyWeekends, offDates])
+
+  const activeStudyDays = activeStudyDates.length
+  const effectiveDailyRules = getSafeDailyRules(totalRules, activeStudyDays)
+
   const rulesByDate = useMemo(() => {
-    return buildRulesByDate(plan?.startDate, plan?.examDate, 1200, offDates)
-  }, [plan?.startDate, plan?.examDate, offDates])
+    return buildRulesByDate({
+      start: plan?.startDate,
+      end: plan?.examDate,
+      totalRules,
+      studyWeekends,
+      offDates,
+    })
+  }, [plan?.startDate, plan?.examDate, studyWeekends, offDates])
 
   const calendarCells = useMemo(() => {
-    return buildCalendarCells(calendarMonth, plan?.startDate, plan?.examDate, offDates)
-  }, [calendarMonth, plan?.startDate, plan?.examDate, offDates])
+    return buildCalendarCells({
+      monthDate: calendarMonth,
+      start: plan?.startDate,
+      end: plan?.examDate,
+      studyWeekends,
+      offDates,
+    })
+  }, [calendarMonth, plan?.startDate, plan?.examDate, studyWeekends, offDates])
 
-  const remainingRules = 1200
-  const activeStudyDays = getDateRange(plan?.startDate, plan?.examDate).filter(
-    (d) => !offDates.includes(formatDateKey(d))
-  ).length
+  async function persistPlan(nextPlan: StudyPlan) {
+    if (!userId || !nextPlan.startDate || !nextPlan.examDate) return
 
-  const effectiveDailyRules =
-    plan?.dailyRules && plan.dailyRules > 0
-      ? plan.dailyRules
-      : activeStudyDays > 0
-        ? Math.ceil(remainingRules / activeStudyDays)
-        : 0
+    try {
+      setSaving(true)
+
+      const res = await fetch("/api/study-plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          startDate: nextPlan.startDate,
+          examDate: nextPlan.examDate,
+          studyWeekends: nextPlan.studyWeekends ?? true,
+          offDates: nextPlan.offDates ?? [],
+        }),
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || data?.error) {
+        console.error("SAVE STUDY PLAN ERROR:", data)
+        return
+      }
+
+      setPlan((prev) => ({
+        ...(prev ?? {}),
+        ...data,
+      }))
+    } catch (err) {
+      console.error("SAVE STUDY PLAN ERROR:", err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function toggleStudyDate(cell: CalendarCell) {
+    if (!plan || cell.isPadding || cell.isExamDay || !cell.inRange) return
+
+    const key = formatDateKey(cell.date)
+    const weekendOffByRule = !studyWeekends && isWeekendDate(cell.date)
+
+    if (weekendOffByRule) return
+
+    const nextOffSet = new Set(offDates)
+
+    if (nextOffSet.has(key)) {
+      nextOffSet.delete(key)
+    } else {
+      nextOffSet.add(key)
+    }
+
+    const nextOffDates = Array.from(nextOffSet).sort()
+
+    const nextActiveDays = getActiveStudyDates({
+      start: plan.startDate,
+      end: plan.examDate,
+      studyWeekends,
+      offDates: nextOffDates,
+    }).length
+
+    const nextPlan: StudyPlan = {
+      ...plan,
+      offDates: nextOffDates,
+      totalDays: nextActiveDays,
+      dailyRules: getSafeDailyRules(totalRules, nextActiveDays),
+    }
+
+    setPlan(nextPlan)
+    await persistPlan(nextPlan)
+  }
+
+  async function toggleStudyWeekends() {
+    if (!plan) return
+
+    const nextStudyWeekends = !(plan.studyWeekends ?? true)
+
+    const nextActiveDays = getActiveStudyDates({
+      start: plan.startDate,
+      end: plan.examDate,
+      studyWeekends: nextStudyWeekends,
+      offDates,
+    }).length
+
+    const nextPlan: StudyPlan = {
+      ...plan,
+      studyWeekends: nextStudyWeekends,
+      totalDays: nextActiveDays,
+      dailyRules: getSafeDailyRules(totalRules, nextActiveDays),
+    }
+
+    setPlan(nextPlan)
+    await persistPlan(nextPlan)
+  }
 
   if (loading) {
     return (
@@ -374,23 +564,32 @@ export default function StudyPlanPage() {
               {calendarCells.map((cell, index) => {
                 const key = formatDateKey(cell.date)
                 const rules = rulesByDate[key] ?? effectiveDailyRules
+                const weekendOffByRule =
+                  !studyWeekends &&
+                  cell.inRange &&
+                  cell.isWeekend &&
+                  !cell.isExamDay
 
                 return (
-                  <div
+                  <button
                     key={`${key}-${index}`}
+                    type="button"
+                    onClick={() => toggleStudyDate(cell)}
+                    disabled={
+                      !!cell.isPadding ||
+                      !!cell.isExamDay ||
+                      !!weekendOffByRule ||
+                      !cell.inRange
+                    }
                     className={[
-                      "min-h-[82px] rounded-[18px] border px-2.5 py-2 text-left",
+                      "min-h-[82px] rounded-[18px] border px-2.5 py-2 text-left transition",
                       cell.isPadding
-                        ? "border-slate-100 bg-slate-50 text-slate-300"
+                        ? "cursor-default border-slate-100 bg-slate-50 text-slate-300"
                         : "",
-                      cell.isExamDay
-                        ? "border-amber-300 bg-amber-50"
-                        : "",
-                      cell.isOff
-                        ? "border-red-300 bg-red-50"
-                        : "",
+                      cell.isExamDay ? "border-amber-300 bg-amber-50" : "",
+                      cell.isOff ? "border-red-300 bg-red-50" : "",
                       cell.inRange && !cell.isOff && !cell.isExamDay
-                        ? "border-slate-200 bg-white"
+                        ? "border-slate-200 bg-white hover:bg-slate-50"
                         : "",
                       cell.isToday && !cell.isPadding
                         ? "ring-2 ring-green-500"
@@ -425,7 +624,7 @@ export default function StudyPlanPage() {
                           </div>
                         )}
 
-                        {(cell.date.getDay() === 0 || cell.date.getDay() === 6) && !cell.isToday && (
+                        {cell.isWeekend && !cell.isToday && (
                           <div className="mt-1 text-[10px] text-sky-500">
                             Weekend
                           </div>
@@ -435,7 +634,7 @@ export default function StudyPlanPage() {
 
                     {cell.isOff && (
                       <div className="text-[11px] font-semibold text-red-500">
-                        OFF
+                        {weekendOffByRule ? "WEEKEND OFF" : "OFF"}
                       </div>
                     )}
 
@@ -444,7 +643,7 @@ export default function StudyPlanPage() {
                         {formatDisplayDate(plan.examDate)}
                       </div>
                     )}
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -460,34 +659,65 @@ export default function StudyPlanPage() {
                 Workload updates automatically when you mark a day off.
               </div>
 
+              <div className="mb-3 rounded-[16px] border border-slate-200 bg-white p-3">
+                <label className="flex cursor-pointer items-center justify-between gap-3 text-[13px]">
+                  <span className="font-medium text-slate-700">
+                    Study on weekends
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={studyWeekends}
+                    onChange={toggleStudyWeekends}
+                  />
+                </label>
+              </div>
+
               <div className="space-y-3 rounded-[16px] border border-slate-200 bg-white p-3">
                 <InfoRow label="Start Date" value={formatDisplayDate(plan.startDate)} />
                 <InfoRow label="Exam Date" value={formatDisplayDate(plan.examDate)} />
                 <InfoRow
                   label="Study on weekends"
-                  value={plan.studyWeekends ? "Yes" : "No"}
+                  value={studyWeekends ? "Yes" : "No"}
                 />
                 <InfoRow
                   label="Base Avg Rules Per Day"
-                  value={<span className="font-semibold text-blue-600">{effectiveDailyRules}</span>}
+                  value={
+                    <span className="font-semibold text-blue-600">
+                      {effectiveDailyRules}
+                    </span>
+                  }
                 />
                 <InfoRow
                   label="Daily MBE"
-                  value={<span className="font-semibold text-blue-700">{plan.dailyMBE ?? 50}</span>}
+                  value={
+                    <span className="font-semibold text-blue-700">
+                      {plan.dailyMBE ?? 50}
+                    </span>
+                  }
                 />
                 <InfoRow
                   label="Remaining Rules"
-                  value={<span className="font-semibold">{remainingRules}</span>}
+                  value={<span className="font-semibold">{totalRules}</span>}
                 />
                 <InfoRow
                   label="Remaining Study Days"
-                  value={<span className="font-semibold">{activeStudyDays || plan.totalDays || 0}</span>}
+                  value={
+                    <span className="font-semibold">
+                      {activeStudyDays || plan.totalDays || 0}
+                    </span>
+                  }
                 />
                 <InfoRow
                   label="Days Off Saved"
                   value={<span className="font-semibold">{offDates.length}</span>}
                 />
               </div>
+
+              {saving && (
+                <div className="mt-2 text-[11px] font-medium text-slate-400">
+                  Saving...
+                </div>
+              )}
             </div>
 
             <div className="rounded-[18px] border border-slate-200 bg-slate-50 p-3.5 shadow-sm">
@@ -498,15 +728,27 @@ export default function StudyPlanPage() {
               <div className="space-y-3 rounded-[16px] border border-slate-200 bg-white p-3">
                 <InfoRow
                   label="New Rules"
-                  value={<span className="font-semibold text-blue-600">{effectiveDailyRules}</span>}
+                  value={
+                    <span className="font-semibold text-blue-600">
+                      {effectiveDailyRules}
+                    </span>
+                  }
                 />
                 <InfoRow
                   label="Review Rules"
-                  value={<span className="font-semibold">{Math.max(6, effectiveDailyRules * 2)}</span>}
+                  value={
+                    <span className="font-semibold">
+                      {Math.max(6, effectiveDailyRules * 2)}
+                    </span>
+                  }
                 />
                 <InfoRow
                   label="MBE Questions"
-                  value={<span className="font-semibold text-blue-700">{plan.dailyMBE ?? 50}</span>}
+                  value={
+                    <span className="font-semibold text-blue-700">
+                      {plan.dailyMBE ?? 50}
+                    </span>
+                  }
                 />
               </div>
             </div>
