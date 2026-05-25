@@ -411,12 +411,9 @@ function buildDistributedRuleMap(
 
 function getEffectiveTodayBLLGoal(studyPlan: any) {
   const totalRules = 1200
-  const fallbackDailyRules = Number(studyPlan?.dailyRules ?? 20)
 
   if (!studyPlan?.startDate || !studyPlan?.examDate) {
-    return Number.isFinite(fallbackDailyRules) && fallbackDailyRules > 0
-      ? fallbackDailyRules
-      : 20
+    return 20
   }
 
   const start = String(studyPlan.startDate).slice(0, 10)
@@ -438,8 +435,15 @@ function getEffectiveTodayBLLGoal(studyPlan: any) {
     return todayGoal
   }
 
-  if (Number.isFinite(fallbackDailyRules) && fallbackDailyRules > 0) {
-    return fallbackDailyRules
+  const scheduledGoals = Object.values(ruleMap)
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0)
+
+  if (scheduledGoals.length > 0) {
+    return Math.round(
+      scheduledGoals.reduce((sum, value) => sum + value, 0) /
+        scheduledGoals.length
+    )
   }
 
   return 20
