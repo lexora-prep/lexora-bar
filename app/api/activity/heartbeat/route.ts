@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { prisma } from "@/lib/prisma"
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -12,6 +13,10 @@ type IpLocation = {
   last_timezone: string | null
   last_latitude: number | null
   last_longitude: number | null
+}
+
+type ExistingProfileActivity = {
+  last_active_at: string | null
 }
 
 function cleanHeaderValue(value: string | null) {
@@ -100,6 +105,102 @@ function getAdminClient() {
   })
 }
 
+function getHeartbeatSeconds(previousLastActiveAt: string | null, now: Date) {
+  if (!previousLastActiveAt) return 0
+
+  const previous = new Date(previousLastActiveAt)
+
+  if (Number.isNaN(previous.getTime())) return 0
+
+  const diffSeconds = Math.floor((now.getTime() - previous.getTime()) / 1000)
+
+  if (diffSeconds < 10) return 0
+
+  if (diffSeconds > 180) return 0
+
+  return diffSeconds
+}
+
+async function getExistingProfileActivity(
+  adminClient: ReturnType<typeof createClient>,
+  userId: string
+): Promise<ExistingProfileActivity> {
+  const { data, error } = await adminClient
+    .from("profiles")
+    .select("last_active_at")
+    .eq("id", userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error("HEARTBEAT PROFILE READ ERROR:", error)
+  }
+
+  return {
+    last_active_at:
+      typeof data?.last_active_at === "string" ? data.last_active_at : null,
+  }
+}
+
+async function updateLatestStudySessionDuration({
+  userId,
+  heartbeatSeconds,
+  now,
+}: {
+  userId: string
+  heartbeatSeconds: number
+  now: Date
+}) {
+  if (heartbeatSeconds <= 0) {
+    return {
+      updated: false,
+      addedSeconds: 0,
+      reason: "no_active_delta",
+    }
+  }
+
+  const sessionWindowStart = new Date(now)
+  sessionWindowStart.setHours(sessionWindowStart.getHours() - 12)
+
+  const latestSession = await prisma.studySession.findFirst({
+    where: {
+      userId,
+      startedAt: {
+        gte: sessionWindowStart,
+      },
+    },
+    select: {
+      id: true,
+      durationSeconds: true,
+    },
+    orderBy: {
+      startedAt: "desc",
+    },
+  })
+
+  if (!latestSession) {
+    return {
+      updated: false,
+      addedSeconds: 0,
+      reason: "no_recent_session",
+    }
+  }
+
+  await prisma.studySession.update({
+    where: {
+      id: latestSession.id,
+    },
+    data: {
+      durationSeconds: Number(latestSession.durationSeconds ?? 0) + heartbeatSeconds,
+    },
+  })
+
+  return {
+    updated: true,
+    addedSeconds: heartbeatSeconds,
+    reason: "updated",
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const authClient = getAuthClient(req)
@@ -116,9 +217,26 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null)
     const activitySource = String(body?.source || "app").trim() || "app"
 
-    const now = new Date().toISOString()
+    const nowDate = new Date()
+    const now = nowDate.toISOString()
     const location = getIpLocationFromHeaders(req)
     const adminClient = getAdminClient()
+
+    const existingProfileActivity = await getExistingProfileActivity(
+      adminClient,
+      user.id
+    )
+
+    const heartbeatSeconds = getHeartbeatSeconds(
+      existingProfileActivity.last_active_at,
+      nowDate
+    )
+
+    const sessionDurationResult = await updateLatestStudySessionDuration({
+      userId: user.id,
+      heartbeatSeconds,
+      now: nowDate,
+    })
 
     const updatePayload: Record<string, string | number | null> = {
       last_active_at: now,
@@ -152,7 +270,11 @@ export async function POST(req: Request) {
       )
     }
 
-    return NextResponse.json({ ok: true, source: activitySource })
+    return NextResponse.json({
+      ok: true,
+      source: activitySource,
+      studySession: sessionDurationResult,
+    })
   } catch (error) {
     console.error("HEARTBEAT API ERROR:", error)
 
