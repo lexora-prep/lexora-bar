@@ -26,6 +26,54 @@ function normalizeDateOnly(value: string) {
   return date
 }
 
+function toDateKey(date: Date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const d = String(date.getDate()).padStart(2, "0")
+  return `${y}-${m}-${d}`
+}
+
+function isWeekend(date: Date) {
+  const day = date.getDay()
+  return day === 0 || day === 6
+}
+
+function calculateTotalStudyDays({
+  startDate,
+  examDate,
+  studyWeekends,
+  offDates,
+}: {
+  startDate: Date
+  examDate: Date
+  studyWeekends: boolean
+  offDates: string[]
+}) {
+  let totalDays = 0
+  const offDateSet = new Set(offDates.map((date) => String(date).slice(0, 10)))
+
+  const current = new Date(startDate)
+  current.setHours(0, 0, 0, 0)
+
+  const end = new Date(examDate)
+  end.setHours(0, 0, 0, 0)
+
+  while (current <= end) {
+    const currentDateString = toDateKey(current)
+    const weekend = isWeekend(current)
+    const manuallyOff = offDateSet.has(currentDateString)
+    const weekendOff = !studyWeekends && weekend
+
+    if (!manuallyOff && !weekendOff) {
+      totalDays++
+    }
+
+    current.setDate(current.getDate() + 1)
+  }
+
+  return totalDays
+}
+
 export async function POST(req: Request) {
   try {
     const auth = await getAuthorizedUser()
@@ -37,7 +85,7 @@ export async function POST(req: Request) {
     const userId = body.userId
     const startDate = normalizeDateOnly(body.startDate)
     const examDate = normalizeDateOnly(body.examDate)
-    const studyWeekends = body.studyWeekends ?? true
+    const studyWeekends = Boolean(body.studyWeekends ?? true)
     const offDates: string[] = Array.isArray(body.offDates) ? body.offDates : []
 
     if (!userId) {
@@ -49,7 +97,10 @@ export async function POST(req: Request) {
     }
 
     if (!startDate || !examDate) {
-      return NextResponse.json({ error: "Missing or invalid dates" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Missing or invalid dates" },
+        { status: 400 }
+      )
     }
 
     if (startDate > examDate) {
@@ -59,19 +110,12 @@ export async function POST(req: Request) {
       )
     }
 
-    let totalDays = 0
-    const current = new Date(startDate)
-
-    while (current <= examDate) {
-      const currentDateString = current.toISOString().slice(0, 10)
-      const isOff = offDates.includes(currentDateString)
-
-      if (!isOff) {
-        totalDays++
-      }
-
-      current.setDate(current.getDate() + 1)
-    }
+    const totalDays = calculateTotalStudyDays({
+      startDate,
+      examDate,
+      studyWeekends,
+      offDates,
+    })
 
     if (totalDays <= 0) {
       return NextResponse.json(
@@ -80,8 +124,14 @@ export async function POST(req: Request) {
       )
     }
 
-    const totalRules = await prisma.rules.count()
-    const dailyRules = Math.max(1, Math.ceil(totalRules / totalDays))
+    const totalRules = await prisma.rules.count({
+      where: {
+        is_active: true,
+      },
+    })
+
+    const safeTotalRules = totalRules > 0 ? totalRules : 1
+    const dailyRules = Math.max(1, Math.ceil(safeTotalRules / totalDays))
     const dailyMBE = 50
 
     const plan = await prisma.studyPlan.upsert({
