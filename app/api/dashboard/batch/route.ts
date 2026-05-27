@@ -4,6 +4,13 @@ import { createClient } from "@/utils/supabase/server"
 
 type DayStatus = "fire" | "ice" | "none"
 
+type ActiveRuleIdentity = {
+  subject_id: string | null
+  topic_id: string | null
+  subtopic_id: string | null
+  title: string
+}
+
 type SubjectAnalyticsResult = {
   subjects: Array<{
     name: string
@@ -28,6 +35,7 @@ type DashboardMetricsResult = {
   todayMBE: number
   goalBLL: number
   goalMBE: number
+  totalRules: number
   userBLL: number
   userMBE: number
   stateBLLAvg: number
@@ -225,6 +233,46 @@ function buildLevelAndProgress(attempts: number, accuracy: number) {
   }
 }
 
+function makeCanonicalRuleKey(rule: ActiveRuleIdentity) {
+  return [
+    String(rule.subject_id ?? "").trim().toLowerCase(),
+    String(rule.topic_id ?? "").trim().toLowerCase(),
+    String(rule.subtopic_id ?? "").trim().toLowerCase(),
+    String(rule.title ?? "").trim().toLowerCase(),
+  ].join("::")
+}
+
+function buildCanonicalRuleCountMaps(activeRules: ActiveRuleIdentity[]) {
+  const canonicalKeysBySubject = new Map<string, Set<string>>()
+
+  for (const rule of activeRules) {
+    if (!rule.subject_id) continue
+    if (!String(rule.title ?? "").trim()) continue
+
+    const subjectId = String(rule.subject_id)
+    const key = makeCanonicalRuleKey(rule)
+
+    if (!canonicalKeysBySubject.has(subjectId)) {
+      canonicalKeysBySubject.set(subjectId, new Set<string>())
+    }
+
+    canonicalKeysBySubject.get(subjectId)?.add(key)
+  }
+
+  const totalBySubjectId = new Map<string, number>()
+  let totalRules = 0
+
+  for (const [subjectId, keys] of canonicalKeysBySubject.entries()) {
+    totalBySubjectId.set(subjectId, keys.size)
+    totalRules += keys.size
+  }
+
+  return {
+    totalBySubjectId,
+    totalRules,
+  }
+}
+
 function getEmptySubjectAnalytics(): SubjectAnalyticsResult {
   return {
     subjects: [],
@@ -232,12 +280,16 @@ function getEmptySubjectAnalytics(): SubjectAnalyticsResult {
   }
 }
 
-function getEmptyDashboardMetrics(profileState: string | null): DashboardMetricsResult {
+function getEmptyDashboardMetrics(
+  profileState: string | null,
+  totalRules = 0
+): DashboardMetricsResult {
   return {
     todayBLL: 0,
     todayMBE: 0,
     goalBLL: 20,
     goalMBE: 60,
+    totalRules,
     userBLL: 0,
     userMBE: 0,
     stateBLLAvg: 0,
@@ -327,13 +379,15 @@ async function getOrCreateProfile(user: {
   })
 }
 
-function getEffectiveTodayBLLGoal(studyPlan: any) {
-  const totalRules = 1200
+function getEffectiveTodayBLLGoal(studyPlan: any, totalRules: number) {
+  const safeTotalRules =
+    Number.isFinite(totalRules) && totalRules > 0 ? totalRules : 20
+
   const fallbackDailyRules = Number(studyPlan?.dailyRules ?? 20)
   const totalDays = Number(studyPlan?.totalDays ?? 0)
 
   if (Number.isFinite(totalDays) && totalDays > 0) {
-    const calculatedGoal = Math.floor(totalRules / totalDays)
+    const calculatedGoal = Math.ceil(safeTotalRules / totalDays)
 
     if (Number.isFinite(calculatedGoal) && calculatedGoal > 0) {
       return calculatedGoal
@@ -349,24 +403,19 @@ function getEffectiveTodayBLLGoal(studyPlan: any) {
 
 function buildSubjectAnalyticsFromRows({
   subjects,
-  activeRuleCounts,
+  activeRules,
   userRuleProgress,
   activeMbeQuestionCounts,
   userMbeAttempts,
 }: {
   subjects: any[]
-  activeRuleCounts: any[]
+  activeRules: ActiveRuleIdentity[]
   userRuleProgress: any[]
   activeMbeQuestionCounts: any[]
   userMbeAttempts: any[]
 }): SubjectAnalyticsResult {
-  const rulesTotalBySubjectId = new Map<string, number>()
-
-  for (const row of activeRuleCounts) {
-    if (row.subject_id) {
-      rulesTotalBySubjectId.set(row.subject_id, row._count._all)
-    }
-  }
+  const { totalBySubjectId: rulesTotalBySubjectId } =
+    buildCanonicalRuleCountMaps(activeRules)
 
   const mbeTotalBySubjectId = new Map<string, number>()
 
@@ -507,6 +556,7 @@ function buildDashboardMetricsFromRows({
   ruleAttemptDates,
   userMbeAttempts,
   goalBLL,
+  totalRules,
 }: {
   profileState: string | null
   todayBLL: number
@@ -523,6 +573,7 @@ function buildDashboardMetricsFromRows({
   ruleAttemptDates: any[]
   userMbeAttempts: any[]
   goalBLL: number
+  totalRules: number
 }): DashboardMetricsResult {
   const bllCorrect = userRuleProgress.reduce(
     (sum, row) => sum + Number(row.correct_count ?? 0),
@@ -559,6 +610,7 @@ function buildDashboardMetricsFromRows({
     todayMBE,
     goalBLL,
     goalMBE: 60,
+    totalRules,
     userBLL: percent(bllCorrect, bllAttempts),
     userMBE: percent(mbeCorrect, mbeTotal),
     stateBLLAvg: 0,
@@ -637,13 +689,15 @@ export async function GET(request: Request) {
         },
       }),
 
-      prisma.rules.groupBy({
-        by: ["subject_id"],
+      prisma.rules.findMany({
         where: {
           is_active: true,
         },
-        _count: {
-          _all: true,
+        select: {
+          subject_id: true,
+          topic_id: true,
+          subtopic_id: true,
+          title: true,
         },
       }),
 
@@ -779,7 +833,7 @@ export async function GET(request: Request) {
 
     const studyPlan = valueOrFallback(results[0], null)
     const subjects = valueOrFallback(results[1], [])
-    const activeRuleCounts = valueOrFallback(results[2], [])
+    const activeRules = valueOrFallback(results[2], [])
     const userRuleProgress = valueOrFallback(results[3], [])
     const activeMbeQuestionCounts = valueOrFallback(results[4], [])
     const userMbeAttempts = valueOrFallback(results[5], [])
@@ -799,9 +853,12 @@ export async function GET(request: Request) {
 
     log("fallback normalization complete")
 
+    const { totalRules } = buildCanonicalRuleCountMaps(activeRules)
+    const effectiveDailyRules = getEffectiveTodayBLLGoal(studyPlan, totalRules)
+
     const subjectAnalytics = buildSubjectAnalyticsFromRows({
       subjects,
-      activeRuleCounts,
+      activeRules,
       userRuleProgress,
       activeMbeQuestionCounts,
       userMbeAttempts,
@@ -820,7 +877,8 @@ export async function GET(request: Request) {
       userRuleProgress,
       ruleAttemptDates,
       userMbeAttempts,
-      goalBLL: getEffectiveTodayBLLGoal(studyPlan),
+      goalBLL: effectiveDailyRules,
+      totalRules,
     })
 
     log("dashboard metrics normalization complete")
@@ -840,7 +898,13 @@ export async function GET(request: Request) {
         subscription_tier: profile.subscription_tier || "free",
         billing_status: profile.billing_status || "free",
       },
-      studyPlan,
+      studyPlan: studyPlan
+        ? {
+            ...studyPlan,
+            totalRules,
+            dailyRules: effectiveDailyRules,
+          }
+        : null,
       dashboard: dashboardMetrics,
       subjects: subjectAnalytics.subjects,
       mbeSubjects: subjectAnalytics.mbeSubjects,

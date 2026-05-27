@@ -2,6 +2,17 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 
+type ActiveRuleIdentity = {
+  id: string
+  subject_id: string | null
+  topic_id: string | null
+  subtopic_id: string | null
+  title: string
+  prompt_question: string | null
+  updated_at: Date | null
+  created_at: Date | null
+}
+
 async function getAuthorizedUser() {
   const supabase = await createClient()
 
@@ -23,6 +34,8 @@ async function getAuthorizedUser() {
 function normalizeDateOnly(value: string) {
   const date = new Date(value)
   if (isNaN(date.getTime())) return null
+
+  date.setHours(0, 0, 0, 0)
   return date
 }
 
@@ -36,6 +49,18 @@ function toDateKey(date: Date) {
 function isWeekend(date: Date) {
   const day = date.getDay()
   return day === 0 || day === 6
+}
+
+function cleanOffDates(value: unknown) {
+  if (!Array.isArray(value)) return []
+
+  return Array.from(
+    new Set(
+      value
+        .map((date) => String(date).slice(0, 10))
+        .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    )
+  )
 }
 
 function calculateTotalStudyDays({
@@ -74,6 +99,90 @@ function calculateTotalStudyDays({
   return totalDays
 }
 
+function makeCanonicalRuleKey(rule: {
+  subject_id?: string | null
+  topic_id?: string | null
+  subtopic_id?: string | null
+  title?: string | null
+}) {
+  return [
+    String(rule.subject_id ?? "").trim().toLowerCase(),
+    String(rule.topic_id ?? "").trim().toLowerCase(),
+    String(rule.subtopic_id ?? "").trim().toLowerCase(),
+    String(rule.title ?? "").trim().toLowerCase(),
+  ].join("::")
+}
+
+function isBetterCanonicalRule(
+  candidate: {
+    prompt_question?: string | null
+    updated_at?: Date | null
+    created_at?: Date | null
+  },
+  current?: {
+    prompt_question?: string | null
+    updated_at?: Date | null
+    created_at?: Date | null
+  } | null
+) {
+  if (!current) return true
+
+  const candidateHasPrompt = !!String(candidate.prompt_question ?? "").trim()
+  const currentHasPrompt = !!String(current.prompt_question ?? "").trim()
+
+  if (candidateHasPrompt && !currentHasPrompt) return true
+  if (!candidateHasPrompt && currentHasPrompt) return false
+
+  const candidateUpdated = candidate.updated_at?.getTime() ?? 0
+  const currentUpdated = current.updated_at?.getTime() ?? 0
+
+  if (candidateUpdated !== currentUpdated) {
+    return candidateUpdated > currentUpdated
+  }
+
+  const candidateCreated = candidate.created_at?.getTime() ?? 0
+  const currentCreated = current.created_at?.getTime() ?? 0
+
+  return candidateCreated > currentCreated
+}
+
+function buildCanonicalRuleCount(activeRules: ActiveRuleIdentity[]) {
+  const canonicalRules = new Map<string, ActiveRuleIdentity>()
+
+  for (const rule of activeRules) {
+    if (!rule.subject_id || !String(rule.title ?? "").trim()) continue
+
+    const key = makeCanonicalRuleKey(rule)
+    const existing = canonicalRules.get(key)
+
+    if (isBetterCanonicalRule(rule, existing)) {
+      canonicalRules.set(key, rule)
+    }
+  }
+
+  return canonicalRules.size
+}
+
+async function getCanonicalActiveRuleCount() {
+  const activeRules = await prisma.rules.findMany({
+    where: {
+      is_active: true,
+    },
+    select: {
+      id: true,
+      subject_id: true,
+      topic_id: true,
+      subtopic_id: true,
+      title: true,
+      prompt_question: true,
+      updated_at: true,
+      created_at: true,
+    },
+  })
+
+  return buildCanonicalRuleCount(activeRules)
+}
+
 export async function POST(req: Request) {
   try {
     const auth = await getAuthorizedUser()
@@ -86,7 +195,7 @@ export async function POST(req: Request) {
     const startDate = normalizeDateOnly(body.startDate)
     const examDate = normalizeDateOnly(body.examDate)
     const studyWeekends = Boolean(body.studyWeekends ?? true)
-    const offDates: string[] = Array.isArray(body.offDates) ? body.offDates : []
+    const offDates = cleanOffDates(body.offDates)
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 })
@@ -124,12 +233,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const totalRules = await prisma.rules.count({
-      where: {
-        is_active: true,
-      },
-    })
-
+    const totalRules = await getCanonicalActiveRuleCount()
     const safeTotalRules = totalRules > 0 ? totalRules : 1
     const dailyRules = Math.max(1, Math.ceil(safeTotalRules / totalDays))
     const dailyMBE = 50
@@ -157,7 +261,10 @@ export async function POST(req: Request) {
       },
     })
 
-    return NextResponse.json(plan)
+    return NextResponse.json({
+      ...plan,
+      totalRules: safeTotalRules,
+    })
   } catch (err) {
     console.error("Study plan error:", err)
     return NextResponse.json({ error: "failed" }, { status: 500 })
@@ -190,7 +297,13 @@ export async function GET(req: Request) {
       return NextResponse.json(null)
     }
 
-    return NextResponse.json(plan)
+    const totalRules = await getCanonicalActiveRuleCount()
+    const safeTotalRules = totalRules > 0 ? totalRules : 1
+
+    return NextResponse.json({
+      ...plan,
+      totalRules: safeTotalRules,
+    })
   } catch (err) {
     console.error("GET STUDY PLAN ERROR:", err)
     return NextResponse.json(null, { status: 500 })
