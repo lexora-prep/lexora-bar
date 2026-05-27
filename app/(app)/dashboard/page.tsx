@@ -249,6 +249,7 @@ export default function Dashboard() {
     try {
       const profile = summary?.profile ?? null
       const studyPlan = summary?.studyPlan ?? null
+      const summaryRuleTotal = getSubjectRuleTotal(summary?.subjects)
 
       if (profile?.full_name) {
         setUserName(profile.full_name)
@@ -316,7 +317,7 @@ export default function Dashboard() {
         setExamDate(exam)
         setStudyWeekends(nextStudyWeekends)
 
-        const totalRules = 1200
+        const totalRules = getPlanTotalRules(studyPlan, summaryRuleTotal)
         const offMap: Record<string, boolean> = {}
 
         if (Array.isArray(studyPlan?.offDates)) {
@@ -334,12 +335,11 @@ export default function Dashboard() {
           nextStudyWeekends
         )
 
-        const safeDailyRules =
-          activeStudyDays > 0
-            ? Math.ceil(totalRules / activeStudyDays)
-            : studyPlan?.dailyRules && studyPlan.dailyRules > 0
-              ? studyPlan.dailyRules
-              : Math.ceil(totalRules / Math.max(studyPlan?.totalDays || 1, 1))
+        const safeDailyRules = getSafeDailyRules(
+          totalRules,
+          activeStudyDays,
+          studyPlan?.dailyRules
+        )
 
         const distributedRules = buildDistributedRuleMap(
           start,
@@ -418,7 +418,7 @@ export default function Dashboard() {
       setExamDate(exam)
       setStudyWeekends(nextStudyWeekends)
 
-      const totalRules = 1200
+      const totalRules = getPlanTotalRules(data, planData?.totalRules)
       const offMap: Record<string, boolean> = {}
       if (Array.isArray(data?.offDates)) {
         data.offDates.forEach((d: string) => {
@@ -435,12 +435,11 @@ export default function Dashboard() {
         nextStudyWeekends
       )
 
-      const safeDailyRules =
-        activeStudyDays > 0
-          ? Math.ceil(totalRules / activeStudyDays)
-          : data?.dailyRules && data.dailyRules > 0
-            ? data.dailyRules
-            : Math.ceil(totalRules / Math.max(data?.totalDays || 1, 1))
+      const safeDailyRules = getSafeDailyRules(
+        totalRules,
+        activeStudyDays,
+        data?.dailyRules
+      )
 
       const distributedRules = buildDistributedRuleMap(
         start,
@@ -525,6 +524,62 @@ export default function Dashboard() {
       setShowCustomRangePicker(false)
     }
   }, [analyticsRange])
+
+  function getPositiveNumber(...values: any[]) {
+    for (const value of values) {
+      const num = Number(value)
+      if (Number.isFinite(num) && num > 0) {
+        return num
+      }
+    }
+
+    return 0
+  }
+
+  function getPlanTotalRules(source?: any, fallback?: any) {
+    return getPositiveNumber(
+      source?.totalRules,
+      source?.total_rules,
+      source?.totalRuleCount,
+      source?.total_rule_count,
+      source?.remainingRules,
+      source?.remaining_rules,
+      fallback
+    )
+  }
+
+  function getSubjectRuleTotal(rows?: any[]) {
+    if (!Array.isArray(rows)) return 0
+
+    return rows.reduce((sum, row) => {
+      const total = Number(row?.total ?? 0)
+      if (!Number.isFinite(total) || total <= 0) return sum
+      return sum + total
+    }, 0)
+  }
+
+  function getSafeDailyRules(
+    totalRules: number,
+    activeStudyDays: number,
+    fallbackDailyRules?: any
+  ) {
+    const fallback = Number(fallbackDailyRules)
+
+    if (
+      Number.isFinite(totalRules) &&
+      totalRules > 0 &&
+      Number.isFinite(activeStudyDays) &&
+      activeStudyDays > 0
+    ) {
+      return Math.max(1, Math.ceil(totalRules / activeStudyDays))
+    }
+
+    if (Number.isFinite(fallback) && fallback > 0) {
+      return Math.max(1, Math.ceil(fallback))
+    }
+
+    return 0
+  }
 
   function buildLevelAndProgress(attempts: number, accuracy: number) {
     let level = "Limited"
@@ -670,8 +725,11 @@ export default function Dashboard() {
     )
     if (activeDates.length === 0) return {}
 
-    const base = Math.floor(totalRules / activeDates.length)
-    let remainder = totalRules % activeDates.length
+    const safeTotalRules =
+      Number.isFinite(totalRules) && totalRules > 0 ? Math.floor(totalRules) : 0
+
+    const base = Math.floor(safeTotalRules / activeDates.length)
+    let remainder = safeTotalRules % activeDates.length
 
     const ruleMap: Record<string, number> = {}
 
@@ -788,15 +846,18 @@ export default function Dashboard() {
   }) {
     if (!startDate || !examDate) return
 
-    const totalRules = planData?.totalRules ?? 1200
+    const totalRules = getPlanTotalRules(planData)
     const nextTotalDays = getRemainingStudyDays(
       startDate,
       examDate,
       nextOffMap,
       nextStudyWeekends
     )
-    const nextDailyRules =
-      nextTotalDays > 0 ? Math.ceil(totalRules / nextTotalDays) : 0
+    const nextDailyRules = getSafeDailyRules(
+      totalRules,
+      nextTotalDays,
+      planData?.dailyRules
+    )
 
     const nextRulesByDate = buildDistributedRuleMap(
       startDate,
@@ -1020,7 +1081,7 @@ export default function Dashboard() {
 
       const viewMonth = new Date(start.getFullYear(), start.getMonth(), 1)
 
-      const totalRules = 1200
+      const totalRules = getPlanTotalRules(data, planData?.totalRules)
       const offMap: Record<string, boolean> = {}
       if (Array.isArray(data?.offDates)) {
         data.offDates.forEach((d: string) => {
@@ -1035,8 +1096,11 @@ export default function Dashboard() {
         offMap,
         nextStudyWeekends
       )
-      const safeDailyRules =
-        safeTotalDays > 0 ? Math.ceil(totalRules / safeTotalDays) : 0
+      const safeDailyRules = getSafeDailyRules(
+        totalRules,
+        safeTotalDays,
+        data?.dailyRules
+      )
 
       const distributedRules = buildDistributedRuleMap(
         startDate,
@@ -2218,7 +2282,7 @@ export default function Dashboard() {
                           label="Remaining Rules"
                           value={
                             <span className="font-semibold">
-                              {planData?.totalRules ?? 1200}
+                              {getPlanTotalRules(planData) || "-"}
                             </span>
                           }
                         />
