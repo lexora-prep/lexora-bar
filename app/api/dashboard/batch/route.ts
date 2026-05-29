@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
 
 type DayStatus = "fire" | "ice" | "none"
+type RuleSet = "core" | "all"
 
 type ActiveRuleIdentity = {
   subject_id: string | null
   topic_id: string | null
   subtopic_id: string | null
   title: string
+  rule_type: string | null
 }
 
 type SubjectAnalyticsResult = {
@@ -86,6 +88,12 @@ const profileSelect = {
 function percent(correct: number, total: number) {
   if (!total) return 0
   return Math.round((correct / total) * 100)
+}
+
+function normalizeRuleSet(value: unknown): RuleSet {
+  const cleanValue = String(value ?? "").trim().toLowerCase()
+  if (cleanValue === "all") return "all"
+  return "core"
 }
 
 function startOfDay(date: Date) {
@@ -233,6 +241,11 @@ function buildLevelAndProgress(attempts: number, accuracy: number) {
   }
 }
 
+function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, ruleSet: RuleSet) {
+  if (ruleSet === "all") return true
+  return rule.rule_type === null
+}
+
 function makeCanonicalRuleKey(rule: ActiveRuleIdentity) {
   return [
     String(rule.subject_id ?? "").trim().toLowerCase(),
@@ -242,10 +255,14 @@ function makeCanonicalRuleKey(rule: ActiveRuleIdentity) {
   ].join("::")
 }
 
-function buildCanonicalRuleCountMaps(activeRules: ActiveRuleIdentity[]) {
+function buildCanonicalRuleCountMaps(
+  activeRules: ActiveRuleIdentity[],
+  ruleSet: RuleSet
+) {
   const canonicalKeysBySubject = new Map<string, Set<string>>()
 
   for (const rule of activeRules) {
+    if (!shouldIncludeRuleForSet(rule, ruleSet)) continue
     if (!rule.subject_id) continue
     if (!String(rule.title ?? "").trim()) continue
 
@@ -270,42 +287,6 @@ function buildCanonicalRuleCountMaps(activeRules: ActiveRuleIdentity[]) {
   return {
     totalBySubjectId,
     totalRules,
-  }
-}
-
-function getEmptySubjectAnalytics(): SubjectAnalyticsResult {
-  return {
-    subjects: [],
-    mbeSubjects: [],
-  }
-}
-
-function getEmptyDashboardMetrics(
-  profileState: string | null,
-  totalRules = 0
-): DashboardMetricsResult {
-  return {
-    todayBLL: 0,
-    todayMBE: 0,
-    goalBLL: 20,
-    goalMBE: 60,
-    totalRules,
-    userBLL: 0,
-    userMBE: 0,
-    stateBLLAvg: 0,
-    stateMBEAvg: 0,
-    topBLL: 0,
-    topMBE: 0,
-    spacedReviewsDue: 0,
-    weeklyStudyTimeHours: 0,
-    weeklyRulesDone: 0,
-    weeklySessions: 0,
-    weeklyWeakAreas: 0,
-    weakAreasCount: 0,
-    currentStreak: 0,
-    bestStreak: 0,
-    streakDays: buildFallbackStreakDays(),
-    selectedState: profileState || "",
   }
 }
 
@@ -407,15 +388,17 @@ function buildSubjectAnalyticsFromRows({
   userRuleProgress,
   activeMbeQuestionCounts,
   userMbeAttempts,
+  ruleSet,
 }: {
   subjects: any[]
   activeRules: ActiveRuleIdentity[]
   userRuleProgress: any[]
   activeMbeQuestionCounts: any[]
   userMbeAttempts: any[]
+  ruleSet: RuleSet
 }): SubjectAnalyticsResult {
   const { totalBySubjectId: rulesTotalBySubjectId } =
-    buildCanonicalRuleCountMaps(activeRules)
+    buildCanonicalRuleCountMaps(activeRules, ruleSet)
 
   const mbeTotalBySubjectId = new Map<string, number>()
 
@@ -438,6 +421,16 @@ function buildSubjectAnalyticsFromRows({
   for (const row of userRuleProgress) {
     const subjectId = row.rules?.subject_id
     if (!subjectId) continue
+
+    const progressRule: ActiveRuleIdentity = {
+      subject_id: subjectId,
+      topic_id: null,
+      subtopic_id: null,
+      title: "progress-rule",
+      rule_type: row.rules?.rule_type ?? null,
+    }
+
+    if (!shouldIncludeRuleForSet(progressRule, ruleSet)) continue
 
     const current =
       bllAgg.get(subjectId) ??
@@ -557,6 +550,7 @@ function buildDashboardMetricsFromRows({
   userMbeAttempts,
   goalBLL,
   totalRules,
+  ruleSet,
 }: {
   profileState: string | null
   todayBLL: number
@@ -574,13 +568,26 @@ function buildDashboardMetricsFromRows({
   userMbeAttempts: any[]
   goalBLL: number
   totalRules: number
+  ruleSet: RuleSet
 }): DashboardMetricsResult {
-  const bllCorrect = userRuleProgress.reduce(
+  const filteredUserRuleProgress = userRuleProgress.filter((row) => {
+    const progressRule: ActiveRuleIdentity = {
+      subject_id: row.rules?.subject_id ?? null,
+      topic_id: null,
+      subtopic_id: null,
+      title: "progress-rule",
+      rule_type: row.rules?.rule_type ?? null,
+    }
+
+    return shouldIncludeRuleForSet(progressRule, ruleSet)
+  })
+
+  const bllCorrect = filteredUserRuleProgress.reduce(
     (sum, row) => sum + Number(row.correct_count ?? 0),
     0
   )
 
-  const bllAttempts = userRuleProgress.reduce(
+  const bllAttempts = filteredUserRuleProgress.reduce(
     (sum, row) => sum + Number(row.attempts ?? 0),
     0
   )
@@ -588,7 +595,7 @@ function buildDashboardMetricsFromRows({
   const mbeTotal = userMbeAttempts.length
   const mbeCorrect = userMbeAttempts.filter((row) => row.is_correct).length
 
-  const weakAreasCount = userRuleProgress.filter((row) => {
+  const weakAreasCount = filteredUserRuleProgress.filter((row) => {
     if (row.needs_practice) return true
     if (!row.attempts || row.attempts < 3) return false
     return percent(row.correct_count ?? 0, row.attempts ?? 0) < 70
@@ -698,6 +705,7 @@ export async function GET(request: Request) {
           topic_id: true,
           subtopic_id: true,
           title: true,
+          rule_type: true,
         },
       }),
 
@@ -713,6 +721,7 @@ export async function GET(request: Request) {
           rules: {
             select: {
               subject_id: true,
+              rule_type: true,
             },
           },
         },
@@ -802,6 +811,9 @@ export async function GET(request: Request) {
           next_review_at: {
             lte: todayEnd,
           },
+          rules: {
+            rule_type: null,
+          },
         },
       }),
 
@@ -853,7 +865,8 @@ export async function GET(request: Request) {
 
     log("fallback normalization complete")
 
-    const { totalRules } = buildCanonicalRuleCountMaps(activeRules)
+    const ruleSet = normalizeRuleSet(studyPlan?.ruleSet)
+    const { totalRules } = buildCanonicalRuleCountMaps(activeRules, ruleSet)
     const effectiveDailyRules = getEffectiveTodayBLLGoal(studyPlan, totalRules)
 
     const subjectAnalytics = buildSubjectAnalyticsFromRows({
@@ -862,6 +875,7 @@ export async function GET(request: Request) {
       userRuleProgress,
       activeMbeQuestionCounts,
       userMbeAttempts,
+      ruleSet,
     })
 
     log("subject analytics normalization complete")
@@ -879,6 +893,7 @@ export async function GET(request: Request) {
       userMbeAttempts,
       goalBLL: effectiveDailyRules,
       totalRules,
+      ruleSet,
     })
 
     log("dashboard metrics normalization complete")
@@ -891,16 +906,18 @@ export async function GET(request: Request) {
         email: profile.email,
         full_name: profile.full_name,
         law_school: profile.law_school,
-        jurisdiction: profileState,
+        jurisdiction: profile.jurisdiction,
         exam_month: profile.exam_month,
         exam_year: profile.exam_year,
         mbe_access: profile.mbe_access,
         subscription_tier: profile.subscription_tier || "free",
         billing_status: profile.billing_status || "free",
       },
+      comparisonState: profileState,
       studyPlan: studyPlan
         ? {
             ...studyPlan,
+            ruleSet,
             totalRules,
             dailyRules: effectiveDailyRules,
           }

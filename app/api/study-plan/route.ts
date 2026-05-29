@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 
+type RuleSet = "core" | "all"
+
 type ActiveRuleIdentity = {
   id: string
   subject_id: string | null
@@ -11,6 +13,7 @@ type ActiveRuleIdentity = {
   prompt_question: string | null
   updated_at: Date | null
   created_at: Date | null
+  rule_type: string | null
 }
 
 async function getAuthorizedUser() {
@@ -61,6 +64,12 @@ function cleanOffDates(value: unknown) {
         .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
     )
   )
+}
+
+function normalizeRuleSet(value: unknown): RuleSet {
+  const cleanValue = String(value ?? "").trim().toLowerCase()
+  if (cleanValue === "all") return "all"
+  return "core"
 }
 
 function calculateTotalStudyDays({
@@ -146,10 +155,19 @@ function isBetterCanonicalRule(
   return candidateCreated > currentCreated
 }
 
-function buildCanonicalRuleCount(activeRules: ActiveRuleIdentity[]) {
+function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, ruleSet: RuleSet) {
+  if (ruleSet === "all") return true
+  return rule.rule_type === null
+}
+
+function buildCanonicalRuleCount(
+  activeRules: ActiveRuleIdentity[],
+  ruleSet: RuleSet
+) {
   const canonicalRules = new Map<string, ActiveRuleIdentity>()
 
   for (const rule of activeRules) {
+    if (!shouldIncludeRuleForSet(rule, ruleSet)) continue
     if (!rule.subject_id || !String(rule.title ?? "").trim()) continue
 
     const key = makeCanonicalRuleKey(rule)
@@ -163,7 +181,7 @@ function buildCanonicalRuleCount(activeRules: ActiveRuleIdentity[]) {
   return canonicalRules.size
 }
 
-async function getCanonicalActiveRuleCount() {
+async function getCanonicalActiveRuleCount(ruleSet: RuleSet) {
   const activeRules = await prisma.rules.findMany({
     where: {
       is_active: true,
@@ -177,10 +195,11 @@ async function getCanonicalActiveRuleCount() {
       prompt_question: true,
       updated_at: true,
       created_at: true,
+      rule_type: true,
     },
   })
 
-  return buildCanonicalRuleCount(activeRules)
+  return buildCanonicalRuleCount(activeRules, ruleSet)
 }
 
 export async function POST(req: Request) {
@@ -196,6 +215,7 @@ export async function POST(req: Request) {
     const examDate = normalizeDateOnly(body.examDate)
     const studyWeekends = Boolean(body.studyWeekends ?? true)
     const offDates = cleanOffDates(body.offDates)
+    const ruleSet = normalizeRuleSet(body.ruleSet)
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 })
@@ -233,7 +253,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const totalRules = await getCanonicalActiveRuleCount()
+    const totalRules = await getCanonicalActiveRuleCount(ruleSet)
     const safeTotalRules = totalRules > 0 ? totalRules : 1
     const dailyRules = Math.max(1, Math.ceil(safeTotalRules / totalDays))
     const dailyMBE = 50
@@ -248,6 +268,7 @@ export async function POST(req: Request) {
         dailyRules,
         dailyMBE,
         offDates,
+        ruleSet,
       },
       create: {
         userId,
@@ -258,11 +279,13 @@ export async function POST(req: Request) {
         dailyRules,
         dailyMBE,
         offDates,
+        ruleSet,
       },
     })
 
     return NextResponse.json({
       ...plan,
+      ruleSet,
       totalRules: safeTotalRules,
     })
   } catch (err) {
@@ -297,11 +320,13 @@ export async function GET(req: Request) {
       return NextResponse.json(null)
     }
 
-    const totalRules = await getCanonicalActiveRuleCount()
+    const ruleSet = normalizeRuleSet(plan.ruleSet)
+    const totalRules = await getCanonicalActiveRuleCount(ruleSet)
     const safeTotalRules = totalRules > 0 ? totalRules : 1
 
     return NextResponse.json({
       ...plan,
+      ruleSet,
       totalRules: safeTotalRules,
     })
   } catch (err) {

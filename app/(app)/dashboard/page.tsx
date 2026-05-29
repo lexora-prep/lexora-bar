@@ -20,6 +20,8 @@ import {
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
+type RuleSet = "core" | "all"
+
 const MBE_SUBJECTS = [
   "Contracts",
   "Torts",
@@ -109,6 +111,12 @@ type TrendPoint = {
   bll: number
 }
 
+function normalizeRuleSet(value: unknown): RuleSet {
+  const cleanValue = String(value ?? "").trim().toLowerCase()
+  if (cleanValue === "all") return "all"
+  return "core"
+}
+
 export default function Dashboard() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -137,6 +145,7 @@ export default function Dashboard() {
   const [startDate, setStartDate] = useState("")
   const [examDate, setExamDate] = useState("")
   const [studyWeekends, setStudyWeekends] = useState(true)
+  const [ruleSet, setRuleSet] = useState<RuleSet>("core")
   const [planData, setPlanData] = useState<any>(null)
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([])
   const [calendarMonth, setCalendarMonth] = useState<Date | null>(null)
@@ -216,9 +225,10 @@ export default function Dashboard() {
   }, [router, supabase])
 
   const dashboardBatchQuery = useQuery({
-    queryKey: ["dashboard-batch", currentUserId],
+    queryKey: ["dashboard-batch", currentUserId, state],
     queryFn: async () => {
-      const res = await fetch("/api/dashboard/batch", {
+      const query = state ? `?state=${encodeURIComponent(state)}` : ""
+      const res = await fetch(`/api/dashboard/batch${query}`, {
         cache: "no-store",
       })
 
@@ -262,12 +272,14 @@ export default function Dashboard() {
       setIsPremium(!!profile?.mbe_access)
 
       const selectedDashboardState =
-        summary?.dashboard?.selectedState &&
-        String(summary.dashboard.selectedState).trim()
-          ? String(summary.dashboard.selectedState).trim()
-          : profile?.jurisdiction && String(profile.jurisdiction).trim()
-            ? String(profile.jurisdiction).trim()
-            : ""
+        summary?.comparisonState && String(summary.comparisonState).trim()
+          ? String(summary.comparisonState).trim()
+          : summary?.dashboard?.selectedState &&
+              String(summary.dashboard.selectedState).trim()
+            ? String(summary.dashboard.selectedState).trim()
+            : profile?.jurisdiction && String(profile.jurisdiction).trim()
+              ? String(profile.jurisdiction).trim()
+              : ""
 
       if (selectedDashboardState) {
         setState((prev) => {
@@ -307,15 +319,18 @@ export default function Dashboard() {
         setStartDate("")
         setExamDate("")
         setStudyWeekends(true)
+        setRuleSet("core")
         setHasShownPlanThisSession(false)
       } else {
         const start = studyPlan.startDate?.slice(0, 10) || ""
         const exam = studyPlan.examDate?.slice(0, 10) || ""
         const nextStudyWeekends = studyPlan.studyWeekends ?? true
+        const nextRuleSet = normalizeRuleSet(studyPlan.ruleSet)
 
         setStartDate(start)
         setExamDate(exam)
         setStudyWeekends(nextStudyWeekends)
+        setRuleSet(nextRuleSet)
 
         const totalRules = getPlanTotalRules(studyPlan, summaryRuleTotal)
         const offMap: Record<string, boolean> = {}
@@ -351,6 +366,7 @@ export default function Dashboard() {
 
         setPlanData({
           ...studyPlan,
+          ruleSet: nextRuleSet,
           totalRules,
           totalDays: activeStudyDays || studyPlan.totalDays || 0,
           dailyRules: safeDailyRules,
@@ -406,6 +422,7 @@ export default function Dashboard() {
         setStartDate("")
         setExamDate("")
         setStudyWeekends(true)
+        setRuleSet("core")
         setHasShownPlanThisSession(false)
         return
       }
@@ -413,10 +430,12 @@ export default function Dashboard() {
       const start = data.startDate?.slice(0, 10) || ""
       const exam = data.examDate?.slice(0, 10) || ""
       const nextStudyWeekends = data.studyWeekends ?? true
+      const nextRuleSet = normalizeRuleSet(data.ruleSet)
 
       setStartDate(start)
       setExamDate(exam)
       setStudyWeekends(nextStudyWeekends)
+      setRuleSet(nextRuleSet)
 
       const totalRules = getPlanTotalRules(data, planData?.totalRules)
       const offMap: Record<string, boolean> = {}
@@ -451,6 +470,7 @@ export default function Dashboard() {
 
       setPlanData({
         ...data,
+        ruleSet: nextRuleSet,
         totalRules,
         totalDays: activeStudyDays || data.totalDays || 0,
         dailyRules: safeDailyRules,
@@ -480,12 +500,6 @@ export default function Dashboard() {
       setStudyPlanLoaded(true)
     }
   }
-
-  /*
-    Study plan is loaded during the first dashboard summary request.
-    Keep loadStudyPlanOnly available for modal refreshes and save/reset actions,
-    but do not run it again automatically on first dashboard render.
-  */
 
   useEffect(() => {
     async function loadTrendData() {
@@ -840,9 +854,11 @@ export default function Dashboard() {
   function applyStudyPlanOptimistically({
     nextOffMap,
     nextStudyWeekends,
+    nextRuleSet = ruleSet,
   }: {
     nextOffMap: Record<string, boolean>
     nextStudyWeekends: boolean
+    nextRuleSet?: RuleSet
   }) {
     if (!startDate || !examDate) return
 
@@ -879,6 +895,7 @@ export default function Dashboard() {
 
     setSavedOffMap(nextOffMap)
     setStudyWeekends(nextStudyWeekends)
+    setRuleSet(nextRuleSet)
     setCalendarDays(nextCalendarDays)
 
     setPlanData((prev: any) => ({
@@ -887,6 +904,7 @@ export default function Dashboard() {
       dailyRules: nextDailyRules,
       totalDays: nextTotalDays,
       studyWeekends: nextStudyWeekends,
+      ruleSet: nextRuleSet,
       offDates: nextOffDates,
       rulesByDate: nextRulesByDate,
     }))
@@ -902,7 +920,8 @@ export default function Dashboard() {
 
   async function saveStudyPlanSilently(
     nextOffDates: string[],
-    nextStudyWeekends = studyWeekends
+    nextStudyWeekends = studyWeekends,
+    nextRuleSet = ruleSet
   ) {
     if (!currentUserId || !startDate || !examDate) return
 
@@ -918,12 +937,17 @@ export default function Dashboard() {
           examDate,
           studyWeekends: nextStudyWeekends,
           offDates: nextOffDates,
+          ruleSet: nextRuleSet,
         }),
       })
 
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         console.error("AUTO SAVE STUDY PLAN ERROR:", data)
+      } else if (currentUserId) {
+        await queryClient.invalidateQueries({
+          queryKey: ["dashboard-batch", currentUserId],
+        })
       }
     } catch (err) {
       console.error("AUTO SAVE STUDY PLAN ERROR:", err)
@@ -935,7 +959,7 @@ export default function Dashboard() {
 
     if (!cleanState) return
 
-    const queryKey = ["dashboard-batch", currentUserId]
+    const queryKey = ["dashboard-batch", currentUserId, cleanState]
 
     setState(cleanState)
     setOpen(false)
@@ -958,60 +982,9 @@ export default function Dashboard() {
     )
 
     if (currentUserId) {
-      const currentCachedData = queryClient.getQueryData(queryKey)
-
-      if (currentCachedData) {
-        const optimisticData = {
-          ...(currentCachedData as any),
-          profile: {
-            ...((currentCachedData as any).profile ?? {}),
-            jurisdiction: cleanState,
-          },
-          dashboard: {
-            ...((currentCachedData as any).dashboard ?? {}),
-            selectedState: cleanState,
-          },
-          stateData:
-            (currentCachedData as any).stateData ??
-            {
-              userMBE: (currentCachedData as any)?.dashboard?.userMBE ?? 0,
-              userBLL: (currentCachedData as any)?.dashboard?.userBLL ?? 0,
-              stateMBEAvg: (currentCachedData as any)?.dashboard?.stateMBEAvg ?? 0,
-              stateBLLAvg: (currentCachedData as any)?.dashboard?.stateBLLAvg ?? 0,
-              topMBE: (currentCachedData as any)?.dashboard?.topMBE ?? 0,
-              topBLL: (currentCachedData as any)?.dashboard?.topBLL ?? 0,
-            },
-        }
-
-        queryClient.setQueryData(queryKey, optimisticData)
-      }
-    }
-
-    try {
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          jurisdiction: cleanState,
-        }),
+      await queryClient.invalidateQueries({
+        queryKey,
       })
-
-      const data = await res.json().catch(() => null)
-
-      if (!res.ok || data?.error) {
-        console.error("SAVE STATE ERROR:", data)
-        return
-      }
-
-      if (currentUserId) {
-        await queryClient.invalidateQueries({
-          queryKey,
-        })
-      }
-    } catch (err) {
-      console.error("SAVE STATE ERROR:", err)
     }
   }
 
@@ -1069,6 +1042,7 @@ export default function Dashboard() {
           examDate,
           studyWeekends,
           offDates: existingOffDates,
+          ruleSet,
         }),
       })
 
@@ -1090,6 +1064,7 @@ export default function Dashboard() {
       }
 
       const nextStudyWeekends = data.studyWeekends ?? studyWeekends
+      const nextRuleSet = normalizeRuleSet(data.ruleSet)
       const safeTotalDays = getRemainingStudyDays(
         startDate,
         examDate,
@@ -1112,6 +1087,7 @@ export default function Dashboard() {
 
       const nextPlanData = {
         ...data,
+        ruleSet: nextRuleSet,
         totalRules,
         totalDays: safeTotalDays,
         dailyRules: safeDailyRules,
@@ -1126,6 +1102,7 @@ export default function Dashboard() {
         nextStudyWeekends
       )
 
+      setRuleSet(nextRuleSet)
       setSavedOffMap(offMap)
       setPlanData(nextPlanData)
       setCalendarMonth(viewMonth)
@@ -1139,6 +1116,10 @@ export default function Dashboard() {
             ? distributedRules[todayKey]
             : safeDailyRules,
       }))
+
+      await queryClient.invalidateQueries({
+        queryKey: ["dashboard-batch", currentUserId],
+      })
     } catch (err) {
       console.error("CREATE PLAN ERROR:", err)
       alert("Something went wrong while generating the plan.")
@@ -1157,9 +1138,10 @@ export default function Dashboard() {
     applyStudyPlanOptimistically({
       nextOffMap,
       nextStudyWeekends: studyWeekends,
+      nextRuleSet: ruleSet,
     })
 
-    await saveStudyPlanSilently(nextOffDates, studyWeekends)
+    await saveStudyPlanSilently(nextOffDates, studyWeekends, ruleSet)
   }
 
   async function handleStudyWeekendChange(nextStudyWeekends: boolean) {
@@ -1169,9 +1151,36 @@ export default function Dashboard() {
     applyStudyPlanOptimistically({
       nextOffMap,
       nextStudyWeekends,
+      nextRuleSet: ruleSet,
     })
 
-    await saveStudyPlanSilently(nextOffDates, nextStudyWeekends)
+    await saveStudyPlanSilently(nextOffDates, nextStudyWeekends, ruleSet)
+  }
+
+  async function handleRuleSetChange(nextRuleSet: RuleSet) {
+    setRuleSet(nextRuleSet)
+
+    if (!planData || !startDate || !examDate) {
+      setPlanData((prev: any) => ({
+        ...(prev ?? {}),
+        ruleSet: nextRuleSet,
+      }))
+      return
+    }
+
+    const nextOffMap = { ...savedOffMap }
+    const nextOffDates = Object.keys(nextOffMap).filter((k) => nextOffMap[k])
+
+    applyStudyPlanOptimistically({
+      nextOffMap,
+      nextStudyWeekends: studyWeekends,
+      nextRuleSet,
+    })
+
+    await saveStudyPlanSilently(nextOffDates, studyWeekends, nextRuleSet)
+    if (currentUserId) {
+      await loadStudyPlanOnly(currentUserId)
+    }
   }
 
   async function savePlanAndClose() {
@@ -1188,6 +1197,7 @@ export default function Dashboard() {
           startDate,
           examDate,
           studyWeekends,
+          ruleSet,
           offDates:
             planData?.offDates ??
             Object.keys(savedOffMap).filter((k) => savedOffMap[k]),
@@ -1200,6 +1210,9 @@ export default function Dashboard() {
       }
 
       await loadStudyPlanOnly(currentUserId)
+      await queryClient.invalidateQueries({
+        queryKey: ["dashboard-batch", currentUserId],
+      })
       closeStudyPlanModal()
     } catch (err) {
       console.error("SAVE STUDY PLAN ERROR:", err)
@@ -1226,11 +1239,16 @@ export default function Dashboard() {
       setStartDate("")
       setExamDate("")
       setStudyWeekends(true)
+      setRuleSet("core")
       setSavedOffMap({})
       setHasShownPlanThisSession(false)
       setResetConfirmOpen(false)
       closeStudyPlanModal()
       setStudyPlanLoaded(true)
+
+      await queryClient.invalidateQueries({
+        queryKey: ["dashboard-batch", currentUserId],
+      })
     } catch (err) {
       console.error("RESET STUDY PLAN ERROR:", err)
       alert("Failed to reset study plan.")
@@ -1980,10 +1998,11 @@ export default function Dashboard() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold">
-                  Select Your Bar Exam State
+                  Select Comparison State
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Choose the state used for your comparison data.
+                  This only changes comparison data. It does not change your
+                  study jurisdiction.
                 </p>
               </div>
 
@@ -2011,7 +2030,7 @@ export default function Dashboard() {
                 >
                   <span className="font-medium">{s.name}</span>
                   <span className="text-xs font-semibold text-violet-600">
-                    Select
+                    Compare
                   </span>
                 </button>
               ))}
@@ -2243,6 +2262,26 @@ export default function Dashboard() {
                           />
                         </div>
 
+                        <div>
+                          <label className="mb-1 block text-[11px] font-medium text-slate-500">
+                            Rule Package
+                          </label>
+                          <select
+                            value={ruleSet}
+                            onChange={(e) =>
+                              handleRuleSetChange(normalizeRuleSet(e.target.value))
+                            }
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-violet-400"
+                          >
+                            <option value="core">Core Rules Only</option>
+                            <option value="all">Full Rule Bank</option>
+                          </select>
+                          <div className="mt-1 text-[10px] leading-4 text-slate-500">
+                            Core excludes definition-only expansion rules. Full
+                            Rule Bank includes all active rules.
+                          </div>
+                        </div>
+
                         <label className="flex items-center gap-2 text-[13px]">
                           <input
                             type="checkbox"
@@ -2283,6 +2322,15 @@ export default function Dashboard() {
                           value={
                             <span className="font-semibold">
                               {getPlanTotalRules(planData) || "-"}
+                            </span>
+                          }
+                        />
+
+                        <InfoRow
+                          label="Rule Package"
+                          value={
+                            <span className="font-semibold">
+                              {ruleSet === "core" ? "Core" : "Full"}
                             </span>
                           }
                         />
