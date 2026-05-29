@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
 
 type DayStatus = "fire" | "ice" | "none"
-type RuleSet = "core" | "all"
+type RuleSet = "core"
 
 type ActiveRuleIdentity = {
   subject_id: string | null
@@ -90,9 +90,7 @@ function percent(correct: number, total: number) {
   return Math.round((correct / total) * 100)
 }
 
-function normalizeRuleSet(value: unknown): RuleSet {
-  const cleanValue = String(value ?? "").trim().toLowerCase()
-  if (cleanValue === "all") return "all"
+function normalizeRuleSet(_value: unknown): RuleSet {
   return "core"
 }
 
@@ -241,8 +239,7 @@ function buildLevelAndProgress(attempts: number, accuracy: number) {
   }
 }
 
-function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, ruleSet: RuleSet) {
-  if (ruleSet === "all") return true
+function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, _ruleSet: RuleSet) {
   return rule.rule_type === null
 }
 

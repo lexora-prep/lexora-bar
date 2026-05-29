@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
-type RuleSet = "core" | "all"
+type RuleSet = "core"
 
 const MBE_SUBJECTS = [
   "Contracts",
@@ -111,9 +111,7 @@ type TrendPoint = {
   bll: number
 }
 
-function normalizeRuleSet(value: unknown): RuleSet {
-  const cleanValue = String(value ?? "").trim().toLowerCase()
-  if (cleanValue === "all") return "all"
+function normalizeRuleSet(_value: unknown): RuleSet {
   return "core"
 }
 
@@ -2274,7 +2272,7 @@ export default function Dashboard() {
                             className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-violet-400"
                           >
                             <option value="core">Core Rules Only</option>
-                            <option value="all">Full Rule Bank</option>
+
                           </select>
                           <div className="mt-1 text-[10px] leading-4 text-slate-500">
                             Core excludes definition-only expansion rules. Full
@@ -2330,7 +2328,7 @@ export default function Dashboard() {
                           label="Rule Package"
                           value={
                             <span className="font-semibold">
-                              {ruleSet === "core" ? "Core" : "Full"}
+                              Core
                             </span>
                           }
                         />

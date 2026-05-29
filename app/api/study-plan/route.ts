@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 
-type RuleSet = "core" | "all"
+type RuleSet = "core"
 
 type ActiveRuleIdentity = {
   id: string
@@ -66,9 +66,7 @@ function cleanOffDates(value: unknown) {
   )
 }
 
-function normalizeRuleSet(value: unknown): RuleSet {
-  const cleanValue = String(value ?? "").trim().toLowerCase()
-  if (cleanValue === "all") return "all"
+function normalizeRuleSet(_value: unknown): RuleSet {
   return "core"
 }
 
@@ -155,8 +153,7 @@ function isBetterCanonicalRule(
   return candidateCreated > currentCreated
 }
 
-function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, ruleSet: RuleSet) {
-  if (ruleSet === "all") return true
+function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, _ruleSet: RuleSet) {
   return rule.rule_type === null
 }
 
