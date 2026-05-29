@@ -343,6 +343,7 @@ model StudyPlan {
   totalDays     Int
   createdAt     DateTime @default(now())
   offDates      String[] @default([])
+  onDates       String[] @default([])
   ruleSet       String   @default("core")
 
   @@schema("public")
