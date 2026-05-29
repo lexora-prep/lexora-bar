@@ -148,6 +148,7 @@ export default function Dashboard() {
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([])
   const [calendarMonth, setCalendarMonth] = useState<Date | null>(null)
   const [savedOffMap, setSavedOffMap] = useState<Record<string, boolean>>({})
+  const [savedOnMap, setSavedOnMap] = useState<Record<string, boolean>>({})
   const [hasShownPlanThisSession, setHasShownPlanThisSession] =
     useState(false)
 
@@ -314,6 +315,7 @@ export default function Dashboard() {
         setCalendarDays([])
         setCalendarMonth(null)
         setSavedOffMap({})
+        setSavedOnMap({})
         setStartDate("")
         setExamDate("")
         setStudyWeekends(true)
@@ -332,6 +334,7 @@ export default function Dashboard() {
 
         const totalRules = getPlanTotalRules(studyPlan, summaryRuleTotal)
         const offMap: Record<string, boolean> = {}
+        const onMap: Record<string, boolean> = {}
 
         if (Array.isArray(studyPlan?.offDates)) {
           studyPlan.offDates.forEach((d: string) => {
@@ -339,12 +342,20 @@ export default function Dashboard() {
           })
         }
 
+        if (Array.isArray(studyPlan?.onDates)) {
+          studyPlan.onDates.forEach((d: string) => {
+            onMap[d] = true
+          })
+        }
+
         setSavedOffMap(offMap)
+        setSavedOnMap(onMap)
 
         const activeStudyDays = getRemainingStudyDays(
           start,
           exam,
           offMap,
+          onMap,
           nextStudyWeekends
         )
 
@@ -359,6 +370,7 @@ export default function Dashboard() {
           exam,
           totalRules,
           offMap,
+          onMap,
           nextStudyWeekends
         )
 
@@ -378,7 +390,7 @@ export default function Dashboard() {
           const viewMonth = new Date(month.getFullYear(), month.getMonth(), 1)
           setCalendarMonth(viewMonth)
           setCalendarDays(
-            buildCalendarDays(start, exam, viewMonth, offMap, nextStudyWeekends)
+            buildCalendarDays(start, exam, viewMonth, offMap, onMap, nextStudyWeekends)
           )
         } else {
           setCalendarDays([])
@@ -417,6 +429,7 @@ export default function Dashboard() {
         setCalendarDays([])
         setCalendarMonth(null)
         setSavedOffMap({})
+        setSavedOnMap({})
         setStartDate("")
         setExamDate("")
         setStudyWeekends(true)
@@ -437,18 +450,28 @@ export default function Dashboard() {
 
       const totalRules = getPlanTotalRules(data, planData?.totalRules)
       const offMap: Record<string, boolean> = {}
+      const onMap: Record<string, boolean> = {}
+
       if (Array.isArray(data?.offDates)) {
         data.offDates.forEach((d: string) => {
           offMap[d] = true
         })
       }
 
+      if (Array.isArray(data?.onDates)) {
+        data.onDates.forEach((d: string) => {
+          onMap[d] = true
+        })
+      }
+
       setSavedOffMap(offMap)
+      setSavedOnMap(onMap)
 
       const activeStudyDays = getRemainingStudyDays(
         start,
         exam,
         offMap,
+        onMap,
         nextStudyWeekends
       )
 
@@ -463,6 +486,7 @@ export default function Dashboard() {
         exam,
         totalRules,
         offMap,
+        onMap,
         nextStudyWeekends
       )
 
@@ -482,7 +506,7 @@ export default function Dashboard() {
         const viewMonth = new Date(month.getFullYear(), month.getMonth(), 1)
         setCalendarMonth(viewMonth)
         setCalendarDays(
-          buildCalendarDays(start, exam, viewMonth, offMap, nextStudyWeekends)
+          buildCalendarDays(start, exam, viewMonth, offMap, onMap, nextStudyWeekends)
         )
       } else {
         setCalendarDays([])
@@ -701,10 +725,15 @@ export default function Dashboard() {
   function isDateOff(
     date: Date,
     offMap: Record<string, boolean>,
+    onMap: Record<string, boolean>,
     shouldStudyWeekends: boolean
   ) {
     const key = formatDateInput(date)
-    return !!offMap[key] || (!shouldStudyWeekends && isWeekendDate(date))
+
+    if (onMap[key]) return false
+    if (offMap[key]) return true
+
+    return !shouldStudyWeekends && isWeekendDate(date)
   }
 
   function getPlanDateRange(start: string, end: string) {
@@ -727,13 +756,14 @@ export default function Dashboard() {
     end: string,
     totalRules: number,
     offMap: Record<string, boolean>,
+    onMap: Record<string, boolean>,
     shouldStudyWeekends = true
   ) {
     const allDates = getPlanDateRange(start, end)
     if (allDates.length === 0) return {}
 
     const activeDates = allDates.filter(
-      (d) => !isDateOff(d, offMap, shouldStudyWeekends)
+      (d) => !isDateOff(d, offMap, onMap, shouldStudyWeekends)
     )
     if (activeDates.length === 0) return {}
 
@@ -766,6 +796,7 @@ export default function Dashboard() {
     end: string,
     monthDate?: Date,
     offMap?: Record<string, boolean>,
+    onMap?: Record<string, boolean>,
     shouldStudyWeekends = true
   ) {
     if (!start || !end) return []
@@ -815,7 +846,7 @@ export default function Dashboard() {
       cells.push({
         date: current,
         isOff: inStudyRange
-          ? isDateOff(current, offMap ?? {}, shouldStudyWeekends)
+          ? isDateOff(current, offMap ?? {}, onMap ?? {}, shouldStudyWeekends)
           : false,
         isPadding: !inStudyRange,
         isExamDay: isSameDay(current, endDt),
@@ -842,19 +873,22 @@ export default function Dashboard() {
     start: string,
     end: string,
     offMap: Record<string, boolean>,
+    onMap: Record<string, boolean>,
     shouldStudyWeekends = true
   ) {
     return getPlanDateRange(start, end).filter(
-      (d) => !isDateOff(d, offMap, shouldStudyWeekends)
+      (d) => !isDateOff(d, offMap, onMap, shouldStudyWeekends)
     ).length
   }
 
   function applyStudyPlanOptimistically({
     nextOffMap,
+    nextOnMap,
     nextStudyWeekends,
     nextRuleSet = ruleSet,
   }: {
     nextOffMap: Record<string, boolean>
+    nextOnMap: Record<string, boolean>
     nextStudyWeekends: boolean
     nextRuleSet?: RuleSet
   }) {
@@ -865,6 +899,7 @@ export default function Dashboard() {
       startDate,
       examDate,
       nextOffMap,
+      nextOnMap,
       nextStudyWeekends
     )
     const nextDailyRules = getSafeDailyRules(
@@ -878,6 +913,7 @@ export default function Dashboard() {
       examDate,
       totalRules,
       nextOffMap,
+      nextOnMap,
       nextStudyWeekends
     )
 
@@ -886,6 +922,7 @@ export default function Dashboard() {
       examDate,
       calendarMonth ?? new Date(startDate),
       nextOffMap,
+      nextOnMap,
       nextStudyWeekends
     )
 
@@ -918,6 +955,7 @@ export default function Dashboard() {
 
   async function saveStudyPlanSilently(
     nextOffDates: string[],
+    nextOnDates: string[],
     nextStudyWeekends = studyWeekends,
     nextRuleSet = ruleSet
   ) {
@@ -935,6 +973,7 @@ export default function Dashboard() {
           examDate,
           studyWeekends: nextStudyWeekends,
           offDates: nextOffDates,
+          onDates: nextOnDates,
           ruleSet: nextRuleSet,
         }),
       })
@@ -1028,6 +1067,9 @@ export default function Dashboard() {
       const existingOffDates = Object.keys(savedOffMap).filter(
         (d) => savedOffMap[d]
       )
+      const existingOnDates = Object.keys(savedOnMap).filter(
+        (d) => savedOnMap[d]
+      )
 
       const res = await fetch("/api/study-plan", {
         method: "POST",
@@ -1040,6 +1082,7 @@ export default function Dashboard() {
           examDate,
           studyWeekends,
           offDates: existingOffDates,
+          onDates: existingOnDates,
           ruleSet,
         }),
       })
@@ -1055,9 +1098,17 @@ export default function Dashboard() {
 
       const totalRules = getPlanTotalRules(data, planData?.totalRules)
       const offMap: Record<string, boolean> = {}
+      const onMap: Record<string, boolean> = {}
+
       if (Array.isArray(data?.offDates)) {
         data.offDates.forEach((d: string) => {
           offMap[d] = true
+        })
+      }
+
+      if (Array.isArray(data?.onDates)) {
+        data.onDates.forEach((d: string) => {
+          onMap[d] = true
         })
       }
 
@@ -1067,6 +1118,7 @@ export default function Dashboard() {
         startDate,
         examDate,
         offMap,
+        onMap,
         nextStudyWeekends
       )
       const safeDailyRules = getSafeDailyRules(
@@ -1080,6 +1132,7 @@ export default function Dashboard() {
         examDate,
         totalRules,
         offMap,
+        onMap,
         nextStudyWeekends
       )
 
@@ -1097,11 +1150,13 @@ export default function Dashboard() {
         examDate,
         viewMonth,
         offMap,
+        onMap,
         nextStudyWeekends
       )
 
       setRuleSet(nextRuleSet)
       setSavedOffMap(offMap)
+      setSavedOnMap(onMap)
       setPlanData(nextPlanData)
       setCalendarMonth(viewMonth)
       setCalendarDays(days)
@@ -1127,32 +1182,62 @@ export default function Dashboard() {
   async function toggleCalendarDay(day: CalendarDay) {
     if (day.isPadding || day.isExamDay) return
 
-    const nextOffMap = { ...savedOffMap }
     const key = formatDateInput(day.date)
-    nextOffMap[key] = !nextOffMap[key]
+    const nextOffMap = { ...savedOffMap }
+    const nextOnMap = { ...savedOnMap }
+
+    const currentlyOff = isDateOff(
+      day.date,
+      savedOffMap,
+      savedOnMap,
+      studyWeekends
+    )
+
+    if (currentlyOff) {
+      delete nextOffMap[key]
+      nextOnMap[key] = true
+    } else {
+      nextOffMap[key] = true
+      delete nextOnMap[key]
+    }
 
     const nextOffDates = Object.keys(nextOffMap).filter((k) => nextOffMap[k])
+    const nextOnDates = Object.keys(nextOnMap).filter((k) => nextOnMap[k])
 
     applyStudyPlanOptimistically({
       nextOffMap,
+      nextOnMap,
       nextStudyWeekends: studyWeekends,
       nextRuleSet: ruleSet,
     })
 
-    await saveStudyPlanSilently(nextOffDates, studyWeekends, ruleSet)
+    await saveStudyPlanSilently(
+      nextOffDates,
+      nextOnDates,
+      studyWeekends,
+      ruleSet
+    )
   }
 
   async function handleStudyWeekendChange(nextStudyWeekends: boolean) {
     const nextOffMap = { ...savedOffMap }
+    const nextOnMap = { ...savedOnMap }
     const nextOffDates = Object.keys(nextOffMap).filter((k) => nextOffMap[k])
+    const nextOnDates = Object.keys(nextOnMap).filter((k) => nextOnMap[k])
 
     applyStudyPlanOptimistically({
       nextOffMap,
+      nextOnMap,
       nextStudyWeekends,
       nextRuleSet: ruleSet,
     })
 
-    await saveStudyPlanSilently(nextOffDates, nextStudyWeekends, ruleSet)
+    await saveStudyPlanSilently(
+      nextOffDates,
+      nextOnDates,
+      nextStudyWeekends,
+      ruleSet
+    )
   }
 
   async function handleRuleSetChange(nextRuleSet: RuleSet) {
@@ -1167,15 +1252,18 @@ export default function Dashboard() {
     }
 
     const nextOffMap = { ...savedOffMap }
+    const nextOnMap = { ...savedOnMap }
     const nextOffDates = Object.keys(nextOffMap).filter((k) => nextOffMap[k])
+    const nextOnDates = Object.keys(nextOnMap).filter((k) => nextOnMap[k])
 
     applyStudyPlanOptimistically({
       nextOffMap,
+      nextOnMap,
       nextStudyWeekends: studyWeekends,
       nextRuleSet,
     })
 
-    await saveStudyPlanSilently(nextOffDates, studyWeekends, nextRuleSet)
+    await saveStudyPlanSilently(nextOffDates, nextOnDates, studyWeekends, nextRuleSet)
     if (currentUserId) {
       await loadStudyPlanOnly(currentUserId)
     }
@@ -1199,6 +1287,9 @@ export default function Dashboard() {
           offDates:
             planData?.offDates ??
             Object.keys(savedOffMap).filter((k) => savedOffMap[k]),
+          onDates:
+            planData?.onDates ??
+            Object.keys(savedOnMap).filter((k) => savedOnMap[k]),
         }),
       })
 
@@ -1239,6 +1330,7 @@ export default function Dashboard() {
       setStudyWeekends(true)
       setRuleSet("core")
       setSavedOffMap({})
+      setSavedOnMap({})
       setHasShownPlanThisSession(false)
       setResetConfirmOpen(false)
       closeStudyPlanModal()
@@ -1262,7 +1354,7 @@ export default function Dashboard() {
 
     setCalendarMonth(next)
     setCalendarDays(
-      buildCalendarDays(startDate, examDate, next, savedOffMap, studyWeekends)
+      buildCalendarDays(startDate, examDate, next, savedOffMap, savedOnMap, studyWeekends)
     )
   }
 
@@ -2343,10 +2435,19 @@ export default function Dashboard() {
                         />
 
                         <InfoRow
-                          label="Days Off Saved"
+                          label="Manual Days Off"
                           value={
                             <span className="font-semibold">
                               {planData?.offDates?.length ?? 0}
+                            </span>
+                          }
+                        />
+
+                        <InfoRow
+                          label="Manual Weekend Study Days"
+                          value={
+                            <span className="font-semibold">
+                              {planData?.onDates?.length ?? 0}
                             </span>
                           }
                         />

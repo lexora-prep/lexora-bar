@@ -75,14 +75,17 @@ function calculateTotalStudyDays({
   examDate,
   studyWeekends,
   offDates,
+  onDates,
 }: {
   startDate: Date
   examDate: Date
   studyWeekends: boolean
   offDates: string[]
+  onDates: string[]
 }) {
   let totalDays = 0
   const offDateSet = new Set(offDates.map((date) => String(date).slice(0, 10)))
+  const onDateSet = new Set(onDates.map((date) => String(date).slice(0, 10)))
 
   const current = new Date(startDate)
   current.setHours(0, 0, 0, 0)
@@ -93,10 +96,11 @@ function calculateTotalStudyDays({
   while (current <= end) {
     const currentDateString = toDateKey(current)
     const weekend = isWeekend(current)
+    const manuallyOn = onDateSet.has(currentDateString)
     const manuallyOff = offDateSet.has(currentDateString)
-    const weekendOff = !studyWeekends && weekend
+    const weekendOff = !studyWeekends && weekend && !manuallyOn
 
-    if (!manuallyOff && !weekendOff) {
+    if (manuallyOn || (!manuallyOff && !weekendOff)) {
       totalDays++
     }
 
@@ -212,6 +216,7 @@ export async function POST(req: Request) {
     const examDate = normalizeDateOnly(body.examDate)
     const studyWeekends = Boolean(body.studyWeekends ?? true)
     const offDates = cleanOffDates(body.offDates)
+    const onDates = cleanOffDates(body.onDates)
     const ruleSet = normalizeRuleSet(body.ruleSet)
 
     if (!userId) {
@@ -241,6 +246,7 @@ export async function POST(req: Request) {
       examDate,
       studyWeekends,
       offDates,
+      onDates,
     })
 
     if (totalDays <= 0) {
@@ -265,6 +271,7 @@ export async function POST(req: Request) {
         dailyRules,
         dailyMBE,
         offDates,
+        onDates,
         ruleSet,
       },
       create: {
@@ -276,6 +283,7 @@ export async function POST(req: Request) {
         dailyRules,
         dailyMBE,
         offDates,
+        onDates,
         ruleSet,
       },
     })
