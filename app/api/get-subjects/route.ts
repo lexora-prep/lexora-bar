@@ -113,6 +113,7 @@ export async function GET(req: Request) {
     const rawRules = await prisma.rules.findMany({
       where: {
         is_active: true,
+        rule_type: null,
         prompt_question: {
           not: null,
         },
@@ -154,7 +155,8 @@ export async function GET(req: Request) {
     for (const [key, rule] of canonicalByKey.entries()) {
       if (!rule.subject_id) continue
 
-      const existing = canonicalKeysBySubject.get(rule.subject_id) ?? new Set<string>()
+      const existing =
+        canonicalKeysBySubject.get(rule.subject_id) ?? new Set<string>()
       existing.add(key)
       canonicalKeysBySubject.set(rule.subject_id, existing)
     }
@@ -166,6 +168,10 @@ export async function GET(req: Request) {
       const progress = await prisma.user_rule_progress.findMany({
         where: {
           user_id: userId,
+          rules: {
+            is_active: true,
+            rule_type: null,
+          },
         },
         select: {
           rule_id: true,

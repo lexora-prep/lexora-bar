@@ -3,9 +3,7 @@ import { NextResponse } from "next/server"
 
 function extractBuzzwords(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item).trim())
-      .filter(Boolean)
+    return value.map((item) => String(item).trim()).filter(Boolean)
   }
 
   if (value && typeof value === "object") {
@@ -124,6 +122,13 @@ export async function POST(req: Request) {
             }
           : {}),
         is_active: true,
+        rule_type: null,
+        prompt_question: {
+          not: null,
+        },
+        rule_text: {
+          not: "",
+        },
       },
       include: {
         subjects: true,
@@ -135,6 +140,13 @@ export async function POST(req: Request) {
       rules = await prisma.rules.findMany({
         where: {
           is_active: true,
+          rule_type: null,
+          prompt_question: {
+            not: null,
+          },
+          rule_text: {
+            not: "",
+          },
         },
         include: {
           subjects: true,
@@ -190,9 +202,7 @@ export async function POST(req: Request) {
     }
 
     const finalLimit =
-      typeof cardCount === "number" && cardCount > 0
-        ? cardCount
-        : limit
+      typeof cardCount === "number" && cardCount > 0 ? cardCount : limit
 
     deck = deck.slice(0, finalLimit)
 

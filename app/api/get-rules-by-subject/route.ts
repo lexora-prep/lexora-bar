@@ -90,6 +90,7 @@ export async function GET(req: Request) {
       where: {
         subject_id: subjectId,
         is_active: true,
+        rule_type: null,
         prompt_question: {
           not: null,
         },

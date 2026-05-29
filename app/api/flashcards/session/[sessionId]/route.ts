@@ -7,18 +7,37 @@ export async function GET(
 ) {
   const { sessionId } = await params
 
-  const rules = await prisma.rules.findMany({
+  const sessionCards = await prisma.flashcard_session_cards.findMany({
+    where: {
+      session_id: sessionId,
+      rules: {
+        is_active: true,
+        rule_type: null,
+      },
+    },
+    orderBy: {
+      position: "asc",
+    },
     take: 20,
     select: {
-      id: true,
-      title: true,
-      rule_text: true,
-      explanation: true,
-      buzzwords: true,
-      cloze_template: true,
-      created_at: true,
+      position: true,
+      rules: {
+        select: {
+          id: true,
+          title: true,
+          rule_text: true,
+          explanation: true,
+          buzzwords: true,
+          cloze_template: true,
+          created_at: true,
+        },
+      },
     },
   })
+
+  const rules = sessionCards
+    .map((card) => card.rules)
+    .filter((rule) => !!rule)
 
   return NextResponse.json({
     success: true,

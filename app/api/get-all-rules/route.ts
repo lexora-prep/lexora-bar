@@ -82,6 +82,7 @@ export async function GET() {
     const rawRules = await prisma.rules.findMany({
       where: {
         is_active: true,
+        rule_type: null,
         prompt_question: {
           not: null,
         },
@@ -167,6 +168,9 @@ export async function GET() {
     return NextResponse.json(normalized)
   } catch (error) {
     console.error("GET ALL RULES ERROR:", error)
-    return NextResponse.json({ error: "Failed to load all rules" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to load all rules" },
+      { status: 500 }
+    )
   }
 }
