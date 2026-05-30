@@ -386,8 +386,13 @@ export default function Dashboard() {
         setHasShownPlanThisSession(true)
 
         if (start && exam) {
-          const month = new Date(start)
-          const viewMonth = new Date(month.getFullYear(), month.getMonth(), 1)
+          const preservedMonth = calendarMonth ?? new Date(start)
+          const viewMonth = new Date(
+            preservedMonth.getFullYear(),
+            preservedMonth.getMonth(),
+            1
+          )
+
           setCalendarMonth(viewMonth)
           setCalendarDays(
             buildCalendarDays(start, exam, viewMonth, offMap, onMap, nextStudyWeekends)
@@ -502,8 +507,13 @@ export default function Dashboard() {
       setHasShownPlanThisSession(true)
 
       if (start && exam) {
-        const month = new Date(start)
-        const viewMonth = new Date(month.getFullYear(), month.getMonth(), 1)
+        const preservedMonth = calendarMonth ?? new Date(start)
+        const viewMonth = new Date(
+          preservedMonth.getFullYear(),
+          preservedMonth.getMonth(),
+          1
+        )
+
         setCalendarMonth(viewMonth)
         setCalendarDays(
           buildCalendarDays(start, exam, viewMonth, offMap, onMap, nextStudyWeekends)
@@ -927,8 +937,10 @@ export default function Dashboard() {
     )
 
     const nextOffDates = Object.keys(nextOffMap).filter((k) => nextOffMap[k])
+    const nextOnDates = Object.keys(nextOnMap).filter((k) => nextOnMap[k])
 
     setSavedOffMap(nextOffMap)
+    setSavedOnMap(nextOnMap)
     setStudyWeekends(nextStudyWeekends)
     setRuleSet(nextRuleSet)
     setCalendarDays(nextCalendarDays)
@@ -941,6 +953,7 @@ export default function Dashboard() {
       studyWeekends: nextStudyWeekends,
       ruleSet: nextRuleSet,
       offDates: nextOffDates,
+      onDates: nextOnDates,
       rulesByDate: nextRulesByDate,
     }))
 
@@ -981,10 +994,6 @@ export default function Dashboard() {
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         console.error("AUTO SAVE STUDY PLAN ERROR:", data)
-      } else if (currentUserId) {
-        await queryClient.invalidateQueries({
-          queryKey: ["dashboard-batch", currentUserId],
-        })
       }
     } catch (err) {
       console.error("AUTO SAVE STUDY PLAN ERROR:", err)
