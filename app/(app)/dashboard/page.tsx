@@ -10,6 +10,9 @@ import {
   ChevronDown,
   CalendarDays,
   Sparkles,
+  Flame,
+  BookOpen,
+  CheckCircle2,
   LineChart,
   BarChart3,
   Crown,
@@ -21,6 +24,225 @@ import {
 import { createClient } from "@/utils/supabase/client"
 
 type RuleSet = "core"
+
+type ExamRegime =
+  | "UBE_CURRENT"
+  | "NEXTGEN"
+  | "CALIFORNIA_CURRENT"
+  | "FLORIDA_CURRENT"
+  | "FLORIDA_NEXTGEN"
+  | "STATE_SPECIFIC"
+  | "TERRITORY_SPECIAL"
+  | "LOCAL_COMPONENT"
+
+type JurisdictionGroup =
+  | "UBE / Uniform Current"
+  | "California"
+  | "Florida"
+  | "State-Specific / Non-UBE"
+  | "Territories / Special"
+  | "Local Component"
+
+type JurisdictionOption = {
+  code: string
+  name: string
+  group: JurisdictionGroup
+  nextGenStart?: string
+  needsVerification?: boolean
+  localComponent?: boolean
+}
+
+type SubjectPlanItem = {
+  name: string
+  weight: number
+  system: ExamRegime
+}
+
+const UBE_CURRENT_SUBJECTS: SubjectPlanItem[] = [
+  { name: "Civil Procedure", weight: 8, system: "UBE_CURRENT" },
+  { name: "Constitutional Law", weight: 8, system: "UBE_CURRENT" },
+  { name: "Contracts", weight: 8, system: "UBE_CURRENT" },
+  { name: "Criminal Law", weight: 6, system: "UBE_CURRENT" },
+  { name: "Criminal Procedure", weight: 6, system: "UBE_CURRENT" },
+  { name: "Evidence", weight: 8, system: "UBE_CURRENT" },
+  { name: "Real Property", weight: 8, system: "UBE_CURRENT" },
+  { name: "Torts", weight: 8, system: "UBE_CURRENT" },
+  { name: "Business Associations", weight: 6, system: "UBE_CURRENT" },
+  { name: "Agency", weight: 4, system: "UBE_CURRENT" },
+  { name: "Partnership", weight: 4, system: "UBE_CURRENT" },
+  { name: "Corporations", weight: 4, system: "UBE_CURRENT" },
+  { name: "Limited Liability Companies", weight: 3, system: "UBE_CURRENT" },
+  { name: "Conflict of Laws", weight: 3, system: "UBE_CURRENT" },
+  { name: "Family Law", weight: 5, system: "UBE_CURRENT" },
+  { name: "Secured Transactions", weight: 5, system: "UBE_CURRENT" },
+  { name: "Trusts", weight: 4, system: "UBE_CURRENT" },
+  { name: "Wills and Estates", weight: 4, system: "UBE_CURRENT" },
+  { name: "Performance Test Templates", weight: 3, system: "UBE_CURRENT" },
+]
+
+const NEXTGEN_SUBJECTS: SubjectPlanItem[] = [
+  { name: "Civil Procedure", weight: 10, system: "NEXTGEN" },
+  { name: "Contract Law", weight: 10, system: "NEXTGEN" },
+  { name: "Evidence", weight: 10, system: "NEXTGEN" },
+  { name: "Torts", weight: 10, system: "NEXTGEN" },
+  { name: "Business Associations", weight: 9, system: "NEXTGEN" },
+  { name: "Constitutional Law", weight: 9, system: "NEXTGEN" },
+  { name: "Criminal Law", weight: 8, system: "NEXTGEN" },
+  { name: "Criminal Procedure", weight: 8, system: "NEXTGEN" },
+  { name: "Real Property", weight: 8, system: "NEXTGEN" },
+  { name: "Family Law", weight: 7, system: "NEXTGEN" },
+  { name: "Legal Research", weight: 5, system: "NEXTGEN" },
+  { name: "Legal Writing", weight: 5, system: "NEXTGEN" },
+  { name: "Issue Spotting and Analysis", weight: 5, system: "NEXTGEN" },
+  { name: "Investigation and Evaluation", weight: 4, system: "NEXTGEN" },
+  { name: "Client Counseling and Advising", weight: 4, system: "NEXTGEN" },
+  { name: "Negotiation and Dispute Resolution", weight: 3, system: "NEXTGEN" },
+  { name: "Client Relationship and Management", weight: 3, system: "NEXTGEN" },
+  { name: "Performance Task Templates", weight: 4, system: "NEXTGEN" },
+]
+
+const CALIFORNIA_SUBJECTS: SubjectPlanItem[] = [
+  { name: "Business Associations", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "Civil Procedure", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "California Civil Procedure", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "Community Property", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "Constitutional Law", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "Contracts", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "Criminal Law", weight: 6, system: "CALIFORNIA_CURRENT" },
+  { name: "Criminal Procedure", weight: 6, system: "CALIFORNIA_CURRENT" },
+  { name: "Evidence", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "California Evidence", weight: 6, system: "CALIFORNIA_CURRENT" },
+  { name: "Professional Responsibility", weight: 8, system: "CALIFORNIA_CURRENT" },
+  { name: "California Professional Responsibility", weight: 6, system: "CALIFORNIA_CURRENT" },
+  { name: "Real Property", weight: 6, system: "CALIFORNIA_CURRENT" },
+  { name: "Remedies", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "Torts", weight: 7, system: "CALIFORNIA_CURRENT" },
+  { name: "Trusts", weight: 5, system: "CALIFORNIA_CURRENT" },
+  { name: "Wills and Succession", weight: 5, system: "CALIFORNIA_CURRENT" },
+  { name: "California Performance Test Templates", weight: 5, system: "CALIFORNIA_CURRENT" },
+]
+
+const FLORIDA_CURRENT_SUBJECTS: SubjectPlanItem[] = [
+  { name: "Florida Constitutional Law", weight: 6, system: "FLORIDA_CURRENT" },
+  { name: "Federal Constitutional Law", weight: 6, system: "FLORIDA_CURRENT" },
+  { name: "Contracts", weight: 6, system: "FLORIDA_CURRENT" },
+  { name: "Criminal Law", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Criminal Procedure", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Florida Criminal Procedure", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Evidence", weight: 6, system: "FLORIDA_CURRENT" },
+  { name: "Florida Evidence", weight: 6, system: "FLORIDA_CURRENT" },
+  { name: "Real Property", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Florida Real Property", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Torts", weight: 6, system: "FLORIDA_CURRENT" },
+  { name: "Florida Civil Procedure", weight: 7, system: "FLORIDA_CURRENT" },
+  { name: "Florida Rules of Judicial Administration", weight: 4, system: "FLORIDA_CURRENT" },
+  { name: "Business Entities", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Family Law", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Wills", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Trusts", weight: 5, system: "FLORIDA_CURRENT" },
+  { name: "Administration of Estates", weight: 4, system: "FLORIDA_CURRENT" },
+  { name: "UCC Article 3", weight: 4, system: "FLORIDA_CURRENT" },
+  { name: "UCC Article 9", weight: 4, system: "FLORIDA_CURRENT" },
+  { name: "Rules Regulating The Florida Bar", weight: 4, system: "FLORIDA_CURRENT" },
+  { name: "Professionalism", weight: 4, system: "FLORIDA_CURRENT" },
+]
+
+const STATE_SPECIFIC_SUBJECTS: SubjectPlanItem[] = [
+  { name: "Civil Procedure", weight: 7, system: "STATE_SPECIFIC" },
+  { name: "Constitutional Law", weight: 7, system: "STATE_SPECIFIC" },
+  { name: "Contracts", weight: 7, system: "STATE_SPECIFIC" },
+  { name: "Criminal Law", weight: 6, system: "STATE_SPECIFIC" },
+  { name: "Criminal Procedure", weight: 6, system: "STATE_SPECIFIC" },
+  { name: "Evidence", weight: 7, system: "STATE_SPECIFIC" },
+  { name: "Real Property", weight: 7, system: "STATE_SPECIFIC" },
+  { name: "Torts", weight: 7, system: "STATE_SPECIFIC" },
+  { name: "State Civil Procedure", weight: 5, system: "STATE_SPECIFIC" },
+  { name: "State Criminal Procedure", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Evidence Distinctions", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Constitutional Law", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Real Property Distinctions", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Wills", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Trusts", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Estates", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Family Law", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Business Entities", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Professional Responsibility", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Remedies", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "State Commercial Law / UCC", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "Local Bar Rules", weight: 3, system: "STATE_SPECIFIC" },
+  { name: "Performance Test Templates", weight: 3, system: "STATE_SPECIFIC" },
+]
+
+const LOCAL_COMPONENT_SUBJECTS: SubjectPlanItem[] = [
+  { name: "Local Law", weight: 8, system: "LOCAL_COMPONENT" },
+  { name: "Local Civil Practice", weight: 8, system: "LOCAL_COMPONENT" },
+  { name: "Local Criminal Procedure", weight: 7, system: "LOCAL_COMPONENT" },
+  { name: "Local Evidence Distinctions", weight: 7, system: "LOCAL_COMPONENT" },
+  { name: "Local Professional Responsibility", weight: 7, system: "LOCAL_COMPONENT" },
+  { name: "Local Real Property Rules", weight: 6, system: "LOCAL_COMPONENT" },
+  { name: "Local Family Law", weight: 6, system: "LOCAL_COMPONENT" },
+  { name: "Local Trusts and Estates", weight: 6, system: "LOCAL_COMPONENT" },
+  { name: "Local Administrative / Admission Rules", weight: 5, system: "LOCAL_COMPONENT" },
+]
+
+const JURISDICTION_OPTIONS: JurisdictionOption[] = [
+  { code: "AL", name: "Alabama", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "AK", name: "Alaska", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "AZ", name: "Arizona", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "AR", name: "Arkansas", group: "UBE / Uniform Current" },
+  { code: "CO", name: "Colorado", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "CT", name: "Connecticut", group: "UBE / Uniform Current", nextGenStart: "2026-07-01" },
+  { code: "DC", name: "District of Columbia", group: "UBE / Uniform Current", nextGenStart: "2028-02-01" },
+  { code: "GU", name: "Guam", group: "Territories / Special", nextGenStart: "2026-07-01" },
+  { code: "ID", name: "Idaho", group: "UBE / Uniform Current", nextGenStart: "2026-07-01" },
+  { code: "IL", name: "Illinois", group: "UBE / Uniform Current", nextGenStart: "2028-02-01" },
+  { code: "IN", name: "Indiana", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "IA", name: "Iowa", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "KS", name: "Kansas", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "KY", name: "Kentucky", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "ME", name: "Maine", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "MD", name: "Maryland", group: "UBE / Uniform Current", nextGenStart: "2026-07-01" },
+  { code: "MA", name: "Massachusetts", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "MI", name: "Michigan", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "MN", name: "Minnesota", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "MO", name: "Missouri", group: "UBE / Uniform Current", nextGenStart: "2026-07-01" },
+  { code: "MT", name: "Montana", group: "UBE / Uniform Current" },
+  { code: "NE", name: "Nebraska", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "NH", name: "New Hampshire", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "NJ", name: "New Jersey", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "NM", name: "New Mexico", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "NY", name: "New York", group: "UBE / Uniform Current", nextGenStart: "2028-07-01", localComponent: true },
+  { code: "NC", name: "North Carolina", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "ND", name: "North Dakota", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "MP", name: "Northern Mariana Islands", group: "Territories / Special", nextGenStart: "2026-07-01" },
+  { code: "OH", name: "Ohio", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "OK", name: "Oklahoma", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "OR", name: "Oregon", group: "UBE / Uniform Current", nextGenStart: "2026-07-01" },
+  { code: "PW", name: "Palau", group: "Territories / Special", nextGenStart: "2026-07-01" },
+  { code: "PA", name: "Pennsylvania", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "RI", name: "Rhode Island", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "SC", name: "South Carolina", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "TN", name: "Tennessee", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "TX", name: "Texas", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "VI", name: "U.S. Virgin Islands", group: "Territories / Special", nextGenStart: "2026-07-01" },
+  { code: "UT", name: "Utah", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "VT", name: "Vermont", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "WA", name: "Washington", group: "UBE / Uniform Current", nextGenStart: "2026-07-01" },
+  { code: "WV", name: "West Virginia", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "WI", name: "Wisconsin", group: "UBE / Uniform Current", nextGenStart: "2028-07-01" },
+  { code: "WY", name: "Wyoming", group: "UBE / Uniform Current", nextGenStart: "2027-07-01" },
+  { code: "CA", name: "California", group: "California", needsVerification: true },
+  { code: "FL", name: "Florida", group: "Florida", nextGenStart: "2028-07-01" },
+  { code: "DE", name: "Delaware", group: "State-Specific / Non-UBE", nextGenStart: "2028-02-01" },
+  { code: "GA", name: "Georgia", group: "State-Specific / Non-UBE", nextGenStart: "2028-07-01" },
+  { code: "HI", name: "Hawaii", group: "State-Specific / Non-UBE", nextGenStart: "2028-07-01" },
+  { code: "LA", name: "Louisiana", group: "State-Specific / Non-UBE", needsVerification: true },
+  { code: "MS", name: "Mississippi", group: "State-Specific / Non-UBE", needsVerification: true },
+  { code: "NV", name: "Nevada", group: "State-Specific / Non-UBE", needsVerification: true },
+  { code: "SD", name: "South Dakota", group: "State-Specific / Non-UBE", nextGenStart: "2027-07-01" },
+  { code: "VA", name: "Virginia", group: "State-Specific / Non-UBE", nextGenStart: "2028-07-01" },
+  { code: "PR", name: "Puerto Rico", group: "Territories / Special", needsVerification: true },
+]
 
 const MBE_SUBJECTS = [
   "Contracts",
@@ -144,6 +366,8 @@ export default function Dashboard() {
   const [examDate, setExamDate] = useState("")
   const [studyWeekends, setStudyWeekends] = useState(true)
   const [ruleSet, setRuleSet] = useState<RuleSet>("core")
+  const [selectedStudyJurisdiction, setSelectedStudyJurisdiction] =
+    useState("UBE")
   const [planData, setPlanData] = useState<any>(null)
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([])
   const [calendarMonth, setCalendarMonth] = useState<Date | null>(null)
@@ -285,6 +509,11 @@ export default function Dashboard() {
           const current = String(prev || "").trim()
           if (current === selectedDashboardState) return prev
           return selectedDashboardState
+        })
+
+        setSelectedStudyJurisdiction((prev) => {
+          if (prev && prev !== "UBE") return prev
+          return normalizeJurisdictionCode(selectedDashboardState)
         })
       }
 
@@ -710,6 +939,162 @@ export default function Dashboard() {
     }
   })
 
+  function normalizeJurisdictionCode(value?: string | null) {
+    const clean = String(value ?? "").trim()
+
+    if (!clean) return "UBE"
+
+    if (clean.toUpperCase() === "UBE") return "UBE"
+
+    const direct = JURISDICTION_OPTIONS.find(
+      (j) => j.code.toLowerCase() === clean.toLowerCase()
+    )
+
+    if (direct) return direct.code
+
+    const byName = JURISDICTION_OPTIONS.find(
+      (j) => j.name.toLowerCase() === clean.toLowerCase()
+    )
+
+    return byName?.code ?? "UBE"
+  }
+
+  function getSelectedJurisdictionOption(code: string) {
+    const normalized = normalizeJurisdictionCode(code)
+    return (
+      JURISDICTION_OPTIONS.find((j) => j.code === normalized) ??
+      JURISDICTION_OPTIONS.find((j) => j.code === "NY") ??
+      null
+    )
+  }
+
+  function getEffectiveExamRegime(
+    code: string,
+    selectedExamDate?: string
+  ): ExamRegime {
+    const normalized = normalizeJurisdictionCode(code)
+
+    if (normalized === "UBE") return "UBE_CURRENT"
+
+    const option = getSelectedJurisdictionOption(normalized)
+
+    if (!option) return "UBE_CURRENT"
+
+    if (option.code === "CA") return "CALIFORNIA_CURRENT"
+
+    const examDateValue = selectedExamDate ? new Date(selectedExamDate) : null
+    const nextGenDateValue = option.nextGenStart
+      ? new Date(option.nextGenStart)
+      : null
+
+    const hasNextGenStarted =
+      examDateValue &&
+      nextGenDateValue &&
+      !isNaN(examDateValue.getTime()) &&
+      !isNaN(nextGenDateValue.getTime()) &&
+      examDateValue >= nextGenDateValue
+
+    if (option.code === "FL") {
+      return hasNextGenStarted ? "FLORIDA_NEXTGEN" : "FLORIDA_CURRENT"
+    }
+
+    if (hasNextGenStarted) return "NEXTGEN"
+
+    if (option.group === "Territories / Special") return "TERRITORY_SPECIAL"
+    if (option.group === "State-Specific / Non-UBE") return "STATE_SPECIFIC"
+    if (option.group === "Local Component") return "LOCAL_COMPONENT"
+
+    return "UBE_CURRENT"
+  }
+
+  function getRegimeLabel(regime: ExamRegime) {
+    if (regime === "UBE_CURRENT") return "UBE / Uniform Current"
+    if (regime === "NEXTGEN") return "NextGen"
+    if (regime === "CALIFORNIA_CURRENT") return "California"
+    if (regime === "FLORIDA_CURRENT") return "Florida Current"
+    if (regime === "FLORIDA_NEXTGEN") return "NextGen + Florida Component"
+    if (regime === "STATE_SPECIFIC") return "State-Specific"
+    if (regime === "TERRITORY_SPECIAL") return "Territory / Special"
+    return "Local Component"
+  }
+
+  function getJurisdictionSubjects(
+    code: string,
+    selectedExamDate?: string
+  ): SubjectPlanItem[] {
+    const regime = getEffectiveExamRegime(code, selectedExamDate)
+
+    if (regime === "CALIFORNIA_CURRENT") return CALIFORNIA_SUBJECTS
+    if (regime === "FLORIDA_CURRENT") return FLORIDA_CURRENT_SUBJECTS
+    if (regime === "FLORIDA_NEXTGEN") {
+      return [
+        ...NEXTGEN_SUBJECTS,
+        { name: "Florida Civil Procedure", weight: 6, system: "FLORIDA_NEXTGEN" },
+        { name: "Florida Evidence", weight: 5, system: "FLORIDA_NEXTGEN" },
+        { name: "Rules Regulating The Florida Bar", weight: 4, system: "FLORIDA_NEXTGEN" },
+        { name: "Professionalism", weight: 4, system: "FLORIDA_NEXTGEN" },
+      ]
+    }
+    if (regime === "NEXTGEN") return NEXTGEN_SUBJECTS
+    if (regime === "STATE_SPECIFIC") return STATE_SPECIFIC_SUBJECTS
+    if (regime === "TERRITORY_SPECIAL") return UBE_CURRENT_SUBJECTS
+    if (regime === "LOCAL_COMPONENT") return LOCAL_COMPONENT_SUBJECTS
+
+    return UBE_CURRENT_SUBJECTS
+  }
+
+  function getSubjectProgressPercent(subjectName: string) {
+    const normalized = subjectName.toLowerCase()
+    const direct = subjectRows.find(
+      (row) => row.name.toLowerCase() === normalized
+    )
+
+    if (direct && direct.total > 0) {
+      return Math.round((direct.completed / Math.max(direct.total, 1)) * 100)
+    }
+
+    const loose = subjectRows.find((row) => {
+      const name = row.name.toLowerCase()
+      return normalized.includes(name) || name.includes(normalized)
+    })
+
+    if (loose && loose.total > 0) {
+      return Math.round((loose.completed / Math.max(loose.total, 1)) * 100)
+    }
+
+    return 0
+  }
+
+  function getStudyPlanDayStats() {
+    const allDates = getPlanDateRange(startDate, examDate)
+    const today = normalizeLocalDate(new Date())
+
+    const totalStudyDays = allDates.filter(
+      (d) => !isDateOff(d, savedOffMap, savedOnMap, studyWeekends)
+    ).length
+
+    const completedStudyDays = allDates.filter(
+      (d) =>
+        d < today &&
+        !isDateOff(d, savedOffMap, savedOnMap, studyWeekends)
+    ).length
+
+    return {
+      totalStudyDays,
+      completedStudyDays,
+    }
+  }
+
+  function getDaysUntilExam() {
+    if (!examDate) return 0
+
+    const today = normalizeLocalDate(new Date())
+    const exam = normalizeLocalDate(new Date(examDate))
+    const diff = exam.getTime() - today.getTime()
+
+    return Math.max(0, Math.ceil(diff / 86400000))
+  }
+
   function normalizeLocalDate(date: Date) {
     const d = new Date(date)
     d.setHours(0, 0, 0, 0)
@@ -793,15 +1178,15 @@ export default function Dashboard() {
     const allDates = getPlanDateRange(start, end)
     if (allDates.length === 0) return {}
 
+    const today = normalizeLocalDate(new Date())
     const preserveBefore = preserveBeforeDate
       ? normalizeLocalDate(new Date(preserveBeforeDate))
-      : normalizeLocalDate(new Date())
+      : today
 
     const safeTotalRules =
       Number.isFinite(totalRules) && totalRules > 0 ? Math.floor(totalRules) : 0
 
     const ruleMap: Record<string, number> = {}
-
     let lockedRules = 0
 
     for (const d of allDates) {
@@ -819,23 +1204,21 @@ export default function Dashboard() {
       }
     }
 
-    const remainingRules = Math.max(0, safeTotalRules - lockedRules)
     const futureDates = allDates.filter((d) => d >= preserveBefore)
     const futureActiveDates = futureDates.filter(
       (d) => !isDateOff(d, offMap, onMap, shouldStudyWeekends)
     )
 
+    const remainingRules = Math.max(0, safeTotalRules - lockedRules)
+
     if (futureActiveDates.length === 0) {
       for (const d of futureDates) {
-        const key = formatDateInput(d)
-        ruleMap[key] = 0
+        ruleMap[formatDateInput(d)] = 0
       }
 
       for (const d of allDates) {
         const key = formatDateInput(d)
-        if (!(key in ruleMap)) {
-          ruleMap[key] = 0
-        }
+        if (!(key in ruleMap)) ruleMap[key] = 0
       }
 
       return ruleMap
@@ -855,7 +1238,6 @@ export default function Dashboard() {
 
     for (const d of futureDates) {
       const key = formatDateInput(d)
-
       if (!(key in ruleMap)) {
         ruleMap[key] = 0
       }
@@ -863,7 +1245,6 @@ export default function Dashboard() {
 
     for (const d of allDates) {
       const key = formatDateInput(d)
-
       if (!(key in ruleMap)) {
         ruleMap[key] = 0
       }
@@ -1295,7 +1676,7 @@ export default function Dashboard() {
       nextOnMap,
       nextStudyWeekends: studyWeekends,
       nextRuleSet: ruleSet,
-      preserveBeforeDate: key,
+      preserveBeforeDate: todayKey,
     })
 
     await saveStudyPlanSilently(
@@ -1587,6 +1968,42 @@ export default function Dashboard() {
       ? "Loading..."
       : `Top ${rankingPercent}% Nationwide`
 
+  const selectedJurisdictionOption =
+    getSelectedJurisdictionOption(selectedStudyJurisdiction)
+
+  const effectiveExamRegime = getEffectiveExamRegime(
+    selectedStudyJurisdiction,
+    examDate
+  )
+
+  const effectiveSubjectPlan = getJurisdictionSubjects(
+    selectedStudyJurisdiction,
+    examDate
+  )
+
+  const visibleSubjectPlan = effectiveSubjectPlan.slice(0, 9)
+
+  const studyDayStats = getStudyPlanDayStats()
+  const rulesMasteredCount = Math.max(0, Number(dashboard?.totalRulesMastered ?? weeklyRulesDone ?? 0))
+  const totalPlanRules = Math.max(1, getPlanTotalRules(planData) || getSubjectRuleTotal(bllSubjects) || 1)
+  const rulesMasteredPercent = Math.max(
+    0,
+    Math.min(100, Math.round((rulesMasteredCount / totalPlanRules) * 100))
+  )
+  const studyDaysPercent = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        (studyDayStats.completedStudyDays /
+          Math.max(studyDayStats.totalStudyDays, 1)) *
+          100
+      )
+    )
+  )
+  const daysUntilExam = getDaysUntilExam()
+  const weeksUntilExam = Math.max(0, daysUntilExam / 7).toFixed(1)
+
   const canSavePlan =
     !!planData &&
     !!startDate &&
@@ -1725,6 +2142,15 @@ export default function Dashboard() {
             }
             100% {
               background-position: -200% center;
+            }
+          }
+
+          @keyframes progressShimmer {
+            0% {
+              transform: translateX(-120%);
+            }
+            100% {
+              transform: translateX(220%);
             }
           }
         `}</style>
@@ -2271,8 +2697,8 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_300px]">
-                <div className="min-h-0 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/60 p-4">
+              <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 bg-white lg:grid-cols-[1fr_320px]">
+                <div className="min-h-0 overflow-hidden border-r border-[#D6E4FF] bg-white p-6">
                   <div className="mb-3 flex items-center justify-between">
                     <button
                       onClick={() => changeMonth("prev")}
@@ -2340,7 +2766,7 @@ export default function Dashboard() {
                               onClick={() => toggleCalendarDay(d)}
                               disabled={d.isPadding}
                               className={[
-                                "min-h-[74px] rounded-[20px] px-2 py-2 text-left transition-all duration-200 shadow-sm",
+                                "min-h-[74px] rounded-[14px] px-2 py-2 text-left transition-all duration-200 shadow-sm hover:-translate-y-0.5",
                                 d.isPadding
                                   ? "cursor-default border border-slate-100 bg-slate-50 text-slate-300"
                                   : "",
@@ -2348,13 +2774,13 @@ export default function Dashboard() {
                                   ? "border border-amber-300 bg-amber-50"
                                   : "",
                                 d.isOff
-                                  ? "border border-rose-300 bg-rose-50"
+                                  ? "border border-dashed border-[#C5D5FF] bg-white"
                                   : "",
                                 !d.isPadding && !d.isOff && !d.isExamDay
-                                  ? "border border-slate-200 bg-white hover:bg-slate-50"
+                                  ? "border border-[#D6E4FF] bg-[#F7FAFF] hover:border-[#7C5CFC] hover:bg-[#F0EDFF]"
                                   : "",
                                 isToday && !d.isPadding
-                                  ? "ring-2 ring-emerald-500"
+                                  ? "ring-2 ring-[#7C5CFC] bg-[#F0EDFF]"
                                   : "",
                                 isFinished
                                   ? "border border-emerald-300 bg-emerald-50"
@@ -2423,19 +2849,45 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                <div className="min-h-0 space-y-3 overflow-y-auto">
+                <div className="min-h-0 space-y-3 overflow-y-auto bg-[#F0F5FF] p-4">
                   <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 shadow-sm">
                     <div>
                       <div className="text-[14px] font-semibold">
-                        Your Remaining Study Schedule
+                        {selectedJurisdictionOption?.name ?? "UBE"} Study Schedule
                       </div>
                       <div className="mt-1 text-[11px] leading-4 text-slate-500">
-                        Workload updates automatically when you mark a day off.
+                        Lexora automatically detects the exam system from the jurisdiction and exam date.
                       </div>
                     </div>
 
                     <div className="mt-4 space-y-3">
                       <div className="grid gap-3">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-medium text-slate-500">
+                            Jurisdiction
+                          </label>
+                          <select
+                            value={selectedStudyJurisdiction}
+                            onChange={(e) =>
+                              setSelectedStudyJurisdiction(e.target.value)
+                            }
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-violet-400"
+                          >
+                            <option value="UBE">UBE / Uniform Current</option>
+                            {JURISDICTION_OPTIONS.map((j) => (
+                              <option key={j.code} value={j.code}>
+                                {j.name} — {j.group}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="mt-1 text-[10px] leading-4 text-slate-500">
+                            Current system: {getRegimeLabel(effectiveExamRegime)}
+                            {selectedJurisdictionOption?.nextGenStart
+                              ? ` • NextGen from ${selectedJurisdictionOption.nextGenStart}`
+                              : ""}
+                          </div>
+                        </div>
+
                         <div>
                           <label className="mb-1 block text-[11px] font-medium text-slate-500">
                             Start Date
@@ -2554,6 +3006,114 @@ export default function Dashboard() {
                             </span>
                           }
                         />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#D6E4FF] bg-[#F0F5FF] p-4 shadow-sm">
+                    <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7F9CC0]">
+                      Exam Countdown
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[5px] border-[#D6E4FF] bg-white shadow-sm">
+                        <div className="absolute inset-[-5px] rounded-full border-[5px] border-transparent border-t-[#7C5CFC]" />
+                        <div className="text-center">
+                          <div className="font-mono text-[18px] font-semibold text-[#3C3489]">
+                            {daysUntilExam}
+                          </div>
+                          <div className="text-[8px] font-semibold uppercase tracking-[0.08em] text-[#7F77DD]">
+                            days
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-[13px] font-semibold text-slate-900">
+                          {getRegimeLabel(effectiveExamRegime)}
+                        </div>
+                        <div className="mt-1 font-mono text-[11px] text-[#7F9CC0]">
+                          {examDate ? formatShortDate(new Date(examDate)) : "No exam date"}
+                        </div>
+                        <div className="mt-2 inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">
+                          <Flame size={11} />
+                          {weeksUntilExam} weeks left
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#D6E4FF] bg-[#F0F5FF] p-4 shadow-sm">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7F9CC0]">
+                        Subject Progress
+                      </div>
+                      <div className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-[#3C3489]">
+                        {effectiveSubjectPlan.length} subjects
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {visibleSubjectPlan.map((subject) => {
+                        const pct = getSubjectProgressPercent(subject.name)
+
+                        return (
+                          <div key={`${subject.system}-${subject.name}`} className="flex items-center gap-2">
+                            <span className="h-2 w-2 shrink-0 rounded-full bg-[#7C5CFC]" />
+                            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">
+                              {subject.name}
+                            </span>
+                            <div className="h-[4px] w-16 overflow-hidden rounded-full bg-[#D6E4FF]">
+                              <div
+                                className="h-full rounded-full bg-[#7C5CFC]"
+                                style={{
+                                  width: `${Math.max(4, Math.min(pct, 100))}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="w-8 text-right font-mono text-[10px] text-[#7F9CC0]">
+                              {pct}%
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-[#D6E4FF] bg-white p-4 shadow-sm">
+                    <div className="space-y-4">
+                      <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                            Rules mastered
+                          </span>
+                          <span className="font-mono text-[11px] font-semibold text-[#7C5CFC]">
+                            {rulesMasteredCount} / {totalPlanRules}
+                          </span>
+                        </div>
+                        <div className="h-[7px] overflow-hidden rounded-full bg-[#E8EFFF]">
+                          <div
+                            className="relative h-full overflow-hidden rounded-full bg-[#7C5CFC] shadow-[0_0_14px_rgba(124,92,252,0.55)] transition-all duration-1000 ease-out before:absolute before:inset-0 before:translate-x-[-100%] before:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.65),transparent)] before:animate-[progressShimmer_2s_ease-in-out_infinite]"
+                            style={{ width: `${rulesMasteredPercent}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                            Study days
+                          </span>
+                          <span className="font-mono text-[11px] font-semibold text-amber-700">
+                            {studyDayStats.completedStudyDays} / {studyDayStats.totalStudyDays}
+                          </span>
+                        </div>
+                        <div className="h-[7px] overflow-hidden rounded-full bg-[#E8EFFF]">
+                          <div
+                            className="relative h-full overflow-hidden rounded-full bg-[#EF9F27] shadow-[0_0_14px_rgba(239,159,39,0.5)] transition-all duration-1000 ease-out before:absolute before:inset-0 before:translate-x-[-100%] before:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.65),transparent)] before:animate-[progressShimmer_2s_ease-in-out_infinite]"
+                            style={{ width: `${studyDaysPercent}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
