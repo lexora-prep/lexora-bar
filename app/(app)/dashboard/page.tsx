@@ -20,10 +20,13 @@ import {
   Zap,
   AlertTriangle,
   Gavel,
+  CalendarOff,
+  CalendarClock,
+  Layers,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
-type RuleSet = "core"
+type RuleSet = "emergency" | "priority" | "core" | "full"
 
 type ExamRegime =
   | "UBE_CURRENT"
@@ -56,6 +59,71 @@ type SubjectPlanItem = {
   name: string
   weight: number
   system: ExamRegime
+}
+
+type CalendarDay = {
+  date: Date
+  isOff: boolean
+  isPadding?: boolean
+  isExamDay?: boolean
+}
+
+type AnalyticsRange = "7d" | "14d" | "30d" | "custom"
+type AnalyticsMode = "BLL" | "MBE"
+
+type SubjectAnalyticsRow = {
+  name: string
+  accuracy: number
+  completed: number
+  total: number
+  level: string
+  progressWidth: number
+}
+
+type TrendPoint = {
+  date: string
+  mbe: number
+  bll: number
+}
+
+const RULE_PACKAGE_META: Record<
+  RuleSet,
+  {
+    label: string
+    shortLabel: string
+    description: string
+    multiplier: number
+    minDays: number
+  }
+> = {
+  emergency: {
+    label: "Emergency Pack",
+    shortLabel: "Emergency",
+    description: "Compressed high-yield plan for very short timelines.",
+    multiplier: 0.45,
+    minDays: 0,
+  },
+  priority: {
+    label: "Priority Rules",
+    shortLabel: "Priority",
+    description: "Focused plan for short timelines.",
+    multiplier: 0.7,
+    minDays: 21,
+  },
+  core: {
+    label: "Core Rules Only",
+    shortLabel: "Core",
+    description: "Balanced core black-letter-law memorization plan.",
+    multiplier: 1,
+    minDays: 45,
+  },
+  full: {
+    label: "Full Rule Bank",
+    shortLabel: "Full",
+    description: "Broader plan for users with enough time.",
+    multiplier: 1.25,
+    minDays: 90,
+  },
 }
 
 const UBE_CURRENT_SUBJECTS: SubjectPlanItem[] = [
@@ -254,86 +322,19 @@ const MBE_SUBJECTS = [
   "Constitutional Law",
 ]
 
-const STATES = [
-  { code: "AL", name: "Alabama" },
-  { code: "AK", name: "Alaska" },
-  { code: "AZ", name: "Arizona" },
-  { code: "AR", name: "Arkansas" },
-  { code: "CA", name: "California" },
-  { code: "CO", name: "Colorado" },
-  { code: "CT", name: "Connecticut" },
-  { code: "DE", name: "Delaware" },
-  { code: "DC", name: "District of Columbia" },
-  { code: "FL", name: "Florida" },
-  { code: "GA", name: "Georgia" },
-  { code: "HI", name: "Hawaii" },
-  { code: "ID", name: "Idaho" },
-  { code: "IL", name: "Illinois" },
-  { code: "IN", name: "Indiana" },
-  { code: "IA", name: "Iowa" },
-  { code: "KS", name: "Kansas" },
-  { code: "KY", name: "Kentucky" },
-  { code: "LA", name: "Louisiana" },
-  { code: "ME", name: "Maine" },
-  { code: "MD", name: "Maryland" },
-  { code: "MA", name: "Massachusetts" },
-  { code: "MI", name: "Michigan" },
-  { code: "MN", name: "Minnesota" },
-  { code: "MS", name: "Mississippi" },
-  { code: "MO", name: "Missouri" },
-  { code: "MT", name: "Montana" },
-  { code: "NE", name: "Nebraska" },
-  { code: "NV", name: "Nevada" },
-  { code: "NH", name: "New Hampshire" },
-  { code: "NJ", name: "New Jersey" },
-  { code: "NM", name: "New Mexico" },
-  { code: "NY", name: "New York" },
-  { code: "NC", name: "North Carolina" },
-  { code: "ND", name: "North Dakota" },
-  { code: "OH", name: "Ohio" },
-  { code: "OK", name: "Oklahoma" },
-  { code: "OR", name: "Oregon" },
-  { code: "PA", name: "Pennsylvania" },
-  { code: "RI", name: "Rhode Island" },
-  { code: "SC", name: "South Carolina" },
-  { code: "SD", name: "South Dakota" },
-  { code: "TN", name: "Tennessee" },
-  { code: "TX", name: "Texas" },
-  { code: "UT", name: "Utah" },
-  { code: "VT", name: "Vermont" },
-  { code: "VA", name: "Virginia" },
-  { code: "WA", name: "Washington" },
-  { code: "WV", name: "West Virginia" },
-  { code: "WI", name: "Wisconsin" },
-  { code: "WY", name: "Wyoming" },
-]
+const STATES = JURISDICTION_OPTIONS.map((j) => ({
+  code: j.code,
+  name: j.name,
+})).filter(
+  (item, index, arr) => arr.findIndex((x) => x.name === item.name) === index
+)
 
-type CalendarDay = {
-  date: Date
-  isOff: boolean
-  isPadding?: boolean
-  isExamDay?: boolean
-}
+function normalizeRuleSet(value: unknown): RuleSet {
+  const clean = String(value ?? "").toLowerCase().trim()
 
-type AnalyticsRange = "7d" | "14d" | "30d" | "custom"
-type AnalyticsMode = "BLL" | "MBE"
-
-type SubjectAnalyticsRow = {
-  name: string
-  accuracy: number
-  completed: number
-  total: number
-  level: string
-  progressWidth: number
-}
-
-type TrendPoint = {
-  date: string
-  mbe: number
-  bll: number
-}
-
-function normalizeRuleSet(_value: unknown): RuleSet {
+  if (clean === "emergency") return "emergency"
+  if (clean === "priority") return "priority"
+  if (clean === "full") return "full"
   return "core"
 }
 
@@ -382,6 +383,8 @@ export default function Dashboard() {
   const [customTo, setCustomTo] = useState("")
   const [showCustomRangePicker, setShowCustomRangePicker] = useState(false)
   const customRangeRef = useRef<HTMLDivElement | null>(null)
+
+  const todayKey = formatDateInput(normalizeLocalDate(new Date()))
 
   const filteredStates = STATES.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
@@ -518,7 +521,6 @@ export default function Dashboard() {
       }
 
       setDashboard(summary?.dashboard ?? null)
-
       setBllSubjects(Array.isArray(summary?.subjects) ? summary.subjects : [])
       setMbeSubjects(
         Array.isArray(summary?.mbeSubjects) ? summary.mbeSubjects : []
@@ -551,94 +553,7 @@ export default function Dashboard() {
         setRuleSet("core")
         setHasShownPlanThisSession(false)
       } else {
-        const start = studyPlan.startDate?.slice(0, 10) || ""
-        const exam = studyPlan.examDate?.slice(0, 10) || ""
-        const nextStudyWeekends = studyPlan.studyWeekends ?? true
-        const nextRuleSet = normalizeRuleSet(studyPlan.ruleSet)
-
-        setStartDate(start)
-        setExamDate(exam)
-        setStudyWeekends(nextStudyWeekends)
-        setRuleSet(nextRuleSet)
-
-        const totalRules = getPlanTotalRules(studyPlan, summaryRuleTotal)
-        const offMap: Record<string, boolean> = {}
-        const onMap: Record<string, boolean> = {}
-
-        if (Array.isArray(studyPlan?.offDates)) {
-          studyPlan.offDates.forEach((d: string) => {
-            offMap[d] = true
-          })
-        }
-
-        if (Array.isArray(studyPlan?.onDates)) {
-          studyPlan.onDates.forEach((d: string) => {
-            onMap[d] = true
-          })
-        }
-
-        setSavedOffMap(offMap)
-        setSavedOnMap(onMap)
-
-        const activeStudyDays = getRemainingStudyDays(
-          start,
-          exam,
-          offMap,
-          onMap,
-          nextStudyWeekends
-        )
-
-        const safeDailyRules = getSafeDailyRules(
-          totalRules,
-          activeStudyDays,
-          studyPlan?.dailyRules
-        )
-
-        const distributedRules = buildDistributedRuleMap(
-          start,
-          exam,
-          totalRules,
-          offMap,
-          onMap,
-          nextStudyWeekends,
-          todayKey,
-          planData?.rulesByDate ?? {}
-        )
-
-        setPlanData({
-          ...studyPlan,
-          ruleSet: nextRuleSet,
-          totalRules,
-          totalDays: activeStudyDays || studyPlan.totalDays || 0,
-          dailyRules: safeDailyRules,
-          rulesByDate: distributedRules,
-        })
-
-        setHasShownPlanThisSession(true)
-
-        if (start && exam) {
-          const preservedMonth = calendarMonth ?? new Date(start)
-          const viewMonth = new Date(
-            preservedMonth.getFullYear(),
-            preservedMonth.getMonth(),
-            1
-          )
-
-          setCalendarMonth(viewMonth)
-          setCalendarDays(
-            buildCalendarDays(
-              start,
-              exam,
-              viewMonth,
-              offMap,
-              onMap,
-              nextStudyWeekends
-            )
-          )
-        } else {
-          setCalendarDays([])
-          setCalendarMonth(new Date())
-        }
+        hydrateStudyPlanFromPayload(studyPlan, summaryRuleTotal)
       }
 
       setCoreLoaded(true)
@@ -657,6 +572,150 @@ export default function Dashboard() {
       setStudyPlanLoaded(true)
     }
   }, [dashboardBatchQuery.isError, dashboardBatchQuery.error])
+
+  useEffect(() => {
+    async function loadTrendData() {
+      if (!currentUserId) return
+
+      try {
+        let url = `/api/trend-analytics?userId=${currentUserId}&range=${analyticsRange}`
+
+        if (analyticsRange === "custom") {
+          if (!customFrom || !customTo) {
+            setTrendData([])
+            return
+          }
+
+          url = `/api/trend-analytics?userId=${currentUserId}&start=${customFrom}&end=${customTo}`
+        }
+
+        const res = await fetch(url, { cache: "no-store" })
+        const data = await res.json().catch(() => null)
+        setTrendData(Array.isArray(data?.trend) ? data.trend : [])
+      } catch (err) {
+        console.error("TREND DATA LOAD ERROR:", err)
+        setTrendData([])
+      }
+    }
+
+    loadTrendData()
+  }, [currentUserId, analyticsRange, customFrom, customTo])
+
+  useEffect(() => {
+    setShowCustomRangePicker(analyticsRange === "custom")
+  }, [analyticsRange])
+
+  useEffect(() => {
+    if (!startDate || !examDate || !planData) return
+
+    const recommended = getRecommendedRuleSet(getDaysUntilExam())
+
+    if (!planData?.userManuallySelectedRulePackage) {
+      setRuleSet(recommended)
+      applyStudyPlanOptimistically({
+        nextOffMap: savedOffMap,
+        nextOnMap: savedOnMap,
+        nextStudyWeekends: studyWeekends,
+        nextRuleSet: recommended,
+        preserveBeforeDate: todayKey,
+        markManualPackage: false,
+      })
+    }
+  }, [examDate, startDate])
+
+  function hydrateStudyPlanFromPayload(studyPlan: any, fallbackTotalRules?: number) {
+    const start = studyPlan.startDate?.slice(0, 10) || ""
+    const exam = studyPlan.examDate?.slice(0, 10) || ""
+    const nextStudyWeekends = studyPlan.studyWeekends ?? true
+    const recommended = getRecommendedRuleSet(getDaysUntilExamForDate(exam))
+    const nextRuleSet = normalizeRuleSet(studyPlan.ruleSet ?? recommended)
+
+    setStartDate(start)
+    setExamDate(exam)
+    setStudyWeekends(nextStudyWeekends)
+    setRuleSet(nextRuleSet)
+
+    const offMap: Record<string, boolean> = {}
+    const onMap: Record<string, boolean> = {}
+
+    if (Array.isArray(studyPlan?.offDates)) {
+      studyPlan.offDates.forEach((d: string) => {
+        offMap[d] = true
+      })
+    }
+
+    if (Array.isArray(studyPlan?.onDates)) {
+      studyPlan.onDates.forEach((d: string) => {
+        onMap[d] = true
+      })
+    }
+
+    setSavedOffMap(offMap)
+    setSavedOnMap(onMap)
+
+    const baseTotalRules = getPlanTotalRules(studyPlan, fallbackTotalRules)
+    const totalRules = getEffectivePackageRuleTotal(baseTotalRules, nextRuleSet)
+    const activeStudyDays = getRemainingStudyDays(
+      start,
+      exam,
+      offMap,
+      onMap,
+      nextStudyWeekends
+    )
+
+    const safeDailyRules = getSafeDailyRules(
+      totalRules,
+      activeStudyDays,
+      studyPlan?.dailyRules
+    )
+
+    const distributedRules = buildDistributedRuleMap(
+      start,
+      exam,
+      totalRules,
+      offMap,
+      onMap,
+      nextStudyWeekends,
+      todayKey,
+      studyPlan?.rulesByDate ?? planData?.rulesByDate ?? {}
+    )
+
+    setPlanData({
+      ...studyPlan,
+      ruleSet: nextRuleSet,
+      baseTotalRules,
+      totalRules,
+      totalDays: activeStudyDays || studyPlan.totalDays || 0,
+      dailyRules: safeDailyRules,
+      rulesByDate: distributedRules,
+    })
+
+    setHasShownPlanThisSession(true)
+
+    if (start && exam) {
+      const preservedMonth = calendarMonth ?? new Date(start)
+      const viewMonth = new Date(
+        preservedMonth.getFullYear(),
+        preservedMonth.getMonth(),
+        1
+      )
+
+      setCalendarMonth(viewMonth)
+      setCalendarDays(
+        buildCalendarDays(
+          start,
+          exam,
+          viewMonth,
+          offMap,
+          onMap,
+          nextStudyWeekends
+        )
+      )
+    } else {
+      setCalendarDays([])
+      setCalendarMonth(new Date())
+    }
+  }
 
   async function loadStudyPlanOnly(userId: string) {
     try {
@@ -681,94 +740,7 @@ export default function Dashboard() {
         return
       }
 
-      const start = data.startDate?.slice(0, 10) || ""
-      const exam = data.examDate?.slice(0, 10) || ""
-      const nextStudyWeekends = data.studyWeekends ?? true
-      const nextRuleSet = normalizeRuleSet(data.ruleSet)
-
-      setStartDate(start)
-      setExamDate(exam)
-      setStudyWeekends(nextStudyWeekends)
-      setRuleSet(nextRuleSet)
-
-      const totalRules = getPlanTotalRules(data, planData?.totalRules)
-      const offMap: Record<string, boolean> = {}
-      const onMap: Record<string, boolean> = {}
-
-      if (Array.isArray(data?.offDates)) {
-        data.offDates.forEach((d: string) => {
-          offMap[d] = true
-        })
-      }
-
-      if (Array.isArray(data?.onDates)) {
-        data.onDates.forEach((d: string) => {
-          onMap[d] = true
-        })
-      }
-
-      setSavedOffMap(offMap)
-      setSavedOnMap(onMap)
-
-      const activeStudyDays = getRemainingStudyDays(
-        start,
-        exam,
-        offMap,
-        onMap,
-        nextStudyWeekends
-      )
-
-      const safeDailyRules = getSafeDailyRules(
-        totalRules,
-        activeStudyDays,
-        data?.dailyRules
-      )
-
-      const distributedRules = buildDistributedRuleMap(
-        start,
-        exam,
-        totalRules,
-        offMap,
-        onMap,
-        nextStudyWeekends,
-        todayKey,
-        planData?.rulesByDate ?? {}
-      )
-
-      setPlanData({
-        ...data,
-        ruleSet: nextRuleSet,
-        totalRules,
-        totalDays: activeStudyDays || data.totalDays || 0,
-        dailyRules: safeDailyRules,
-        rulesByDate: distributedRules,
-      })
-
-      setHasShownPlanThisSession(true)
-
-      if (start && exam) {
-        const preservedMonth = calendarMonth ?? new Date(start)
-        const viewMonth = new Date(
-          preservedMonth.getFullYear(),
-          preservedMonth.getMonth(),
-          1
-        )
-
-        setCalendarMonth(viewMonth)
-        setCalendarDays(
-          buildCalendarDays(
-            start,
-            exam,
-            viewMonth,
-            offMap,
-            onMap,
-            nextStudyWeekends
-          )
-        )
-      } else {
-        setCalendarDays([])
-        setCalendarMonth(new Date())
-      }
+      hydrateStudyPlanFromPayload(data, planData?.baseTotalRules ?? planData?.totalRules)
     } catch (err) {
       console.error("LOAD STUDY PLAN ERROR:", err)
       setPlanData(null)
@@ -781,50 +753,10 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => {
-    async function loadTrendData() {
-      if (!currentUserId) return
-
-      try {
-        let url = `/api/trend-analytics?userId=${currentUserId}&range=${analyticsRange}`
-
-        if (analyticsRange === "custom") {
-          if (!customFrom || !customTo) {
-            setTrendData([])
-            return
-          }
-          url = `/api/trend-analytics?userId=${currentUserId}&start=${customFrom}&end=${customTo}`
-        }
-
-        const res = await fetch(url, {
-          cache: "no-store",
-        })
-
-        const data = await res.json().catch(() => null)
-        setTrendData(Array.isArray(data?.trend) ? data.trend : [])
-      } catch (err) {
-        console.error("TREND DATA LOAD ERROR:", err)
-        setTrendData([])
-      }
-    }
-
-    loadTrendData()
-  }, [currentUserId, analyticsRange, customFrom, customTo])
-
-  useEffect(() => {
-    if (analyticsRange === "custom") {
-      setShowCustomRangePicker(true)
-    } else {
-      setShowCustomRangePicker(false)
-    }
-  }, [analyticsRange])
-
   function getPositiveNumber(...values: any[]) {
     for (const value of values) {
       const num = Number(value)
-      if (Number.isFinite(num) && num > 0) {
-        return num
-      }
+      if (Number.isFinite(num) && num > 0) return num
     }
 
     return 0
@@ -832,6 +764,8 @@ export default function Dashboard() {
 
   function getPlanTotalRules(source?: any, fallback?: any) {
     return getPositiveNumber(
+      source?.baseTotalRules,
+      source?.base_total_rules,
       source?.totalRules,
       source?.total_rules,
       source?.totalRuleCount,
@@ -840,6 +774,24 @@ export default function Dashboard() {
       source?.remaining_rules,
       fallback
     )
+  }
+
+  function getEffectivePackageRuleTotal(baseTotalRules: number, packageType: RuleSet) {
+    const safeBase = Number.isFinite(baseTotalRules) && baseTotalRules > 0 ? baseTotalRules : 0
+    const multiplier = RULE_PACKAGE_META[packageType]?.multiplier ?? 1
+    return Math.max(1, Math.round(safeBase * multiplier))
+  }
+
+  function getRecommendedRuleSet(daysLeft: number): RuleSet {
+    if (daysLeft <= 21) return "emergency"
+    if (daysLeft <= 45) return "priority"
+    if (daysLeft <= 90) return "core"
+    return isPremium ? "full" : "core"
+  }
+
+  function isHeavierPackage(selected: RuleSet, recommended: RuleSet) {
+    const order: RuleSet[] = ["emergency", "priority", "core", "full"]
+    return order.indexOf(selected) > order.indexOf(recommended)
   }
 
   function getSubjectRuleTotal(rows?: any[]) {
@@ -880,10 +832,7 @@ export default function Dashboard() {
     let progressWidth = 0
 
     if (attempts <= 0) {
-      return {
-        level: "Limited",
-        progressWidth: 0,
-      }
+      return { level: "Limited", progressWidth: 0 }
     }
 
     const completionFactor = Math.min(attempts / 10, 1)
@@ -943,7 +892,6 @@ export default function Dashboard() {
     const clean = String(value ?? "").trim()
 
     if (!clean) return "UBE"
-
     if (clean.toUpperCase() === "UBE") return "UBE"
 
     const direct = JURISDICTION_OPTIONS.find(
@@ -961,11 +909,16 @@ export default function Dashboard() {
 
   function getSelectedJurisdictionOption(code: string) {
     const normalized = normalizeJurisdictionCode(code)
-    return (
-      JURISDICTION_OPTIONS.find((j) => j.code === normalized) ??
-      JURISDICTION_OPTIONS.find((j) => j.code === "NY") ??
-      null
-    )
+
+    if (normalized === "UBE") {
+      return {
+        code: "UBE",
+        name: "UBE / Uniform Current",
+        group: "UBE / Uniform Current" as JurisdictionGroup,
+      }
+    }
+
+    return JURISDICTION_OPTIONS.find((j) => j.code === normalized) ?? null
   }
 
   function getEffectiveExamRegime(
@@ -1079,17 +1032,18 @@ export default function Dashboard() {
         !isDateOff(d, savedOffMap, savedOnMap, studyWeekends)
     ).length
 
-    return {
-      totalStudyDays,
-      completedStudyDays,
-    }
+    return { totalStudyDays, completedStudyDays }
   }
 
   function getDaysUntilExam() {
-    if (!examDate) return 0
+    return getDaysUntilExamForDate(examDate)
+  }
+
+  function getDaysUntilExamForDate(value?: string) {
+    if (!value) return 0
 
     const today = normalizeLocalDate(new Date())
-    const exam = normalizeLocalDate(new Date(examDate))
+    const exam = normalizeLocalDate(new Date(value))
     const diff = exam.getTime() - today.getTime()
 
     return Math.max(0, Math.ceil(diff / 86400000))
@@ -1179,9 +1133,12 @@ export default function Dashboard() {
     if (allDates.length === 0) return {}
 
     const today = normalizeLocalDate(new Date())
-    const preserveBefore = preserveBeforeDate
+    const requestedPreserveBefore = preserveBeforeDate
       ? normalizeLocalDate(new Date(preserveBeforeDate))
       : today
+
+    const preserveBefore =
+      requestedPreserveBefore < today ? today : requestedPreserveBefore
 
     const safeTotalRules =
       Number.isFinite(totalRules) && totalRules > 0 ? Math.floor(totalRules) : 0
@@ -1231,23 +1188,17 @@ export default function Dashboard() {
       const key = formatDateInput(d)
       ruleMap[key] = base + (remainder > 0 ? 1 : 0)
 
-      if (remainder > 0) {
-        remainder--
-      }
+      if (remainder > 0) remainder--
     }
 
     for (const d of futureDates) {
       const key = formatDateInput(d)
-      if (!(key in ruleMap)) {
-        ruleMap[key] = 0
-      }
+      if (!(key in ruleMap)) ruleMap[key] = 0
     }
 
     for (const d of allDates) {
       const key = formatDateInput(d)
-      if (!(key in ruleMap)) {
-        ruleMap[key] = 0
-      }
+      if (!(key in ruleMap)) ruleMap[key] = 0
     }
 
     return ruleMap
@@ -1284,7 +1235,6 @@ export default function Dashboard() {
 
     const firstWeekday = firstDayOfMonth.getDay()
     const daysInMonth = lastDayOfMonth.getDate()
-
     const cells: CalendarDay[] = []
 
     for (let i = 0; i < firstWeekday; i++) {
@@ -1349,16 +1299,24 @@ export default function Dashboard() {
     nextStudyWeekends,
     nextRuleSet = ruleSet,
     preserveBeforeDate = todayKey,
+    markManualPackage = true,
   }: {
     nextOffMap: Record<string, boolean>
     nextOnMap: Record<string, boolean>
     nextStudyWeekends: boolean
     nextRuleSet?: RuleSet
     preserveBeforeDate?: string
+    markManualPackage?: boolean
   }) {
     if (!startDate || !examDate) return
 
-    const totalRules = getPlanTotalRules(planData)
+    const baseTotalRules = getPlanTotalRules(
+      { baseTotalRules: planData?.baseTotalRules },
+      getSubjectRuleTotal(bllSubjects) || planData?.totalRules
+    )
+
+    const totalRules = getEffectivePackageRuleTotal(baseTotalRules, nextRuleSet)
+
     const nextTotalDays = getRemainingStudyDays(
       startDate,
       examDate,
@@ -1366,11 +1324,8 @@ export default function Dashboard() {
       nextOnMap,
       nextStudyWeekends
     )
-    const nextDailyRules = getSafeDailyRules(
-      totalRules,
-      nextTotalDays,
-      planData?.dailyRules
-    )
+
+    const nextDailyRules = getSafeDailyRules(totalRules, nextTotalDays)
 
     const nextRulesByDate = buildDistributedRuleMap(
       startDate,
@@ -1403,6 +1358,7 @@ export default function Dashboard() {
 
     setPlanData((prev: any) => ({
       ...(prev ?? {}),
+      baseTotalRules,
       totalRules,
       dailyRules: nextDailyRules,
       totalDays: nextTotalDays,
@@ -1411,6 +1367,8 @@ export default function Dashboard() {
       offDates: nextOffDates,
       onDates: nextOnDates,
       rulesByDate: nextRulesByDate,
+      userManuallySelectedRulePackage:
+        markManualPackage || prev?.userManuallySelectedRulePackage,
     }))
 
     setDashboard((prev: any) => ({
@@ -1484,9 +1442,7 @@ export default function Dashboard() {
     )
 
     if (currentUserId) {
-      await queryClient.invalidateQueries({
-        queryKey,
-      })
+      await queryClient.invalidateQueries({ queryKey })
     }
   }
 
@@ -1536,6 +1492,8 @@ export default function Dashboard() {
         (d) => savedOnMap[d]
       )
 
+      const selectedRuleSet = ruleSet || getRecommendedRuleSet(getDaysUntilExam())
+
       const res = await fetch("/api/study-plan", {
         method: "POST",
         headers: {
@@ -1548,7 +1506,7 @@ export default function Dashboard() {
           studyWeekends,
           offDates: existingOffDates,
           onDates: existingOnDates,
-          ruleSet,
+          ruleSet: selectedRuleSet,
         }),
       })
 
@@ -1560,8 +1518,9 @@ export default function Dashboard() {
       }
 
       const viewMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+      const baseTotalRules = getPlanTotalRules(data, planData?.baseTotalRules ?? getSubjectRuleTotal(bllSubjects))
+      const totalRules = getEffectivePackageRuleTotal(baseTotalRules, selectedRuleSet)
 
-      const totalRules = getPlanTotalRules(data, planData?.totalRules)
       const offMap: Record<string, boolean> = {}
       const onMap: Record<string, boolean> = {}
 
@@ -1578,7 +1537,6 @@ export default function Dashboard() {
       }
 
       const nextStudyWeekends = data.studyWeekends ?? studyWeekends
-      const nextRuleSet = normalizeRuleSet(data.ruleSet)
       const safeTotalDays = getRemainingStudyDays(
         startDate,
         examDate,
@@ -1586,11 +1544,7 @@ export default function Dashboard() {
         onMap,
         nextStudyWeekends
       )
-      const safeDailyRules = getSafeDailyRules(
-        totalRules,
-        safeTotalDays,
-        data?.dailyRules
-      )
+      const safeDailyRules = getSafeDailyRules(totalRules, safeTotalDays)
 
       const distributedRules = buildDistributedRuleMap(
         startDate,
@@ -1605,7 +1559,8 @@ export default function Dashboard() {
 
       const nextPlanData = {
         ...data,
-        ruleSet: nextRuleSet,
+        ruleSet: selectedRuleSet,
+        baseTotalRules,
         totalRules,
         totalDays: safeTotalDays,
         dailyRules: safeDailyRules,
@@ -1621,7 +1576,7 @@ export default function Dashboard() {
         nextStudyWeekends
       )
 
-      setRuleSet(nextRuleSet)
+      setRuleSet(selectedRuleSet)
       setSavedOffMap(offMap)
       setSavedOnMap(onMap)
       setPlanData(nextPlanData)
@@ -1677,6 +1632,7 @@ export default function Dashboard() {
       nextStudyWeekends: studyWeekends,
       nextRuleSet: ruleSet,
       preserveBeforeDate: todayKey,
+      markManualPackage: false,
     })
 
     await saveStudyPlanSilently(
@@ -1699,6 +1655,7 @@ export default function Dashboard() {
       nextStudyWeekends,
       nextRuleSet: ruleSet,
       preserveBeforeDate: todayKey,
+      markManualPackage: false,
     })
 
     await saveStudyPlanSilently(
@@ -1710,12 +1667,23 @@ export default function Dashboard() {
   }
 
   async function handleRuleSetChange(nextRuleSet: RuleSet) {
+    const recommended = getRecommendedRuleSet(getDaysUntilExam())
+
+    if (isHeavierPackage(nextRuleSet, recommended)) {
+      const confirmed = window.confirm(
+        `Lexora recommends ${RULE_PACKAGE_META[recommended].label} because your exam is close. Choosing ${RULE_PACKAGE_META[nextRuleSet].label} may overload your daily workload. Continue?`
+      )
+
+      if (!confirmed) return
+    }
+
     setRuleSet(nextRuleSet)
 
     if (!planData || !startDate || !examDate) {
       setPlanData((prev: any) => ({
         ...(prev ?? {}),
         ruleSet: nextRuleSet,
+        userManuallySelectedRulePackage: true,
       }))
       return
     }
@@ -1731,6 +1699,7 @@ export default function Dashboard() {
       nextStudyWeekends: studyWeekends,
       nextRuleSet,
       preserveBeforeDate: todayKey,
+      markManualPackage: true,
     })
 
     await saveStudyPlanSilently(
@@ -1739,10 +1708,6 @@ export default function Dashboard() {
       studyWeekends,
       nextRuleSet
     )
-
-    if (currentUserId) {
-      await loadStudyPlanOnly(currentUserId)
-    }
   }
 
   async function savePlanAndClose() {
@@ -1841,7 +1806,6 @@ export default function Dashboard() {
     )
   }
 
-  const todayKey = formatDateInput(normalizeLocalDate(new Date()))
   const todayRuleTarget =
     planData?.rulesByDate?.[todayKey] ??
     planData?.dailyRules ??
@@ -1858,10 +1822,6 @@ export default function Dashboard() {
     (dashboard?.todayBLL ?? 0) === 0 &&
     (dashboard?.todayMBE ?? 0) === 0
 
-  const mbeDiff =
-    (stateData?.userMBE ?? dashboard?.userMBE ?? 0) -
-    (stateData?.stateMBEAvg ?? dashboard?.stateMBEAvg ?? 0)
-
   const bllDiff =
     (stateData?.userBLL ?? dashboard?.userBLL ?? 0) -
     (stateData?.stateBLLAvg ?? dashboard?.stateBLLAvg ?? 0)
@@ -1877,14 +1837,10 @@ export default function Dashboard() {
   const rankingPercent = useMemo(() => {
     const scoreValue = stateData?.userBLL ?? dashboard?.userBLL
 
-    if (scoreValue === null || scoreValue === undefined) {
-      return null
-    }
+    if (scoreValue === null || scoreValue === undefined) return null
 
     const score = Number(scoreValue)
-    if (!Number.isFinite(score)) {
-      return null
-    }
+    if (!Number.isFinite(score)) return null
 
     if (score <= 0) return 100
 
@@ -1906,9 +1862,7 @@ export default function Dashboard() {
   }, [analyticsRange, customFrom, customTo])
 
   const activeRows = useMemo(() => {
-    if (analyticsMode === "MBE") {
-      return mbeRows
-    }
+    if (analyticsMode === "MBE") return mbeRows
     return subjectRows
   }, [analyticsMode, mbeRows, subjectRows])
 
@@ -1932,11 +1886,7 @@ export default function Dashboard() {
       }
     }
 
-    return {
-      labels: [],
-      user: [],
-      avg: [],
-    }
+    return { labels: [], user: [], avg: [] }
   }, [trendData, analyticsMode, currentModeStateAverage])
 
   const selectedSubjectBars = useMemo(() => {
@@ -1964,9 +1914,7 @@ export default function Dashboard() {
   const weeklyWeakAreas = Number(dashboard?.weeklyWeakAreas ?? 0)
 
   const nationwideTitle =
-    rankingPercent === null
-      ? "Loading..."
-      : `Top ${rankingPercent}% Nationwide`
+    rankingPercent === null ? "Loading..." : `Top ${rankingPercent}% Nationwide`
 
   const selectedJurisdictionOption =
     getSelectedJurisdictionOption(selectedStudyJurisdiction)
@@ -1981,15 +1929,28 @@ export default function Dashboard() {
     examDate
   )
 
-  const visibleSubjectPlan = effectiveSubjectPlan.slice(0, 9)
-
+  const visibleSubjectPlan = effectiveSubjectPlan.slice(0, 10)
   const studyDayStats = getStudyPlanDayStats()
-  const rulesMasteredCount = Math.max(0, Number(dashboard?.totalRulesMastered ?? weeklyRulesDone ?? 0))
-  const totalPlanRules = Math.max(1, getPlanTotalRules(planData) || getSubjectRuleTotal(bllSubjects) || 1)
+  const daysUntilExam = getDaysUntilExam()
+  const weeksUntilExam = Math.max(0, daysUntilExam / 7).toFixed(1)
+  const recommendedRuleSet = getRecommendedRuleSet(daysUntilExam)
+
+  const totalPlanRules = Math.max(
+    1,
+    Number(planData?.totalRules ?? 0) ||
+      getEffectivePackageRuleTotal(getSubjectRuleTotal(bllSubjects) || 1164, ruleSet)
+  )
+
+  const rulesMasteredCount = Math.max(
+    0,
+    Number(dashboard?.totalRulesMastered ?? weeklyRulesDone ?? 0)
+  )
+
   const rulesMasteredPercent = Math.max(
     0,
     Math.min(100, Math.round((rulesMasteredCount / totalPlanRules) * 100))
   )
+
   const studyDaysPercent = Math.max(
     0,
     Math.min(
@@ -2001,8 +1962,6 @@ export default function Dashboard() {
       )
     )
   )
-  const daysUntilExam = getDaysUntilExam()
-  const weeksUntilExam = Math.max(0, daysUntilExam / 7).toFixed(1)
 
   const canSavePlan =
     !!planData &&
@@ -2697,8 +2656,8 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 bg-white lg:grid-cols-[1fr_320px]">
-                <div className="min-h-0 overflow-hidden border-r border-[#D6E4FF] bg-white p-6">
+              <div className="grid min-h-0 flex-1 grid-cols-1 bg-white lg:grid-cols-[1fr_320px]">
+                <div className="min-h-0 overflow-y-auto border-r border-[#D6E4FF] bg-white px-6 py-6">
                   <div className="mb-3 flex items-center justify-between">
                     <button
                       onClick={() => changeMonth("prev")}
@@ -2722,8 +2681,7 @@ export default function Dashboard() {
                   </div>
 
                   <div className="mb-3 text-[13px] text-slate-500">
-                    Click a study date to mark it off. Exam day is highlighted
-                    in amber.
+                    Click a study date to mark it off. Exam day is highlighted in amber.
                   </div>
 
                   <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[11px] font-semibold text-slate-500">
@@ -2737,281 +2695,134 @@ export default function Dashboard() {
                   </div>
 
                   {calendarDays.length === 0 ? (
-                    <div className="flex h-[520px] items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm text-slate-400">
-                      Select your start date and exam date, then click Create
-                      Plan.
+                    <div className="flex h-[480px] items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm text-slate-400">
+                      Select your start date and exam date, then click Create Plan.
                     </div>
                   ) : (
-                    <div className="h-[520px] overflow-y-auto pr-1">
-                      <div className="grid grid-cols-7 gap-2">
-                        {calendarDays.map((d, i) => {
-                          const isWeekend =
-                            d.date.getDay() === 0 || d.date.getDay() === 6
-                          const isToday = isSameDay(
-                            d.date,
-                            normalizeLocalDate(new Date())
-                          )
-                          const todayDate = normalizeLocalDate(new Date())
-                          const isPastDay = normalizeLocalDate(d.date) < todayDate
-                          const isFinished =
-                            isPastDay &&
-                            !d.isPadding &&
-                            !d.isExamDay &&
-                            !d.isOff
+                    <div className="grid grid-cols-7 gap-2">
+                      {calendarDays.map((d, i) => {
+                        const isWeekend =
+                          d.date.getDay() === 0 || d.date.getDay() === 6
+                        const isToday = isSameDay(
+                          d.date,
+                          normalizeLocalDate(new Date())
+                        )
+                        const todayDate = normalizeLocalDate(new Date())
+                        const isPastDay = normalizeLocalDate(d.date) < todayDate
+                        const isFinished =
+                          isPastDay &&
+                          !d.isPadding &&
+                          !d.isExamDay &&
+                          !d.isOff
 
-                          return (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => toggleCalendarDay(d)}
-                              disabled={d.isPadding}
-                              className={[
-                                "min-h-[74px] rounded-[14px] px-2 py-2 text-left transition-all duration-200 shadow-sm hover:-translate-y-0.5",
-                                d.isPadding
-                                  ? "cursor-default border border-slate-100 bg-slate-50 text-slate-300"
-                                  : "",
-                                d.isExamDay
-                                  ? "border border-amber-300 bg-amber-50"
-                                  : "",
-                                d.isOff
-                                  ? "border border-dashed border-[#C5D5FF] bg-white"
-                                  : "",
-                                !d.isPadding && !d.isOff && !d.isExamDay
-                                  ? "border border-[#D6E4FF] bg-[#F7FAFF] hover:border-[#7C5CFC] hover:bg-[#F0EDFF]"
-                                  : "",
-                                isToday && !d.isPadding
-                                  ? "ring-2 ring-[#7C5CFC] bg-[#F0EDFF]"
-                                  : "",
-                                isFinished
-                                  ? "border border-emerald-300 bg-emerald-50"
-                                  : "",
-                                isWeekend &&
-                                !d.isPadding &&
-                                !d.isOff &&
-                                !d.isExamDay
-                                  ? "bg-sky-50"
-                                  : "",
-                              ].join(" ")}
-                            >
-                              <div className="mb-1 flex items-center justify-between">
-                                <span className="text-[13px] font-semibold">
-                                  {d.date.getDate()}
-                                </span>
-
-                                {d.isExamDay && (
-                                  <span className="text-[9px] font-semibold text-amber-700">
-                                    EXAM
-                                  </span>
-                                )}
-                              </div>
-
-                              {!d.isPadding && !d.isExamDay && !d.isOff && (
-                                <>
-                                  <div className="text-[10px] font-semibold text-violet-600">
-                                    {planData?.rulesByDate?.[
-                                      formatDateInput(d.date)
-                                    ] ??
-                                      planData?.dailyRules ??
-                                      0}{" "}
-                                    rules
-                                  </div>
-
-                                  {isFinished && (
-                                    <div className="mt-1 text-[10px] font-semibold text-emerald-600">
-                                      Completed
-                                    </div>
-                                  )}
-
-                                  {isWeekend && !isFinished && (
-                                    <div className="mt-1 text-[10px] text-sky-500">
-                                      Weekend
-                                    </div>
-                                  )}
-                                </>
-                              )}
-
-                              {d.isOff && (
-                                <div className="text-[10px] font-semibold text-rose-500">
-                                  OFF
-                                </div>
-                              )}
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => toggleCalendarDay(d)}
+                            disabled={d.isPadding}
+                            className={[
+                              "min-h-[74px] rounded-[14px] px-2 py-2 text-left transition-all duration-200 shadow-sm",
+                              d.isPadding
+                                ? "cursor-default border border-slate-100 bg-slate-50 text-slate-300"
+                                : "",
+                              d.isExamDay
+                                ? "border border-amber-300 bg-amber-50"
+                                : "",
+                              d.isOff
+                                ? "border border-rose-200 bg-rose-50 text-rose-600"
+                                : "",
+                              !d.isPadding && !d.isOff && !d.isExamDay
+                                ? "border border-[#D6E4FF] bg-[#F7FAFF] hover:-translate-y-0.5 hover:border-[#7C5CFC] hover:bg-[#F0EDFF]"
+                                : "",
+                              isToday && !d.isPadding
+                                ? "ring-2 ring-[#7C5CFC] bg-[#F0EDFF]"
+                                : "",
+                              isFinished
+                                ? "border border-emerald-300 bg-emerald-50"
+                                : "",
+                              isWeekend &&
+                              !d.isPadding &&
+                              !d.isOff &&
+                              !d.isExamDay
+                                ? "bg-sky-50"
+                                : "",
+                            ].join(" ")}
+                          >
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-[13px] font-semibold">
+                                {d.date.getDate()}
+                              </span>
 
                               {d.isExamDay && (
-                                <div className="mt-1 text-[9px] text-amber-700">
-                                  {formatShortDate(d.date)}
-                                </div>
+                                <span className="text-[9px] font-semibold text-amber-700">
+                                  EXAM
+                                </span>
                               )}
-                            </button>
-                          )
-                        })}
-                      </div>
+                            </div>
+
+                            {!d.isPadding && !d.isExamDay && !d.isOff && (
+                              <>
+                                <div className="text-[10px] font-semibold text-violet-600">
+                                  {planData?.rulesByDate?.[
+                                    formatDateInput(d.date)
+                                  ] ??
+                                    planData?.dailyRules ??
+                                    0}{" "}
+                                  rules
+                                </div>
+
+                                {isFinished && (
+                                  <div className="mt-1 text-[10px] font-semibold text-emerald-600">
+                                    Completed
+                                  </div>
+                                )}
+
+                                {isWeekend && !isFinished && (
+                                  <div className="mt-1 text-[10px] text-sky-500">
+                                    Weekend
+                                  </div>
+                                )}
+                              </>
+                            )}
+
+                            {d.isOff && (
+                              <div className="text-[10px] font-semibold text-rose-500">
+                                OFF
+                              </div>
+                            )}
+
+                            {d.isExamDay && (
+                              <div className="mt-1 text-[9px] text-amber-700">
+                                {formatShortDate(d.date)}
+                              </div>
+                            )}
+                          </button>
+                        )
+                      })}
                     </div>
                   )}
+
+                  <div className="mt-8 space-y-4 px-1">
+                    <ProgressLine
+                      label="Rules Mastered"
+                      value={`${rulesMasteredCount} / ${totalPlanRules}`}
+                      percent={rulesMasteredPercent}
+                      tone="violet"
+                    />
+
+                    <ProgressLine
+                      label="Study Days"
+                      value={`${studyDayStats.completedStudyDays} / ${studyDayStats.totalStudyDays}`}
+                      percent={studyDaysPercent}
+                      tone="amber"
+                    />
+                  </div>
                 </div>
 
-                <div className="min-h-0 space-y-3 overflow-y-auto bg-[#F0F5FF] p-4">
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 shadow-sm">
-                    <div>
-                      <div className="text-[14px] font-semibold">
-                        {selectedJurisdictionOption?.name ?? "UBE"} Study Schedule
-                      </div>
-                      <div className="mt-1 text-[11px] leading-4 text-slate-500">
-                        Lexora automatically detects the exam system from the jurisdiction and exam date.
-                      </div>
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      <div className="grid gap-3">
-                        <div>
-                          <label className="mb-1 block text-[11px] font-medium text-slate-500">
-                            Jurisdiction
-                          </label>
-                          <select
-                            value={selectedStudyJurisdiction}
-                            onChange={(e) =>
-                              setSelectedStudyJurisdiction(e.target.value)
-                            }
-                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-violet-400"
-                          >
-                            <option value="UBE">UBE / Uniform Current</option>
-                            {JURISDICTION_OPTIONS.map((j) => (
-                              <option key={j.code} value={j.code}>
-                                {j.name} — {j.group}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="mt-1 text-[10px] leading-4 text-slate-500">
-                            Current system: {getRegimeLabel(effectiveExamRegime)}
-                            {selectedJurisdictionOption?.nextGenStart
-                              ? ` • NextGen from ${selectedJurisdictionOption.nextGenStart}`
-                              : ""}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-[11px] font-medium text-slate-500">
-                            Start Date
-                          </label>
-                          <input
-                            type="date"
-                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-violet-400"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-[11px] font-medium text-slate-500">
-                            Exam Date
-                          </label>
-                          <input
-                            type="date"
-                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-violet-400"
-                            value={examDate}
-                            onChange={(e) => setExamDate(e.target.value)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-[11px] font-medium text-slate-500">
-                            Rule Package
-                          </label>
-                          <select
-                            value={ruleSet}
-                            onChange={(e) =>
-                              handleRuleSetChange(normalizeRuleSet(e.target.value))
-                            }
-                            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-violet-400"
-                          >
-                            <option value="core">Core Rules Only</option>
-                          </select>
-                          <div className="mt-1 text-[10px] leading-4 text-slate-500">
-                            Core excludes definition-only expansion rules. Full
-                            Rule Bank includes all active rules.
-                          </div>
-                        </div>
-
-                        <label className="flex items-center gap-2 text-[13px]">
-                          <input
-                            type="checkbox"
-                            checked={studyWeekends}
-                            onChange={(e) =>
-                              handleStudyWeekendChange(e.target.checked)
-                            }
-                          />
-                          Study on weekends
-                        </label>
-                      </div>
-
-                      <div className="grid gap-2 pt-1">
-                        <InfoRow
-                          label="Base Avg Rules Per Day"
-                          value={
-                            <span className="font-semibold text-violet-600">
-                              {planData?.dailyRules ?? "-"}
-                            </span>
-                          }
-                        />
-
-                        <InfoRow
-                          label="Daily MBE"
-                          value={
-                            isPremium ? (
-                              <span className="font-semibold text-blue-700">
-                                {planData?.dailyMBE ?? 50}
-                              </span>
-                            ) : (
-                              <PremiumBadge onClick={() => undefined} />
-                            )
-                          }
-                        />
-
-                        <InfoRow
-                          label="Remaining Rules"
-                          value={
-                            <span className="font-semibold">
-                              {getPlanTotalRules(planData) || "-"}
-                            </span>
-                          }
-                        />
-
-                        <InfoRow
-                          label="Rule Package"
-                          value={<span className="font-semibold">Core</span>}
-                        />
-
-                        <InfoRow
-                          label="Remaining Study Days"
-                          value={
-                            <span className="font-semibold">
-                              {planData?.totalDays ?? 0}
-                            </span>
-                          }
-                        />
-
-                        <InfoRow
-                          label="Manual Days Off"
-                          value={
-                            <span className="font-semibold">
-                              {planData?.offDates?.length ?? 0}
-                            </span>
-                          }
-                        />
-
-                        <InfoRow
-                          label="Manual Weekend Study Days"
-                          value={
-                            <span className="font-semibold">
-                              {planData?.onDates?.length ?? 0}
-                            </span>
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[24px] border border-[#D6E4FF] bg-[#F0F5FF] p-4 shadow-sm">
-                    <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7F9CC0]">
+                <div className="min-h-0 overflow-y-auto bg-[#EEF5FF]">
+                  <StudyPanelSection>
+                    <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
                       Exam Countdown
                     </div>
 
@@ -3028,8 +2839,8 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      <div>
-                        <div className="text-[13px] font-semibold text-slate-900">
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-semibold text-slate-900">
                           {getRegimeLabel(effectiveExamRegime)}
                         </div>
                         <div className="mt-1 font-mono text-[11px] text-[#7F9CC0]">
@@ -3041,11 +2852,11 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </StudyPanelSection>
 
-                  <div className="rounded-[24px] border border-[#D6E4FF] bg-[#F0F5FF] p-4 shadow-sm">
+                  <StudyPanelSection>
                     <div className="mb-3 flex items-center justify-between">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7F9CC0]">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
                         Subject Progress
                       </div>
                       <div className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-[#3C3489]">
@@ -3058,7 +2869,10 @@ export default function Dashboard() {
                         const pct = getSubjectProgressPercent(subject.name)
 
                         return (
-                          <div key={`${subject.system}-${subject.name}`} className="flex items-center gap-2">
+                          <div
+                            key={`${subject.system}-${subject.name}`}
+                            className="flex items-center gap-2"
+                          >
                             <span className="h-2 w-2 shrink-0 rounded-full bg-[#7C5CFC]" />
                             <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600">
                               {subject.name}
@@ -3067,7 +2881,7 @@ export default function Dashboard() {
                               <div
                                 className="h-full rounded-full bg-[#7C5CFC]"
                                 style={{
-                                  width: `${Math.max(4, Math.min(pct, 100))}%`,
+                                  width: `${pct <= 0 ? 3 : Math.min(pct, 100)}%`,
                                 }}
                               />
                             </div>
@@ -3078,52 +2892,139 @@ export default function Dashboard() {
                         )
                       })}
                     </div>
-                  </div>
+                  </StudyPanelSection>
 
-                  <div className="rounded-[24px] border border-[#D6E4FF] bg-white p-4 shadow-sm">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                            Rules mastered
-                          </span>
-                          <span className="font-mono text-[11px] font-semibold text-[#7C5CFC]">
-                            {rulesMasteredCount} / {totalPlanRules}
-                          </span>
-                        </div>
-                        <div className="h-[7px] overflow-hidden rounded-full bg-[#E8EFFF]">
-                          <div
-                            className="relative h-full overflow-hidden rounded-full bg-[#7C5CFC] shadow-[0_0_14px_rgba(124,92,252,0.55)] transition-all duration-1000 ease-out before:absolute before:inset-0 before:translate-x-[-100%] before:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.65),transparent)] before:animate-[progressShimmer_2s_ease-in-out_infinite]"
-                            style={{ width: `${rulesMasteredPercent}%` }}
-                          />
-                        </div>
-                      </div>
+                  <StudyPanelSection>
+                    <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
+                      Overview
+                    </div>
 
-                      <div>
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                            Study days
-                          </span>
-                          <span className="font-mono text-[11px] font-semibold text-amber-700">
-                            {studyDayStats.completedStudyDays} / {studyDayStats.totalStudyDays}
-                          </span>
+                    <div className="space-y-3">
+                      <OverviewRow
+                        icon={<Zap size={14} />}
+                        label="Rules / day"
+                        value={String(planData?.dailyRules ?? "-")}
+                        tone="violet"
+                      />
+                      <OverviewRow
+                        icon={<CalendarOff size={14} />}
+                        label="Days off saved"
+                        value={String(planData?.offDates?.length ?? 0)}
+                        tone="amber"
+                      />
+                      <OverviewRow
+                        icon={<CalendarClock size={14} />}
+                        label="Study days left"
+                        value={String(planData?.totalDays ?? 0)}
+                        tone="violet"
+                      />
+                      <OverviewRow
+                        icon={<Layers size={14} />}
+                        label="Rule package"
+                        value={RULE_PACKAGE_META[ruleSet].shortLabel}
+                        tone="violet"
+                      />
+                    </div>
+                  </StudyPanelSection>
+
+                  <StudyPanelSection>
+                    <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
+                      Settings
+                    </div>
+
+                    <div className="space-y-3">
+                      <PanelField label="Jurisdiction">
+                        <select
+                          value={selectedStudyJurisdiction}
+                          onChange={(e) =>
+                            setSelectedStudyJurisdiction(e.target.value)
+                          }
+                          className="w-full rounded-xl border border-[#9AB8EF] bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[#7C5CFC]"
+                        >
+                          <option value="UBE">UBE / Uniform Current</option>
+                          {JURISDICTION_OPTIONS.map((j) => (
+                            <option key={j.code} value={j.code}>
+                              {j.name} — {j.group}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="mt-1 text-[10px] leading-4 text-[#6D82A3]">
+                          Current system: {getRegimeLabel(effectiveExamRegime)}
+                          {selectedJurisdictionOption?.nextGenStart
+                            ? ` • NextGen from ${selectedJurisdictionOption.nextGenStart}`
+                            : ""}
                         </div>
-                        <div className="h-[7px] overflow-hidden rounded-full bg-[#E8EFFF]">
-                          <div
-                            className="relative h-full overflow-hidden rounded-full bg-[#EF9F27] shadow-[0_0_14px_rgba(239,159,39,0.5)] transition-all duration-1000 ease-out before:absolute before:inset-0 before:translate-x-[-100%] before:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.65),transparent)] before:animate-[progressShimmer_2s_ease-in-out_infinite]"
-                            style={{ width: `${studyDaysPercent}%` }}
+                      </PanelField>
+
+                      <PanelField label="Start date">
+                        <input
+                          type="date"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[#7C5CFC]"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                        />
+                      </PanelField>
+
+                      <PanelField label="Exam date">
+                        <input
+                          type="date"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[#7C5CFC]"
+                          value={examDate}
+                          onChange={(e) => setExamDate(e.target.value)}
+                        />
+                      </PanelField>
+
+                      <PanelField label="Package">
+                        <select
+                          value={ruleSet}
+                          onChange={(e) =>
+                            handleRuleSetChange(normalizeRuleSet(e.target.value))
+                          }
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[#7C5CFC]"
+                        >
+                          <option value="emergency">Emergency Pack</option>
+                          <option value="priority">Priority Rules</option>
+                          <option value="core">Core Rules Only</option>
+                          <option value="full" disabled={!isPremium}>
+                            Full Rule Bank{!isPremium ? " — Premium" : ""}
+                          </option>
+                        </select>
+                        <div className="mt-1 text-[10px] leading-4 text-[#6D82A3]">
+                          Recommended: {RULE_PACKAGE_META[recommendedRuleSet].label}.{" "}
+                          {RULE_PACKAGE_META[ruleSet].description}
+                        </div>
+                      </PanelField>
+
+                      <div className="grid grid-cols-[88px_1fr] items-center gap-3">
+                        <div className="text-[12px] font-medium text-[#7F9CC0]">
+                          Weekends
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleStudyWeekendChange(!studyWeekends)}
+                          className={`relative h-7 w-14 rounded-full transition ${
+                            studyWeekends ? "bg-[#7C5CFC]" : "bg-[#C7DAF7]"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${
+                              studyWeekends ? "left-8" : "left-1"
+                            }`}
                           />
-                        </div>
+                          <span className="absolute right-[-28px] top-1 text-[12px] font-medium text-[#7F9CC0]">
+                            {studyWeekends ? "on" : "off"}
+                          </span>
+                        </button>
                       </div>
                     </div>
-                  </div>
+                  </StudyPanelSection>
 
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 shadow-sm">
-                    <div className="mb-2 text-[14px] font-semibold">
+                  <StudyPanelSection>
+                    <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
                       Daily Breakdown
                     </div>
 
-                    <div className="space-y-2 text-[13px]">
+                    <div className="space-y-3">
                       <InfoRow
                         label="New Rules"
                         value={
@@ -3155,12 +3056,12 @@ export default function Dashboard() {
                         }
                       />
                     </div>
-                  </div>
+                  </StudyPanelSection>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-2 border-t border-[#D6E4FF] p-4">
                     <button
                       onClick={createPlan}
-                      className="rounded-2xl bg-[linear-gradient(135deg,#6f84ea_0%,#9f7bea_100%)] px-3 py-2.5 text-[13px] font-semibold text-white shadow transition hover:opacity-95"
+                      className="rounded-xl border border-[#AABBE7] bg-white px-3 py-2.5 text-[13px] font-semibold text-slate-800 shadow-sm transition hover:bg-[#F7FAFF]"
                     >
                       Create
                     </button>
@@ -3168,10 +3069,10 @@ export default function Dashboard() {
                     <button
                       onClick={savePlanAndClose}
                       disabled={!canSavePlan}
-                      className={`rounded-2xl px-3 py-2.5 text-[13px] font-semibold text-white shadow transition ${
+                      className={`rounded-xl px-3 py-2.5 text-[13px] font-semibold shadow-sm transition ${
                         canSavePlan
-                          ? "bg-[linear-gradient(135deg,#4f46e5_0%,#7c3aed_100%)] hover:opacity-95"
-                          : "cursor-not-allowed bg-slate-300 text-slate-100 shadow-none"
+                          ? "bg-white text-slate-900 hover:bg-[#F7FAFF] border border-[#AABBE7]"
+                          : "cursor-not-allowed border border-[#C7D5EF] bg-[#EEF3FB] text-[#9AAAC5]"
                       }`}
                     >
                       Save
@@ -3179,7 +3080,7 @@ export default function Dashboard() {
 
                     <button
                       onClick={() => setResetConfirmOpen(true)}
-                      className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-[13px] font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                      className="rounded-xl border border-[#AABBE7] bg-white px-3 py-2.5 text-[13px] font-semibold text-slate-800 shadow-sm transition hover:bg-[#F7FAFF]"
                     >
                       Reset
                     </button>
@@ -3201,8 +3102,7 @@ export default function Dashboard() {
                         Reset study plan?
                       </div>
                       <div className="mt-1 text-[13px] leading-6 text-slate-500">
-                        This will remove the current study plan. It will not
-                        reset your profile information.
+                        This will remove the current study plan. It will not reset your profile information.
                       </div>
                     </div>
                   </div>
@@ -3229,6 +3129,99 @@ export default function Dashboard() {
         </div>
       )}
     </>
+  )
+}
+
+function StudyPanelSection({ children }: { children: ReactNode }) {
+  return (
+    <section className="border-b border-[#D6E4FF] px-5 py-5">
+      {children}
+    </section>
+  )
+}
+
+function PanelField({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <div className="grid grid-cols-[88px_1fr] items-start gap-3">
+      <div className="pt-2 text-[12px] font-medium text-[#7F9CC0]">
+        {label}
+      </div>
+      <div>{children}</div>
+    </div>
+  )
+}
+
+function OverviewRow({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  tone: "violet" | "amber"
+}) {
+  return (
+    <div className="flex items-center justify-between border-b border-[#D6E4FF]/60 pb-2 last:border-0 last:pb-0">
+      <div className="flex items-center gap-2 text-[12px] font-medium text-[#7F9CC0]">
+        <span className="text-[#9EB9DF]">{icon}</span>
+        {label}
+      </div>
+      <span
+        className={`rounded-lg px-2 py-1 font-mono text-[12px] font-semibold ${
+          tone === "violet"
+            ? "bg-[#EDE7FF] text-[#4D3A9A]"
+            : "bg-[#FFE9C5] text-[#9B5A00]"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function ProgressLine({
+  label,
+  value,
+  percent,
+  tone,
+}: {
+  label: string
+  value: string
+  percent: number
+  tone: "violet" | "amber"
+}) {
+  const fill =
+    tone === "violet"
+      ? "bg-[#7C5CFC] shadow-[0_0_14px_rgba(124,92,252,0.55)]"
+      : "bg-[#EF9F27] shadow-[0_0_14px_rgba(239,159,39,0.5)]"
+
+  const valueClass = tone === "violet" ? "text-[#7C5CFC]" : "text-amber-700"
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {label}
+        </span>
+        <span className={`font-mono text-[13px] font-semibold ${valueClass}`}>
+          {value}
+        </span>
+      </div>
+      <div className="h-[7px] overflow-hidden rounded-full bg-[#E8EFFF]">
+        <div
+          className={`relative h-full overflow-hidden rounded-full ${fill} transition-all duration-1000 ease-out before:absolute before:inset-0 before:translate-x-[-100%] before:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.65),transparent)] before:animate-[progressShimmer_2s_ease-in-out_infinite]`}
+          style={{ width: `${Math.max(0, Math.min(percent, 100))}%` }}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -3709,12 +3702,16 @@ function SimpleLineChart({
           const yy = padTop + (chartH / (yTicks - 1)) * i
           return (
             <line
-              key={v}
+              key={`${v}-${i}`}
               x1={padLeft}
               x2={width - padRight}
               y1={yy}
               y2={yy}
-              stroke={i === yTicks - 1 ? "rgba(148,163,184,0.18)" : "rgba(148,163,184,0.12)"}
+              stroke={
+                i === yTicks - 1
+                  ? "rgba(148,163,184,0.18)"
+                  : "rgba(148,163,184,0.12)"
+              }
               strokeWidth="1"
             />
           )
@@ -3787,7 +3784,7 @@ function SimpleLineChart({
           const isLast = i === labels.length - 1
           return (
             <text
-              key={label}
+              key={`${label}-${i}`}
               x={x(i)}
               y={height - 8}
               textAnchor="middle"
