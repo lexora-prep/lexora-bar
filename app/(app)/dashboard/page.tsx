@@ -805,15 +805,38 @@ export default function Dashboard() {
       }
     }
 
+    const futureDates = allDates.filter((d) => d >= preserveBefore)
+    const futureActiveDates = futureDates.filter(
+      (d) => !isDateOff(d, offMap, onMap, shouldStudyWeekends)
+    )
+
+    if (futureActiveDates.length === 0) {
+      for (const d of futureDates) {
+        ruleMap[formatDateInput(d)] = 0
+      }
+
+      return ruleMap
+    }
+
     const remainingRules = Math.max(0, safeTotalRules - lockedRules)
 
-    const activeDates = allDates.filter((d) => {
-      if (d < preserveBefore) return false
-      return !isDateOff(d, offMap, onMap, shouldStudyWeekends)
+    const hasPreviousFutureAssignments = futureDates.some((d) => {
+      const key = formatDateInput(d)
+      const previousValue = Number(previousRuleMap?.[key] ?? 0)
+      return Number.isFinite(previousValue) && previousValue > 0
     })
 
-    if (activeDates.length === 0) {
-      for (const d of allDates) {
+    if (!hasPreviousFutureAssignments) {
+      const base = Math.floor(remainingRules / futureActiveDates.length)
+      let remainder = remainingRules % futureActiveDates.length
+
+      for (const d of futureActiveDates) {
+        const key = formatDateInput(d)
+        ruleMap[key] = base + (remainder > 0 ? 1 : 0)
+        if (remainder > 0) remainder--
+      }
+
+      for (const d of futureDates) {
         const key = formatDateInput(d)
         if (!(key in ruleMap)) {
           ruleMap[key] = 0
@@ -823,13 +846,78 @@ export default function Dashboard() {
       return ruleMap
     }
 
-    const base = Math.floor(remainingRules / activeDates.length)
-    let remainder = remainingRules % activeDates.length
+    let carriedRules = 0
+    let lastActiveKey: string | null = null
 
-    for (const d of activeDates) {
+    for (const d of futureDates) {
       const key = formatDateInput(d)
-      ruleMap[key] = base + (remainder > 0 ? 1 : 0)
-      if (remainder > 0) remainder--
+      const previousValue = Number(previousRuleMap?.[key] ?? 0)
+      const safePreviousValue =
+        Number.isFinite(previousValue) && previousValue > 0
+          ? Math.floor(previousValue)
+          : 0
+
+      const isActiveStudyDay = !isDateOff(
+        d,
+        offMap,
+        onMap,
+        shouldStudyWeekends
+      )
+
+      if (!isActiveStudyDay) {
+        carriedRules += safePreviousValue
+        ruleMap[key] = 0
+        continue
+      }
+
+      ruleMap[key] = safePreviousValue
+
+      if (carriedRules > 0) {
+        ruleMap[key] += carriedRules
+        carriedRules = 0
+      }
+
+      lastActiveKey = key
+    }
+
+    if (carriedRules > 0 && lastActiveKey) {
+      ruleMap[lastActiveKey] = (ruleMap[lastActiveKey] ?? 0) + carriedRules
+      carriedRules = 0
+    }
+
+    const currentFutureTotal = futureActiveDates.reduce((sum, d) => {
+      const key = formatDateInput(d)
+      const value = Number(ruleMap[key] ?? 0)
+      return sum + (Number.isFinite(value) && value > 0 ? Math.floor(value) : 0)
+    }, 0)
+
+    let difference = remainingRules - currentFutureTotal
+
+    if (difference > 0) {
+      let index = 0
+
+      while (difference > 0 && futureActiveDates.length > 0) {
+        const key = formatDateInput(
+          futureActiveDates[index % futureActiveDates.length]
+        )
+
+        ruleMap[key] = (ruleMap[key] ?? 0) + 1
+        difference--
+        index++
+      }
+    }
+
+    if (difference < 0) {
+      let excess = Math.abs(difference)
+
+      for (let i = futureActiveDates.length - 1; i >= 0 && excess > 0; i--) {
+        const key = formatDateInput(futureActiveDates[i])
+        const currentValue = Number(ruleMap[key] ?? 0)
+        const removable = Math.min(currentValue, excess)
+
+        ruleMap[key] = currentValue - removable
+        excess -= removable
+      }
     }
 
     for (const d of allDates) {
