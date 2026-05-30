@@ -937,11 +937,13 @@ export default function Dashboard() {
     nextOnMap,
     nextStudyWeekends,
     nextRuleSet = ruleSet,
+    preserveBeforeDate = todayKey,
   }: {
     nextOffMap: Record<string, boolean>
     nextOnMap: Record<string, boolean>
     nextStudyWeekends: boolean
     nextRuleSet?: RuleSet
+    preserveBeforeDate?: string
   }) {
     if (!startDate || !examDate) return
 
@@ -966,7 +968,7 @@ export default function Dashboard() {
       nextOffMap,
       nextOnMap,
       nextStudyWeekends,
-      todayKey,
+      preserveBeforeDate,
       planData?.rulesByDate ?? {}
     )
 
@@ -1263,6 +1265,7 @@ export default function Dashboard() {
       nextOnMap,
       nextStudyWeekends: studyWeekends,
       nextRuleSet: ruleSet,
+      preserveBeforeDate: key,
     })
 
     await saveStudyPlanSilently(
