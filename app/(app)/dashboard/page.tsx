@@ -397,7 +397,14 @@ export default function Dashboard() {
 
           setCalendarMonth(viewMonth)
           setCalendarDays(
-            buildCalendarDays(start, exam, viewMonth, offMap, onMap, nextStudyWeekends)
+            buildCalendarDays(
+              start,
+              exam,
+              viewMonth,
+              offMap,
+              onMap,
+              nextStudyWeekends
+            )
           )
         } else {
           setCalendarDays([])
@@ -520,7 +527,14 @@ export default function Dashboard() {
 
         setCalendarMonth(viewMonth)
         setCalendarDays(
-          buildCalendarDays(start, exam, viewMonth, offMap, onMap, nextStudyWeekends)
+          buildCalendarDays(
+            start,
+            exam,
+            viewMonth,
+            offMap,
+            onMap,
+            nextStudyWeekends
+          )
         )
       } else {
         setCalendarDays([])
@@ -532,6 +546,7 @@ export default function Dashboard() {
       setCalendarDays([])
       setCalendarMonth(null)
       setSavedOffMap({})
+      setSavedOnMap({})
     } finally {
       setStudyPlanLoaded(true)
     }
@@ -778,10 +793,9 @@ export default function Dashboard() {
     const allDates = getPlanDateRange(start, end)
     if (allDates.length === 0) return {}
 
-    const today = normalizeLocalDate(new Date())
     const preserveBefore = preserveBeforeDate
       ? normalizeLocalDate(new Date(preserveBeforeDate))
-      : today
+      : normalizeLocalDate(new Date())
 
     const safeTotalRules =
       Number.isFinite(totalRules) && totalRules > 0 ? Math.floor(totalRules) : 0
@@ -805,6 +819,7 @@ export default function Dashboard() {
       }
     }
 
+    const remainingRules = Math.max(0, safeTotalRules - lockedRules)
     const futureDates = allDates.filter((d) => d >= preserveBefore)
     const futureActiveDates = futureDates.filter(
       (d) => !isDateOff(d, offMap, onMap, shouldStudyWeekends)
@@ -812,31 +827,11 @@ export default function Dashboard() {
 
     if (futureActiveDates.length === 0) {
       for (const d of futureDates) {
-        ruleMap[formatDateInput(d)] = 0
-      }
-
-      return ruleMap
-    }
-
-    const remainingRules = Math.max(0, safeTotalRules - lockedRules)
-
-    const hasPreviousFutureAssignments = futureDates.some((d) => {
-      const key = formatDateInput(d)
-      const previousValue = Number(previousRuleMap?.[key] ?? 0)
-      return Number.isFinite(previousValue) && previousValue > 0
-    })
-
-    if (!hasPreviousFutureAssignments) {
-      const base = Math.floor(remainingRules / futureActiveDates.length)
-      let remainder = remainingRules % futureActiveDates.length
-
-      for (const d of futureActiveDates) {
         const key = formatDateInput(d)
-        ruleMap[key] = base + (remainder > 0 ? 1 : 0)
-        if (remainder > 0) remainder--
+        ruleMap[key] = 0
       }
 
-      for (const d of futureDates) {
+      for (const d of allDates) {
         const key = formatDateInput(d)
         if (!(key in ruleMap)) {
           ruleMap[key] = 0
@@ -846,82 +841,29 @@ export default function Dashboard() {
       return ruleMap
     }
 
-    let carriedRules = 0
-    let lastActiveKey: string | null = null
+    const base = Math.floor(remainingRules / futureActiveDates.length)
+    let remainder = remainingRules % futureActiveDates.length
+
+    for (const d of futureActiveDates) {
+      const key = formatDateInput(d)
+      ruleMap[key] = base + (remainder > 0 ? 1 : 0)
+
+      if (remainder > 0) {
+        remainder--
+      }
+    }
 
     for (const d of futureDates) {
       const key = formatDateInput(d)
-      const previousValue = Number(previousRuleMap?.[key] ?? 0)
-      const safePreviousValue =
-        Number.isFinite(previousValue) && previousValue > 0
-          ? Math.floor(previousValue)
-          : 0
 
-      const isActiveStudyDay = !isDateOff(
-        d,
-        offMap,
-        onMap,
-        shouldStudyWeekends
-      )
-
-      if (!isActiveStudyDay) {
-        carriedRules += safePreviousValue
+      if (!(key in ruleMap)) {
         ruleMap[key] = 0
-        continue
-      }
-
-      ruleMap[key] = safePreviousValue
-
-      if (carriedRules > 0) {
-        ruleMap[key] += carriedRules
-        carriedRules = 0
-      }
-
-      lastActiveKey = key
-    }
-
-    if (carriedRules > 0 && lastActiveKey) {
-      ruleMap[lastActiveKey] = (ruleMap[lastActiveKey] ?? 0) + carriedRules
-      carriedRules = 0
-    }
-
-    const currentFutureTotal = futureActiveDates.reduce((sum, d) => {
-      const key = formatDateInput(d)
-      const value = Number(ruleMap[key] ?? 0)
-      return sum + (Number.isFinite(value) && value > 0 ? Math.floor(value) : 0)
-    }, 0)
-
-    let difference = remainingRules - currentFutureTotal
-
-    if (difference > 0) {
-      let index = 0
-
-      while (difference > 0 && futureActiveDates.length > 0) {
-        const key = formatDateInput(
-          futureActiveDates[index % futureActiveDates.length]
-        )
-
-        ruleMap[key] = (ruleMap[key] ?? 0) + 1
-        difference--
-        index++
-      }
-    }
-
-    if (difference < 0) {
-      let excess = Math.abs(difference)
-
-      for (let i = futureActiveDates.length - 1; i >= 0 && excess > 0; i--) {
-        const key = formatDateInput(futureActiveDates[i])
-        const currentValue = Number(ruleMap[key] ?? 0)
-        const removable = Math.min(currentValue, excess)
-
-        ruleMap[key] = currentValue - removable
-        excess -= removable
       }
     }
 
     for (const d of allDates) {
       const key = formatDateInput(d)
+
       if (!(key in ruleMap)) {
         ruleMap[key] = 0
       }
@@ -1375,6 +1317,7 @@ export default function Dashboard() {
       nextOnMap,
       nextStudyWeekends,
       nextRuleSet: ruleSet,
+      preserveBeforeDate: todayKey,
     })
 
     await saveStudyPlanSilently(
@@ -1406,9 +1349,16 @@ export default function Dashboard() {
       nextOnMap,
       nextStudyWeekends: studyWeekends,
       nextRuleSet,
+      preserveBeforeDate: todayKey,
     })
 
-    await saveStudyPlanSilently(nextOffDates, nextOnDates, studyWeekends, nextRuleSet)
+    await saveStudyPlanSilently(
+      nextOffDates,
+      nextOnDates,
+      studyWeekends,
+      nextRuleSet
+    )
+
     if (currentUserId) {
       await loadStudyPlanOnly(currentUserId)
     }
@@ -1499,7 +1449,14 @@ export default function Dashboard() {
 
     setCalendarMonth(next)
     setCalendarDays(
-      buildCalendarDays(startDate, examDate, next, savedOffMap, savedOnMap, studyWeekends)
+      buildCalendarDays(
+        startDate,
+        examDate,
+        next,
+        savedOffMap,
+        savedOnMap,
+        studyWeekends
+      )
     )
   }
 
@@ -1861,7 +1818,9 @@ export default function Dashboard() {
               <MetricCard
                 title="BLL Score"
                 value={`${stateData?.userBLL ?? dashboard?.userBLL ?? 0}%`}
-                subtitle={`State avg: ${stateData?.stateBLLAvg ?? dashboard?.stateBLLAvg ?? 0}%`}
+                subtitle={`State avg: ${
+                  stateData?.stateBLLAvg ?? dashboard?.stateBLLAvg ?? 0
+                }%`}
                 accent="emerald"
                 progress={stateData?.userBLL ?? dashboard?.userBLL ?? 0}
                 delta={bllDiff}
@@ -1879,7 +1838,8 @@ export default function Dashboard() {
                     Today&apos;s Smart Plan
                   </div>
                   <div className="text-[11px] text-white/65">
-                    {todayBll} / {goalBll} rules today • {todaySpacedReviews} spaced reviews due
+                    {todayBll} / {goalBll} rules today •{" "}
+                    {todaySpacedReviews} spaced reviews due
                   </div>
                 </div>
               </div>
@@ -1931,7 +1891,10 @@ export default function Dashboard() {
                   </button>
                 </div>
 
-                <div className="relative flex items-center gap-1" ref={customRangeRef}>
+                <div
+                  className="relative flex items-center gap-1"
+                  ref={customRangeRef}
+                >
                   {(["7d", "14d", "30d", "custom"] as AnalyticsRange[]).map(
                     (range) => (
                       <button
@@ -2509,7 +2472,6 @@ export default function Dashboard() {
                             className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-violet-400"
                           >
                             <option value="core">Core Rules Only</option>
-
                           </select>
                           <div className="mt-1 text-[10px] leading-4 text-slate-500">
                             Core excludes definition-only expansion rules. Full
@@ -2563,11 +2525,7 @@ export default function Dashboard() {
 
                         <InfoRow
                           label="Rule Package"
-                          value={
-                            <span className="font-semibold">
-                              Core
-                            </span>
-                          }
+                          value={<span className="font-semibold">Core</span>}
                         />
 
                         <InfoRow
@@ -2619,9 +2577,7 @@ export default function Dashboard() {
                         label="Review Rules"
                         value={
                           <span className="font-semibold">
-                            {todayRuleTarget
-                              ? Math.max(6, todayRuleTarget * 2)
-                              : 0}
+                            {todaySpacedReviews}
                           </span>
                         }
                       />
