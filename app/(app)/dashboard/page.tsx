@@ -371,7 +371,9 @@ export default function Dashboard() {
           totalRules,
           offMap,
           onMap,
-          nextStudyWeekends
+          nextStudyWeekends,
+          todayKey,
+          planData?.rulesByDate ?? {}
         )
 
         setPlanData({
@@ -492,7 +494,9 @@ export default function Dashboard() {
         totalRules,
         offMap,
         onMap,
-        nextStudyWeekends
+        nextStudyWeekends,
+        todayKey,
+        planData?.rulesByDate ?? {}
       )
 
       setPlanData({
@@ -767,23 +771,60 @@ export default function Dashboard() {
     totalRules: number,
     offMap: Record<string, boolean>,
     onMap: Record<string, boolean>,
-    shouldStudyWeekends = true
+    shouldStudyWeekends = true,
+    preserveBeforeDate?: string,
+    previousRuleMap: Record<string, number> = {}
   ) {
     const allDates = getPlanDateRange(start, end)
     if (allDates.length === 0) return {}
 
-    const activeDates = allDates.filter(
-      (d) => !isDateOff(d, offMap, onMap, shouldStudyWeekends)
-    )
-    if (activeDates.length === 0) return {}
+    const today = normalizeLocalDate(new Date())
+    const preserveBefore = preserveBeforeDate
+      ? normalizeLocalDate(new Date(preserveBeforeDate))
+      : today
 
     const safeTotalRules =
       Number.isFinite(totalRules) && totalRules > 0 ? Math.floor(totalRules) : 0
 
-    const base = Math.floor(safeTotalRules / activeDates.length)
-    let remainder = safeTotalRules % activeDates.length
-
     const ruleMap: Record<string, number> = {}
+
+    let lockedRules = 0
+
+    for (const d of allDates) {
+      const key = formatDateInput(d)
+
+      if (d < preserveBefore) {
+        const previousValue = Number(previousRuleMap?.[key] ?? 0)
+        const safePreviousValue =
+          Number.isFinite(previousValue) && previousValue > 0
+            ? Math.floor(previousValue)
+            : 0
+
+        ruleMap[key] = safePreviousValue
+        lockedRules += safePreviousValue
+      }
+    }
+
+    const remainingRules = Math.max(0, safeTotalRules - lockedRules)
+
+    const activeDates = allDates.filter((d) => {
+      if (d < preserveBefore) return false
+      return !isDateOff(d, offMap, onMap, shouldStudyWeekends)
+    })
+
+    if (activeDates.length === 0) {
+      for (const d of allDates) {
+        const key = formatDateInput(d)
+        if (!(key in ruleMap)) {
+          ruleMap[key] = 0
+        }
+      }
+
+      return ruleMap
+    }
+
+    const base = Math.floor(remainingRules / activeDates.length)
+    let remainder = remainingRules % activeDates.length
 
     for (const d of activeDates) {
       const key = formatDateInput(d)
@@ -924,7 +965,9 @@ export default function Dashboard() {
       totalRules,
       nextOffMap,
       nextOnMap,
-      nextStudyWeekends
+      nextStudyWeekends,
+      todayKey,
+      planData?.rulesByDate ?? {}
     )
 
     const nextCalendarDays = buildCalendarDays(
@@ -1142,7 +1185,9 @@ export default function Dashboard() {
         totalRules,
         offMap,
         onMap,
-        nextStudyWeekends
+        nextStudyWeekends,
+        todayKey,
+        planData?.rulesByDate ?? {}
       )
 
       const nextPlanData = {
