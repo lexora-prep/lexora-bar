@@ -43,44 +43,13 @@ model user_legal_acceptances {
   @@schema("public")
 }
 
-enum MBETrack {
-  CLASSIC
-  NEXTGEN
-
-  @@schema("public")
-}
-
-enum MBESessionMode {
-  STUDY
-  QUIZ
-  REVIEW
-
-  @@schema("public")
-}
-
-enum QuestionStatus {
-  ACTIVE
-  DRAFT
-  DISABLED
-  FLAGGED
-
-  @@schema("public")
-}
-
 model rules {
   id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   topic_id                String?                   @db.Uuid
   subtopic_id             String?                   @db.Uuid
   title                   String
   rule_text               String
-  prompt_question         String?
   explanation             String?
-  application_example     String?
-  how_to_apply            Json?
-  common_traps            Json?
-  exam_tip                String?
-  common_trap             String?
-  priority                String?
   buzzwords               Json?
   cloze_template          String?
   is_active               Boolean                   @default(true)
@@ -89,6 +58,13 @@ model rules {
   subject_uuid            String?                   @db.Uuid
   subject_id              String?                   @db.Uuid
   rule_type               String?
+  prompt_question         String?
+  application_example     String?
+  common_trap             String?
+  priority                String?
+  common_traps            Json?
+  exam_tip                String?
+  how_to_apply            Json?
   flashcard_session_cards flashcard_session_cards[]
   subjects                subjects?                 @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rules_subject")
   subtopics               subtopics?                @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -99,23 +75,24 @@ model rules {
   @@index([subtopic_id])
   @@index([topic_id])
   @@index([subject_id])
+  @@index([is_active, subject_id], map: "idx_rules_active_subject")
   @@schema("public")
 }
 
 model subjects {
   id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                  String
+  order_index           Int                @default(0)
+  created_at            DateTime           @default(now()) @db.Timestamptz(6)
   exam_status           String             @default("core")
   show_in_rule_training Boolean            @default(true)
   show_in_analytics     Boolean            @default(true)
-  order_index           Int                @default(0)
-  created_at            DateTime           @default(now()) @db.Timestamptz(6)
-  rules                 rules[]
-  topics                topics[]
   mbe_questions         MBEQuestion[]
+  state_subject_stats   StateSubjectStat[]
   topic_progress        TopicProgress[]
   user_subject_stats    UserSubjectStat[]
-  state_subject_stats   StateSubjectStat[]
+  rules                 rules[]
+  topics                topics[]
 
   @@schema("public")
 }
@@ -126,10 +103,10 @@ model subtopics {
   name          String
   order_index   Int           @default(0)
   created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  mbe_questions MBEQuestion[]
   rules         rules[]
   topics        topics        @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user_rules    user_rules[]
-  mbe_questions MBEQuestion[]
 
   @@index([topic_id])
   @@schema("public")
@@ -141,12 +118,12 @@ model topics {
   name           String
   order_index    Int             @default(0)
   created_at     DateTime        @default(now()) @db.Timestamptz(6)
+  mbe_questions  MBEQuestion[]
+  topic_progress TopicProgress[]
   rules          rules[]
   subtopics      subtopics[]
   subjects       subjects        @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "topics_subject_fk")
   user_rules     user_rules[]
-  mbe_questions  MBEQuestion[]
-  topic_progress TopicProgress[]
 
   @@index([subject_id])
   @@schema("public")
@@ -171,13 +148,14 @@ model user_rule_attempts {
   user_id          String    @db.Uuid
   rule_id          String    @db.Uuid
   score            Int
-  training_mode    String?   @db.VarChar(50)
   missed_buzzwords Json?
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  training_mode    String?   @db.VarChar(50)
 
   @@index([user_id])
   @@index([user_id, created_at])
   @@index([user_id, training_mode])
+  @@index([user_id, created_at(sort: Desc)], map: "idx_user_rule_attempts_user_created")
   @@schema("public")
 }
 
@@ -204,6 +182,8 @@ model user_rule_progress {
   @@index([rule_id])
   @@index([user_id])
   @@index([user_id, next_review_at])
+  @@index([user_id, needs_practice], map: "idx_user_rule_progress_user_needs_practice")
+  @@index([user_id, next_review_at], map: "idx_user_rule_progress_user_next_review")
   @@schema("public")
 }
 
@@ -215,19 +195,19 @@ model user_rules {
   subtopic_id         String    @db.Uuid
   title               String
   rule_text           String
-  prompt_question     String?
   explanation         String?
-  application_example String?
-  how_to_apply        Json?
-  common_traps        Json?
-  exam_tip            String?
-  common_trap         String?
-  priority            String?
   buzzwords           Json?
   cloze_template      String?
   created_at          DateTime  @default(now()) @db.Timestamptz(6)
   updated_at          DateTime  @default(now()) @db.Timestamptz(6)
   subject_id          String?   @db.Uuid
+  prompt_question     String?
+  application_example String?
+  common_trap         String?
+  priority            String?
+  common_traps        Json?
+  exam_tip            String?
+  how_to_apply        Json?
   rules               rules     @relation(fields: [original_rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   subtopics           subtopics @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   topics              topics    @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -287,6 +267,7 @@ model StudySession {
   @@index([userId])
   @@index([startedAt])
   @@index([userId, startedAt])
+  @@index([userId, startedAt(sort: Desc)], map: "idx_study_session_user_started")
   @@schema("public")
 }
 
@@ -313,38 +294,47 @@ model userRuleStat {
 }
 
 model user_mbe_attempts {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id         String   @db.Uuid
-  session_id      String?  @db.Uuid
-  question_id     String?  @db.Uuid
-  selected_answer String?
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String       @db.Uuid
+  question_id     String?      @db.Uuid
   is_correct      Boolean
+  created_at      DateTime     @default(now()) @db.Timestamptz(6)
+  selected_answer String?
+  session_id      String?      @db.Uuid
   time_spent_sec  Int?
-  created_at      DateTime @default(now()) @db.Timestamptz(6)
-
-  exam_session ExamSession? @relation(fields: [session_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  mbe_question MBEQuestion? @relation(fields: [question_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  mbe_question    MBEQuestion? @relation(fields: [question_id], references: [id], onUpdate: NoAction)
+  exam_session    ExamSession? @relation(fields: [session_id], references: [id], onUpdate: NoAction)
 
   @@index([user_id])
   @@index([user_id, created_at])
   @@index([session_id])
   @@index([question_id])
+  @@index([user_id, is_correct], map: "idx_user_mbe_attempts_user_correct")
+  @@index([user_id, created_at(sort: Desc)], map: "idx_user_mbe_attempts_user_created")
   @@schema("public")
 }
 
 model StudyPlan {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  startDate     DateTime
-  examDate      DateTime
-  studyWeekends Boolean
-  dailyMBE      Int
-  dailyRules    Int
-  totalDays     Int
-  createdAt     DateTime @default(now())
-  offDates      String[] @default([])
-  onDates       String[] @default([])
-  ruleSet       String   @default("core")
+  id                              String   @id @default(uuid())
+  userId                          String   @unique
+  startDate                       DateTime
+  examDate                        DateTime
+  studyWeekends                   Boolean
+  dailyMBE                        Int
+  dailyRules                      Int
+  totalDays                       Int
+  createdAt                       DateTime @default(now())
+  offDates                        String[] @default([])
+  ruleSet                         String   @default("core")
+  onDates                         String[] @default([])
+  jurisdictionCode                String   @default("UBE")
+  jurisdictionName                String   @default("UBE / Uniform Current")
+  examRegime                      String   @default("UBE_CURRENT")
+  rulePackages                    String[] @default(["core"])
+  customRulesEnabled              Boolean  @default(false)
+  studyRound                      Int      @default(1)
+  userManuallySelectedRulePackage Boolean  @default(false)
+  updatedAt                       DateTime @default(now()) @updatedAt
 
   @@schema("public")
 }
@@ -360,84 +350,80 @@ model beta_invites {
 }
 
 model profiles {
-  id                       String    @id @db.Uuid
-  email                    String    @unique
-  full_name                String?
-  law_school               String?
-  jurisdiction             String?
-  exam_month               Int?
-  exam_year                Int?
-  phone_number             String?
-  mbe_access               Boolean   @default(false)
-  subscription_tier        String?   @default("free")
-  paddle_customer_id       String?
-  paddle_subscription_id   String?
-  paddle_transaction_id    String?
-  paddle_price_id          String?
-  billing_status           String?   @default("free")
-  billing_currency         String?
-  billing_amount_cents     Int?
-  billing_tax_cents        Int?
-  billing_total_cents      Int?
-  billing_interval         String?
-  billing_started_at       DateTime? @db.Timestamptz(6)
-  billing_period_starts_at DateTime? @db.Timestamptz(6)
-  billing_period_ends_at   DateTime? @db.Timestamptz(6)
-  billing_cancelled_at     DateTime? @db.Timestamptz(6)
-  billing_last_paid_at     DateTime? @db.Timestamptz(6)
-  billing_discount_id      String?
-  billing_discount_code    String?
-  billing_discount_amount  String?
-  billing_invoice_url      String?
-
-  role                  String    @default("user")
-  admin_role            String?   @default("user")
-  is_blocked            Boolean   @default(false)
-  is_admin              Boolean   @default(false)
-  email_announcements   Boolean   @default(true)
-  study_reminders       Boolean   @default(true)
-  sound_effects         Boolean   @default(false)
-  compact_mode          Boolean   @default(false)
-  pending_deletion      Boolean   @default(false)
-  deletion_requested_at DateTime? @db.Timestamptz(6)
-  deleted_at            DateTime? @db.Timestamptz(6)
-
-  can_manage_questions     Boolean @default(false)
-  can_manage_rules         Boolean @default(false)
-  can_manage_users         Boolean @default(false)
-  can_manage_announcements Boolean @default(false)
-  can_view_billing         Boolean @default(false)
-  can_manage_coupons       Boolean @default(false)
-  can_manage_settings      Boolean @default(false)
-  can_view_audit_log       Boolean @default(false)
-
-  can_manage_workspace_members      Boolean @default(false)
-  can_create_workspace_channels     Boolean @default(false)
-  can_manage_workspace_channels     Boolean @default(false)
-  can_manage_hidden_channels        Boolean @default(false)
-  can_manage_workspace_notes        Boolean @default(false)
-  can_create_shared_notes           Boolean @default(false)
-  can_create_workspace_polls        Boolean @default(false)
-  can_send_workspace_wake_alerts    Boolean @default(false)
-  can_view_workspace_member_details Boolean @default(false)
-  can_manage_all_workspace          Boolean @default(false)
-
-  workspace_status String @default("online")
-
-  last_login_at        DateTime? @db.Timestamptz(6)
-  last_active_at       DateTime? @db.Timestamptz(6)
-  last_ip_address      String?
-  last_country         String?
-  last_region          String?
-  last_city            String?
-  last_timezone        String?
-  last_latitude        Float?
-  last_longitude       Float?
-  last_user_agent      String?
-  last_activity_source String?
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
+  id                                                               String                @id @db.Uuid
+  email                                                            String                @unique
+  full_name                                                        String?
+  law_school                                                       String?
+  jurisdiction                                                     String?
+  exam_month                                                       Int?
+  exam_year                                                        Int?
+  created_at                                                       DateTime              @default(now())
+  mbe_access                                                       Boolean               @default(false)
+  subscription_tier                                                String?               @default("free")
+  is_admin                                                         Boolean               @default(false)
+  is_blocked                                                       Boolean               @default(false)
+  role                                                             String                @default("user")
+  updated_at                                                       DateTime              @default(now())
+  compact_mode                                                     Boolean               @default(false)
+  deleted_at                                                       DateTime?             @db.Timestamptz(6)
+  deletion_requested_at                                            DateTime?             @db.Timestamptz(6)
+  email_announcements                                              Boolean               @default(true)
+  pending_deletion                                                 Boolean               @default(false)
+  sound_effects                                                    Boolean               @default(false)
+  study_reminders                                                  Boolean               @default(true)
+  admin_role                                                       String?               @default("user")
+  can_manage_announcements                                         Boolean               @default(false)
+  can_manage_coupons                                               Boolean               @default(false)
+  can_manage_questions                                             Boolean               @default(false)
+  can_manage_rules                                                 Boolean               @default(false)
+  can_manage_settings                                              Boolean               @default(false)
+  can_manage_users                                                 Boolean               @default(false)
+  can_view_audit_log                                               Boolean               @default(false)
+  can_view_billing                                                 Boolean               @default(false)
+  can_create_shared_notes                                          Boolean               @default(false)
+  can_create_workspace_channels                                    Boolean               @default(false)
+  can_manage_all_workspace                                         Boolean               @default(false)
+  can_manage_workspace_members                                     Boolean               @default(false)
+  workspace_status                                                 String                @default("online")
+  can_create_workspace_polls                                       Boolean               @default(false)
+  can_manage_hidden_channels                                       Boolean               @default(false)
+  can_manage_workspace_channels                                    Boolean               @default(false)
+  can_manage_workspace_notes                                       Boolean               @default(false)
+  can_send_workspace_wake_alerts                                   Boolean               @default(false)
+  can_view_workspace_member_details                                Boolean               @default(false)
+  last_active_at                                                   DateTime?             @db.Timestamptz(6)
+  last_login_at                                                    DateTime?             @db.Timestamptz(6)
+  phone_number                                                     String?
+  last_ip_address                                                  String?
+  last_country                                                     String?
+  last_region                                                      String?
+  last_city                                                        String?
+  last_timezone                                                    String?
+  last_latitude                                                    Float?
+  last_longitude                                                   Float?
+  last_user_agent                                                  String?
+  last_activity_source                                             String?
+  billing_amount_cents                                             Int?
+  billing_cancelled_at                                             DateTime?             @db.Timestamptz(6)
+  billing_currency                                                 String?
+  billing_discount_amount                                          String?
+  billing_discount_code                                            String?
+  billing_discount_id                                              String?
+  billing_interval                                                 String?
+  billing_invoice_url                                              String?
+  billing_last_paid_at                                             DateTime?             @db.Timestamptz(6)
+  billing_period_ends_at                                           DateTime?             @db.Timestamptz(6)
+  billing_period_starts_at                                         DateTime?             @db.Timestamptz(6)
+  billing_started_at                                               DateTime?             @db.Timestamptz(6)
+  billing_status                                                   String?               @default("free")
+  billing_tax_cents                                                Int?
+  billing_total_cents                                              Int?
+  paddle_customer_id                                               String?
+  paddle_price_id                                                  String?
+  paddle_subscription_id                                           String?
+  paddle_transaction_id                                            String?
+  admin_notifications_admin_notifications_actor_admin_idToprofiles admin_notifications[] @relation("admin_notifications_actor_admin_idToprofiles")
+  admin_notifications_admin_notifications_admin_idToprofiles       admin_notifications[] @relation("admin_notifications_admin_idToprofiles")
 
   @@index([jurisdiction])
   @@index([role])
@@ -450,33 +436,46 @@ model profiles {
 }
 
 model support_tickets {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String   @db.Uuid
-  email      String
-  subject    String
-  category   String   @default("billing")
-  status     String   @default("open")
-  priority   String   @default("normal")
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-
-  messages support_ticket_messages[]
+  id                    String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String                    @db.Uuid
+  email                 String
+  subject               String
+  category              String                    @default("billing")
+  status                String                    @default("open")
+  priority              String                    @default("normal")
+  created_at            DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                  @default(now()) @db.Timestamptz(6)
+  assigned_admin_id     String?                   @db.Uuid
+  assigned_admin_name   String?
+  last_user_message_at  DateTime?                 @db.Timestamptz(6)
+  last_support_reply_at DateTime?                 @db.Timestamptz(6)
+  last_admin_read_at    DateTime?                 @db.Timestamptz(6)
+  resolved_at           DateTime?                 @db.Timestamptz(6)
+  closed_at             DateTime?                 @db.Timestamptz(6)
+  sla_due_at            DateTime?                 @db.Timestamptz(6)
+  messages              support_ticket_messages[]
 
   @@index([user_id])
   @@index([email])
   @@index([status])
   @@index([created_at(sort: Desc)])
+  @@index([assigned_admin_id])
+  @@index([closed_at(sort: Desc)])
+  @@index([last_admin_read_at(sort: Desc)])
+  @@index([last_support_reply_at(sort: Desc)])
+  @@index([last_user_message_at(sort: Desc)])
+  @@index([resolved_at(sort: Desc)])
+  @@index([sla_due_at])
   @@schema("public")
 }
 
 model support_ticket_messages {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ticket_id  String   @db.Uuid
-  sender     String   @default("user")
+  id         String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticket_id  String          @db.Uuid
+  sender     String          @default("user")
   message    String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  ticket support_tickets @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  created_at DateTime        @default(now()) @db.Timestamptz(6)
+  ticket     support_tickets @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
 
   @@index([ticket_id])
   @@index([created_at(sort: Desc)])
@@ -499,66 +498,65 @@ model workspace_settings {
 }
 
 model MBEQuestion {
-  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  question_number  Int?           @unique
-  title            String?
-  question_text    String
-  answer_a         String
-  answer_b         String
-  answer_c         String
-  answer_d         String
-  correct_answer   String
-  explanation      String?
-  rule_text        String?
-  subject_id       String         @db.Uuid
-  topic_id         String?        @db.Uuid
-  subtopic_id      String?        @db.Uuid
-  track            MBETrack       @default(CLASSIC)
-  difficulty       Int?           @default(1)
-  source           String?
-  source_reference String?
-  question_status  QuestionStatus @default(ACTIVE)
-  is_active        Boolean        @default(true)
-  version          Int            @default(1)
-  flagged_count    Int            @default(0)
-  created_at       DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime       @default(now()) @db.Timestamptz(6)
-
-  subjects               subjects              @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  topics                 topics?               @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  subtopics              subtopics?            @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                     String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                  String?
+  question_text          String
+  answer_a               String
+  answer_b               String
+  answer_c               String
+  answer_d               String
+  correct_answer         String
+  explanation            String?
+  rule_text              String?
+  subject_id             String                @db.Uuid
+  topic_id               String?               @db.Uuid
+  subtopic_id            String?               @db.Uuid
+  track                  MBETrack              @default(CLASSIC)
+  difficulty             Int?                  @default(1)
+  source                 String?
+  source_reference       String?
+  question_status        QuestionStatus        @default(ACTIVE)
+  is_active              Boolean               @default(true)
+  version                Int                   @default(1)
+  flagged_count          Int                   @default(0)
+  created_at             DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime              @default(now()) @db.Timestamptz(6)
+  question_number        Int?                  @unique
   exam_session_questions ExamSessionQuestion[]
-  user_mbe_attempts      user_mbe_attempts[]
+  subjects               subjects              @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subtopics              subtopics?            @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  topics                 topics?               @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   question_flags         QuestionFlag[]
   question_revisions     QuestionRevision[]
+  user_mbe_attempts      user_mbe_attempts[]
 
   @@index([subject_id])
   @@index([topic_id])
   @@index([subtopic_id])
   @@index([track])
   @@index([question_status])
+  @@index([is_active, subject_id], map: "idx_mbe_question_active_subject")
   @@schema("public")
 }
 
 model ExamSession {
-  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            String         @db.Uuid
-  track              MBETrack       @default(CLASSIC)
+  id                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String                @db.Uuid
+  track              MBETrack              @default(CLASSIC)
   mode               MBESessionMode
   review_source      String?
   total_questions    Int
   time_limit_seconds Int?
-  started_at         DateTime       @default(now()) @db.Timestamptz(6)
-  completed_at       DateTime?      @db.Timestamptz(6)
-  is_completed       Boolean        @default(false)
+  started_at         DateTime              @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?             @db.Timestamptz(6)
+  is_completed       Boolean               @default(false)
   score              Float?
-  correct_count      Int            @default(0)
-  incorrect_count    Int            @default(0)
-  unanswered_count   Int            @default(0)
-  created_at         DateTime       @default(now()) @db.Timestamptz(6)
-
-  questions         ExamSessionQuestion[]
-  user_mbe_attempts user_mbe_attempts[]
+  correct_count      Int                   @default(0)
+  incorrect_count    Int                   @default(0)
+  unanswered_count   Int                   @default(0)
+  created_at         DateTime              @default(now()) @db.Timestamptz(6)
+  questions          ExamSessionQuestion[]
+  user_mbe_attempts  user_mbe_attempts[]
 
   @@index([user_id])
   @@index([track])
@@ -568,14 +566,13 @@ model ExamSession {
 }
 
 model ExamSessionQuestion {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  session_id  String   @db.Uuid
-  question_id String   @db.Uuid
-  order_index Int
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  exam_session ExamSession @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id   String      @db.Uuid
+  question_id  String      @db.Uuid
+  order_index  Int
+  created_at   DateTime    @default(now()) @db.Timestamptz(6)
   mbe_question MBEQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  exam_session ExamSession @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([session_id, question_id])
   @@index([session_id])
@@ -595,9 +592,8 @@ model TopicProgress {
   last_attempted DateTime? @db.Timestamptz(6)
   created_at     DateTime  @default(now()) @db.Timestamptz(6)
   updated_at     DateTime  @default(now()) @db.Timestamptz(6)
-
-  subjects subjects @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  topics   topics   @relation(fields: [topic_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subjects       subjects  @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  topics         topics    @relation(fields: [topic_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, topic_id])
   @@index([user_id])
@@ -617,8 +613,7 @@ model UserSubjectStat {
   last_attempted    DateTime? @db.Timestamptz(6)
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   updated_at        DateTime  @default(now()) @db.Timestamptz(6)
-
-  subjects subjects @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subjects          subjects  @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, subject_id])
   @@index([user_id])
@@ -651,8 +646,7 @@ model StateSubjectStat {
   avg_time_spent    Float?   @default(0)
   created_at        DateTime @default(now()) @db.Timestamptz(6)
   updated_at        DateTime @default(now()) @db.Timestamptz(6)
-
-  subjects subjects @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subjects          subjects @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([state, subject_id])
   @@index([state])
@@ -661,15 +655,14 @@ model StateSubjectStat {
 }
 
 model QuestionFlag {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  question_id String    @db.Uuid
-  user_id     String?   @db.Uuid
-  reason      String?
-  details     String?
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
-  resolved    Boolean   @default(false)
-  resolved_at DateTime? @db.Timestamptz(6)
-
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question_id  String      @db.Uuid
+  user_id      String?     @db.Uuid
+  reason       String?
+  details      String?
+  created_at   DateTime    @default(now()) @db.Timestamptz(6)
+  resolved     Boolean     @default(false)
+  resolved_at  DateTime?   @db.Timestamptz(6)
   mbe_question MBEQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([question_id])
@@ -678,17 +671,16 @@ model QuestionFlag {
 }
 
 model QuestionRevision {
-  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  question_id          String   @db.Uuid
-  changed_by           String?  @db.Uuid
+  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question_id          String      @db.Uuid
+  changed_by           String?     @db.Uuid
   previous_title       String?
   previous_text        String?
   previous_answer      String?
   previous_explanation String?
   change_note          String?
-  created_at           DateTime @default(now()) @db.Timestamptz(6)
-
-  mbe_question MBEQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at           DateTime    @default(now()) @db.Timestamptz(6)
+  mbe_question         MBEQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([question_id])
   @@schema("public")
@@ -747,17 +739,17 @@ model admin_notes {
   author_id     String    @db.Uuid
   title         String?
   body          String
+  is_pinned     Boolean   @default(false)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime  @default(now()) @db.Timestamptz(6)
+  assignee_id   String?   @db.Uuid
+  checked_by    String[]  @default([])
+  due_at        DateTime? @db.Timestamptz(6)
   priority      String    @default("normal")
   status        String    @default("open")
   audience      String    @default("all_admins")
-  recipient_ids String[]  @default([])
   confidential  Boolean   @default(false)
-  assignee_id   String?   @db.Uuid
-  due_at        DateTime? @db.Timestamptz(6)
-  is_pinned     Boolean   @default(false)
-  checked_by    String[]  @default([])
-  created_at    DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime  @default(now()) @db.Timestamptz(6)
+  recipient_ids String[]  @default([])
 
   @@index([author_id])
   @@index([assignee_id])
@@ -795,46 +787,57 @@ model admin_note_reactions {
 }
 
 model admin_notifications {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String   @db.Uuid
-  type       String
-  title      String
-  body       String?
-  link       String?
-  is_read    Boolean  @default(false)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
+  id                                                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                                               String?   @db.Uuid
+  type                                                  String
+  title                                                 String
+  body                                                  String?   @default("")
+  link                                                  String?
+  is_read                                               Boolean   @default(false)
+  created_at                                            DateTime  @default(now()) @db.Timestamptz(6)
+  admin_id                                              String?   @db.Uuid
+  actor_admin_id                                        String?   @db.Uuid
+  href                                                  String?
+  metadata                                              Json?     @default("{}")
+  read_at                                               DateTime? @db.Timestamptz(6)
+  severity                                              String    @default("normal")
+  profiles_admin_notifications_actor_admin_idToprofiles profiles? @relation("admin_notifications_actor_admin_idToprofiles", fields: [actor_admin_id], references: [id], onUpdate: NoAction, map: "admin_notifications_actor_admin_id_profiles_id_fk")
+  profiles_admin_notifications_admin_idToprofiles       profiles? @relation("admin_notifications_admin_idToprofiles", fields: [admin_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "admin_notifications_admin_id_profiles_id_fk")
 
   @@index([user_id])
   @@index([is_read])
   @@index([created_at])
+  @@index([admin_id, created_at(sort: Desc)])
+  @@index([admin_id, read_at])
+  @@index([admin_id, severity, created_at(sort: Desc)], map: "admin_notifications_admin_id_severity_idx")
+  @@index([admin_id, type, created_at(sort: Desc)], map: "admin_notifications_admin_id_type_idx")
+  @@index([type])
   @@schema("public")
 }
 
 model workspace_teams {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug        String   @unique
+  id          String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String                   @unique
   name        String
   description String?
-  is_system   Boolean  @default(false)
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  members  workspace_team_members[]
-  channels workspace_channels[]
-  notes    workspace_notes[]
+  is_system   Boolean                  @default(false)
+  created_at  DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime                 @default(now()) @db.Timestamptz(6)
+  channels    workspace_channels[]
+  notes       workspace_notes[]
+  members     workspace_team_members[]
 
   @@schema("public")
 }
 
 model workspace_team_members {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  team_id    String   @db.Uuid
-  user_id    String   @db.Uuid
-  team_role  String   @default("member")
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-
-  team workspace_teams @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  id         String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  team_id    String          @db.Uuid
+  user_id    String          @db.Uuid
+  team_role  String          @default("member")
+  created_at DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at DateTime        @default(now()) @db.Timestamptz(6)
+  team       workspace_teams @relation(fields: [team_id], references: [id], onDelete: Cascade)
 
   @@unique([team_id, user_id])
   @@index([user_id])
@@ -843,29 +846,28 @@ model workspace_team_members {
 }
 
 model workspace_channels {
-  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  team_id             String    @db.Uuid
+  id                  String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug                String
   name                String
   description         String?
-  icon_symbol         String    @default("#")
-  color_hex           String    @default("#6366f1")
-  is_default          Boolean   @default(false)
-  is_private          Boolean   @default(false)
-  is_hidden           Boolean   @default(false)
-  created_by          String?   @db.Uuid
-  is_archived         Boolean   @default(false)
-  archived_at         DateTime? @db.Timestamptz(6)
-  deleted_at          DateTime? @db.Timestamptz(6)
-  delete_requested_by String?   @db.Uuid
-  delete_confirmed_by String?   @db.Uuid
-  created_at          DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
-
-  team     workspace_teams             @relation(fields: [team_id], references: [id], onDelete: Cascade)
-  messages workspace_messages[]
-  members  workspace_channel_members[]
-  polls    workspace_polls[]
+  is_default          Boolean                     @default(false)
+  created_at          DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime                    @default(now()) @db.Timestamptz(6)
+  created_by          String?                     @db.Uuid
+  is_private          Boolean                     @default(false)
+  team_id             String                      @db.Uuid
+  archived_at         DateTime?                   @db.Timestamptz(6)
+  delete_confirmed_by String?                     @db.Uuid
+  delete_requested_by String?                     @db.Uuid
+  deleted_at          DateTime?                   @db.Timestamptz(6)
+  is_archived         Boolean                     @default(false)
+  color_hex           String                      @default("#6366f1")
+  icon_symbol         String                      @default("#")
+  is_hidden           Boolean                     @default(false)
+  members             workspace_channel_members[]
+  team                workspace_teams             @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  messages            workspace_messages[]
+  polls               workspace_polls[]
 
   @@unique([team_id, slug])
   @@index([team_id])
@@ -877,13 +879,12 @@ model workspace_channels {
 }
 
 model workspace_channel_members {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  channel_id   String   @db.Uuid
-  user_id      String   @db.Uuid
-  channel_role String?  @default("member")
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
-
-  channel workspace_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channel_id   String             @db.Uuid
+  user_id      String             @db.Uuid
+  created_at   DateTime           @default(now()) @db.Timestamptz(6)
+  channel_role String?            @default("member")
+  channel      workspace_channels @relation(fields: [channel_id], references: [id], onDelete: Cascade)
 
   @@unique([channel_id, user_id])
   @@index([user_id])
@@ -892,30 +893,29 @@ model workspace_channel_members {
 }
 
 model workspace_messages {
-  id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  channel_id                     String    @db.Uuid
-  author_id                      String    @db.Uuid
+  id                             String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channel_id                     String                        @db.Uuid
+  author_id                      String                        @db.Uuid
   content                        String
-  message_type                   String    @default("message")
-  reply_to_message_id            String?   @db.Uuid
-  forwarded_from_message_id      String?   @db.Uuid
-  forwarded_from_note_id         String?   @db.Uuid
-  forwarded_original_author_name String?
-  is_pinned                      Boolean   @default(false)
-  is_urgent                      Boolean   @default(false)
-  wake_alert_sent_at             DateTime? @db.Timestamptz(6)
-  is_deleted                     Boolean   @default(false)
-  deleted_at                     DateTime? @db.Timestamptz(6)
-  deleted_by                     String?   @db.Uuid
-  edited_at                      DateTime? @db.Timestamptz(6)
+  is_pinned                      Boolean                       @default(false)
+  created_at                     DateTime                      @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime                      @default(now()) @db.Timestamptz(6)
   attachment_name                String?
   attachment_size                String?
   attachment_type                String?
-  created_at                     DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at                     DateTime  @default(now()) @db.Timestamptz(6)
-
-  channel   workspace_channels            @relation(fields: [channel_id], references: [id], onDelete: Cascade)
-  reactions workspace_message_reactions[]
+  deleted_at                     DateTime?                     @db.Timestamptz(6)
+  deleted_by                     String?                       @db.Uuid
+  edited_at                      DateTime?                     @db.Timestamptz(6)
+  is_deleted                     Boolean                       @default(false)
+  message_type                   String                        @default("message")
+  forwarded_from_message_id      String?                       @db.Uuid
+  forwarded_from_note_id         String?                       @db.Uuid
+  forwarded_original_author_name String?
+  is_urgent                      Boolean                       @default(false)
+  reply_to_message_id            String?                       @db.Uuid
+  wake_alert_sent_at             DateTime?                     @db.Timestamptz(6)
+  reactions                      workspace_message_reactions[]
+  channel                        workspace_channels            @relation(fields: [channel_id], references: [id], onDelete: Cascade)
 
   @@index([channel_id, created_at])
   @@index([author_id])
@@ -926,13 +926,12 @@ model workspace_messages {
 }
 
 model workspace_message_reactions {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  message_id String   @db.Uuid
-  user_id    String   @db.Uuid
+  id         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id String             @db.Uuid
+  user_id    String             @db.Uuid
   emoji      String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  message workspace_messages @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  created_at DateTime           @default(now()) @db.Timestamptz(6)
+  message    workspace_messages @relation(fields: [message_id], references: [id], onDelete: Cascade)
 
   @@unique([message_id, user_id, emoji])
   @@index([message_id])
@@ -941,24 +940,22 @@ model workspace_message_reactions {
 }
 
 model workspace_direct_threads {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_by String?  @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
-
-  members  workspace_direct_thread_members[]
-  messages workspace_direct_messages[]
+  id         String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at DateTime                          @default(now()) @db.Timestamptz(6)
+  updated_at DateTime                          @default(now()) @db.Timestamptz(6)
+  created_by String?                           @db.Uuid
+  messages   workspace_direct_messages[]
+  members    workspace_direct_thread_members[]
 
   @@schema("public")
 }
 
 model workspace_direct_thread_members {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  thread_id  String   @db.Uuid
-  user_id    String   @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  thread workspace_direct_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade)
+  id         String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  thread_id  String                   @db.Uuid
+  user_id    String                   @db.Uuid
+  created_at DateTime                 @default(now()) @db.Timestamptz(6)
+  thread     workspace_direct_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade)
 
   @@unique([thread_id, user_id])
   @@index([user_id])
@@ -967,22 +964,21 @@ model workspace_direct_thread_members {
 }
 
 model workspace_direct_messages {
-  id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  thread_id                      String    @db.Uuid
-  author_id                      String    @db.Uuid
+  id                             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  thread_id                      String                   @db.Uuid
+  author_id                      String                   @db.Uuid
   content                        String
-  reply_to_message_id            String?   @db.Uuid
-  forwarded_from_message_id      String?   @db.Uuid
+  created_at                     DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime                 @default(now()) @db.Timestamptz(6)
+  deleted_at                     DateTime?                @db.Timestamptz(6)
+  deleted_by                     String?                  @db.Uuid
+  edited_at                      DateTime?                @db.Timestamptz(6)
+  is_deleted                     Boolean                  @default(false)
+  read_by                        String[]                 @default([])
+  forwarded_from_message_id      String?                  @db.Uuid
   forwarded_original_author_name String?
-  is_deleted                     Boolean   @default(false)
-  deleted_at                     DateTime? @db.Timestamptz(6)
-  deleted_by                     String?   @db.Uuid
-  edited_at                      DateTime? @db.Timestamptz(6)
-  read_by                        String[]  @default([])
-  created_at                     DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at                     DateTime  @default(now()) @db.Timestamptz(6)
-
-  thread workspace_direct_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade)
+  reply_to_message_id            String?                  @db.Uuid
+  thread                         workspace_direct_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade)
 
   @@index([thread_id])
   @@index([author_id])
@@ -991,27 +987,26 @@ model workspace_direct_messages {
 }
 
 model workspace_notes {
-  id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  owner_id                       String?   @db.Uuid
-  team_id                        String?   @db.Uuid
+  id                             String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id                       String?                    @db.Uuid
+  team_id                        String?                    @db.Uuid
   title                          String
   body                           String
-  note_type                      String    @default("personal")
-  visibility                     String    @default("private")
-  shared_scope                   String    @default("private")
-  recipient_ids                  String[]  @default([])
-  status                         String    @default("active")
-  forwarded_from_note_id         String?   @db.Uuid
+  visibility                     String                     @default("private")
+  created_at                     DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime                   @default(now()) @db.Timestamptz(6)
+  archived_at                    DateTime?                  @db.Timestamptz(6)
+  note_type                      String                     @default("personal")
+  recipient_ids                  String[]                   @default([])
+  status                         String                     @default("active")
+  withdrawn_at                   DateTime?                  @db.Timestamptz(6)
+  forwarded_from_note_id         String?                    @db.Uuid
   forwarded_original_author_name String?
-  withdrawn_at                   DateTime? @db.Timestamptz(6)
-  archived_at                    DateTime? @db.Timestamptz(6)
-  created_at                     DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at                     DateTime  @default(now()) @db.Timestamptz(6)
-
-  team      workspace_teams?           @relation(fields: [team_id], references: [id], onDelete: SetNull)
-  comments  workspace_note_comments[]
-  reactions workspace_note_reactions[]
-  polls     workspace_polls[]
+  shared_scope                   String                     @default("private")
+  comments                       workspace_note_comments[]
+  reactions                      workspace_note_reactions[]
+  team                           workspace_teams?           @relation(fields: [team_id], references: [id])
+  polls                          workspace_polls[]
 
   @@index([owner_id])
   @@index([team_id])
@@ -1023,18 +1018,17 @@ model workspace_notes {
 }
 
 model workspace_note_comments {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  note_id    String    @db.Uuid
-  author_id  String    @db.Uuid
+  id         String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  note_id    String          @db.Uuid
+  author_id  String          @db.Uuid
   body       String
-  is_deleted Boolean   @default(false)
-  deleted_at DateTime? @db.Timestamptz(6)
-  deleted_by String?   @db.Uuid
-  edited_at  DateTime? @db.Timestamptz(6)
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at DateTime  @default(now()) @db.Timestamptz(6)
-
-  note workspace_notes @relation(fields: [note_id], references: [id], onDelete: Cascade)
+  is_deleted Boolean         @default(false)
+  deleted_at DateTime?       @db.Timestamptz(6)
+  deleted_by String?         @db.Uuid
+  edited_at  DateTime?       @db.Timestamptz(6)
+  created_at DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at DateTime        @default(now()) @db.Timestamptz(6)
+  note       workspace_notes @relation(fields: [note_id], references: [id], onDelete: Cascade)
 
   @@index([note_id])
   @@index([author_id])
@@ -1043,13 +1037,12 @@ model workspace_note_comments {
 }
 
 model workspace_note_reactions {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  note_id    String   @db.Uuid
-  user_id    String   @db.Uuid
+  id         String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  note_id    String          @db.Uuid
+  user_id    String          @db.Uuid
   emoji      String
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  note workspace_notes @relation(fields: [note_id], references: [id], onDelete: Cascade)
+  created_at DateTime        @default(now()) @db.Timestamptz(6)
+  note       workspace_notes @relation(fields: [note_id], references: [id], onDelete: Cascade)
 
   @@unique([note_id, user_id, emoji])
   @@index([note_id])
@@ -1058,20 +1051,19 @@ model workspace_note_reactions {
 }
 
 model workspace_polls {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  channel_id      String?   @db.Uuid
-  note_id         String?   @db.Uuid
-  created_by      String    @db.Uuid
+  id              String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  channel_id      String?                  @db.Uuid
+  note_id         String?                  @db.Uuid
+  created_by      String                   @db.Uuid
   question        String
-  multiple_choice Boolean   @default(false)
-  closes_at       DateTime? @db.Timestamptz(6)
-  created_at      DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
-
-  channel workspace_channels?      @relation(fields: [channel_id], references: [id], onDelete: Cascade)
-  note    workspace_notes?         @relation(fields: [note_id], references: [id], onDelete: Cascade)
-  options workspace_poll_options[]
-  votes   workspace_poll_votes[]
+  multiple_choice Boolean                  @default(false)
+  closes_at       DateTime?                @db.Timestamptz(6)
+  created_at      DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime                 @default(now()) @db.Timestamptz(6)
+  options         workspace_poll_options[]
+  votes           workspace_poll_votes[]
+  channel         workspace_channels?      @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  note            workspace_notes?         @relation(fields: [note_id], references: [id], onDelete: Cascade)
 
   @@index([channel_id])
   @@index([note_id])
@@ -1080,28 +1072,26 @@ model workspace_polls {
 }
 
 model workspace_poll_options {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  poll_id     String   @db.Uuid
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  poll_id     String                 @db.Uuid
   label       String
-  order_index Int      @default(0)
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  poll  workspace_polls        @relation(fields: [poll_id], references: [id], onDelete: Cascade)
-  votes workspace_poll_votes[]
+  order_index Int                    @default(0)
+  created_at  DateTime               @default(now()) @db.Timestamptz(6)
+  poll        workspace_polls        @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  votes       workspace_poll_votes[]
 
   @@index([poll_id])
   @@schema("public")
 }
 
 model workspace_poll_votes {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  poll_id    String   @db.Uuid
-  option_id  String   @db.Uuid
-  voter_id   String   @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  poll   workspace_polls        @relation(fields: [poll_id], references: [id], onDelete: Cascade)
-  option workspace_poll_options @relation(fields: [option_id], references: [id], onDelete: Cascade)
+  id         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  poll_id    String                 @db.Uuid
+  option_id  String                 @db.Uuid
+  voter_id   String                 @db.Uuid
+  created_at DateTime               @default(now()) @db.Timestamptz(6)
+  option     workspace_poll_options @relation(fields: [option_id], references: [id], onDelete: Cascade)
+  poll       workspace_polls        @relation(fields: [poll_id], references: [id], onDelete: Cascade)
 
   @@unique([poll_id, option_id, voter_id])
   @@index([poll_id])
@@ -1118,5 +1108,106 @@ model feature_flags {
   updated_at  DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([key])
+  @@schema("public")
+}
+
+model paddle_payment_records {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                  String    @db.Uuid
+  email                    String
+  paddle_event_id          String?
+  paddle_customer_id       String?
+  paddle_subscription_id   String?
+  paddle_transaction_id    String    @unique(map: "paddle_payment_records_transaction_unique")
+  paddle_price_id          String?
+  plan                     String?   @default("premium")
+  status                   String?   @default("paid")
+  currency                 String?
+  amount_cents             Int?
+  tax_cents                Int?
+  total_cents              Int?
+  billing_period_starts_at DateTime? @db.Timestamptz(6)
+  billing_period_ends_at   DateTime? @db.Timestamptz(6)
+  paid_at                  DateTime? @db.Timestamptz(6)
+  discount_id              String?
+  discount_code            String?
+  discount_amount          String?
+  invoice_url              String?
+  receipt_url              String?
+  raw_event                Json?
+  created_at               DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)])
+  @@index([paddle_customer_id], map: "paddle_payment_records_customer_id_idx")
+  @@index([email])
+  @@index([paid_at(sort: Desc)])
+  @@index([paddle_subscription_id], map: "paddle_payment_records_subscription_id_idx")
+  @@index([user_id])
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_activity_logs {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String   @db.Uuid
+  actor_user_id String?  @db.Uuid
+  action        String
+  entity_type   String?
+  entity_id     String?
+  title         String?
+  body          String?
+  metadata      Json     @default("{}")
+  ip_address    String?
+  user_agent    String?
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([action])
+  @@index([entity_type, entity_id], map: "user_activity_logs_entity_idx")
+  @@index([user_id, created_at(sort: Desc)])
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_notifications {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  type       String    @default("general")
+  title      String    @default("Notification")
+  body       String?
+  link       String?
+  severity   String    @default("normal")
+  metadata   Json      @default("{}")
+  is_read    Boolean   @default(false)
+  read_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([type])
+  @@index([user_id, created_at(sort: Desc)])
+  @@index([user_id, is_read, created_at(sort: Desc)], map: "user_notifications_user_id_unread_idx")
+  @@schema("public")
+}
+
+enum MBETrack {
+  CLASSIC
+  NEXTGEN
+
+  @@schema("public")
+}
+
+enum MBESessionMode {
+  STUDY
+  QUIZ
+  REVIEW
+
+  @@schema("public")
+}
+
+enum QuestionStatus {
+  ACTIVE
+  DRAFT
+  DISABLED
+  FLAGGED
+
   @@schema("public")
 }
