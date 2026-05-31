@@ -10,10 +10,16 @@ type TopNavbarProps = {
   hasStudyPlan?: boolean
 }
 
-type AnnouncementItem = {
+type NotificationItem = {
   id: string
+  type?: string | null
   title: string
   body: string
+  link?: string | null
+  severity?: string | null
+  metadata?: unknown
+  is_read?: boolean
+  read_at?: string | null
   created_at?: string
 }
 
@@ -25,63 +31,72 @@ export default function TopNavbar({
 }: TopNavbarProps) {
   const loading = false
 
-  const [announcementOpen, setAnnouncementOpen] = useState(false)
-  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([])
-  const [announcementsLoading, setAnnouncementsLoading] = useState(false)
+  const [notificationOpen, setNotificationOpen] = useState(false)
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
 
-  const announcementRef = useRef<HTMLDivElement | null>(null)
+  const notificationRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        announcementRef.current &&
-        !announcementRef.current.contains(event.target as Node)
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
       ) {
-        setAnnouncementOpen(false)
+        setNotificationOpen(false)
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside)
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
 
-  async function loadAnnouncements() {
-    setAnnouncementsLoading(true)
+  useEffect(() => {
+    loadNotifications()
+  }, [])
+
+  async function loadNotifications() {
+    setNotificationsLoading(true)
 
     try {
-      const res = await fetch("/api/announcements/active", {
+      const res = await fetch("/api/notifications", {
         cache: "no-store",
       })
 
       const data = await res.json().catch(() => null)
 
       if (!res.ok) {
-        setAnnouncements([])
+        setNotifications([])
+        setUnreadCount(0)
         return
       }
 
-      setAnnouncements(Array.isArray(data?.announcements) ? data.announcements : [])
+      setNotifications(Array.isArray(data?.notifications) ? data.notifications : [])
+      setUnreadCount(Number(data?.unreadCount ?? 0))
     } catch (error) {
-      console.error("ANNOUNCEMENTS LOAD ERROR:", error)
-      setAnnouncements([])
+      console.error("NOTIFICATIONS LOAD ERROR:", error)
+      setNotifications([])
+      setUnreadCount(0)
     } finally {
-      setAnnouncementsLoading(false)
+      setNotificationsLoading(false)
     }
   }
 
   async function handleBellClick() {
-    const nextOpen = !announcementOpen
-    setAnnouncementOpen(nextOpen)
+    const nextOpen = !notificationOpen
+    setNotificationOpen(nextOpen)
 
     if (nextOpen) {
-      await loadAnnouncements()
+      await loadNotifications()
     }
   }
 
   const greeting = getGreeting()
-  const hasAnnouncements = announcements.length > 0
+  const hasUnreadNotifications = unreadCount > 0
 
   return (
     <div className="border-b border-slate-200 bg-white px-6 py-5 md:px-8">
@@ -108,54 +123,74 @@ export default function TopNavbar({
           </div>
         </div>
 
-        <div className="relative flex shrink-0 items-center gap-3" ref={announcementRef}>
+        <div className="relative flex shrink-0 items-center gap-3" ref={notificationRef}>
           <button
             type="button"
             onClick={handleBellClick}
             className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
-            aria-label="Open announcements"
+            aria-label="Open notifications"
           >
             <Bell size={18} />
+
             <span
               className={`absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full ${
-                hasAnnouncements ? "bg-red-500" : "bg-slate-300"
+                hasUnreadNotifications ? "bg-red-500" : "bg-slate-300"
               }`}
             />
+
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </button>
 
-          {announcementOpen && (
-            <div className="absolute right-0 top-12 z-50 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+          {notificationOpen && (
+            <div className="absolute right-0 top-12 z-50 w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                 <div>
                   <div className="text-sm font-semibold text-slate-900">
-                    Announcements
+                    Notifications
                   </div>
                   <div className="text-xs text-slate-500">
-                    Updates from Lexora
+                    {unreadCount > 0
+                      ? `${unreadCount} unread update${unreadCount === 1 ? "" : "s"}`
+                      : "Updates from Lexora"}
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setAnnouncementOpen(false)}
+                  onClick={() => setNotificationOpen(false)}
                   className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                  aria-label="Close announcements"
+                  aria-label="Close notifications"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               <div className="max-h-[360px] overflow-y-auto">
-                {announcementsLoading ? (
+                {notificationsLoading ? (
                   <div className="px-4 py-4 text-sm text-slate-500">
-                    Loading announcements...
+                    Loading notifications...
                   </div>
-                ) : announcements.length > 0 ? (
+                ) : notifications.length > 0 ? (
                   <div className="divide-y divide-slate-100">
-                    {announcements.map((item) => (
-                      <div key={item.id} className="px-4 py-4">
-                        <div className="text-sm font-semibold text-slate-900">
-                          {item.title}
+                    {notifications.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`px-4 py-4 ${
+                          item.is_read ? "bg-white" : "bg-violet-50/60"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="text-sm font-semibold text-slate-900">
+                            {item.title}
+                          </div>
+
+                          {!item.is_read && (
+                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500" />
+                          )}
                         </div>
 
                         <div className="mt-1 text-sm leading-6 text-slate-600">
@@ -172,7 +207,7 @@ export default function TopNavbar({
                   </div>
                 ) : (
                   <div className="px-4 py-4 text-sm text-slate-500">
-                    No announcements right now.
+                    No notifications right now.
                   </div>
                 )}
               </div>
