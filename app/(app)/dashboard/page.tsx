@@ -11,8 +11,6 @@ import {
   CalendarDays,
   Sparkles,
   Flame,
-  BookOpen,
-  CheckCircle2,
   LineChart,
   BarChart3,
   Crown,
@@ -27,6 +25,7 @@ import {
 import { createClient } from "@/utils/supabase/client"
 
 type RuleSet = "emergency" | "priority" | "core" | "full"
+type SubscriptionTier = "free" | "monthly" | "premium"
 
 type ExamRegime =
   | "UBE_CURRENT"
@@ -86,6 +85,8 @@ type TrendPoint = {
   bll: number
 }
 
+const COMPARISON_STATE_STORAGE_KEY = "lexora-comparison-state"
+
 const RULE_PACKAGE_META: Record<
   RuleSet,
   {
@@ -108,7 +109,7 @@ const RULE_PACKAGE_META: Record<
     shortLabel: "Priority",
     description: "Focused plan for short timelines.",
     multiplier: 0.7,
-    minDays: 21,
+    minDays: 15,
   },
   core: {
     label: "Core Rules Only",
@@ -181,13 +182,21 @@ const CALIFORNIA_SUBJECTS: SubjectPlanItem[] = [
   { name: "Evidence", weight: 7, system: "CALIFORNIA_CURRENT" },
   { name: "California Evidence", weight: 6, system: "CALIFORNIA_CURRENT" },
   { name: "Professional Responsibility", weight: 8, system: "CALIFORNIA_CURRENT" },
-  { name: "California Professional Responsibility", weight: 6, system: "CALIFORNIA_CURRENT" },
+  {
+    name: "California Professional Responsibility",
+    weight: 6,
+    system: "CALIFORNIA_CURRENT",
+  },
   { name: "Real Property", weight: 6, system: "CALIFORNIA_CURRENT" },
   { name: "Remedies", weight: 7, system: "CALIFORNIA_CURRENT" },
   { name: "Torts", weight: 7, system: "CALIFORNIA_CURRENT" },
   { name: "Trusts", weight: 5, system: "CALIFORNIA_CURRENT" },
   { name: "Wills and Succession", weight: 5, system: "CALIFORNIA_CURRENT" },
-  { name: "California Performance Test Templates", weight: 5, system: "CALIFORNIA_CURRENT" },
+  {
+    name: "California Performance Test Templates",
+    weight: 5,
+    system: "CALIFORNIA_CURRENT",
+  },
 ]
 
 const FLORIDA_CURRENT_SUBJECTS: SubjectPlanItem[] = [
@@ -203,7 +212,11 @@ const FLORIDA_CURRENT_SUBJECTS: SubjectPlanItem[] = [
   { name: "Florida Real Property", weight: 5, system: "FLORIDA_CURRENT" },
   { name: "Torts", weight: 6, system: "FLORIDA_CURRENT" },
   { name: "Florida Civil Procedure", weight: 7, system: "FLORIDA_CURRENT" },
-  { name: "Florida Rules of Judicial Administration", weight: 4, system: "FLORIDA_CURRENT" },
+  {
+    name: "Florida Rules of Judicial Administration",
+    weight: 4,
+    system: "FLORIDA_CURRENT",
+  },
   { name: "Business Entities", weight: 5, system: "FLORIDA_CURRENT" },
   { name: "Family Law", weight: 5, system: "FLORIDA_CURRENT" },
   { name: "Wills", weight: 5, system: "FLORIDA_CURRENT" },
@@ -211,7 +224,11 @@ const FLORIDA_CURRENT_SUBJECTS: SubjectPlanItem[] = [
   { name: "Administration of Estates", weight: 4, system: "FLORIDA_CURRENT" },
   { name: "UCC Article 3", weight: 4, system: "FLORIDA_CURRENT" },
   { name: "UCC Article 9", weight: 4, system: "FLORIDA_CURRENT" },
-  { name: "Rules Regulating The Florida Bar", weight: 4, system: "FLORIDA_CURRENT" },
+  {
+    name: "Rules Regulating The Florida Bar",
+    weight: 4,
+    system: "FLORIDA_CURRENT",
+  },
   { name: "Professionalism", weight: 4, system: "FLORIDA_CURRENT" },
 ]
 
@@ -228,13 +245,21 @@ const STATE_SPECIFIC_SUBJECTS: SubjectPlanItem[] = [
   { name: "State Criminal Procedure", weight: 4, system: "STATE_SPECIFIC" },
   { name: "State Evidence Distinctions", weight: 4, system: "STATE_SPECIFIC" },
   { name: "State Constitutional Law", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Real Property Distinctions", weight: 4, system: "STATE_SPECIFIC" },
+  {
+    name: "State Real Property Distinctions",
+    weight: 4,
+    system: "STATE_SPECIFIC",
+  },
   { name: "State Wills", weight: 4, system: "STATE_SPECIFIC" },
   { name: "State Trusts", weight: 4, system: "STATE_SPECIFIC" },
   { name: "State Estates", weight: 4, system: "STATE_SPECIFIC" },
   { name: "State Family Law", weight: 4, system: "STATE_SPECIFIC" },
   { name: "State Business Entities", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Professional Responsibility", weight: 4, system: "STATE_SPECIFIC" },
+  {
+    name: "State Professional Responsibility",
+    weight: 4,
+    system: "STATE_SPECIFIC",
+  },
   { name: "State Remedies", weight: 4, system: "STATE_SPECIFIC" },
   { name: "State Commercial Law / UCC", weight: 4, system: "STATE_SPECIFIC" },
   { name: "Local Bar Rules", weight: 3, system: "STATE_SPECIFIC" },
@@ -250,7 +275,11 @@ const LOCAL_COMPONENT_SUBJECTS: SubjectPlanItem[] = [
   { name: "Local Real Property Rules", weight: 6, system: "LOCAL_COMPONENT" },
   { name: "Local Family Law", weight: 6, system: "LOCAL_COMPONENT" },
   { name: "Local Trusts and Estates", weight: 6, system: "LOCAL_COMPONENT" },
-  { name: "Local Administrative / Admission Rules", weight: 5, system: "LOCAL_COMPONENT" },
+  {
+    name: "Local Administrative / Admission Rules",
+    weight: 5,
+    system: "LOCAL_COMPONENT",
+  },
 ]
 
 const JURISDICTION_OPTIONS: JurisdictionOption[] = [
@@ -338,6 +367,53 @@ function normalizeRuleSet(value: unknown): RuleSet {
   return "core"
 }
 
+function getSubscriptionTier(profile: any): SubscriptionTier {
+  const rawTier = String(profile?.subscription_tier ?? "").toLowerCase()
+
+  if (rawTier === "premium") return "premium"
+  if (rawTier === "monthly") return "monthly"
+  if (rawTier === "paid") return "monthly"
+
+  if (profile?.mbe_access === true) return "premium"
+
+  return "free"
+}
+
+function getEntitlements(profile: any) {
+  const tier = getSubscriptionTier(profile)
+
+  return {
+    tier,
+    canCreateStudyPlan: true,
+    canUseJurisdictionPicker: true,
+    canUseExamRegimeDetection: true,
+    canSeeExamCountdown: true,
+    canUseCalendar: tier === "monthly" || tier === "premium",
+    canUseLimitedCalendar: tier === "free",
+    canUseCoreRules: tier === "monthly" || tier === "premium",
+    canPreviewCoreRules: tier === "free",
+    canUsePriorityRules: tier === "monthly" || tier === "premium",
+    canUseFullRuleBank: tier === "premium",
+    canUseCustomRules: tier === "monthly" || tier === "premium",
+    canAddCustomRulesToPlan: tier === "monthly" || tier === "premium",
+    canUseMultiplePackages: tier === "premium",
+    canUseLimitedMultiplePackages: tier === "monthly",
+    canUseSpacedReview: tier === "monthly" || tier === "premium",
+    canUseWeakAreaTraining: tier === "monthly" || tier === "premium",
+    canUseAdvancedWeakAreaTraining: tier === "premium",
+    canUseSecondRound: tier === "monthly" || tier === "premium",
+    canUseFinalWeakAreaRound: tier === "premium",
+    canUseBasicBLLAnalytics: true,
+    canUseBLLAnalytics: tier === "monthly" || tier === "premium",
+    canUseAdvancedBLLAnalytics: tier === "premium",
+    canUseStateComparison: true,
+    canUseAdvancedStateComparison: tier === "premium",
+    canSeeMBEComingSoon: tier === "premium",
+    canUseMBEPractice: false,
+    canUseMBEAnalytics: false,
+  }
+}
+
 export default function Dashboard() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -355,7 +431,9 @@ export default function Dashboard() {
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [, setUserName] = useState("User")
-  const [isPremium, setIsPremium] = useState(false)
+  const [subscriptionTier, setSubscriptionTier] =
+    useState<SubscriptionTier>("free")
+  const [entitlements, setEntitlements] = useState(() => getEntitlements(null))
   const [authReady, setAuthReady] = useState(false)
 
   const [coreLoaded, setCoreLoaded] = useState(false)
@@ -495,16 +573,23 @@ export default function Dashboard() {
         setUserName("User")
       }
 
-      setIsPremium(!!profile?.mbe_access)
+      const nextEntitlements = getEntitlements(profile)
+      setSubscriptionTier(nextEntitlements.tier)
+      setEntitlements(nextEntitlements)
+
+      const savedComparisonState =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem(COMPARISON_STATE_STORAGE_KEY)
+          : null
 
       const selectedDashboardState =
-        summary?.comparisonState && String(summary.comparisonState).trim()
-          ? String(summary.comparisonState).trim()
-          : summary?.dashboard?.selectedState &&
-              String(summary.dashboard.selectedState).trim()
-            ? String(summary.dashboard.selectedState).trim()
-            : profile?.jurisdiction && String(profile.jurisdiction).trim()
-              ? String(profile.jurisdiction).trim()
+        savedComparisonState && String(savedComparisonState).trim()
+          ? String(savedComparisonState).trim()
+          : summary?.comparisonState && String(summary.comparisonState).trim()
+            ? String(summary.comparisonState).trim()
+            : summary?.dashboard?.selectedState &&
+                String(summary.dashboard.selectedState).trim()
+              ? String(summary.dashboard.selectedState).trim()
               : ""
 
       if (selectedDashboardState) {
@@ -512,11 +597,6 @@ export default function Dashboard() {
           const current = String(prev || "").trim()
           if (current === selectedDashboardState) return prev
           return selectedDashboardState
-        })
-
-        setSelectedStudyJurisdiction((prev) => {
-          if (prev && prev !== "UBE") return prev
-          return normalizeJurisdictionCode(selectedDashboardState)
         })
       }
 
@@ -542,6 +622,11 @@ export default function Dashboard() {
       }
 
       if (!studyPlan || !studyPlan.startDate || !studyPlan.examDate) {
+        const profileJurisdiction = normalizeJurisdictionCode(
+          profile?.jurisdiction ?? "UBE"
+        )
+
+        setSelectedStudyJurisdiction(profileJurisdiction)
         setPlanData(null)
         setCalendarDays([])
         setCalendarMonth(null)
@@ -608,7 +693,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!startDate || !examDate || !planData) return
 
-    const recommended = getRecommendedRuleSet(getDaysUntilExam())
+    const recommended = getRecommendedRuleSet(getDaysUntilExamForDate(examDate))
 
     if (!planData?.userManuallySelectedRulePackage) {
       setRuleSet(recommended)
@@ -617,19 +702,32 @@ export default function Dashboard() {
         nextOnMap: savedOnMap,
         nextStudyWeekends: studyWeekends,
         nextRuleSet: recommended,
-        preserveBeforeDate: todayKey,
+        preserveBeforeDate: startDate,
         markManualPackage: false,
       })
     }
   }, [examDate, startDate])
 
+  useEffect(() => {
+    if (!entitlements.canSeeMBEComingSoon && analyticsMode === "MBE") {
+      setAnalyticsMode("BLL")
+    }
+  }, [analyticsMode, entitlements.canSeeMBEComingSoon])
+
   function hydrateStudyPlanFromPayload(studyPlan: any, fallbackTotalRules?: number) {
-    const start = studyPlan.startDate?.slice(0, 10) || ""
-    const exam = studyPlan.examDate?.slice(0, 10) || ""
+    const start = normalizeDateString(studyPlan.startDate)
+    const exam = normalizeDateString(studyPlan.examDate)
     const nextStudyWeekends = studyPlan.studyWeekends ?? true
+    const savedJurisdiction = normalizeJurisdictionCode(
+      studyPlan.jurisdictionCode ??
+        studyPlan.jurisdiction_code ??
+        studyPlan.jurisdiction ??
+        "UBE"
+    )
     const recommended = getRecommendedRuleSet(getDaysUntilExamForDate(exam))
     const nextRuleSet = normalizeRuleSet(studyPlan.ruleSet ?? recommended)
 
+    setSelectedStudyJurisdiction(savedJurisdiction)
     setStartDate(start)
     setExamDate(exam)
     setStudyWeekends(nextStudyWeekends)
@@ -640,13 +738,15 @@ export default function Dashboard() {
 
     if (Array.isArray(studyPlan?.offDates)) {
       studyPlan.offDates.forEach((d: string) => {
-        offMap[d] = true
+        const key = normalizeDateString(d)
+        if (key) offMap[key] = true
       })
     }
 
     if (Array.isArray(studyPlan?.onDates)) {
       studyPlan.onDates.forEach((d: string) => {
-        onMap[d] = true
+        const key = normalizeDateString(d)
+        if (key) onMap[key] = true
       })
     }
 
@@ -682,6 +782,9 @@ export default function Dashboard() {
 
     setPlanData({
       ...studyPlan,
+      jurisdictionCode: savedJurisdiction,
+      jurisdictionName: getJurisdictionDisplayName(savedJurisdiction),
+      examRegime: getEffectiveExamRegime(savedJurisdiction, exam),
       ruleSet: nextRuleSet,
       baseTotalRules,
       totalRules,
@@ -693,7 +796,7 @@ export default function Dashboard() {
     setHasShownPlanThisSession(true)
 
     if (start && exam) {
-      const preservedMonth = calendarMonth ?? new Date(start)
+      const preservedMonth = calendarMonth ?? new Date(`${start}T00:00:00`)
       const viewMonth = new Date(
         preservedMonth.getFullYear(),
         preservedMonth.getMonth(),
@@ -740,7 +843,10 @@ export default function Dashboard() {
         return
       }
 
-      hydrateStudyPlanFromPayload(data, planData?.baseTotalRules ?? planData?.totalRules)
+      hydrateStudyPlanFromPayload(
+        data,
+        planData?.baseTotalRules ?? planData?.totalRules
+      )
     } catch (err) {
       console.error("LOAD STUDY PLAN ERROR:", err)
       setPlanData(null)
@@ -777,13 +883,17 @@ export default function Dashboard() {
   }
 
   function getEffectivePackageRuleTotal(baseTotalRules: number, packageType: RuleSet) {
-    const safeBase = Number.isFinite(baseTotalRules) && baseTotalRules > 0 ? baseTotalRules : 0
+    const safeBase =
+      Number.isFinite(baseTotalRules) && baseTotalRules > 0 ? baseTotalRules : 0
     const multiplier = RULE_PACKAGE_META[packageType]?.multiplier ?? 1
+
+    if (safeBase <= 0) return 0
+
     return Math.max(1, Math.round(safeBase * multiplier))
   }
 
   function getRecommendedRuleSet(daysLeft: number): RuleSet {
-    if (daysLeft <= 21) return "emergency"
+    if (daysLeft <= 14) return "emergency"
     if (daysLeft <= 45) return "priority"
     if (daysLeft <= 90) return "core"
     return isPremium ? "full" : "core"
@@ -921,6 +1031,11 @@ export default function Dashboard() {
     return JURISDICTION_OPTIONS.find((j) => j.code === normalized) ?? null
   }
 
+  function getJurisdictionDisplayName(code: string) {
+    const option = getSelectedJurisdictionOption(code)
+    return option?.name ?? "UBE / Uniform Current"
+  }
+
   function getEffectiveExamRegime(
     code: string,
     selectedExamDate?: string
@@ -935,9 +1050,11 @@ export default function Dashboard() {
 
     if (option.code === "CA") return "CALIFORNIA_CURRENT"
 
-    const examDateValue = selectedExamDate ? new Date(selectedExamDate) : null
+    const examDateValue = selectedExamDate
+      ? new Date(`${selectedExamDate.slice(0, 10)}T00:00:00`)
+      : null
     const nextGenDateValue = option.nextGenStart
-      ? new Date(option.nextGenStart)
+      ? new Date(`${option.nextGenStart}T00:00:00`)
       : null
 
     const hasNextGenStarted =
@@ -984,7 +1101,11 @@ export default function Dashboard() {
         ...NEXTGEN_SUBJECTS,
         { name: "Florida Civil Procedure", weight: 6, system: "FLORIDA_NEXTGEN" },
         { name: "Florida Evidence", weight: 5, system: "FLORIDA_NEXTGEN" },
-        { name: "Rules Regulating The Florida Bar", weight: 4, system: "FLORIDA_NEXTGEN" },
+        {
+          name: "Rules Regulating The Florida Bar",
+          weight: 4,
+          system: "FLORIDA_NEXTGEN",
+        },
         { name: "Professionalism", weight: 4, system: "FLORIDA_NEXTGEN" },
       ]
     }
@@ -996,26 +1117,52 @@ export default function Dashboard() {
     return UBE_CURRENT_SUBJECTS
   }
 
+  function shouldUseGlobalSubjectProgressForCurrentJurisdiction() {
+    const regime = getEffectiveExamRegime(selectedStudyJurisdiction, examDate)
+    return regime === "UBE_CURRENT" || regime === "NEXTGEN"
+  }
+
   function getSubjectProgressPercent(subjectName: string) {
-    const normalized = subjectName.toLowerCase()
+    if (!shouldUseGlobalSubjectProgressForCurrentJurisdiction()) return 0
+
+    const normalized = subjectName.trim().toLowerCase()
     const direct = subjectRows.find(
-      (row) => row.name.toLowerCase() === normalized
+      (row) => row.name.trim().toLowerCase() === normalized
     )
 
     if (direct && direct.total > 0) {
       return Math.round((direct.completed / Math.max(direct.total, 1)) * 100)
     }
 
-    const loose = subjectRows.find((row) => {
-      const name = row.name.toLowerCase()
-      return normalized.includes(name) || name.includes(normalized)
-    })
-
-    if (loose && loose.total > 0) {
-      return Math.round((loose.completed / Math.max(loose.total, 1)) * 100)
-    }
-
     return 0
+  }
+
+  function getSubjectAnalyticsForCurrentJurisdiction() {
+    const jurisdictionSubjects = getJurisdictionSubjects(
+      selectedStudyJurisdiction,
+      examDate
+    )
+
+    return jurisdictionSubjects.map((subject) => {
+      const normalized = subject.name.trim().toLowerCase()
+      const direct = shouldUseGlobalSubjectProgressForCurrentJurisdiction()
+        ? subjectRows.find((row) => row.name.trim().toLowerCase() === normalized)
+        : null
+
+      const completed = direct?.completed ?? 0
+      const total = direct?.total ?? subject.weight
+      const accuracy = direct?.accuracy ?? 0
+      const derived = buildLevelAndProgress(completed, accuracy)
+
+      return {
+        name: subject.name,
+        accuracy,
+        completed,
+        total,
+        level: completed > 0 ? derived.level : "Limited",
+        progressWidth: completed > 0 ? derived.progressWidth : 0,
+      }
+    })
   }
 
   function getStudyPlanDayStats() {
@@ -1043,7 +1190,7 @@ export default function Dashboard() {
     if (!value) return 0
 
     const today = normalizeLocalDate(new Date())
-    const exam = normalizeLocalDate(new Date(value))
+    const exam = normalizeLocalDate(new Date(`${value.slice(0, 10)}T00:00:00`))
     const diff = exam.getTime() - today.getTime()
 
     return Math.max(0, Math.ceil(diff / 86400000))
@@ -1053,6 +1200,22 @@ export default function Dashboard() {
     const d = new Date(date)
     d.setHours(0, 0, 0, 0)
     return d
+  }
+
+  function normalizeDateString(value?: string | Date | null) {
+    if (!value) return ""
+    if (value instanceof Date) return formatDateInput(value)
+
+    const clean = String(value).trim()
+    if (!clean) return ""
+
+    const match = clean.match(/^(\d{4}-\d{2}-\d{2})/)
+    if (match) return match[1]
+
+    const parsed = new Date(clean)
+    if (isNaN(parsed.getTime())) return ""
+
+    return formatDateInput(parsed)
   }
 
   function formatDateInput(date: Date) {
@@ -1108,8 +1271,8 @@ export default function Dashboard() {
     const dates: Date[] = []
     if (!start || !end) return dates
 
-    const cursor = normalizeLocalDate(new Date(start))
-    const endDt = normalizeLocalDate(new Date(end))
+    const cursor = normalizeLocalDate(new Date(`${start}T00:00:00`))
+    const endDt = normalizeLocalDate(new Date(`${end}T00:00:00`))
 
     while (cursor <= endDt) {
       dates.push(new Date(cursor))
@@ -1132,16 +1295,12 @@ export default function Dashboard() {
     const allDates = getPlanDateRange(start, end)
     if (allDates.length === 0) return {}
 
-    const today = normalizeLocalDate(new Date())
-    const requestedPreserveBefore = preserveBeforeDate
-      ? normalizeLocalDate(new Date(preserveBeforeDate))
-      : today
-
-    const preserveBefore =
-      requestedPreserveBefore < today ? today : requestedPreserveBefore
-
     const safeTotalRules =
       Number.isFinite(totalRules) && totalRules > 0 ? Math.floor(totalRules) : 0
+
+    const requestedPreserveBefore = preserveBeforeDate
+      ? normalizeLocalDate(new Date(`${preserveBeforeDate}T00:00:00`))
+      : normalizeLocalDate(new Date(`${start}T00:00:00`))
 
     const ruleMap: Record<string, number> = {}
     let lockedRules = 0
@@ -1149,7 +1308,7 @@ export default function Dashboard() {
     for (const d of allDates) {
       const key = formatDateInput(d)
 
-      if (d < preserveBefore) {
+      if (d < requestedPreserveBefore) {
         const previousValue = Number(previousRuleMap?.[key] ?? 0)
         const safePreviousValue =
           Number.isFinite(previousValue) && previousValue > 0
@@ -1161,15 +1320,15 @@ export default function Dashboard() {
       }
     }
 
-    const futureDates = allDates.filter((d) => d >= preserveBefore)
-    const futureActiveDates = futureDates.filter(
+    const redistributionDates = allDates.filter((d) => d >= requestedPreserveBefore)
+    const activeRedistributionDates = redistributionDates.filter(
       (d) => !isDateOff(d, offMap, onMap, shouldStudyWeekends)
     )
 
     const remainingRules = Math.max(0, safeTotalRules - lockedRules)
 
-    if (futureActiveDates.length === 0) {
-      for (const d of futureDates) {
+    if (activeRedistributionDates.length === 0) {
+      for (const d of redistributionDates) {
         ruleMap[formatDateInput(d)] = 0
       }
 
@@ -1181,17 +1340,17 @@ export default function Dashboard() {
       return ruleMap
     }
 
-    const base = Math.floor(remainingRules / futureActiveDates.length)
-    let remainder = remainingRules % futureActiveDates.length
+    const base = Math.floor(remainingRules / activeRedistributionDates.length)
+    let remainder = remainingRules % activeRedistributionDates.length
 
-    for (const d of futureActiveDates) {
+    for (const d of activeRedistributionDates) {
       const key = formatDateInput(d)
       ruleMap[key] = base + (remainder > 0 ? 1 : 0)
 
       if (remainder > 0) remainder--
     }
 
-    for (const d of futureDates) {
+    for (const d of redistributionDates) {
       const key = formatDateInput(d)
       if (!(key in ruleMap)) ruleMap[key] = 0
     }
@@ -1214,8 +1373,8 @@ export default function Dashboard() {
   ) {
     if (!start || !end) return []
 
-    const startDt = normalizeLocalDate(new Date(start))
-    const endDt = normalizeLocalDate(new Date(end))
+    const startDt = normalizeLocalDate(new Date(`${start}T00:00:00`))
+    const endDt = normalizeLocalDate(new Date(`${end}T00:00:00`))
     const viewMonth = monthDate
       ? new Date(monthDate)
       : new Date(startDt.getFullYear(), startDt.getMonth(), 1)
@@ -1298,7 +1457,7 @@ export default function Dashboard() {
     nextOnMap,
     nextStudyWeekends,
     nextRuleSet = ruleSet,
-    preserveBeforeDate = todayKey,
+    preserveBeforeDate = startDate,
     markManualPackage = true,
   }: {
     nextOffMap: Record<string, boolean>
@@ -1341,7 +1500,7 @@ export default function Dashboard() {
     const nextCalendarDays = buildCalendarDays(
       startDate,
       examDate,
-      calendarMonth ?? new Date(startDate),
+      calendarMonth ?? new Date(`${startDate}T00:00:00`),
       nextOffMap,
       nextOnMap,
       nextStudyWeekends
@@ -1366,6 +1525,9 @@ export default function Dashboard() {
       ruleSet: nextRuleSet,
       offDates: nextOffDates,
       onDates: nextOnDates,
+      jurisdictionCode: selectedStudyJurisdiction,
+      jurisdictionName: getJurisdictionDisplayName(selectedStudyJurisdiction),
+      examRegime: getEffectiveExamRegime(selectedStudyJurisdiction, examDate),
       rulesByDate: nextRulesByDate,
       userManuallySelectedRulePackage:
         markManualPackage || prev?.userManuallySelectedRulePackage,
@@ -1380,11 +1542,57 @@ export default function Dashboard() {
     }))
   }
 
+  function buildStudyPlanRequestBody({
+    nextOffDates,
+    nextOnDates,
+    nextStudyWeekends,
+    nextRuleSet,
+    manualPackage,
+  }: {
+    nextOffDates: string[]
+    nextOnDates: string[]
+    nextStudyWeekends: boolean
+    nextRuleSet: RuleSet
+    manualPackage: boolean
+  }) {
+    const jurisdictionCode = normalizeJurisdictionCode(selectedStudyJurisdiction)
+    const jurisdictionName = getJurisdictionDisplayName(jurisdictionCode)
+    const examRegime = getEffectiveExamRegime(jurisdictionCode, examDate)
+
+    return {
+      userId: currentUserId,
+      startDate,
+      examDate,
+      studyWeekends: nextStudyWeekends,
+      offDates: nextOffDates,
+      onDates: nextOnDates,
+      ruleSet: nextRuleSet,
+      rulePackages: [nextRuleSet],
+      jurisdictionCode,
+      jurisdictionName,
+      examRegime,
+      customRulesEnabled: Boolean(planData?.customRulesEnabled ?? false),
+      studyRound: Number(planData?.studyRound ?? 1),
+      userManuallySelectedRulePackage: manualPackage,
+    }
+  }
+
+  async function refreshDashboardAndPlan() {
+    if (!currentUserId) return
+
+    await queryClient.invalidateQueries({
+      queryKey: ["dashboard-batch", currentUserId],
+    })
+
+    await dashboardBatchQuery.refetch()
+  }
+
   async function saveStudyPlanSilently(
     nextOffDates: string[],
     nextOnDates: string[],
     nextStudyWeekends = studyWeekends,
-    nextRuleSet = ruleSet
+    nextRuleSet = ruleSet,
+    manualPackage = Boolean(planData?.userManuallySelectedRulePackage)
   ) {
     if (!currentUserId || !startDate || !examDate) return
 
@@ -1394,15 +1602,15 @@ export default function Dashboard() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          userId: currentUserId,
-          startDate,
-          examDate,
-          studyWeekends: nextStudyWeekends,
-          offDates: nextOffDates,
-          onDates: nextOnDates,
-          ruleSet: nextRuleSet,
-        }),
+        body: JSON.stringify(
+          buildStudyPlanRequestBody({
+            nextOffDates,
+            nextOnDates,
+            nextStudyWeekends,
+            nextRuleSet,
+            manualPackage,
+          })
+        ),
       })
 
       if (!res.ok) {
@@ -1420,6 +1628,10 @@ export default function Dashboard() {
     if (!cleanState) return
 
     const queryKey = ["dashboard-batch", currentUserId, cleanState]
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(COMPARISON_STATE_STORAGE_KEY, cleanState)
+    }
 
     setState(cleanState)
     setOpen(false)
@@ -1444,6 +1656,35 @@ export default function Dashboard() {
     if (currentUserId) {
       await queryClient.invalidateQueries({ queryKey })
     }
+  }
+
+  function handleStudyJurisdictionChange(nextCode: string) {
+    const normalized = normalizeJurisdictionCode(nextCode)
+
+    if (normalized === selectedStudyJurisdiction) return
+
+    if (planData && startDate && examDate) {
+      const confirmed = window.confirm(
+        "Changing your study jurisdiction will update the exam system and tested subjects for this study plan. Your state comparison will not change. Continue?"
+      )
+
+      if (!confirmed) return
+    }
+
+    const nextRegime = getEffectiveExamRegime(normalized, examDate)
+
+    setSelectedStudyJurisdiction(normalized)
+
+    setPlanData((prev: any) => {
+      if (!prev) return prev
+
+      return {
+        ...prev,
+        jurisdictionCode: normalized,
+        jurisdictionName: getJurisdictionDisplayName(normalized),
+        examRegime: nextRegime,
+      }
+    })
   }
 
   async function openStudyPlanModal() {
@@ -1472,8 +1713,8 @@ export default function Dashboard() {
         return
       }
 
-      const start = new Date(startDate)
-      const end = new Date(examDate)
+      const start = new Date(`${startDate}T00:00:00`)
+      const end = new Date(`${examDate}T00:00:00`)
 
       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
         alert("Invalid date format.")
@@ -1499,15 +1740,15 @@ export default function Dashboard() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          userId: currentUserId,
-          startDate,
-          examDate,
-          studyWeekends,
-          offDates: existingOffDates,
-          onDates: existingOnDates,
-          ruleSet: selectedRuleSet,
-        }),
+        body: JSON.stringify(
+          buildStudyPlanRequestBody({
+            nextOffDates: existingOffDates,
+            nextOnDates: existingOnDates,
+            nextStudyWeekends: studyWeekends,
+            nextRuleSet: selectedRuleSet,
+            manualPackage: Boolean(planData?.userManuallySelectedRulePackage),
+          })
+        ),
       })
 
       const data = await res.json()
@@ -1517,8 +1758,17 @@ export default function Dashboard() {
         return
       }
 
+      const persistedJurisdiction = normalizeJurisdictionCode(
+        data?.jurisdictionCode ?? selectedStudyJurisdiction
+      )
+
+      setSelectedStudyJurisdiction(persistedJurisdiction)
+
       const viewMonth = new Date(start.getFullYear(), start.getMonth(), 1)
-      const baseTotalRules = getPlanTotalRules(data, planData?.baseTotalRules ?? getSubjectRuleTotal(bllSubjects))
+      const baseTotalRules = getPlanTotalRules(
+        data,
+        planData?.baseTotalRules ?? getSubjectRuleTotal(bllSubjects)
+      )
       const totalRules = getEffectivePackageRuleTotal(baseTotalRules, selectedRuleSet)
 
       const offMap: Record<string, boolean> = {}
@@ -1526,13 +1776,15 @@ export default function Dashboard() {
 
       if (Array.isArray(data?.offDates)) {
         data.offDates.forEach((d: string) => {
-          offMap[d] = true
+          const key = normalizeDateString(d)
+          if (key) offMap[key] = true
         })
       }
 
       if (Array.isArray(data?.onDates)) {
         data.onDates.forEach((d: string) => {
-          onMap[d] = true
+          const key = normalizeDateString(d)
+          if (key) onMap[key] = true
         })
       }
 
@@ -1553,12 +1805,15 @@ export default function Dashboard() {
         offMap,
         onMap,
         nextStudyWeekends,
-        todayKey,
-        planData?.rulesByDate ?? {}
+        startDate,
+        {}
       )
 
       const nextPlanData = {
         ...data,
+        jurisdictionCode: persistedJurisdiction,
+        jurisdictionName: getJurisdictionDisplayName(persistedJurisdiction),
+        examRegime: getEffectiveExamRegime(persistedJurisdiction, examDate),
         ruleSet: selectedRuleSet,
         baseTotalRules,
         totalRules,
@@ -1592,9 +1847,8 @@ export default function Dashboard() {
             : safeDailyRules,
       }))
 
-      await queryClient.invalidateQueries({
-        queryKey: ["dashboard-batch", currentUserId],
-      })
+      await loadStudyPlanOnly(currentUserId)
+      await refreshDashboardAndPlan()
     } catch (err) {
       console.error("CREATE PLAN ERROR:", err)
       alert("Something went wrong while generating the plan.")
@@ -1631,7 +1885,7 @@ export default function Dashboard() {
       nextOnMap,
       nextStudyWeekends: studyWeekends,
       nextRuleSet: ruleSet,
-      preserveBeforeDate: todayKey,
+      preserveBeforeDate: key,
       markManualPackage: false,
     })
 
@@ -1641,6 +1895,8 @@ export default function Dashboard() {
       studyWeekends,
       ruleSet
     )
+
+    await refreshDashboardAndPlan()
   }
 
   async function handleStudyWeekendChange(nextStudyWeekends: boolean) {
@@ -1664,10 +1920,17 @@ export default function Dashboard() {
       nextStudyWeekends,
       ruleSet
     )
+
+    await refreshDashboardAndPlan()
   }
 
   async function handleRuleSetChange(nextRuleSet: RuleSet) {
     const recommended = getRecommendedRuleSet(getDaysUntilExam())
+
+    if (!isPremium && nextRuleSet === "full") {
+      alert("Full Rule Bank is available only for Premium users.")
+      return
+    }
 
     if (isHeavierPackage(nextRuleSet, recommended)) {
       const confirmed = window.confirm(
@@ -1683,6 +1946,7 @@ export default function Dashboard() {
       setPlanData((prev: any) => ({
         ...(prev ?? {}),
         ruleSet: nextRuleSet,
+        rulePackages: [nextRuleSet],
         userManuallySelectedRulePackage: true,
       }))
       return
@@ -1706,44 +1970,50 @@ export default function Dashboard() {
       nextOffDates,
       nextOnDates,
       studyWeekends,
-      nextRuleSet
+      nextRuleSet,
+      true
     )
+
+    await refreshDashboardAndPlan()
   }
 
-  async function savePlanAndClose() {
+  async function savePlanAndKeepOpen() {
     if (!currentUserId || !startDate || !examDate || !planData) return
 
     try {
+      const nextOffDates =
+        planData?.offDates ??
+        Object.keys(savedOffMap).filter((k) => savedOffMap[k])
+
+      const nextOnDates =
+        planData?.onDates ??
+        Object.keys(savedOnMap).filter((k) => savedOnMap[k])
+
       const res = await fetch("/api/study-plan", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          userId: currentUserId,
-          startDate,
-          examDate,
-          studyWeekends,
-          ruleSet,
-          offDates:
-            planData?.offDates ??
-            Object.keys(savedOffMap).filter((k) => savedOffMap[k]),
-          onDates:
-            planData?.onDates ??
-            Object.keys(savedOnMap).filter((k) => savedOnMap[k]),
-        }),
+        body: JSON.stringify(
+          buildStudyPlanRequestBody({
+            nextOffDates,
+            nextOnDates,
+            nextStudyWeekends: studyWeekends,
+            nextRuleSet: ruleSet,
+            manualPackage: Boolean(planData?.userManuallySelectedRulePackage),
+          })
+        ),
       })
 
-      if (!res.ok) {
-        alert("Failed to save study plan.")
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || data?.error) {
+        alert(data?.error || "Failed to save study plan.")
         return
       }
 
       await loadStudyPlanOnly(currentUserId)
-      await queryClient.invalidateQueries({
-        queryKey: ["dashboard-batch", currentUserId],
-      })
-      closeStudyPlanModal()
+      await refreshDashboardAndPlan()
     } catch (err) {
       console.error("SAVE STUDY PLAN ERROR:", err)
       alert("Failed to save study plan.")
@@ -1777,9 +2047,7 @@ export default function Dashboard() {
       closeStudyPlanModal()
       setStudyPlanLoaded(true)
 
-      await queryClient.invalidateQueries({
-        queryKey: ["dashboard-batch", currentUserId],
-      })
+      await refreshDashboardAndPlan()
     } catch (err) {
       console.error("RESET STUDY PLAN ERROR:", err)
       alert("Failed to reset study plan.")
@@ -1813,6 +2081,9 @@ export default function Dashboard() {
     20
 
   const todaySpacedReviews = Number(dashboard?.spacedReviewsDue ?? 0)
+
+  const isPremium = subscriptionTier === "premium"
+  const shouldShowMBEComingSoon = entitlements.canSeeMBEComingSoon
 
   const shouldShowWelcomeBanner =
     authReady &&
@@ -1861,10 +2132,20 @@ export default function Dashboard() {
     return analyticsRange.toUpperCase()
   }, [analyticsRange, customFrom, customTo])
 
+  const jurisdictionBllRows = useMemo(() => {
+    return getSubjectAnalyticsForCurrentJurisdiction()
+  }, [
+    selectedStudyJurisdiction,
+    examDate,
+    bllSubjects,
+    planData?.jurisdictionCode,
+    planData?.examRegime,
+  ])
+
   const activeRows = useMemo(() => {
     if (analyticsMode === "MBE") return mbeRows
-    return subjectRows
-  }, [analyticsMode, mbeRows, subjectRows])
+    return jurisdictionBllRows
+  }, [analyticsMode, mbeRows, jurisdictionBllRows])
 
   const currentModeStateAverage =
     analyticsMode === "MBE"
@@ -1929,27 +2210,42 @@ export default function Dashboard() {
     examDate
   )
 
-  const visibleSubjectPlan = effectiveSubjectPlan.slice(0, 10)
+  const visibleSubjectPlan = effectiveSubjectPlan
   const studyDayStats = getStudyPlanDayStats()
   const daysUntilExam = getDaysUntilExam()
   const weeksUntilExam = Math.max(0, daysUntilExam / 7).toFixed(1)
   const recommendedRuleSet = getRecommendedRuleSet(daysUntilExam)
 
-  const totalPlanRules = Math.max(
-    1,
+  const actualTotalRules =
     Number(planData?.totalRules ?? 0) ||
-      getEffectivePackageRuleTotal(getSubjectRuleTotal(bllSubjects) || 1164, ruleSet)
-  )
+    getEffectivePackageRuleTotal(getSubjectRuleTotal(bllSubjects), ruleSet)
 
-  const rulesMasteredCount = Math.max(
+  const totalPlanRulesForDisplay =
+    Number.isFinite(actualTotalRules) && actualTotalRules > 0
+      ? Math.round(actualTotalRules)
+      : 0
+
+  const totalPlanRulesForPercent = Math.max(1, totalPlanRulesForDisplay)
+
+  const rawRulesMasteredCount = Math.max(
     0,
     Number(dashboard?.totalRulesMastered ?? weeklyRulesDone ?? 0)
   )
 
-  const rulesMasteredPercent = Math.max(
-    0,
-    Math.min(100, Math.round((rulesMasteredCount / totalPlanRules) * 100))
-  )
+  const rulesMasteredCount = shouldUseGlobalSubjectProgressForCurrentJurisdiction()
+    ? rawRulesMasteredCount
+    : 0
+
+  const rulesMasteredPercent =
+    totalPlanRulesForDisplay > 0
+      ? Math.max(
+          0,
+          Math.min(
+            100,
+            Math.round((rulesMasteredCount / totalPlanRulesForPercent) * 100)
+          )
+        )
+      : 0
 
   const studyDaysPercent = Math.max(
     0,
@@ -2264,16 +2560,18 @@ export default function Dashboard() {
                     BLL
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => undefined}
-                    className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-[12px] font-semibold text-slate-500 transition hover:bg-slate-100"
-                  >
-                    MBE
-                    <span className="ml-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-amber-700">
-                      Coming Soon
-                    </span>
-                  </button>
+                  {shouldShowMBEComingSoon && (
+                    <button
+                      type="button"
+                      onClick={() => undefined}
+                      className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-[12px] font-semibold text-slate-500 transition hover:bg-slate-100"
+                    >
+                      MBE
+                      <span className="ml-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-amber-700">
+                        Coming Soon
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 <div
@@ -2367,7 +2665,7 @@ export default function Dashboard() {
                 title="Score trend"
                 subtitle={`${
                   analyticsMode === "BLL"
-                    ? "Black letter law accuracy over time"
+                    ? `${getJurisdictionDisplayName(selectedStudyJurisdiction)} BLL accuracy over time`
                     : "MBE accuracy over time"
                 } • ${chartRangeLabel}`}
                 premium
@@ -2390,7 +2688,7 @@ export default function Dashboard() {
                 title="Accuracy by subject"
                 subtitle={
                   analyticsMode === "BLL"
-                    ? "Your BLL performance by subject"
+                    ? `${getJurisdictionDisplayName(selectedStudyJurisdiction)} subjects`
                     : isPremium
                       ? "Your MBE percentage vs state average"
                       : "Premium only. Unlock MBE analytics."
@@ -2628,7 +2926,7 @@ export default function Dashboard() {
           onClick={closeStudyPlanModal}
         >
           <div
-            className="relative h-[88vh] w-[1120px] max-w-[96vw] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl"
+            className="relative h-[88vh] w-[1120px] max-w-[96vw] select-none overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex h-full flex-col">
@@ -2657,7 +2955,7 @@ export default function Dashboard() {
               </div>
 
               <div className="grid min-h-0 flex-1 grid-cols-1 bg-white lg:grid-cols-[1fr_320px]">
-                <div className="min-h-0 overflow-y-auto border-r border-[#D6E4FF] bg-white px-6 py-6">
+                <div className="min-h-0 overflow-y-auto border-r border-[#D6E4FF] bg-white px-6 py-5">
                   <div className="mb-3 flex items-center justify-between">
                     <button
                       onClick={() => changeMonth("prev")}
@@ -2681,7 +2979,8 @@ export default function Dashboard() {
                   </div>
 
                   <div className="mb-3 text-[13px] text-slate-500">
-                    Click a study date to mark it off. Exam day is highlighted in amber.
+                    Choose your exam date, then adjust study days as needed.
+                    Days marked off are excluded from daily rule distribution.
                   </div>
 
                   <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[11px] font-semibold text-slate-500">
@@ -2695,7 +2994,7 @@ export default function Dashboard() {
                   </div>
 
                   {calendarDays.length === 0 ? (
-                    <div className="flex h-[480px] items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm text-slate-400">
+                    <div className="flex h-[430px] items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm text-slate-400">
                       Select your start date and exam date, then click Create Plan.
                     </div>
                   ) : (
@@ -2722,7 +3021,7 @@ export default function Dashboard() {
                             onClick={() => toggleCalendarDay(d)}
                             disabled={d.isPadding}
                             className={[
-                              "min-h-[74px] rounded-[14px] px-2 py-2 text-left transition-all duration-200 shadow-sm",
+                              "min-h-[66px] rounded-[14px] px-2 py-2 text-left transition-all duration-200 shadow-sm",
                               d.isPadding
                                 ? "cursor-default border border-slate-100 bg-slate-50 text-slate-300"
                                 : "",
@@ -2803,10 +3102,12 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <div className="mt-8 space-y-4 px-1">
+                  <div className="mt-5 grid grid-cols-1 gap-4 px-1 md:grid-cols-2">
                     <ProgressLine
                       label="Rules Mastered"
-                      value={`${rulesMasteredCount} / ${totalPlanRules}`}
+                      value={`${rulesMasteredCount} / ${
+                        totalPlanRulesForDisplay || "-"
+                      }`}
                       percent={rulesMasteredPercent}
                       tone="violet"
                     />
@@ -2821,7 +3122,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="min-h-0 overflow-y-auto bg-[#EEF5FF]">
-                  <StudyPanelSection>
+                  <StudyPanelSection compact>
                     <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
                       Exam Countdown
                     </div>
@@ -2844,7 +3145,7 @@ export default function Dashboard() {
                           {getRegimeLabel(effectiveExamRegime)}
                         </div>
                         <div className="mt-1 font-mono text-[11px] text-[#7F9CC0]">
-                          {examDate ? formatShortDate(new Date(examDate)) : "No exam date"}
+                          {examDate ? formatShortDate(new Date(`${examDate}T00:00:00`)) : "No exam date"}
                         </div>
                         <div className="mt-2 inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">
                           <Flame size={11} />
@@ -2854,17 +3155,17 @@ export default function Dashboard() {
                     </div>
                   </StudyPanelSection>
 
-                  <StudyPanelSection>
+                  <StudyPanelSection compact>
                     <div className="mb-3 flex items-center justify-between">
                       <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
                         Subject Progress
                       </div>
-                      <div className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-[#3C3489]">
+                      <div className="text-[10px] font-semibold text-[#3C3489]">
                         {effectiveSubjectPlan.length} subjects
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="max-h-[190px] space-y-2 overflow-y-auto pr-1">
                       {visibleSubjectPlan.map((subject) => {
                         const pct = getSubjectProgressPercent(subject.name)
 
@@ -2881,7 +3182,7 @@ export default function Dashboard() {
                               <div
                                 className="h-full rounded-full bg-[#7C5CFC]"
                                 style={{
-                                  width: `${pct <= 0 ? 3 : Math.min(pct, 100)}%`,
+                                  width: `${Math.max(0, Math.min(pct, 100))}%`,
                                 }}
                               />
                             </div>
@@ -2894,12 +3195,12 @@ export default function Dashboard() {
                     </div>
                   </StudyPanelSection>
 
-                  <StudyPanelSection>
+                  <StudyPanelSection compact>
                     <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
                       Overview
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       <OverviewRow
                         icon={<Zap size={14} />}
                         label="Rules / day"
@@ -2927,7 +3228,7 @@ export default function Dashboard() {
                     </div>
                   </StudyPanelSection>
 
-                  <StudyPanelSection>
+                  <StudyPanelSection compact>
                     <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
                       Settings
                     </div>
@@ -2937,9 +3238,9 @@ export default function Dashboard() {
                         <select
                           value={selectedStudyJurisdiction}
                           onChange={(e) =>
-                            setSelectedStudyJurisdiction(e.target.value)
+                            handleStudyJurisdictionChange(e.target.value)
                           }
-                          className="w-full rounded-xl border border-[#9AB8EF] bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[#7C5CFC]"
+                          className="w-full appearance-none rounded-2xl border border-[#BED0F5] bg-white/95 px-4 py-2.5 text-sm font-medium text-slate-800 shadow-[0_8px_18px_-14px_rgba(15,23,42,0.55)] outline-none transition focus:border-[#7C5CFC] focus:ring-4 focus:ring-violet-100"
                         >
                           <option value="UBE">UBE / Uniform Current</option>
                           {JURISDICTION_OPTIONS.map((j) => (
@@ -2959,7 +3260,7 @@ export default function Dashboard() {
                       <PanelField label="Start date">
                         <input
                           type="date"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[#7C5CFC]"
+                          className="w-full rounded-2xl border border-[#D7E2F7] bg-white/95 px-4 py-2.5 text-sm font-medium text-slate-800 shadow-[0_8px_18px_-14px_rgba(15,23,42,0.55)] outline-none transition focus:border-[#7C5CFC] focus:ring-4 focus:ring-violet-100"
                           value={startDate}
                           onChange={(e) => setStartDate(e.target.value)}
                         />
@@ -2968,7 +3269,7 @@ export default function Dashboard() {
                       <PanelField label="Exam date">
                         <input
                           type="date"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[#7C5CFC]"
+                          className="w-full rounded-2xl border border-[#D7E2F7] bg-white/95 px-4 py-2.5 text-sm font-medium text-slate-800 shadow-[0_8px_18px_-14px_rgba(15,23,42,0.55)] outline-none transition focus:border-[#7C5CFC] focus:ring-4 focus:ring-violet-100"
                           value={examDate}
                           onChange={(e) => setExamDate(e.target.value)}
                         />
@@ -2980,7 +3281,7 @@ export default function Dashboard() {
                           onChange={(e) =>
                             handleRuleSetChange(normalizeRuleSet(e.target.value))
                           }
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-[#7C5CFC]"
+                          className="w-full appearance-none rounded-2xl border border-[#D7E2F7] bg-white/95 px-4 py-2.5 text-sm font-medium text-slate-800 shadow-[0_8px_18px_-14px_rgba(15,23,42,0.55)] outline-none transition focus:border-[#7C5CFC] focus:ring-4 focus:ring-violet-100"
                         >
                           <option value="emergency">Emergency Pack</option>
                           <option value="priority">Priority Rules</option>
@@ -3019,7 +3320,7 @@ export default function Dashboard() {
                     </div>
                   </StudyPanelSection>
 
-                  <StudyPanelSection>
+                  <StudyPanelSection compact>
                     <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7F9CC0]">
                       Daily Breakdown
                     </div>
@@ -3047,8 +3348,8 @@ export default function Dashboard() {
                         label="MBE Questions"
                         value={
                           isPremium ? (
-                            <span className="font-semibold text-blue-700">
-                              {planData?.dailyMBE ?? 50}
+                            <span className="font-semibold text-slate-400">
+                              Coming soon
                             </span>
                           ) : (
                             <PremiumBadge onClick={() => undefined} />
@@ -3058,21 +3359,21 @@ export default function Dashboard() {
                     </div>
                   </StudyPanelSection>
 
-                  <div className="grid grid-cols-3 gap-2 border-t border-[#D6E4FF] p-4">
+                  <div className="grid grid-cols-3 gap-3 border-t border-[#D6E4FF] p-4">
                     <button
                       onClick={createPlan}
-                      className="rounded-xl border border-[#AABBE7] bg-white px-3 py-2.5 text-[13px] font-semibold text-slate-800 shadow-sm transition hover:bg-[#F7FAFF]"
+                      className="rounded-2xl bg-[linear-gradient(135deg,#7C5CFC,#9B7CFF)] px-3 py-3 text-[13px] font-semibold text-white shadow-[0_12px_24px_-14px_rgba(124,92,252,0.75)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_28px_-14px_rgba(124,92,252,0.8)] active:translate-y-0"
                     >
                       Create
                     </button>
 
                     <button
-                      onClick={savePlanAndClose}
+                      onClick={savePlanAndKeepOpen}
                       disabled={!canSavePlan}
-                      className={`rounded-xl px-3 py-2.5 text-[13px] font-semibold shadow-sm transition ${
+                      className={`rounded-2xl px-3 py-3 text-[13px] font-semibold shadow-sm transition ${
                         canSavePlan
-                          ? "bg-white text-slate-900 hover:bg-[#F7FAFF] border border-[#AABBE7]"
-                          : "cursor-not-allowed border border-[#C7D5EF] bg-[#EEF3FB] text-[#9AAAC5]"
+                          ? "bg-white text-slate-900 ring-1 ring-[#BFD0F3] hover:-translate-y-0.5 hover:bg-[#F7FAFF] hover:shadow-[0_14px_24px_-18px_rgba(15,23,42,0.55)] active:translate-y-0"
+                          : "cursor-not-allowed bg-[#E7EEF9] text-[#9AAAC5] ring-1 ring-[#C7D5EF]"
                       }`}
                     >
                       Save
@@ -3080,7 +3381,7 @@ export default function Dashboard() {
 
                     <button
                       onClick={() => setResetConfirmOpen(true)}
-                      className="rounded-xl border border-[#AABBE7] bg-white px-3 py-2.5 text-[13px] font-semibold text-slate-800 shadow-sm transition hover:bg-[#F7FAFF]"
+                      className="rounded-2xl bg-white px-3 py-3 text-[13px] font-semibold text-rose-600 ring-1 ring-rose-200 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-50 hover:shadow-[0_14px_24px_-18px_rgba(244,63,94,0.55)] active:translate-y-0"
                     >
                       Reset
                     </button>
@@ -3132,9 +3433,15 @@ export default function Dashboard() {
   )
 }
 
-function StudyPanelSection({ children }: { children: ReactNode }) {
+function StudyPanelSection({
+  children,
+  compact = false,
+}: {
+  children: ReactNode
+  compact?: boolean
+}) {
   return (
-    <section className="border-b border-[#D6E4FF] px-5 py-5">
+    <section className={`border-b border-[#D6E4FF] px-5 ${compact ? "py-4" : "py-5"}`}>
       {children}
     </section>
   )
@@ -3161,7 +3468,6 @@ function OverviewRow({
   icon,
   label,
   value,
-  tone,
 }: {
   icon: ReactNode
   label: string
@@ -3174,13 +3480,7 @@ function OverviewRow({
         <span className="text-[#9EB9DF]">{icon}</span>
         {label}
       </div>
-      <span
-        className={`rounded-lg px-2 py-1 font-mono text-[12px] font-semibold ${
-          tone === "violet"
-            ? "bg-[#EDE7FF] text-[#4D3A9A]"
-            : "bg-[#FFE9C5] text-[#9B5A00]"
-        }`}
-      >
+      <span className="font-mono text-[13px] font-semibold text-slate-800">
         {value}
       </span>
     </div>
@@ -3243,7 +3543,7 @@ function InfoRow({
 function PremiumBadge({ onClick }: { onClick?: () => void }) {
   const content = (
     <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-      Premium
+      Coming soon
       <span>🔒</span>
     </span>
   )
@@ -3492,10 +3792,10 @@ function LockedChartCard({ onClick }: { onClick: () => void }) {
         <Lock size={16} />
       </div>
       <div className="text-[13px] font-semibold text-slate-800">
-        Premium required
+        Coming soon
       </div>
       <div className="mt-1 text-[11px] text-slate-500">
-        Unlock MBE charts and comparison analytics
+        MBE practice and MBE analytics are not active yet.
       </div>
     </button>
   )

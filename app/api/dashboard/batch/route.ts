@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
 
 type DayStatus = "fire" | "ice" | "none"
-type RuleSet = "core"
+type RuleSet = "emergency" | "priority" | "golden" | "core" | "full"
 
 type ActiveRuleIdentity = {
   subject_id: string | null
@@ -90,7 +90,14 @@ function percent(correct: number, total: number) {
   return Math.round((correct / total) * 100)
 }
 
-function normalizeRuleSet(_value: unknown): RuleSet {
+function normalizeRuleSet(value: unknown): RuleSet {
+  const clean = String(value ?? "").trim().toLowerCase()
+
+  if (clean === "emergency") return "emergency"
+  if (clean === "priority") return "priority"
+  if (clean === "golden") return "golden"
+  if (clean === "full") return "full"
+
   return "core"
 }
 
@@ -239,7 +246,44 @@ function buildLevelAndProgress(attempts: number, accuracy: number) {
   }
 }
 
-function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, _ruleSet: RuleSet) {
+function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, ruleSet: RuleSet) {
+  const type = String(rule.rule_type ?? "").trim().toLowerCase()
+
+  if (ruleSet === "core") return rule.rule_type === null || type === "core"
+  if (ruleSet === "full") return true
+
+  if (ruleSet === "golden") {
+    return [
+      "golden",
+      "golden_120",
+      "most_tested",
+      "high_yield",
+      "priority",
+    ].includes(type)
+  }
+
+  if (ruleSet === "priority") {
+    return [
+      "priority",
+      "golden",
+      "golden_120",
+      "most_tested",
+      "high_yield",
+      "emergency",
+    ].includes(type)
+  }
+
+  if (ruleSet === "emergency") {
+    return [
+      "emergency",
+      "priority",
+      "golden",
+      "golden_120",
+      "most_tested",
+      "high_yield",
+    ].includes(type)
+  }
+
   return rule.rule_type === null
 }
 
@@ -394,8 +438,13 @@ function buildSubjectAnalyticsFromRows({
   userMbeAttempts: any[]
   ruleSet: RuleSet
 }): SubjectAnalyticsResult {
-  const { totalBySubjectId: rulesTotalBySubjectId } =
+  let { totalBySubjectId: rulesTotalBySubjectId, totalRules } =
     buildCanonicalRuleCountMaps(activeRules, ruleSet)
+
+  if (totalRules <= 0 && ruleSet !== "core") {
+    const fallback = buildCanonicalRuleCountMaps(activeRules, "core")
+    rulesTotalBySubjectId = fallback.totalBySubjectId
+  }
 
   const mbeTotalBySubjectId = new Map<string, number>()
 
@@ -535,7 +584,7 @@ function buildSubjectAnalyticsFromRows({
 }
 
 function buildDashboardMetricsFromRows({
-  profileState,
+  comparisonState,
   todayBLL,
   todayMBE,
   weeklyRuleAttempts,
@@ -549,7 +598,7 @@ function buildDashboardMetricsFromRows({
   totalRules,
   ruleSet,
 }: {
-  profileState: string | null
+  comparisonState: string | null
   todayBLL: number
   todayMBE: number
   weeklyRuleAttempts: number
@@ -613,7 +662,7 @@ function buildDashboardMetricsFromRows({
     todayBLL,
     todayMBE,
     goalBLL,
-    goalMBE: 60,
+    goalMBE: 0,
     totalRules,
     userBLL: percent(bllCorrect, bllAttempts),
     userMBE: percent(mbeCorrect, mbeTotal),
@@ -632,7 +681,7 @@ function buildDashboardMetricsFromRows({
     currentStreak: streak.currentStreak,
     bestStreak: streak.bestStreak,
     streakDays: streak.streakDays,
-    selectedState: profileState || "",
+    selectedState: comparisonState || "",
   }
 }
 
@@ -655,13 +704,6 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url)
     const requestedState = url.searchParams.get("state")?.trim() || null
-
-    const savedProfileState =
-      typeof profile.jurisdiction === "string" && profile.jurisdiction.trim()
-        ? profile.jurisdiction.trim()
-        : null
-
-    const profileState = requestedState || savedProfileState
 
     const now = new Date()
     const today = startOfDay(now)
@@ -863,7 +905,12 @@ export async function GET(request: Request) {
     log("fallback normalization complete")
 
     const ruleSet = normalizeRuleSet(studyPlan?.ruleSet)
-    const { totalRules } = buildCanonicalRuleCountMaps(activeRules, ruleSet)
+    let { totalRules } = buildCanonicalRuleCountMaps(activeRules, ruleSet)
+
+    if (totalRules <= 0 && ruleSet !== "core") {
+      totalRules = buildCanonicalRuleCountMaps(activeRules, "core").totalRules
+    }
+
     const effectiveDailyRules = getEffectiveTodayBLLGoal(studyPlan, totalRules)
 
     const subjectAnalytics = buildSubjectAnalyticsFromRows({
@@ -878,7 +925,7 @@ export async function GET(request: Request) {
     log("subject analytics normalization complete")
 
     const dashboardMetrics = buildDashboardMetricsFromRows({
-      profileState,
+      comparisonState: requestedState,
       todayBLL,
       todayMBE,
       weeklyRuleAttempts,
@@ -910,7 +957,7 @@ export async function GET(request: Request) {
         subscription_tier: profile.subscription_tier || "free",
         billing_status: profile.billing_status || "free",
       },
-      comparisonState: profileState,
+      comparisonState: requestedState,
       studyPlan: studyPlan
         ? {
             ...studyPlan,
@@ -922,7 +969,7 @@ export async function GET(request: Request) {
       dashboard: dashboardMetrics,
       subjects: subjectAnalytics.subjects,
       mbeSubjects: subjectAnalytics.mbeSubjects,
-      stateData: profileState
+      stateData: requestedState
         ? {
             userMBE: dashboardMetrics.userMBE,
             userBLL: dashboardMetrics.userBLL,
