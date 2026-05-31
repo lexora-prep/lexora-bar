@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Lock,
+  LifeBuoy,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { useUnsavedChanges } from "@/app/_providers/UnsavedChangesProvider"
@@ -208,6 +209,11 @@ export default function Sidebar({
       name: "Subscription",
       href: "/subscription",
       icon: CreditCard,
+    },
+    {
+      name: "Support",
+      href: "/support",
+      icon: LifeBuoy,
     },
   ]
 
