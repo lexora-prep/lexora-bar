@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Bell, X } from "lucide-react"
+import { Bell, CheckCheck, Mail, MailOpen, X } from "lucide-react"
 
 type TopNavbarProps = {
   collapsed?: boolean
@@ -35,6 +35,7 @@ export default function TopNavbar({
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsLoading, setNotificationsLoading] = useState(false)
+  const [markingAllRead, setMarkingAllRead] = useState(false)
 
   const notificationRef = useRef<HTMLDivElement | null>(null)
 
@@ -95,6 +96,79 @@ export default function TopNavbar({
     }
   }
 
+  async function markNotificationRead(item: NotificationItem) {
+    const wasUnread = !item.is_read
+
+    if (wasUnread) {
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === item.id
+            ? {
+                ...notification,
+                is_read: true,
+                read_at: new Date().toISOString(),
+              }
+            : notification
+        )
+      )
+
+      setUnreadCount((prev) => Math.max(0, prev - 1))
+    }
+
+    try {
+      const res = await fetch(`/api/notifications/${item.id}/read`, {
+        method: "POST",
+      })
+
+      if (!res.ok) {
+        await loadNotifications()
+        return
+      }
+
+      if (item.link) {
+        window.location.href = item.link
+      }
+    } catch (error) {
+      console.error("MARK NOTIFICATION READ ERROR:", error)
+      await loadNotifications()
+    }
+  }
+
+  async function markAllNotificationsRead() {
+    if (unreadCount <= 0 || markingAllRead) return
+
+    const previousNotifications = notifications
+    const previousUnreadCount = unreadCount
+
+    setMarkingAllRead(true)
+    setUnreadCount(0)
+    setNotifications((prev) =>
+      prev.map((notification) => ({
+        ...notification,
+        is_read: true,
+        read_at: notification.read_at ?? new Date().toISOString(),
+      }))
+    )
+
+    try {
+      const res = await fetch("/api/notifications/read-all", {
+        method: "POST",
+      })
+
+      if (!res.ok) {
+        setNotifications(previousNotifications)
+        setUnreadCount(previousUnreadCount)
+        return
+      }
+    } catch (error) {
+      console.error("MARK ALL NOTIFICATIONS READ ERROR:", error)
+      setNotifications(previousNotifications)
+      setUnreadCount(previousUnreadCount)
+    } finally {
+      setMarkingAllRead(false)
+    }
+  }
+
   const greeting = getGreeting()
   const hasUnreadNotifications = unreadCount > 0
 
@@ -123,7 +197,10 @@ export default function TopNavbar({
           </div>
         </div>
 
-        <div className="relative flex shrink-0 items-center gap-3" ref={notificationRef}>
+        <div
+          className="relative flex shrink-0 items-center gap-3"
+          ref={notificationRef}
+        >
           <button
             type="button"
             onClick={handleBellClick}
@@ -146,64 +223,119 @@ export default function TopNavbar({
           </button>
 
           {notificationOpen && (
-            <div className="absolute right-0 top-12 z-50 w-[380px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+            <div className="absolute right-0 top-12 z-50 w-[400px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
                 <div>
                   <div className="text-sm font-semibold text-slate-900">
                     Notifications
                   </div>
                   <div className="text-xs text-slate-500">
                     {unreadCount > 0
-                      ? `${unreadCount} unread update${unreadCount === 1 ? "" : "s"}`
-                      : "Updates from Lexora"}
+                      ? `${unreadCount} unread update${
+                          unreadCount === 1 ? "" : "s"
+                        }`
+                      : "All caught up"}
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setNotificationOpen(false)}
-                  className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                  aria-label="Close notifications"
-                >
-                  <X size={16} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={markAllNotificationsRead}
+                    disabled={unreadCount <= 0 || markingAllRead}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition ${
+                      unreadCount > 0 && !markingAllRead
+                        ? "bg-violet-50 text-violet-700 hover:bg-violet-100"
+                        : "cursor-not-allowed bg-slate-50 text-slate-400"
+                    }`}
+                    title="Mark all as read"
+                  >
+                    <CheckCheck size={14} />
+                    {markingAllRead ? "Marking..." : "Mark all read"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setNotificationOpen(false)}
+                    className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                    aria-label="Close notifications"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
 
-              <div className="max-h-[360px] overflow-y-auto">
+              <div className="max-h-[390px] overflow-y-auto">
                 {notificationsLoading ? (
                   <div className="px-4 py-4 text-sm text-slate-500">
                     Loading notifications...
                   </div>
                 ) : notifications.length > 0 ? (
                   <div className="divide-y divide-slate-100">
-                    {notifications.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`px-4 py-4 ${
-                          item.is_read ? "bg-white" : "bg-violet-50/60"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="text-sm font-semibold text-slate-900">
-                            {item.title}
+                    {notifications.map((item) => {
+                      const unread = !item.is_read
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => markNotificationRead(item)}
+                          className={`block w-full px-4 py-4 text-left transition hover:bg-slate-50 ${
+                            unread ? "bg-violet-50/60" : "bg-white"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+                                unread
+                                  ? "bg-violet-100 text-violet-700"
+                                  : "bg-slate-100 text-slate-500"
+                              }`}
+                            >
+                              {unread ? (
+                                <Mail size={16} />
+                              ) : (
+                                <MailOpen size={16} />
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-3">
+                                <div
+                                  className={`text-sm ${
+                                    unread
+                                      ? "font-semibold text-slate-950"
+                                      : "font-medium text-slate-700"
+                                  }`}
+                                >
+                                  {item.title}
+                                </div>
+
+                                {unread && (
+                                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-violet-500" />
+                                )}
+                              </div>
+
+                              <div className="mt-1 text-sm leading-6 text-slate-600">
+                                {item.body}
+                              </div>
+
+                              {item.created_at && (
+                                <div className="mt-2 text-xs text-slate-400">
+                                  {new Date(item.created_at).toLocaleString()}
+                                </div>
+                              )}
+
+                              {item.link && (
+                                <div className="mt-2 text-xs font-semibold text-violet-700">
+                                  Open details →
+                                </div>
+                              )}
+                            </div>
                           </div>
-
-                          {!item.is_read && (
-                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-violet-500" />
-                          )}
-                        </div>
-
-                        <div className="mt-1 text-sm leading-6 text-slate-600">
-                          {item.body}
-                        </div>
-
-                        {item.created_at && (
-                          <div className="mt-2 text-xs text-slate-400">
-                            {new Date(item.created_at).toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        </button>
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="px-4 py-4 text-sm text-slate-500">
