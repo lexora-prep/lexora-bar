@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 
 import Sidebar from "./components/Sidebar"
 import TopNavbar from "./components/TopNavbar"
+import GlobalToasts from "./components/GlobalToasts"
 import UserActivityHeartbeat from "./components/UserActivityHeartbeat"
 
 import { createClient } from "@/utils/supabase/client"
@@ -248,11 +249,12 @@ function AuthenticatedShell({
     [pathname, requestNavigation]
   )
 
-  const showTopNavbar = pathname === "/dashboard"
+  const showTopNavbar = true
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-foreground transition-colors duration-300">
       <UserActivityHeartbeat />
+      <GlobalToasts />
 
       <div
         className={`transition-all duration-300 ease-in-out ${

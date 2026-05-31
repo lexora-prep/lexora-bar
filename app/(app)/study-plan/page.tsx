@@ -361,6 +361,18 @@ export default function StudyPlanPage() {
   const [saveError, setSaveError] = useState("")
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
 
+  function showToast(kind: "success" | "error", title: string, body?: string) {
+    window.dispatchEvent(
+      new CustomEvent("lexora:toast", {
+        detail: {
+          kind,
+          title,
+          body,
+        },
+      })
+    )
+  }
+
   useEffect(() => {
     async function loadUser() {
       try {
@@ -525,7 +537,13 @@ export default function StudyPlanPage() {
 
       if (!res.ok || data?.error) {
         console.error("SAVE STUDY PLAN ERROR:", data)
-        setSaveError(data?.error || "Could not save study plan. Please try again.")
+
+        const message = data?.error || "Could not save study plan. Please try again."
+
+        setSaveError(message)
+        setSaveMessage("")
+        showToast("error", "Study plan was not saved", message)
+
         return
       }
 
@@ -536,10 +554,17 @@ export default function StudyPlanPage() {
 
       setSaveMessage("Study plan saved successfully.")
       setSaveError("")
+      showToast("success", "Study plan saved", "Your study plan was saved successfully.")
+
+      window.setTimeout(() => {
+        setSaveMessage("")
+      }, 3000)
     } catch (err) {
       console.error("SAVE STUDY PLAN ERROR:", err)
+
       setSaveError("Could not save study plan. Please try again.")
       setSaveMessage("")
+      showToast("error", "Study plan was not saved", "Please try again.")
     } finally {
       setSaving(false)
     }
