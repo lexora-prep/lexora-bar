@@ -357,6 +357,8 @@ export default function StudyPlanPage() {
   const [plan, setPlan] = useState<StudyPlan | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState("")
+  const [saveError, setSaveError] = useState("")
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
 
   useEffect(() => {
@@ -489,6 +491,8 @@ export default function StudyPlanPage() {
 
     try {
       setSaving(true)
+      setSaveMessage("")
+      setSaveError("")
 
       const res = await fetch("/api/study-plan", {
         method: "POST",
@@ -521,6 +525,7 @@ export default function StudyPlanPage() {
 
       if (!res.ok || data?.error) {
         console.error("SAVE STUDY PLAN ERROR:", data)
+        setSaveError(data?.error || "Could not save study plan. Please try again.")
         return
       }
 
@@ -528,8 +533,13 @@ export default function StudyPlanPage() {
         ...(prev ?? {}),
         ...data,
       }))
+
+      setSaveMessage("Study plan saved successfully.")
+      setSaveError("")
     } catch (err) {
       console.error("SAVE STUDY PLAN ERROR:", err)
+      setSaveError("Could not save study plan. Please try again.")
+      setSaveMessage("")
     } finally {
       setSaving(false)
     }
@@ -922,9 +932,19 @@ export default function StudyPlanPage() {
               />
             </PanelSection>
 
-            {saving && (
-              <div className="px-5 pb-3 text-[11px] font-medium text-[#7894BC]">
-                Saving...
+            {(saving || saveMessage || saveError) && (
+              <div className="px-5 pb-3 text-[11px] font-medium">
+                {saving && <div className="text-[#7894BC]">Saving...</div>}
+                {!saving && saveMessage && (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
+                    {saveMessage}
+                  </div>
+                )}
+                {!saving && saveError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                    {saveError}
+                  </div>
+                )}
               </div>
             )}
 
