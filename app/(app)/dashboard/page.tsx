@@ -441,6 +441,7 @@ export default function Dashboard() {
 
   const [openPlan, setOpenPlan] = useState(false)
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
+  const [studyPlanSaveStatus, setStudyPlanSaveStatus] = useState<"idle" | "saving" | "saved">("idle")
   const [startDate, setStartDate] = useState("")
   const [examDate, setExamDate] = useState("")
   const [studyWeekends, setStudyWeekends] = useState(true)
@@ -1977,10 +1978,24 @@ export default function Dashboard() {
     await refreshDashboardAndPlan()
   }
 
+  function showDashboardToast(kind: "success" | "error", title: string, body?: string) {
+    window.dispatchEvent(
+      new CustomEvent("lexora:toast", {
+        detail: {
+          kind,
+          title,
+          body,
+        },
+      })
+    )
+  }
+
   async function savePlanAndKeepOpen() {
     if (!currentUserId || !startDate || !examDate || !planData) return
 
     try {
+      setStudyPlanSaveStatus("saving")
+
       const nextOffDates =
         planData?.offDates ??
         Object.keys(savedOffMap).filter((k) => savedOffMap[k])
@@ -1989,34 +2004,62 @@ export default function Dashboard() {
         planData?.onDates ??
         Object.keys(savedOnMap).filter((k) => savedOnMap[k])
 
+      const normalizedJurisdiction = normalizeJurisdictionCode(selectedStudyJurisdiction)
+      const nextExamRegime = getEffectiveExamRegime(normalizedJurisdiction, examDate)
+
+      const requestBody = {
+        ...buildStudyPlanRequestBody({
+          nextOffDates,
+          nextOnDates,
+          nextStudyWeekends: studyWeekends,
+          nextRuleSet: ruleSet,
+          manualPackage: Boolean(planData?.userManuallySelectedRulePackage),
+        }),
+        jurisdictionCode: normalizedJurisdiction,
+        jurisdictionName: getJurisdictionDisplayName(normalizedJurisdiction),
+        examRegime: nextExamRegime,
+      }
+
       const res = await fetch("/api/study-plan", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(
-          buildStudyPlanRequestBody({
-            nextOffDates,
-            nextOnDates,
-            nextStudyWeekends: studyWeekends,
-            nextRuleSet: ruleSet,
-            manualPackage: Boolean(planData?.userManuallySelectedRulePackage),
-          })
-        ),
+        body: JSON.stringify(requestBody),
       })
 
       const data = await res.json().catch(() => null)
 
       if (!res.ok || data?.error) {
-        alert(data?.error || "Failed to save study plan.")
+        const message = data?.error || "Failed to save study plan."
+
+        setStudyPlanSaveStatus("idle")
+        showDashboardToast("error", "Study plan was not saved", message)
         return
       }
 
+      setPlanData((prev: any) => ({
+        ...(prev ?? {}),
+        ...data,
+        jurisdictionCode: normalizedJurisdiction,
+        jurisdictionName: getJurisdictionDisplayName(normalizedJurisdiction),
+        examRegime: nextExamRegime,
+      }))
+
+      setStudyPlanSaveStatus("saved")
+      showDashboardToast("success", "Study plan saved", "Your study calendar was saved successfully.")
+
       await loadStudyPlanOnly(currentUserId)
       await refreshDashboardAndPlan()
+
+      window.setTimeout(() => {
+        setStudyPlanSaveStatus("idle")
+      }, 2500)
     } catch (err) {
       console.error("SAVE STUDY PLAN ERROR:", err)
-      alert("Failed to save study plan.")
+
+      setStudyPlanSaveStatus("idle")
+      showDashboardToast("error", "Study plan was not saved", "Please try again.")
     }
   }
 
@@ -2028,8 +2071,14 @@ export default function Dashboard() {
         method: "DELETE",
       })
 
-      if (!res.ok) {
-        alert("Failed to reset study plan.")
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || data?.error) {
+        showDashboardToast(
+          "error",
+          "Study plan was not reset",
+          data?.error || "Failed to reset study plan."
+        )
         return
       }
 
@@ -2047,10 +2096,12 @@ export default function Dashboard() {
       closeStudyPlanModal()
       setStudyPlanLoaded(true)
 
+      showDashboardToast("success", "Study plan reset", "Your study calendar was reset successfully.")
+
       await refreshDashboardAndPlan()
     } catch (err) {
       console.error("RESET STUDY PLAN ERROR:", err)
-      alert("Failed to reset study plan.")
+      showDashboardToast("error", "Study plan was not reset", "Please try again.")
     }
   }
 
@@ -3376,7 +3427,11 @@ export default function Dashboard() {
                           : "cursor-not-allowed bg-[#E7EEF9] text-[#9AAAC5] ring-1 ring-[#C7D5EF]"
                       }`}
                     >
-                      Save
+                      {studyPlanSaveStatus === "saving"
+                        ? "Saving..."
+                        : studyPlanSaveStatus === "saved"
+                          ? "Saved"
+                          : "Save"}
                     </button>
 
                     <button
