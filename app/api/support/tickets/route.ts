@@ -27,14 +27,23 @@ function cleanString(value: unknown, fallback = "") {
 }
 
 function normalizeCategory(value: string) {
-  const normalized = value.trim().toLowerCase()
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, "_")
 
   if (normalized === "billing") return "billing"
+  if (normalized === "payment") return "billing"
   if (normalized === "account") return "account"
+  if (normalized === "account_access") return "account"
   if (normalized === "technical") return "technical"
+  if (normalized === "bug") return "bug"
   if (normalized === "content") return "content"
+  if (normalized === "rules") return "content"
+  if (normalized === "study_plan") return "study_plan"
+  if (normalized === "progress") return "study_plan"
+  if (normalized === "subscription") return "subscription"
+  if (normalized === "feature") return "feature"
+  if (normalized === "other") return "other"
 
-  return normalized || "billing"
+  return normalized || "other"
 }
 
 function getPriority(category: string) {
@@ -42,6 +51,8 @@ function getPriority(category: string) {
 
   if (normalized === "billing") return "high"
   if (normalized === "technical") return "high"
+  if (normalized === "bug") return "high"
+  if (normalized === "account") return "high"
 
   return "normal"
 }
@@ -50,7 +61,12 @@ function getSlaDueAt(category: string, baseDate = new Date()) {
   const normalized = normalizeCategory(category)
   const due = new Date(baseDate)
 
-  if (normalized === "billing" || normalized === "technical") {
+  if (
+    normalized === "billing" ||
+    normalized === "technical" ||
+    normalized === "bug" ||
+    normalized === "account"
+  ) {
     due.setHours(due.getHours() + 12)
     return due
   }
@@ -77,9 +93,9 @@ export async function GET() {
         user_id: auth.user.id,
       },
       orderBy: {
-        created_at: "desc",
+        updated_at: "desc",
       },
-      take: 20,
+      take: 50,
       include: {
         messages: {
           where: publicMessageFilter,
@@ -96,7 +112,7 @@ export async function GET() {
 
     return NextResponse.json(
       { ok: false, error: err?.message || "Failed to load support tickets." },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
@@ -108,20 +124,31 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}))
 
-    const subject = cleanString(body.subject, "Billing support request")
-    const category = normalizeCategory(cleanString(body.category, "billing"))
+    const subject = cleanString(body.subject, "Support request")
+    const category = normalizeCategory(cleanString(body.category, "other"))
+    const otherTopic = cleanString(body.otherTopic)
     const message = cleanString(body.message)
+
+    if (!subject) {
+      return NextResponse.json(
+        { ok: false, error: "Subject is required." },
+        { status: 400 }
+      )
+    }
 
     if (!message) {
       return NextResponse.json(
         { ok: false, error: "Message is required." },
-        { status: 400 },
+        { status: 400 }
       )
     }
 
-    const email =
-      auth.user.email ||
-      cleanString(body.email, "unknown@lexoraprep.com")
+    const finalSubject =
+      category === "other" && otherTopic
+        ? `${subject} (${otherTopic})`
+        : subject
+
+    const email = auth.user.email || cleanString(body.email, "unknown@lexoraprep.com")
 
     const now = new Date()
     const priority = getPriority(category)
@@ -131,7 +158,7 @@ export async function POST(req: Request) {
       data: {
         user_id: auth.user.id,
         email,
-        subject,
+        subject: finalSubject,
         category,
         status: "open",
         priority,
@@ -181,7 +208,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { ok: false, error: err?.message || "Failed to create support ticket." },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
