@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   AlertCircle,
@@ -163,7 +163,24 @@ function getTicketNumber(ticket: SupportTicket, allTickets: SupportTicket[]) {
   return `TKT-${String(number).padStart(4, "0")}`
 }
 
+
 export default function SupportPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white px-4 py-4 xl:px-5">
+          <div className="mx-auto max-w-[1500px] rounded-[28px] border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-[0_18px_55px_-38px_rgba(15,23,42,0.45)]">
+            Loading support center...
+          </div>
+        </div>
+      }
+    >
+      <SupportPageContent />
+    </Suspense>
+  )
+}
+
+function SupportPageContent() {
   const searchParams = useSearchParams()
   const ticketIdFromUrl = searchParams.get("ticketId")
 
