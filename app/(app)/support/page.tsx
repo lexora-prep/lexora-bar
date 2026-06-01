@@ -11,8 +11,6 @@ import {
   Inbox,
   LifeBuoy,
   Loader2,
-  MessageSquare,
-  MoreHorizontal,
   Paperclip,
   Plus,
   Search,
@@ -121,19 +119,6 @@ function formatDateTime(value?: string | null) {
   })
 }
 
-function formatShortDate(value?: string | null) {
-  if (!value) return "Not available"
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) return "Not available"
-
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-  })
-}
-
 function getLastPublicMessage(ticket: SupportTicket) {
   if (!Array.isArray(ticket.messages) || ticket.messages.length === 0) {
     return "No messages yet."
@@ -162,7 +147,6 @@ function getTicketNumber(ticket: SupportTicket, allTickets: SupportTicket[]) {
 
   return `TKT-${String(number).padStart(4, "0")}`
 }
-
 
 export default function SupportPage() {
   return (
@@ -220,7 +204,10 @@ function SupportPageContent() {
 
       setTickets(nextTickets)
 
-      if (ticketIdFromUrl && nextTickets.some((ticket: SupportTicket) => ticket.id === ticketIdFromUrl)) {
+      if (
+        ticketIdFromUrl &&
+        nextTickets.some((ticket: SupportTicket) => ticket.id === ticketIdFromUrl)
+      ) {
         setSelectedTicketId(ticketIdFromUrl)
       } else if (selectLatest && nextTickets[0]?.id) {
         setSelectedTicketId(nextTickets[0].id)
@@ -251,7 +238,6 @@ function SupportPageContent() {
 
     return tickets.filter((ticket) => {
       const matchesFilter = filter === "all" ? true : ticket.status === filter
-
       const ticketNumber = getTicketNumber(ticket, tickets).toLowerCase()
 
       const matchesQuery = cleanQuery
@@ -526,46 +512,42 @@ function SupportPageContent() {
             {selectedTicket ? (
               <div className="flex h-full min-h-[760px] flex-col">
                 <div className="border-b border-slate-100 p-6">
-                  <div className="flex items-start justify-between gap-5">
-                    <div className="min-w-0">
-                      <button
-                        type="button"
-                        className="mb-5 inline-flex items-center gap-2 text-[13px] font-semibold text-slate-600 transition hover:text-slate-950"
-                      >
-                        <ChevronLeft size={15} />
-                        Back to tickets
-                      </button>
+                  <div className="min-w-0">
+                    <button
+                      type="button"
+                      className="mb-5 inline-flex items-center gap-2 text-[13px] font-semibold text-slate-600 transition hover:text-slate-950"
+                    >
+                      <ChevronLeft size={15} />
+                      Back to tickets
+                    </button>
 
-                      <h2 className="text-[27px] font-semibold tracking-[-0.04em] text-slate-950">
-                        {selectedTicket.subject}
-                      </h2>
+                    <h2 className="text-[27px] font-semibold tracking-[-0.04em] text-slate-950">
+                      {selectedTicket.subject}
+                    </h2>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-[13px] text-slate-500">
-                        <span>Status:</span>
-                        <span className={`rounded-lg px-2 py-1 text-[12px] font-semibold ${statusClasses(selectedTicket.status)}`}>
-                          {statusLabel(selectedTicket.status)}
-                        </span>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-[13px] text-slate-500">
+                      <span>Status:</span>
+                      <span className={`rounded-lg px-2 py-1 text-[12px] font-semibold ${statusClasses(selectedTicket.status)}`}>
+                        {statusLabel(selectedTicket.status)}
+                      </span>
 
-                        <span>Priority:</span>
-                        <span className={`rounded-lg px-2 py-1 text-[12px] font-semibold ${priorityClasses(selectedTicket.priority)}`}>
-                          {priorityLabel(selectedTicket.priority)}
-                        </span>
+                      <span>Priority:</span>
+                      <span className={`rounded-lg px-2 py-1 text-[12px] font-semibold ${priorityClasses(selectedTicket.priority)}`}>
+                        {priorityLabel(selectedTicket.priority)}
+                      </span>
 
-                        <span>Category:</span>
-                        <span className="rounded-lg bg-slate-100 px-2 py-1 text-[12px] font-semibold text-slate-600">
-                          {categoryLabel(selectedTicket.category)}
-                        </span>
+                      <span>Category:</span>
+                      <span className="rounded-lg bg-slate-100 px-2 py-1 text-[12px] font-semibold text-slate-600">
+                        {categoryLabel(selectedTicket.category)}
+                      </span>
 
-                        <span>{selectedTicketNumber}</span>
-                        <span>Created {formatDateTime(selectedTicket.created_at)}</span>
-                      </div>
+                      <span>{selectedTicketNumber}</span>
+                      <span>Created {formatDateTime(selectedTicket.created_at)}</span>
                     </div>
-
-                    
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-white p-6">
+                <div className="flex-1 overflow-y-auto bg-white px-6 py-2">
                   <div className="divide-y divide-slate-100">
                     {selectedTicket.messages.map((item) => {
                       const support = isSupportSender(item.sender)
@@ -596,17 +578,15 @@ function SupportPageContent() {
                         <div
                           key={item.id}
                           className={`grid grid-cols-[38px_minmax(0,1fr)] gap-4 py-5 ${
-                            support ? "bg-blue-50/40 -mx-6 px-6" : ""
+                            support ? "-mx-6 bg-blue-50/40 px-6" : ""
                           }`}
                         >
                           <div
                             className={`flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-bold ${
-                              support
-                                ? "bg-blue-600 text-white"
-                                : "bg-slate-600 text-white"
+                              support ? "bg-blue-600 text-white" : "bg-slate-600 text-white"
                             }`}
                           >
-                            {support ? "L" : "V"}
+                            {support ? "L" : "M"}
                           </div>
 
                           <div className="min-w-0">
@@ -617,12 +597,10 @@ function SupportPageContent() {
 
                               <span
                                 className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
-                                  support
-                                    ? "bg-blue-100 text-blue-700"
-                                    : "bg-slate-100 text-slate-600"
+                                  support ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"
                                 }`}
                               >
-                                {support ? "Support" : "You"}
+                                {support ? "Support" : "Student"}
                               </span>
 
                               <span className="text-[13px] text-slate-400">
@@ -638,6 +616,8 @@ function SupportPageContent() {
                       )
                     })}
                   </div>
+                </div>
+
                 <div className="border-t border-slate-100 bg-white p-5">
                   {selectedIsClosed ? (
                     <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
