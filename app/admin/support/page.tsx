@@ -324,6 +324,36 @@ export default async function AdminSupportPage() {
       where id = ${ticket.id}::uuid
     `
 
+    const notificationTicket = await prisma.support_tickets.findUnique({
+      where: {
+        id: ticket.id,
+      },
+      select: {
+        id: true,
+        user_id: true,
+        subject: true,
+      },
+    })
+
+    if (notificationTicket) {
+      await prisma.user_notifications.create({
+        data: {
+          user_id: notificationTicket.user_id,
+          type: "support_ticket_reply",
+          title: "Support replied to your ticket",
+          body: `Your ticket "${notificationTicket.subject}" has a new reply.`,
+          link: `/support?ticketId=${notificationTicket.id}`,
+          severity: "info",
+          metadata: {
+            ticketId: notificationTicket.id,
+            ticketSubject: notificationTicket.subject,
+            status: "pending",
+            repliedBy: name,
+          },
+        },
+      })
+    }
+
     revalidatePath("/admin/support")
   }
 
