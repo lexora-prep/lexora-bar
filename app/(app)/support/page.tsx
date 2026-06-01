@@ -115,6 +115,11 @@ function isSupportSender(sender: string) {
   return normalized === "support" || normalized === "admin"
 }
 
+function isSystemSender(sender: string) {
+  const normalized = sender?.toLowerCase()
+  return normalized === "system" || normalized === "support_event" || normalized === "status"
+}
+
 export default function SupportPage() {
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [selectedTicketId, setSelectedTicketId] = useState("")
@@ -473,27 +478,50 @@ export default function SupportPage() {
                   <div className="space-y-4">
                     {selectedTicket.messages.map((item) => {
                       const support = isSupportSender(item.sender)
+                      const system = isSystemSender(item.sender)
+
+                      if (system) {
+                        return (
+                          <div
+                            key={item.id}
+                            className="border-b border-slate-100 px-6 py-2.5 text-center text-[12px] text-slate-400"
+                          >
+                            <span>
+                              {item.message}
+                              <span className="mx-1 text-slate-300">·</span>
+                              {formatDateTime(item.created_at)}
+                            </span>
+                          </div>
+                        )
+                      }
 
                       return (
-                        <div
-                          key={item.id}
-                          className={`flex ${support ? "justify-start" : "justify-end"}`}
-                        >
-                          <div
-                            className={`max-w-[78%] rounded-[22px] px-4 py-3 shadow-sm ${
-                              support
-                                ? "border border-slate-200 bg-white text-slate-700"
-                                : "bg-slate-950 text-white"
-                            }`}
-                          >
-                            <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em] opacity-70">
-                              {support ? "Lexora support" : "You"}
+                        <div key={item.id} className="border-b border-slate-100 px-6 py-4">
+                          <div className="grid grid-cols-[36px_minmax(0,1fr)] gap-3">
+                            <div
+                              className={`flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-bold ${
+                                support
+                                  ? "bg-blue-50 text-blue-700 ring-1 ring-blue-100"
+                                  : "bg-slate-100 text-slate-700 ring-1 ring-slate-200"
+                              }`}
+                            >
+                              {support ? "L" : "M"}
                             </div>
-                            <div className="whitespace-pre-wrap text-sm leading-6">
-                              {item.message}
-                            </div>
-                            <div className="mt-2 text-[11px] opacity-60">
-                              {formatDateTime(item.created_at)}
+
+                            <div className="min-w-0">
+                              <div className="mb-1 flex flex-wrap items-center gap-2 text-[13px]">
+                                <span className="font-semibold text-slate-900">
+                                  {support ? "Lexora Support" : "Me"}
+                                </span>
+                                <span className="text-slate-300">·</span>
+                                <span className="text-slate-400">
+                                  {formatDateTime(item.created_at)}
+                                </span>
+                              </div>
+
+                              <div className="whitespace-pre-wrap text-[14px] leading-6 text-slate-700">
+                                {item.message}
+                              </div>
                             </div>
                           </div>
                         </div>
