@@ -5,13 +5,13 @@ import { useSearchParams } from "next/navigation"
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock3,
   Inbox,
   LifeBuoy,
   Loader2,
-  Paperclip,
   Plus,
   Search,
   Send,
@@ -124,7 +124,10 @@ function getLastPublicMessage(ticket: SupportTicket) {
     return "No messages yet."
   }
 
-  return ticket.messages[ticket.messages.length - 1]?.message || "No messages yet."
+  const visibleMessages = ticket.messages.filter((message) => !isSystemSender(message.sender))
+  const lastVisibleMessage = visibleMessages[visibleMessages.length - 1]
+
+  return lastVisibleMessage?.message || "No messages yet."
 }
 
 function isSupportSender(sender: string) {
@@ -182,6 +185,7 @@ function SupportPageContent() {
   const [otherTopic, setOtherTopic] = useState("")
   const [message, setMessage] = useState("")
   const [replyText, setReplyText] = useState("")
+  const [activityOpen, setActivityOpen] = useState(false)
 
   async function loadTickets(selectLatest = false) {
     try {
@@ -233,6 +237,10 @@ function SupportPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketIdFromUrl])
 
+  useEffect(() => {
+    setActivityOpen(false)
+  }, [selectedTicketId])
+
   const filteredTickets = useMemo(() => {
     const cleanQuery = query.trim().toLowerCase()
 
@@ -257,6 +265,14 @@ function SupportPageContent() {
     filteredTickets[0] ||
     tickets[0] ||
     null
+
+  const visibleMessages = selectedTicket
+    ? selectedTicket.messages.filter((item) => !isSystemSender(item.sender))
+    : []
+
+  const systemMessages = selectedTicket
+    ? selectedTicket.messages.filter((item) => isSystemSender(item.sender))
+    : []
 
   const openCount = tickets.filter((ticket) => ticket.status === "open").length
   const pendingCount = tickets.filter((ticket) => ticket.status === "pending").length
@@ -543,93 +559,125 @@ function SupportPageContent() {
 
                       <span>{selectedTicketNumber}</span>
                       <span>Created {formatDateTime(selectedTicket.created_at)}</span>
+                      <span>Updated {formatDateTime(selectedTicket.updated_at)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-white px-6 py-2">
+                <div className="flex-1 overflow-y-auto bg-white">
                   <div className="divide-y divide-slate-100">
-                    {selectedTicket.messages.map((item) => {
-                      const support = isSupportSender(item.sender)
-                      const system = isSystemSender(item.sender)
+                    {visibleMessages.length > 0 ? (
+                      visibleMessages.map((item) => {
+                        const support = isSupportSender(item.sender)
 
-                      if (system) {
                         return (
                           <div
                             key={item.id}
-                            className="flex items-center gap-3 py-3 text-[13px] text-slate-500"
+                            className={`grid grid-cols-[38px_minmax(0,1fr)] gap-4 px-6 py-5 ${
+                              support ? "bg-blue-50/40" : "bg-white"
+                            }`}
                           >
-                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                              <Clock3 size={13} />
+                            <div
+                              className={`flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-bold ${
+                                support ? "bg-blue-600 text-white" : "bg-slate-600 text-white"
+                              }`}
+                            >
+                              {support ? "L" : "M"}
                             </div>
 
                             <div className="min-w-0">
-                              <span>{item.message}</span>
-                              <span className="mx-2 text-slate-300">·</span>
-                              <span className="text-slate-400">
-                                {formatDateTime(item.created_at)}
-                              </span>
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <span className="text-[14px] font-semibold text-slate-950">
+                                  {support ? "Lexora Support" : "Me"}
+                                </span>
+
+                                <span
+                                  className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+                                    support ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"
+                                  }`}
+                                >
+                                  {support ? "Support" : "Student"}
+                                </span>
+
+                                <span className="text-[13px] text-slate-400">
+                                  {formatDateTime(item.created_at)}
+                                </span>
+                              </div>
+
+                              <div className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
+                                {item.message}
+                              </div>
                             </div>
                           </div>
                         )
-                      }
+                      })
+                    ) : (
+                      <div className="px-6 py-10 text-sm text-slate-500">
+                        No public messages yet.
+                      </div>
+                    )}
+                  </div>
 
-                      return (
-                        <div
-                          key={item.id}
-                          className={`grid grid-cols-[38px_minmax(0,1fr)] gap-4 py-5 ${
-                            support ? "-mx-6 bg-blue-50/40 px-6" : ""
-                          }`}
-                        >
-                          <div
-                            className={`flex h-9 w-9 items-center justify-center rounded-full text-[12px] font-bold ${
-                              support ? "bg-blue-600 text-white" : "bg-slate-600 text-white"
-                            }`}
-                          >
-                            {support ? "L" : "M"}
+                  {systemMessages.length > 0 && (
+                    <div className="border-t border-slate-100 px-6 py-4">
+                      <button
+                        type="button"
+                        onClick={() => setActivityOpen((value) => !value)}
+                        className="flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-left transition hover:bg-slate-100"
+                      >
+                        <div>
+                          <div className="text-[14px] font-semibold text-slate-900">
+                            Ticket activity
                           </div>
-
-                          <div className="min-w-0">
-                            <div className="mb-2 flex flex-wrap items-center gap-2">
-                              <span className="text-[14px] font-semibold text-slate-950">
-                                {support ? "Lexora Support" : "Me"}
-                              </span>
-
-                              <span
-                                className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
-                                  support ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"
-                                }`}
-                              >
-                                {support ? "Support" : "Student"}
-                              </span>
-
-                              <span className="text-[13px] text-slate-400">
-                                {formatDateTime(item.created_at)}
-                              </span>
-                            </div>
-
-                            <div className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">
-                              {item.message}
-                            </div>
+                          <div className="mt-0.5 text-[13px] text-slate-500">
+                            {systemMessages.length} updates
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
+
+                        <ChevronDown
+                          size={17}
+                          className={`text-slate-500 transition-transform ${
+                            activityOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {activityOpen && (
+                        <div className="mt-3 space-y-2">
+                          {systemMessages.map((item) => (
+                            <div
+                              key={item.id}
+                              className="grid grid-cols-[26px_minmax(0,1fr)] gap-3 py-2 text-[13px] text-slate-500"
+                            >
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                                <Clock3 size={13} />
+                              </div>
+
+                              <div className="min-w-0">
+                                <span>{item.message}</span>
+                                <span className="mx-2 text-slate-300">·</span>
+                                <span className="text-slate-400">
+                                  {formatDateTime(item.created_at)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <div className="border-t border-slate-100 bg-white p-5">
+                <div className="border-t border-slate-100 bg-white px-6 py-5">
                   {selectedIsClosed ? (
                     <div className="flex items-start gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
                       <XCircle size={16} className="mt-0.5 shrink-0" />
                       <span>This ticket is closed. Create a new ticket if you need more help.</span>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                      <div className="mb-3 flex items-center gap-4 border-b border-slate-100 px-1 pb-2">
-                        <button className="border-b-2 border-slate-950 pb-2 text-sm font-semibold text-slate-950">
-                          Reply
-                        </button>
+                    <div>
+                      <div className="mb-3 text-sm font-semibold text-slate-950">
+                        Reply
                       </div>
 
                       <textarea
@@ -637,18 +685,10 @@ function SupportPageContent() {
                         onChange={(event) => setReplyText(event.target.value)}
                         placeholder="Type your message..."
                         rows={4}
-                        className="min-h-[110px] w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 outline-none transition-all duration-200 focus:border-blue-300 focus:ring-4 focus:ring-blue-50"
+                        className="min-h-[112px] w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 outline-none transition-all duration-200 focus:border-blue-300 focus:ring-4 focus:ring-blue-50"
                       />
 
-                      <div className="mt-3 flex items-center justify-between">
-                        <button
-                          type="button"
-                          className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-50 hover:text-slate-700 active:scale-[0.98]"
-                          aria-label="Attach file"
-                        >
-                          <Paperclip size={16} />
-                        </button>
-
+                      <div className="mt-3 flex justify-end">
                         <button
                           type="button"
                           onClick={sendReply}
