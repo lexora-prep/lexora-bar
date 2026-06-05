@@ -24,7 +24,21 @@ import {
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import {
-AnalyticsRowNoPercent,
+import {
+  type RuleSet,
+  type SubscriptionTier,
+  type ExamRegime,
+  type JurisdictionGroup,
+  type JurisdictionOption,
+  type SubjectPlanItem,
+  type CalendarDay,
+  type AnalyticsRange,
+  type AnalyticsMode,
+  type SubjectAnalyticsRow,
+  type TrendPoint,
+} from "./_components/dashboardTypes"
+
+  AnalyticsRowNoPercent,
   ChartCard,
   CompactCompareMetric,
   EmptyChartMessage,
@@ -43,20 +57,6 @@ AnalyticsRowNoPercent,
   clampNumber,
   shortDateLabel,
 } from "./_components/DashboardUi"
-import {
-  type RuleSet,
-  type SubscriptionTier,
-  type ExamRegime,
-  type JurisdictionGroup,
-  type JurisdictionOption,
-  type SubjectPlanItem,
-  type CalendarDay,
-  type AnalyticsRange,
-  type AnalyticsMode,
-  type SubjectAnalyticsRow,
-  type TrendPoint,
-} from "./_components/dashboardTypes"
-
 
 const COMPARISON_STATE_STORAGE_KEY = "lexora-comparison-state"
 

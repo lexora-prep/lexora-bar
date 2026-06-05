@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import {
-AnalyticsRowNoPercent,
+  AnalyticsRowNoPercent,
   ChartCard,
   CompactCompareMetric,
   EmptyChartMessage,
@@ -43,20 +43,67 @@ AnalyticsRowNoPercent,
   clampNumber,
   shortDateLabel,
 } from "./_components/DashboardUi"
-import {
-  type RuleSet,
-  type SubscriptionTier,
-  type ExamRegime,
-  type JurisdictionGroup,
-  type JurisdictionOption,
-  type SubjectPlanItem,
-  type CalendarDay,
-  type AnalyticsRange,
-  type AnalyticsMode,
-  type SubjectAnalyticsRow,
-  type TrendPoint,
-} from "./_components/dashboardTypes"
 
+type RuleSet = "emergency" | "priority" | "core" | "full"
+type SubscriptionTier = "free" | "monthly" | "premium"
+
+type ExamRegime =
+  | "UBE_CURRENT"
+  | "NEXTGEN"
+  | "CALIFORNIA_CURRENT"
+  | "FLORIDA_CURRENT"
+  | "FLORIDA_NEXTGEN"
+  | "STATE_SPECIFIC"
+  | "TERRITORY_SPECIAL"
+  | "LOCAL_COMPONENT"
+
+type JurisdictionGroup =
+  | "UBE / Uniform Current"
+  | "California"
+  | "Florida"
+  | "State-Specific / Non-UBE"
+  | "Territories / Special"
+  | "Local Component"
+
+type JurisdictionOption = {
+  code: string
+  name: string
+  group: JurisdictionGroup
+  nextGenStart?: string
+  needsVerification?: boolean
+  localComponent?: boolean
+}
+
+type SubjectPlanItem = {
+  name: string
+  weight: number
+  system: ExamRegime
+}
+
+type CalendarDay = {
+  date: Date
+  isOff: boolean
+  isPadding?: boolean
+  isExamDay?: boolean
+}
+
+type AnalyticsRange = "7d" | "14d" | "30d" | "custom"
+type AnalyticsMode = "BLL" | "MBE"
+
+type SubjectAnalyticsRow = {
+  name: string
+  accuracy: number
+  completed: number
+  total: number
+  level: string
+  progressWidth: number
+}
+
+type TrendPoint = {
+  date: string
+  mbe: number
+  bll: number
+}
 
 const COMPARISON_STATE_STORAGE_KEY = "lexora-comparison-state"
 
