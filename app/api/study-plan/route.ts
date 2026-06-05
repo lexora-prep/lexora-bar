@@ -629,48 +629,56 @@ export async function POST(req: Request) {
 
     const planAction = existingPlan ? "study_plan.updated" : "study_plan.created"
     const planTitle = existingPlan ? "Study plan updated" : "Study plan created"
+    const suppressNotification = body.suppressNotification === true
 
-    await Promise.all([
-      createUserNotification({
-        userId,
-        type: "study_plan",
-        title: planTitle,
-        body: `Your study plan for ${jurisdiction.name} was saved successfully.`,
-        link: "/study-plan",
-        severity: "normal",
-        metadata: {
-          studyPlanId: plan.id,
-          jurisdictionCode: jurisdiction.code,
-          jurisdictionName: jurisdiction.name,
-          examRegime,
-          ruleSet,
-          totalDays,
-          dailyRules,
-          dailyMBE,
-        },
-      }),
-      logUserActivity({
-        userId,
-        actorUserId: user.id,
-        action: planAction,
-        entityType: "study_plan",
-        entityId: plan.id,
-        title: planTitle,
-        body: `Study plan saved for ${jurisdiction.name}.`,
-        metadata: {
-          studyPlanId: plan.id,
-          jurisdictionCode: jurisdiction.code,
-          jurisdictionName: jurisdiction.name,
-          examRegime,
-          ruleSet,
-          totalDays,
-          dailyRules,
-          dailyMBE,
-          offDates,
-          onDates,
-        },
-      }),
-    ])
+    const activityPromise = logUserActivity({
+      userId,
+      actorUserId: user.id,
+      action: planAction,
+      entityType: "study_plan",
+      entityId: plan.id,
+      title: planTitle,
+      body: `Study plan saved for ${jurisdiction.name}.`,
+      metadata: {
+        studyPlanId: plan.id,
+        jurisdictionCode: jurisdiction.code,
+        jurisdictionName: jurisdiction.name,
+        examRegime,
+        ruleSet,
+        totalDays,
+        dailyRules,
+        dailyMBE,
+        offDates,
+        onDates,
+        suppressNotification,
+      },
+    })
+
+    if (suppressNotification) {
+      await activityPromise
+    } else {
+      await Promise.all([
+        createUserNotification({
+          userId,
+          type: "study_plan",
+          title: planTitle,
+          body: `Your study plan for ${jurisdiction.name} was saved successfully.`,
+          link: "/study-plan",
+          severity: "normal",
+          metadata: {
+            studyPlanId: plan.id,
+            jurisdictionCode: jurisdiction.code,
+            jurisdictionName: jurisdiction.name,
+            examRegime,
+            ruleSet,
+            totalDays,
+            dailyRules,
+            dailyMBE,
+          },
+        }),
+        activityPromise,
+      ])
+    }
 
     return NextResponse.json({
       ...plan,

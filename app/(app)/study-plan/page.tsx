@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Layers,
+  Save,
   Zap,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
@@ -33,6 +34,7 @@ type StudyPlan = {
   customRulesEnabled?: boolean
   studyRound?: number
   userManuallySelectedRulePackage?: boolean
+  totalRules?: number
   createdAt?: string
   updatedAt?: string
 }
@@ -74,6 +76,25 @@ function normalizeDate(date: Date) {
   return d
 }
 
+function normalizeDateString(value?: string | Date | null) {
+  if (!value) return ""
+
+  if (value instanceof Date) {
+    return formatDateKey(value)
+  }
+
+  const clean = String(value).trim()
+  if (!clean) return ""
+
+  const match = clean.match(/^(\d{4}-\d{2}-\d{2})/)
+  if (match) return match[1]
+
+  const parsed = new Date(clean)
+  if (isNaN(parsed.getTime())) return ""
+
+  return formatDateKey(parsed)
+}
+
 function formatDateKey(date: Date) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, "0")
@@ -90,8 +111,13 @@ function formatMonthYear(date: Date) {
 
 function formatDisplayDate(value?: string) {
   if (!value) return "-"
-  const d = new Date(value)
+
+  const clean = normalizeDateString(value)
+  if (!clean) return "-"
+
+  const d = new Date(`${clean}T00:00:00`)
   if (isNaN(d.getTime())) return "-"
+
   return d.toLocaleDateString("en-US", {
     month: "2-digit",
     day: "2-digit",
@@ -114,8 +140,8 @@ function isWeekendDate(date: Date) {
 function getDateRange(start?: string, end?: string) {
   if (!start || !end) return []
 
-  const startDate = normalizeDate(new Date(start))
-  const endDate = normalizeDate(new Date(end))
+  const startDate = normalizeDate(new Date(`${normalizeDateString(start)}T00:00:00`))
+  const endDate = normalizeDate(new Date(`${normalizeDateString(end)}T00:00:00`))
 
   if (
     isNaN(startDate.getTime()) ||
@@ -180,8 +206,13 @@ function getActiveStudyDates({
 }
 
 function getWorkloadTotal(plan: StudyPlan | null) {
+  const totalRules = Number(plan?.totalRules ?? 0)
   const dailyRules = Number(plan?.dailyRules ?? 0)
   const totalDays = Number(plan?.totalDays ?? 0)
+
+  if (Number.isFinite(totalRules) && totalRules > 0) {
+    return Math.round(totalRules)
+  }
 
   if (
     Number.isFinite(dailyRules) &&
@@ -275,8 +306,10 @@ function buildCalendarCells({
   const firstDay = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1)
   const lastDay = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0)
 
-  const startDate = start ? normalizeDate(new Date(start)) : null
-  const endDate = end ? normalizeDate(new Date(end)) : null
+  const cleanStart = normalizeDateString(start)
+  const cleanEnd = normalizeDateString(end)
+  const startDate = cleanStart ? normalizeDate(new Date(`${cleanStart}T00:00:00`)) : null
+  const endDate = cleanEnd ? normalizeDate(new Date(`${cleanEnd}T00:00:00`)) : null
   const today = normalizeDate(new Date())
 
   const cells: CalendarCell[] = []
@@ -357,6 +390,7 @@ export default function StudyPlanPage() {
   const [plan, setPlan] = useState<StudyPlan | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [saveMessage, setSaveMessage] = useState("")
   const [saveError, setSaveError] = useState("")
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
@@ -422,9 +456,12 @@ export default function StudyPlanPage() {
         const nextPlan = data || null
 
         setPlan(nextPlan)
+        setHasUnsavedChanges(false)
 
         if (nextPlan?.startDate) {
-          const start = new Date(nextPlan.startDate)
+          const cleanStart = normalizeDateString(nextPlan.startDate)
+          const start = new Date(`${cleanStart}T00:00:00`)
+
           if (!isNaN(start.getTime())) {
             setCalendarMonth(new Date(start.getFullYear(), start.getMonth(), 1))
           }
@@ -457,6 +494,7 @@ export default function StudyPlanPage() {
   }, [plan?.startDate, plan?.examDate, studyWeekends, offDates, onDates])
 
   const activeStudyDays = activeStudyDates.length
+
   const effectiveDailyRules =
     workloadTotal > 0
       ? getSafeDailyRules(workloadTotal, activeStudyDays)
@@ -513,8 +551,8 @@ export default function StudyPlanPage() {
         },
         body: JSON.stringify({
           userId,
-          startDate: nextPlan.startDate,
-          examDate: nextPlan.examDate,
+          startDate: normalizeDateString(nextPlan.startDate),
+          examDate: normalizeDateString(nextPlan.examDate),
           studyWeekends: nextPlan.studyWeekends ?? true,
           offDates: nextPlan.offDates ?? [],
           onDates: nextPlan.onDates ?? [],
@@ -550,8 +588,13 @@ export default function StudyPlanPage() {
       setPlan((prev) => ({
         ...(prev ?? {}),
         ...data,
+        startDate: normalizeDateString(data?.startDate ?? nextPlan.startDate),
+        examDate: normalizeDateString(data?.examDate ?? nextPlan.examDate),
+        offDates: Array.isArray(data?.offDates) ? data.offDates : nextPlan.offDates ?? [],
+        onDates: Array.isArray(data?.onDates) ? data.onDates : nextPlan.onDates ?? [],
       }))
 
+      setHasUnsavedChanges(false)
       setSaveMessage("Study plan saved successfully.")
       setSaveError("")
       showToast("success", "Study plan saved", "Your study plan was saved successfully.")
@@ -570,8 +613,8 @@ export default function StudyPlanPage() {
     }
   }
 
-  async function toggleStudyDate(cell: CalendarCell) {
-    if (!plan || cell.isPadding || cell.isExamDay || !cell.inRange) return
+  function toggleStudyDate(cell: CalendarCell) {
+    if (!plan || cell.isPadding || cell.isExamDay || !cell.inRange || saving) return
 
     const key = formatDateKey(cell.date)
     const nextOffSet = new Set(offDates)
@@ -615,14 +658,16 @@ export default function StudyPlanPage() {
     }
 
     setPlan(nextPlan)
-    await persistPlan(nextPlan)
+    setHasUnsavedChanges(true)
+    setSaveMessage("")
+    setSaveError("")
   }
 
-  async function toggleStudyWeekends() {
-    if (!plan) return
+  function toggleStudyWeekends() {
+    if (!plan || saving) return
 
     const confirmed = window.confirm(
-      "Changing weekend study settings will recalculate future study days. Continue?"
+      "Changing weekend study settings will recalculate your study days. Continue?"
     )
 
     if (!confirmed) return
@@ -648,7 +693,14 @@ export default function StudyPlanPage() {
     }
 
     setPlan(nextPlan)
-    await persistPlan(nextPlan)
+    setHasUnsavedChanges(true)
+    setSaveMessage("")
+    setSaveError("")
+  }
+
+  async function saveCurrentPlan() {
+    if (!plan || saving) return
+    await persistPlan(plan)
   }
 
   function goToPreviousMonth() {
@@ -708,7 +760,7 @@ export default function StudyPlanPage() {
   return (
     <div className="min-h-screen w-full bg-white px-4 py-4 xl:px-5">
       <div className="mx-auto max-w-[1500px] space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
               Study Plan
@@ -722,12 +774,33 @@ export default function StudyPlanPage() {
             </div>
           </div>
 
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
-          >
-            Back to Dashboard
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {hasUnsavedChanges && (
+              <div className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                Unsaved changes
+              </div>
+            )}
+
+            <button
+              onClick={saveCurrentPlan}
+              disabled={saving || !hasUnsavedChanges}
+              className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                saving || !hasUnsavedChanges
+                  ? "cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400"
+                  : "border border-violet-200 bg-violet-600 text-white hover:-translate-y-0.5 hover:bg-violet-700"
+              }`}
+            >
+              <Save size={15} />
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_315px]">
@@ -753,8 +826,9 @@ export default function StudyPlanPage() {
             </div>
 
             <div className="mb-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-500">
-              Click a study day to mark it off. Click an off day to turn it back
-              into a study day. Exam day is locked.
+              Click study days to adjust them. Changes stay local until you press
+              Save Changes, so the calendar will not flicker or send multiple
+              notifications.
             </div>
 
             <div className="mb-2 grid grid-cols-7 gap-2 text-center text-[12px] font-semibold text-slate-500">
@@ -781,7 +855,7 @@ export default function StudyPlanPage() {
                     key={`${key}-${index}`}
                     type="button"
                     onClick={() => toggleStudyDate(cell)}
-                    disabled={!!cell.isPadding || !!cell.isExamDay || !cell.inRange}
+                    disabled={!!cell.isPadding || !!cell.isExamDay || !cell.inRange || saving}
                     className={[
                       "min-h-[84px] rounded-[20px] border px-3 py-2.5 text-left shadow-sm transition",
                       cell.isPadding
@@ -795,6 +869,7 @@ export default function StudyPlanPage() {
                       cell.isToday && !cell.isPadding
                         ? "ring-2 ring-violet-500"
                         : "",
+                      saving ? "cursor-wait opacity-80" : "",
                     ].join(" ")}
                   >
                     <div className="mb-1 flex items-center justify-between">
@@ -851,16 +926,16 @@ export default function StudyPlanPage() {
 
             <div className="mt-7 grid gap-4">
               <ProgressLine
-                label="Rules Mastered"
-                value={workloadTotal > 0 ? `0 / ${workloadTotal}` : "-"}
-                percent={0}
+                label="Rules Planned"
+                value={workloadTotal > 0 ? `${workloadTotal}` : "-"}
+                percent={workloadTotal > 0 ? 100 : 0}
                 tone="violet"
               />
 
               <ProgressLine
                 label="Study Days"
-                value={`0 / ${activeStudyDays || plan.totalDays || 0}`}
-                percent={0}
+                value={`${activeStudyDays || plan.totalDays || 0}`}
+                percent={activeStudyDays || plan.totalDays ? 100 : 0}
                 tone="amber"
               />
             </div>
@@ -918,16 +993,17 @@ export default function StudyPlanPage() {
                     Weekends
                   </div>
                   <div className="mt-0.5 text-[11px] text-[#7894BC]/80">
-                    Recalculates future workload
+                    Recalculates local workload
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={toggleStudyWeekends}
+                  disabled={saving}
                   className={`relative h-8 w-16 rounded-full transition ${
                     studyWeekends ? "bg-violet-500" : "bg-blue-200"
-                  }`}
+                  } ${saving ? "cursor-wait opacity-70" : ""}`}
                 >
                   <span
                     className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
@@ -957,14 +1033,22 @@ export default function StudyPlanPage() {
               />
             </PanelSection>
 
-            {(saving || saveMessage || saveError) && (
+            {(saving || saveMessage || saveError || hasUnsavedChanges) && (
               <div className="px-5 pb-3 text-[11px] font-medium">
                 {saving && <div className="text-[#7894BC]">Saving...</div>}
-                {!saving && saveMessage && (
+
+                {!saving && hasUnsavedChanges && !saveError && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-700">
+                    You have unsaved calendar changes.
+                  </div>
+                )}
+
+                {!saving && saveMessage && !hasUnsavedChanges && (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-700">
                     {saveMessage}
                   </div>
                 )}
+
                 {!saving && saveError && (
                   <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700">
                     {saveError}
@@ -974,8 +1058,8 @@ export default function StudyPlanPage() {
             )}
 
             <div className="grid grid-cols-3 gap-2 border-t border-blue-100 p-4">
-              <ActionButton onClick={() => router.push("/dashboard")}>
-                Dashboard
+              <ActionButton onClick={saveCurrentPlan} disabled={saving || !hasUnsavedChanges}>
+                {saving ? "Saving" : "Save"}
               </ActionButton>
               <ActionButton onClick={() => router.push("/rule-training")}>
                 Train
@@ -1088,14 +1172,21 @@ function InfoRow({
 function ActionButton({
   children,
   onClick,
+  disabled = false,
 }: {
   children: React.ReactNode
   onClick: () => void
+  disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
-      className="rounded-2xl border border-blue-100 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50 active:translate-y-0"
+      disabled={disabled}
+      className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold shadow-sm transition ${
+        disabled
+          ? "cursor-not-allowed border-blue-100 bg-blue-50 text-slate-400"
+          : "border-blue-100 bg-white text-slate-800 hover:-translate-y-0.5 hover:bg-blue-50 active:translate-y-0"
+      }`}
     >
       {children}
     </button>
