@@ -58,6 +58,15 @@ import {
 } from "./_components/dashboardTypes"
 import { getEntitlements, normalizeRuleSet } from "./_components/dashboardHelpers"
 import {
+  getEffectivePackageRuleTotal,
+  getPlanTotalRules,
+  getPositiveNumber,
+  getRecommendedRuleSet,
+  getSafeDailyRules,
+  getSubjectRuleTotal,
+  isHeavierPackage,
+} from "./_components/dashboardCalculations"
+import {
   getEffectiveExamRegime,
   getJurisdictionDisplayName,
   getJurisdictionSubjects,
@@ -395,7 +404,7 @@ export default function Dashboard() {
         studyPlan.jurisdiction ??
         "UBE"
     )
-    const recommended = getRecommendedRuleSet(getDaysUntilExamForDate(exam))
+    const recommended = getRecommendedRuleSet(getDaysUntilExamForDate(exam), isPremium)
     const nextRuleSet = normalizeRuleSet(studyPlan.ruleSet ?? recommended)
     const manualPackage = Boolean(studyPlan?.userManuallySelectedRulePackage)
 
@@ -541,84 +550,6 @@ export default function Dashboard() {
     } finally {
       setStudyPlanLoaded(true)
     }
-  }
-
-  function getPositiveNumber(...values: any[]) {
-    for (const value of values) {
-      const num = Number(value)
-      if (Number.isFinite(num) && num > 0) return num
-    }
-
-    return 0
-  }
-
-  function getPlanTotalRules(source?: any, fallback?: any) {
-    return getPositiveNumber(
-      source?.baseTotalRules,
-      source?.base_total_rules,
-      source?.totalRules,
-      source?.total_rules,
-      source?.totalRuleCount,
-      source?.total_rule_count,
-      source?.remainingRules,
-      source?.remaining_rules,
-      fallback
-    )
-  }
-
-  function getEffectivePackageRuleTotal(baseTotalRules: number, packageType: RuleSet) {
-    const safeBase =
-      Number.isFinite(baseTotalRules) && baseTotalRules > 0 ? baseTotalRules : 0
-    const multiplier = RULE_PACKAGE_META[packageType]?.multiplier ?? 1
-
-    if (safeBase <= 0) return 0
-
-    return Math.max(1, Math.round(safeBase * multiplier))
-  }
-
-  function getRecommendedRuleSet(daysLeft: number): RuleSet {
-    if (daysLeft <= 14) return "emergency"
-    if (daysLeft <= 45) return "priority"
-    if (daysLeft <= 90) return "core"
-    return isPremium ? "full" : "core"
-  }
-
-  function isHeavierPackage(selected: RuleSet, recommended: RuleSet) {
-    const order: RuleSet[] = ["emergency", "priority", "core", "full"]
-    return order.indexOf(selected) > order.indexOf(recommended)
-  }
-
-  function getSubjectRuleTotal(rows?: any[]) {
-    if (!Array.isArray(rows)) return 0
-
-    return rows.reduce((sum, row) => {
-      const total = Number(row?.total ?? 0)
-      if (!Number.isFinite(total) || total <= 0) return sum
-      return sum + total
-    }, 0)
-  }
-
-  function getSafeDailyRules(
-    totalRules: number,
-    activeStudyDays: number,
-    fallbackDailyRules?: any
-  ) {
-    const fallback = Number(fallbackDailyRules)
-
-    if (
-      Number.isFinite(totalRules) &&
-      totalRules > 0 &&
-      Number.isFinite(activeStudyDays) &&
-      activeStudyDays > 0
-    ) {
-      return Math.max(1, Math.ceil(totalRules / activeStudyDays))
-    }
-
-    if (Number.isFinite(fallback) && fallback > 0) {
-      return Math.max(1, Math.ceil(fallback))
-    }
-
-    return 0
   }
 
   function buildLevelAndProgress(attempts: number, accuracy: number) {
@@ -1308,7 +1239,7 @@ export default function Dashboard() {
         (d) => savedOnMap[d]
       )
 
-      const selectedRuleSet = ruleSet || getRecommendedRuleSet(getDaysUntilExam())
+      const selectedRuleSet = ruleSet || getRecommendedRuleSet(getDaysUntilExam(), isPremium)
 
       const res = await fetch("/api/study-plan", {
         method: "POST",
@@ -1488,7 +1419,7 @@ export default function Dashboard() {
   }
 
   function handleRuleSetChange(nextRuleSet: RuleSet) {
-    const recommended = getRecommendedRuleSet(getDaysUntilExam())
+    const recommended = getRecommendedRuleSet(getDaysUntilExam(), isPremium)
 
     if (!isPremium && nextRuleSet === "full") {
       alert("Full Rule Bank is available only for Premium users.")
@@ -1565,7 +1496,7 @@ export default function Dashboard() {
     setExamDate(nextExamDate)
     setHasUnsavedPlanChanges(true)
 
-    const recommended = getRecommendedRuleSet(getDaysUntilExamForDate(nextExamDate))
+    const recommended = getRecommendedRuleSet(getDaysUntilExamForDate(nextExamDate), isPremium)
     const nextRuleSet = userManuallySelectedRulePackage ? ruleSet : recommended
 
     if (!userManuallySelectedRulePackage) {
@@ -1896,7 +1827,7 @@ export default function Dashboard() {
   const studyDayStats = getStudyPlanDayStats()
   const daysUntilExam = getDaysUntilExam()
   const weeksUntilExam = Math.max(0, daysUntilExam / 7).toFixed(1)
-  const recommendedRuleSet = getRecommendedRuleSet(daysUntilExam)
+  const recommendedRuleSet = getRecommendedRuleSet(daysUntilExam, isPremium)
 
   const actualTotalRules =
     Number(planData?.totalRules ?? 0) ||
