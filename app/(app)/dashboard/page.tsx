@@ -59,7 +59,6 @@ import {
 import { getEntitlements, normalizeRuleSet } from "./_components/dashboardHelpers"
 import { buildLevelAndProgress } from "./_components/dashboardProgressHelpers"
 import { getStudyPlanDayStatsForPlan } from "./_components/dashboardStudyPlanStatsHelpers"
-import { buildDraftCalendarPreviewForPlan } from "./_components/dashboardCalendarPreviewHelpers"
 import {
   getEffectivePackageRuleTotal,
   getPlanTotalRules,
@@ -679,16 +678,28 @@ export default function Dashboard() {
     nextOnMap: Record<string, boolean>
     nextStudyWeekends: boolean
   }) {
-    return buildDraftCalendarPreviewForPlan({
-      nextStartDate,
-      nextExamDate,
-      nextOffMap,
-      nextOnMap,
-      nextStudyWeekends,
-      calendarMonth,
-      setCalendarMonth,
-      setCalendarDays,
-    })
+    if (!nextStartDate || !nextExamDate) return
+
+    const baseMonth =
+      calendarMonth ?? new Date(`${nextStartDate.slice(0, 10)}T00:00:00`)
+
+    const viewMonth = new Date(
+      baseMonth.getFullYear(),
+      baseMonth.getMonth(),
+      1
+    )
+
+    setCalendarMonth(viewMonth)
+    setCalendarDays(
+      buildCalendarDays(
+        nextStartDate,
+        nextExamDate,
+        viewMonth,
+        nextOffMap,
+        nextOnMap,
+        nextStudyWeekends
+      )
+    )
   }
 
   function applyStudyPlanOptimistically({
