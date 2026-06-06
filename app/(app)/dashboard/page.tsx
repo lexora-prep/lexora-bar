@@ -60,6 +60,11 @@ import { getEntitlements, normalizeRuleSet } from "./_components/dashboardHelper
 import { buildLevelAndProgress } from "./_components/dashboardProgressHelpers"
 import { getStudyPlanDayStatsForPlan } from "./_components/dashboardStudyPlanStatsHelpers"
 import {
+  getSubjectAnalyticsForJurisdiction,
+  getSubjectProgressPercentForJurisdiction,
+  shouldUseGlobalSubjectProgressForJurisdiction,
+} from "./_components/dashboardSubjectAnalyticsHelpers"
+import {
   getEffectivePackageRuleTotal,
   getPlanTotalRules,
   getPositiveNumber,
@@ -604,50 +609,26 @@ export default function Dashboard() {
   })
 
   function shouldUseGlobalSubjectProgressForCurrentJurisdiction() {
-    const regime = getEffectiveExamRegime(selectedStudyJurisdiction, examDate)
-    return regime === "UBE_CURRENT" || regime === "NEXTGEN"
+    return shouldUseGlobalSubjectProgressForJurisdiction({
+      selectedStudyJurisdiction,
+      examDate,
+    })
   }
 
   function getSubjectProgressPercent(subjectName: string) {
-    if (!shouldUseGlobalSubjectProgressForCurrentJurisdiction()) return 0
-
-    const normalized = subjectName.trim().toLowerCase()
-    const direct = subjectRows.find(
-      (row) => row.name.trim().toLowerCase() === normalized
-    )
-
-    if (direct && direct.total > 0) {
-      return Math.round((direct.completed / Math.max(direct.total, 1)) * 100)
-    }
-
-    return 0
+    return getSubjectProgressPercentForJurisdiction({
+      subjectName,
+      subjectRows,
+      selectedStudyJurisdiction,
+      examDate,
+    })
   }
 
   function getSubjectAnalyticsForCurrentJurisdiction() {
-    const jurisdictionSubjects = getJurisdictionSubjects(
+    return getSubjectAnalyticsForJurisdiction({
+      subjectRows,
       selectedStudyJurisdiction,
-      examDate
-    )
-
-    return jurisdictionSubjects.map((subject) => {
-      const normalized = subject.name.trim().toLowerCase()
-      const direct = shouldUseGlobalSubjectProgressForCurrentJurisdiction()
-        ? subjectRows.find((row) => row.name.trim().toLowerCase() === normalized)
-        : null
-
-      const completed = direct?.completed ?? 0
-      const total = direct?.total ?? subject.weight
-      const accuracy = direct?.accuracy ?? 0
-      const derived = buildLevelAndProgress(completed, accuracy)
-
-      return {
-        name: subject.name,
-        accuracy,
-        completed,
-        total,
-        level: completed > 0 ? derived.level : "Limited",
-        progressWidth: completed > 0 ? derived.progressWidth : 0,
-      }
+      examDate,
     })
   }
 
