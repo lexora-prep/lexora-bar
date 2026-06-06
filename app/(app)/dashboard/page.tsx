@@ -63,6 +63,7 @@ import {
   deleteStudyPlan,
   postStudyPlan,
 } from "./_components/dashboardStudyPlanApiHelpers"
+import { buildStudyPlanRequestBodyForDashboard } from "./_components/dashboardStudyPlanPayloadHelpers"
 import {
   getSubjectAnalyticsForJurisdiction,
   getSubjectProgressPercentForJurisdiction,
@@ -784,41 +785,6 @@ export default function Dashboard() {
     }))
   }
 
-  function buildStudyPlanRequestBody({
-    nextOffDates,
-    nextOnDates,
-    nextStudyWeekends,
-    nextRuleSet,
-    manualPackage,
-  }: {
-    nextOffDates: string[]
-    nextOnDates: string[]
-    nextStudyWeekends: boolean
-    nextRuleSet: RuleSet
-    manualPackage: boolean
-  }) {
-    const jurisdictionCode = normalizeJurisdictionCode(selectedStudyJurisdiction)
-    const jurisdictionName = getJurisdictionDisplayName(jurisdictionCode)
-    const examRegime = getEffectiveExamRegime(jurisdictionCode, examDate)
-
-    return {
-      userId: currentUserId,
-      startDate,
-      examDate,
-      studyWeekends: nextStudyWeekends,
-      offDates: nextOffDates,
-      onDates: nextOnDates,
-      ruleSet: nextRuleSet,
-      rulePackages: [nextRuleSet],
-      jurisdictionCode,
-      jurisdictionName,
-      examRegime,
-      customRulesEnabled: Boolean(planData?.customRulesEnabled ?? false),
-      studyRound: Number(planData?.studyRound ?? 1),
-      userManuallySelectedRulePackage: manualPackage,
-    }
-  }
-
   async function refreshDashboardAndPlan() {
     if (!currentUserId) return
 
@@ -944,11 +910,17 @@ export default function Dashboard() {
       const selectedRuleSet = ruleSet || getRecommendedRuleSet(getDaysUntilExam(), isPremium)
 
       const result = await postStudyPlan(
-        buildStudyPlanRequestBody({
+        buildStudyPlanRequestBodyForDashboard({
+          currentUserId,
+          startDate,
+          examDate,
+          selectedStudyJurisdiction,
           nextOffDates: existingOffDates,
           nextOnDates: existingOnDates,
           nextStudyWeekends: studyWeekends,
           nextRuleSet: selectedRuleSet,
+          customRulesEnabled: Boolean(planData?.customRulesEnabled ?? false),
+          studyRound: Number(planData?.studyRound ?? 1),
           manualPackage: userManuallySelectedRulePackage,
         })
       )
@@ -1262,11 +1234,17 @@ export default function Dashboard() {
       const nextExamRegime = getEffectiveExamRegime(normalizedJurisdiction, examDate)
 
       const requestBody = {
-        ...buildStudyPlanRequestBody({
+        ...buildStudyPlanRequestBodyForDashboard({
+          currentUserId,
+          startDate,
+          examDate,
+          selectedStudyJurisdiction,
           nextOffDates,
           nextOnDates,
           nextStudyWeekends: studyWeekends,
           nextRuleSet: ruleSet,
+          customRulesEnabled: Boolean(planData?.customRulesEnabled ?? false),
+          studyRound: Number(planData?.studyRound ?? 1),
           manualPackage: userManuallySelectedRulePackage,
         }),
         jurisdictionCode: normalizedJurisdiction,
