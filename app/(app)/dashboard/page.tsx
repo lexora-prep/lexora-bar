@@ -1,4 +1,6 @@
-import { buildDraftCalendarPreviewForDashboard } from "./_components/dashboardDraftCalendarPreviewHelpers"\n"use client"
+"use client"
+
+import { buildDraftCalendarPreviewForDashboard } from "./_components/dashboardDraftCalendarPreviewHelpers"
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
