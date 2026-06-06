@@ -1,4 +1,4 @@
-import { buildCalendarDays } from "./dashboardStudyPlanHelpers"
+import { buildCalendarDays } from "./dashboardCalendarHelpers"
 
 export function buildDraftCalendarPreviewForDashboard({
   nextStartDate,
