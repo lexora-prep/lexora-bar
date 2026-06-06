@@ -60,6 +60,10 @@ import { getEntitlements, normalizeRuleSet } from "./_components/dashboardHelper
 import { buildLevelAndProgress } from "./_components/dashboardProgressHelpers"
 import { getStudyPlanDayStatsForPlan } from "./_components/dashboardStudyPlanStatsHelpers"
 import {
+  deleteStudyPlan,
+  postStudyPlan,
+} from "./_components/dashboardStudyPlanApiHelpers"
+import {
   getSubjectAnalyticsForJurisdiction,
   getSubjectProgressPercentForJurisdiction,
   shouldUseGlobalSubjectProgressForJurisdiction,
@@ -939,26 +943,20 @@ export default function Dashboard() {
 
       const selectedRuleSet = ruleSet || getRecommendedRuleSet(getDaysUntilExam(), isPremium)
 
-      const res = await fetch("/api/study-plan", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(
-          buildStudyPlanRequestBody({
-            nextOffDates: existingOffDates,
-            nextOnDates: existingOnDates,
-            nextStudyWeekends: studyWeekends,
-            nextRuleSet: selectedRuleSet,
-            manualPackage: userManuallySelectedRulePackage,
-          })
-        ),
-      })
+      const result = await postStudyPlan(
+        buildStudyPlanRequestBody({
+          nextOffDates: existingOffDates,
+          nextOnDates: existingOnDates,
+          nextStudyWeekends: studyWeekends,
+          nextRuleSet: selectedRuleSet,
+          manualPackage: userManuallySelectedRulePackage,
+        })
+      )
 
-      const data = await res.json()
+      const data = result.data
 
-      if (!res.ok || data?.error) {
-        alert(data?.error || "Failed to create study plan.")
+      if (!result.ok) {
+        alert(result.error || "Failed to create study plan.")
         return
       }
 
@@ -1276,18 +1274,11 @@ export default function Dashboard() {
         examRegime: nextExamRegime,
       }
 
-      const res = await fetch("/api/study-plan", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      })
+      const result = await postStudyPlan(requestBody)
+      const data = result.data
 
-      const data = await res.json().catch(() => null)
-
-      if (!res.ok || data?.error) {
-        const message = data?.error || "Failed to save study plan."
+      if (!result.ok) {
+        const message = result.error || "Failed to save study plan."
 
         setStudyPlanSaveStatus("idle")
         showDashboardToast("error", "Study plan was not saved", message)
@@ -1325,17 +1316,13 @@ export default function Dashboard() {
     if (!currentUserId) return
 
     try {
-      const res = await fetch(`/api/study-plan?userId=${currentUserId}`, {
-        method: "DELETE",
-      })
+      const result = await deleteStudyPlan(currentUserId)
 
-      const data = await res.json().catch(() => null)
-
-      if (!res.ok || data?.error) {
+      if (!result.ok) {
         showDashboardToast(
           "error",
           "Study plan was not reset",
-          data?.error || "Failed to reset study plan."
+          result.error || "Failed to reset study plan."
         )
         return
       }
