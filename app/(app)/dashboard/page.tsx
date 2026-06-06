@@ -1,4 +1,4 @@
-"use client"
+import { buildDraftCalendarPreviewForDashboard } from "./_components/dashboardDraftCalendarPreviewHelpers"\n"use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -654,28 +654,19 @@ export default function Dashboard() {
     nextOnMap: Record<string, boolean>
     nextStudyWeekends: boolean
   }) {
-    if (!nextStartDate || !nextExamDate) return
+    const preview = buildDraftCalendarPreviewForDashboard({
+      nextStartDate,
+      nextExamDate,
+      nextOffMap,
+      nextOnMap,
+      nextStudyWeekends,
+      calendarMonth,
+    })
 
-    const baseMonth =
-      calendarMonth ?? new Date(`${nextStartDate.slice(0, 10)}T00:00:00`)
+    if (!preview) return
 
-    const viewMonth = new Date(
-      baseMonth.getFullYear(),
-      baseMonth.getMonth(),
-      1
-    )
-
-    setCalendarMonth(viewMonth)
-    setCalendarDays(
-      buildCalendarDays(
-        nextStartDate,
-        nextExamDate,
-        viewMonth,
-        nextOffMap,
-        nextOnMap,
-        nextStudyWeekends
-      )
-    )
+    setCalendarMonth(preview.viewMonth)
+    setCalendarDays(preview.calendarDays)
   }
 
   function applyStudyPlanOptimistically({
