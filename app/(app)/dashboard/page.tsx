@@ -64,6 +64,7 @@ import {
   postStudyPlan,
 } from "./_components/dashboardStudyPlanApiHelpers"
 import { buildStudyPlanRequestBodyForDashboard } from "./_components/dashboardStudyPlanPayloadHelpers"
+import { buildStudyPlanDateMaps } from "./_components/dashboardStudyPlanDateMapHelpers"
 import {
   getSubjectAnalyticsForJurisdiction,
   getSubjectProgressPercentForJurisdiction,
@@ -442,22 +443,11 @@ export default function Dashboard() {
     setRuleSet(nextRuleSet)
     setUserManuallySelectedRulePackage(manualPackage)
 
-    const offMap: Record<string, boolean> = {}
-    const onMap: Record<string, boolean> = {}
-
-    if (Array.isArray(studyPlan?.offDates)) {
-      studyPlan.offDates.forEach((d: string) => {
-        const key = normalizeDateString(d)
-        if (key) offMap[key] = true
-      })
-    }
-
-    if (Array.isArray(studyPlan?.onDates)) {
-      studyPlan.onDates.forEach((d: string) => {
-        const key = normalizeDateString(d)
-        if (key) onMap[key] = true
-      })
-    }
+    const { offMap, onMap } = buildStudyPlanDateMaps(
+      studyPlan?.offDates,
+      studyPlan?.onDates,
+      normalizeDateString
+    )
 
     setSavedOffMap(offMap)
     setSavedOnMap(onMap)
@@ -945,22 +935,11 @@ export default function Dashboard() {
       )
       const totalRules = getEffectivePackageRuleTotal(baseTotalRules, selectedRuleSet)
 
-      const offMap: Record<string, boolean> = {}
-      const onMap: Record<string, boolean> = {}
-
-      if (Array.isArray(data?.offDates)) {
-        data.offDates.forEach((d: string) => {
-          const key = normalizeDateString(d)
-          if (key) offMap[key] = true
-        })
-      }
-
-      if (Array.isArray(data?.onDates)) {
-        data.onDates.forEach((d: string) => {
-          const key = normalizeDateString(d)
-          if (key) onMap[key] = true
-        })
-      }
+      const { offMap, onMap } = buildStudyPlanDateMaps(
+        data?.offDates,
+        data?.onDates,
+        normalizeDateString
+      )
 
       const nextStudyWeekends = data.studyWeekends ?? studyWeekends
       const safeTotalDays = getRemainingStudyDays(
