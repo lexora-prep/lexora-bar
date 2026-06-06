@@ -51,22 +51,16 @@ export const UBE_CURRENT_SUBJECTS: SubjectPlanItem[] = [
   { name: "Evidence", weight: 8, system: "UBE_CURRENT" },
   { name: "Real Property", weight: 8, system: "UBE_CURRENT" },
   { name: "Torts", weight: 8, system: "UBE_CURRENT" },
-  { name: "Business Associations", weight: 6, system: "UBE_CURRENT" },
-  { name: "Agency", weight: 4, system: "UBE_CURRENT" },
-  { name: "Partnership", weight: 4, system: "UBE_CURRENT" },
-  { name: "Corporations", weight: 4, system: "UBE_CURRENT" },
-  { name: "Limited Liability Companies", weight: 3, system: "UBE_CURRENT" },
-  { name: "Conflict of Laws", weight: 3, system: "UBE_CURRENT" },
+  { name: "Business Associations", weight: 7, system: "UBE_CURRENT" },
   { name: "Family Law", weight: 5, system: "UBE_CURRENT" },
   { name: "Secured Transactions", weight: 5, system: "UBE_CURRENT" },
   { name: "Trusts", weight: 4, system: "UBE_CURRENT" },
   { name: "Wills and Estates", weight: 4, system: "UBE_CURRENT" },
-  { name: "Performance Test Templates", weight: 3, system: "UBE_CURRENT" },
 ]
 
 export const NEXTGEN_SUBJECTS: SubjectPlanItem[] = [
   { name: "Civil Procedure", weight: 10, system: "NEXTGEN" },
-  { name: "Contract Law", weight: 10, system: "NEXTGEN" },
+  { name: "Contracts", weight: 10, system: "NEXTGEN" },
   { name: "Evidence", weight: 10, system: "NEXTGEN" },
   { name: "Torts", weight: 10, system: "NEXTGEN" },
   { name: "Business Associations", weight: 9, system: "NEXTGEN" },
@@ -75,14 +69,6 @@ export const NEXTGEN_SUBJECTS: SubjectPlanItem[] = [
   { name: "Criminal Procedure", weight: 8, system: "NEXTGEN" },
   { name: "Real Property", weight: 8, system: "NEXTGEN" },
   { name: "Family Law", weight: 7, system: "NEXTGEN" },
-  { name: "Legal Research", weight: 5, system: "NEXTGEN" },
-  { name: "Legal Writing", weight: 5, system: "NEXTGEN" },
-  { name: "Issue Spotting and Analysis", weight: 5, system: "NEXTGEN" },
-  { name: "Investigation and Evaluation", weight: 4, system: "NEXTGEN" },
-  { name: "Client Counseling and Advising", weight: 4, system: "NEXTGEN" },
-  { name: "Negotiation and Dispute Resolution", weight: 3, system: "NEXTGEN" },
-  { name: "Client Relationship and Management", weight: 3, system: "NEXTGEN" },
-  { name: "Performance Task Templates", weight: 4, system: "NEXTGEN" },
 ]
 
 export const CALIFORNIA_SUBJECTS: SubjectPlanItem[] = [
@@ -97,21 +83,12 @@ export const CALIFORNIA_SUBJECTS: SubjectPlanItem[] = [
   { name: "Evidence", weight: 7, system: "CALIFORNIA_CURRENT" },
   { name: "California Evidence", weight: 6, system: "CALIFORNIA_CURRENT" },
   { name: "Professional Responsibility", weight: 8, system: "CALIFORNIA_CURRENT" },
-  {
-    name: "California Professional Responsibility",
-    weight: 6,
-    system: "CALIFORNIA_CURRENT",
-  },
+  { name: "California Professional Responsibility", weight: 6, system: "CALIFORNIA_CURRENT" },
   { name: "Real Property", weight: 6, system: "CALIFORNIA_CURRENT" },
   { name: "Remedies", weight: 7, system: "CALIFORNIA_CURRENT" },
   { name: "Torts", weight: 7, system: "CALIFORNIA_CURRENT" },
   { name: "Trusts", weight: 5, system: "CALIFORNIA_CURRENT" },
   { name: "Wills and Succession", weight: 5, system: "CALIFORNIA_CURRENT" },
-  {
-    name: "California Performance Test Templates",
-    weight: 5,
-    system: "CALIFORNIA_CURRENT",
-  },
 ]
 
 export const FLORIDA_CURRENT_SUBJECTS: SubjectPlanItem[] = [
@@ -156,33 +133,17 @@ export const STATE_SPECIFIC_SUBJECTS: SubjectPlanItem[] = [
   { name: "Evidence", weight: 7, system: "STATE_SPECIFIC" },
   { name: "Real Property", weight: 7, system: "STATE_SPECIFIC" },
   { name: "Torts", weight: 7, system: "STATE_SPECIFIC" },
-  { name: "State Civil Procedure", weight: 5, system: "STATE_SPECIFIC" },
-  { name: "State Criminal Procedure", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Evidence Distinctions", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Constitutional Law", weight: 4, system: "STATE_SPECIFIC" },
-  {
-    name: "State Real Property Distinctions",
-    weight: 4,
-    system: "STATE_SPECIFIC",
-  },
-  { name: "State Wills", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Trusts", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Estates", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Family Law", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Business Entities", weight: 4, system: "STATE_SPECIFIC" },
-  {
-    name: "State Professional Responsibility",
-    weight: 4,
-    system: "STATE_SPECIFIC",
-  },
-  { name: "State Remedies", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "State Commercial Law / UCC", weight: 4, system: "STATE_SPECIFIC" },
-  { name: "Local Bar Rules", weight: 3, system: "STATE_SPECIFIC" },
-  { name: "Performance Test Templates", weight: 3, system: "STATE_SPECIFIC" },
+  { name: "Business Associations", weight: 5, system: "STATE_SPECIFIC" },
+  { name: "Family Law", weight: 5, system: "STATE_SPECIFIC" },
+  { name: "Wills and Estates", weight: 5, system: "STATE_SPECIFIC" },
+  { name: "Trusts", weight: 5, system: "STATE_SPECIFIC" },
+  { name: "Secured Transactions", weight: 5, system: "STATE_SPECIFIC" },
+  { name: "Professional Responsibility", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "Remedies", weight: 4, system: "STATE_SPECIFIC" },
+  { name: "Commercial Law / UCC", weight: 4, system: "STATE_SPECIFIC" },
 ]
 
 export const LOCAL_COMPONENT_SUBJECTS: SubjectPlanItem[] = [
-  { name: "Local Law", weight: 8, system: "LOCAL_COMPONENT" },
   { name: "Local Civil Practice", weight: 8, system: "LOCAL_COMPONENT" },
   { name: "Local Criminal Procedure", weight: 7, system: "LOCAL_COMPONENT" },
   { name: "Local Evidence Distinctions", weight: 7, system: "LOCAL_COMPONENT" },
@@ -190,11 +151,6 @@ export const LOCAL_COMPONENT_SUBJECTS: SubjectPlanItem[] = [
   { name: "Local Real Property Rules", weight: 6, system: "LOCAL_COMPONENT" },
   { name: "Local Family Law", weight: 6, system: "LOCAL_COMPONENT" },
   { name: "Local Trusts and Estates", weight: 6, system: "LOCAL_COMPONENT" },
-  {
-    name: "Local Administrative / Admission Rules",
-    weight: 5,
-    system: "LOCAL_COMPONENT",
-  },
 ]
 
 export const JURISDICTION_OPTIONS: JurisdictionOption[] = [
