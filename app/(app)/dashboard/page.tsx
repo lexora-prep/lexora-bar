@@ -58,6 +58,7 @@ import {
 } from "./_components/dashboardTypes"
 import { getEntitlements, normalizeRuleSet } from "./_components/dashboardHelpers"
 import { buildLevelAndProgress } from "./_components/dashboardProgressHelpers"
+import { getStudyPlanDayStatsForPlan } from "./_components/dashboardStudyPlanStatsHelpers"
 import {
   getEffectivePackageRuleTotal,
   getPlanTotalRules,
@@ -651,20 +652,13 @@ export default function Dashboard() {
   }
 
   function getStudyPlanDayStats() {
-    const allDates = getPlanDateRange(startDate, examDate)
-    const today = normalizeLocalDate(new Date())
-
-    const totalStudyDays = allDates.filter(
-      (d) => !isDateOff(d, savedOffMap, savedOnMap, studyWeekends)
-    ).length
-
-    const completedStudyDays = allDates.filter(
-      (d) =>
-        d < today &&
-        !isDateOff(d, savedOffMap, savedOnMap, studyWeekends)
-    ).length
-
-    return { totalStudyDays, completedStudyDays }
+    return getStudyPlanDayStatsForPlan({
+      startDate,
+      examDate,
+      savedOffMap,
+      savedOnMap,
+      studyWeekends,
+    })
   }
 
   function getDaysUntilExam() {
