@@ -172,6 +172,52 @@ export default function Dashboard() {
 
   const todayKey = formatDateInput(normalizeLocalDate(new Date()))
 
+  function getAssignedRulesForDate(dateKey: string) {
+    const raw = planData?.rulesByDate?.[dateKey]
+    const value = Number(raw ?? 0)
+
+    return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0
+  }
+
+  function getCompletedRulesForDate(dateKey: string) {
+    if (dateKey === todayKey) {
+      const todayValue = Number(dashboard?.todayBLL ?? 0)
+      return Number.isFinite(todayValue) && todayValue > 0
+        ? Math.floor(todayValue)
+        : 0
+    }
+
+    const storedValue = Number(
+      planData?.completedRulesByDate?.[dateKey] ??
+        planData?.completedByDate?.[dateKey] ??
+        0
+    )
+
+    return Number.isFinite(storedValue) && storedValue > 0
+      ? Math.floor(storedValue)
+      : 0
+  }
+
+  function getStudyDayStatus(dateKey: string, day: CalendarDay) {
+    if (day.isPadding) return "padding"
+    if (day.isExamDay) return "exam"
+    if (day.isOff) return "off"
+
+    const assignedRules = getAssignedRulesForDate(dateKey)
+    const completedRules = getCompletedRulesForDate(dateKey)
+    const dateOnly = normalizeLocalDate(day.date)
+    const todayOnly = normalizeLocalDate(new Date())
+    const isTodayDate = isSameDay(dateOnly, todayOnly)
+    const isPastDate = dateOnly < todayOnly
+
+    if (assignedRules <= 0) return "unassigned"
+    if (completedRules >= assignedRules) return "completed"
+    if (isTodayDate) return "today"
+    if (isPastDate) return "missed"
+
+    return "pending"
+  }
+
   const filteredStates = STATES.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   )
@@ -995,8 +1041,9 @@ export default function Dashboard() {
             : safeDailyRules,
       }))
 
-      await loadStudyPlanOnly(currentUserId)
-      await refreshDashboardAndPlan()
+      await queryClient.invalidateQueries({
+        queryKey: ["dashboard-batch", currentUserId],
+      })
     } catch (err) {
       console.error("CREATE PLAN ERROR:", err)
       alert("Something went wrong while generating the plan.")
@@ -1137,10 +1184,20 @@ export default function Dashboard() {
     setHasUnsavedPlanChanges(true)
 
     const recommended = getRecommendedRuleSet(getDaysUntilExamForDate(nextExamDate), isPremium)
-    const nextRuleSet = userManuallySelectedRulePackage ? ruleSet : recommended
+    let nextRuleSet = userManuallySelectedRulePackage ? ruleSet : recommended
 
     if (!userManuallySelectedRulePackage) {
       setRuleSet(recommended)
+    } else if (recommended !== ruleSet) {
+      const shouldSwitchPackage = window.confirm(
+        `Your new exam date changes Lexora's recommendation to ${RULE_PACKAGE_META[recommended].label}. Switch from ${RULE_PACKAGE_META[ruleSet].label} to ${RULE_PACKAGE_META[recommended].label}?`
+      )
+
+      if (shouldSwitchPackage) {
+        nextRuleSet = recommended
+        setRuleSet(recommended)
+        setUserManuallySelectedRulePackage(false)
+      }
     }
 
     if (!startDate || !nextExamDate) return
@@ -1194,13 +1251,13 @@ export default function Dashboard() {
     try {
       setStudyPlanSaveStatus("saving")
 
-      const nextOffDates =
-        planData?.offDates ??
-        Object.keys(savedOffMap).filter((k) => savedOffMap[k])
+      const nextOffDates = Object.keys(savedOffMap).filter(
+        (k) => savedOffMap[k]
+      )
 
-      const nextOnDates =
-        planData?.onDates ??
-        Object.keys(savedOnMap).filter((k) => savedOnMap[k])
+      const nextOnDates = Object.keys(savedOnMap).filter(
+        (k) => savedOnMap[k]
+      )
 
       const normalizedJurisdiction = normalizeJurisdictionCode(selectedStudyJurisdiction)
       const nextExamRegime = getEffectiveExamRegime(normalizedJurisdiction, examDate)
@@ -1235,21 +1292,25 @@ export default function Dashboard() {
         return
       }
 
-      setPlanData((prev: any) => ({
-        ...(prev ?? {}),
-        ...data,
-        jurisdictionCode: normalizedJurisdiction,
-        jurisdictionName: getJurisdictionDisplayName(normalizedJurisdiction),
-        examRegime: nextExamRegime,
-        userManuallySelectedRulePackage,
-      }))
+      hydrateStudyPlanFromPayload(
+        {
+          ...data,
+          jurisdictionCode: normalizedJurisdiction,
+          jurisdictionName: getJurisdictionDisplayName(normalizedJurisdiction),
+          examRegime: nextExamRegime,
+          ruleSet,
+          userManuallySelectedRulePackage,
+        },
+        planData?.baseTotalRules ?? planData?.totalRules ?? getSubjectRuleTotal(bllSubjects)
+      )
 
       setStudyPlanSaveStatus("saved")
       setHasUnsavedPlanChanges(false)
       showDashboardToast("success", "Study plan saved", "Your study calendar was saved successfully.")
 
-      await loadStudyPlanOnly(currentUserId)
-      await refreshDashboardAndPlan()
+      await queryClient.invalidateQueries({
+        queryKey: ["dashboard-batch", currentUserId],
+      })
 
       window.setTimeout(() => {
         setStudyPlanSaveStatus("idle")
@@ -2257,19 +2318,19 @@ export default function Dashboard() {
                   ) : (
                     <div className="grid grid-cols-7 gap-2">
                       {calendarDays.map((d, i) => {
+                        const dateKey = formatDateInput(d.date)
                         const isWeekend =
                           d.date.getDay() === 0 || d.date.getDay() === 6
                         const isToday = isSameDay(
                           d.date,
                           normalizeLocalDate(new Date())
                         )
-                        const todayDate = normalizeLocalDate(new Date())
-                        const isPastDay = normalizeLocalDate(d.date) < todayDate
-                        const isFinished =
-                          isPastDay &&
-                          !d.isPadding &&
-                          !d.isExamDay &&
-                          !d.isOff
+                        const assignedRules = getAssignedRulesForDate(dateKey)
+                        const completedRules = getCompletedRulesForDate(dateKey)
+                        const studyDayStatus = getStudyDayStatus(dateKey, d)
+                        const isFinished = studyDayStatus === "completed"
+                        const isMissed = studyDayStatus === "missed"
+                        const isUnassigned = studyDayStatus === "unassigned"
 
                         return (
                           <button
@@ -2320,11 +2381,7 @@ export default function Dashboard() {
                             {!d.isPadding && !d.isExamDay && !d.isOff && (
                               <>
                                 <div className="text-[10px] font-semibold text-violet-600">
-                                  {planData?.rulesByDate?.[
-                                    formatDateInput(d.date)
-                                  ] ??
-                                    planData?.dailyRules ??
-                                    0}{" "}
+                                  {assignedRules}{" "}
                                   rules
                                 </div>
 
@@ -2334,9 +2391,33 @@ export default function Dashboard() {
                                   </div>
                                 )}
 
-                                {isWeekend && !isFinished && (
+                                {studyDayStatus === "today" && (
+                                  <div className="mt-1 text-[10px] font-semibold text-violet-600">
+                                    Today
+                                  </div>
+                                )}
+
+                                {isMissed && (
+                                  <div className="mt-1 text-[10px] font-semibold text-amber-600">
+                                    Missed
+                                  </div>
+                                )}
+
+                                {isUnassigned && (
+                                  <div className="mt-1 text-[10px] font-semibold text-slate-400">
+                                    No rules assigned
+                                  </div>
+                                )}
+
+                                {studyDayStatus === "pending" && isWeekend && (
                                   <div className="mt-1 text-[10px] text-sky-500">
                                     Weekend
+                                  </div>
+                                )}
+
+                                {assignedRules > 0 && completedRules > 0 && !isFinished && (
+                                  <div className="mt-1 text-[10px] text-slate-500">
+                                    {completedRules} done
                                   </div>
                                 )}
                               </>
