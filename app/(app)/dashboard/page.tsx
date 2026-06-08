@@ -867,27 +867,102 @@ export default function Dashboard() {
 
     if (planData && startDate && examDate) {
       const confirmed = window.confirm(
-        "Changing your study jurisdiction will update the exam system and tested subjects for this study plan. Your state comparison will not change. Continue?"
+        "Changing your study jurisdiction will reset this study plan calendar and update the tested subject coverage. Your state comparison will not change. Continue?"
       )
 
       if (!confirmed) return
     }
 
     const nextRegime = getEffectiveExamRegime(normalized, examDate)
+    const resetOffMap: Record<string, boolean> = {}
+    const resetOnMap: Record<string, boolean> = {}
 
     setSelectedStudyJurisdiction(normalized)
+    setSavedOffMap(resetOffMap)
+    setSavedOnMap(resetOnMap)
     setHasUnsavedPlanChanges(true)
 
-    setPlanData((prev: any) => {
-      if (!prev) return prev
+    if (!startDate || !examDate) {
+      setCalendarDays([])
 
-      return {
-        ...prev,
-        jurisdictionCode: normalized,
-        jurisdictionName: getJurisdictionDisplayName(normalized),
-        examRegime: nextRegime,
-      }
-    })
+      setPlanData((prev: any) => {
+        if (!prev) return prev
+
+        return {
+          ...prev,
+          jurisdictionCode: normalized,
+          jurisdictionName: getJurisdictionDisplayName(normalized),
+          examRegime: nextRegime,
+          offDates: [],
+          onDates: [],
+          rulesByDate: {},
+        }
+      })
+
+      return
+    }
+
+    const baseTotalRules = getPlanTotalRules(
+      { baseTotalRules: planData?.baseTotalRules },
+      getSubjectRuleTotal(getJurisdictionSubjects(normalized, nextRegime)) ||
+        planData?.totalRules
+    )
+
+    const totalRules = getEffectivePackageRuleTotal(baseTotalRules, ruleSet)
+
+    const nextTotalDays = getRemainingStudyDays(
+      startDate,
+      examDate,
+      resetOffMap,
+      resetOnMap,
+      studyWeekends
+    )
+
+    const nextDailyRules = getSafeDailyRules(totalRules, nextTotalDays)
+
+    const nextRulesByDate = buildDistributedRuleMap(
+      startDate,
+      examDate,
+      totalRules,
+      resetOffMap,
+      resetOnMap,
+      studyWeekends,
+      startDate,
+      {}
+    )
+
+    const nextCalendarDays = buildCalendarDays(
+      startDate,
+      examDate,
+      calendarMonth ?? new Date(`${startDate}T00:00:00`),
+      resetOffMap,
+      resetOnMap,
+      studyWeekends
+    )
+
+    setCalendarDays(nextCalendarDays)
+
+    setPlanData((prev: any) => ({
+      ...(prev ?? {}),
+      jurisdictionCode: normalized,
+      jurisdictionName: getJurisdictionDisplayName(normalized),
+      examRegime: nextRegime,
+      baseTotalRules,
+      totalRules,
+      dailyRules: nextDailyRules,
+      totalDays: nextTotalDays,
+      offDates: [],
+      onDates: [],
+      rulesByDate: nextRulesByDate,
+    }))
+
+    setDashboard((prev: any) => ({
+      ...(prev ?? {}),
+      goalBLL:
+        nextRulesByDate[todayKey] && nextRulesByDate[todayKey] > 0
+          ? nextRulesByDate[todayKey]
+          : nextDailyRules,
+    }))
   }
 
   async function openStudyPlanModal() {
