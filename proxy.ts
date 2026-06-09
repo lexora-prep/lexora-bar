@@ -29,7 +29,6 @@ export async function proxy(req: NextRequest) {
 
   const publicRoutes = ["/", "/login", "/register", "/landing.html"]
   const isPublicRoute = publicRoutes.includes(pathname)
-  const isAdminRoute = pathname.startsWith("/admin")
 
   if (!user && !isPublicRoute) {
     const url = req.nextUrl.clone()
@@ -41,34 +40,6 @@ export async function proxy(req: NextRequest) {
     const url = req.nextUrl.clone()
     url.pathname = "/dashboard"
     return NextResponse.redirect(url)
-  }
-
-  if (user && isAdminRoute) {
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, role, is_admin, is_blocked")
-      .eq("id", user.id)
-      .single()
-
-    if (profileError || !profile) {
-      const url = req.nextUrl.clone()
-      url.pathname = "/dashboard"
-      return NextResponse.redirect(url)
-    }
-
-    if (profile.is_blocked) {
-      const url = req.nextUrl.clone()
-      url.pathname = "/dashboard"
-      return NextResponse.redirect(url)
-    }
-
-    const allowed = profile.is_admin === true || profile.role === "admin"
-
-    if (!allowed) {
-      const url = req.nextUrl.clone()
-      url.pathname = "/dashboard"
-      return NextResponse.redirect(url)
-    }
   }
 
   return response
