@@ -1,5 +1,8 @@
+import { prisma } from "@/lib/prisma"
+import { logUserActivity } from "@/lib/user-activity"
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js"
+import { createClient as createServerClient } from "@/utils/supabase/server"
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -11,12 +14,77 @@ function getAdminClient() {
     throw new Error("Supabase service role environment variables are missing.")
   }
 
-  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  return createSupabaseAdminClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
   })
+}
+
+async function requireSettingsAdmin() {
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    return {
+      error: NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 }),
+    }
+  }
+
+  const profile = await prisma.profiles.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      email: true,
+      full_name: true,
+      is_admin: true,
+      role: true,
+      admin_role: true,
+      is_blocked: true,
+      can_manage_settings: true,
+    },
+  })
+
+  if (!profile || profile.is_blocked || (!profile.is_admin && profile.role !== "admin")) {
+    return {
+      error: NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 }),
+    }
+  }
+
+  if (!profile.can_manage_settings && profile.admin_role !== "super_admin") {
+    return {
+      error: NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 }),
+    }
+  }
+
+  return {
+    userId: user.id,
+    email: profile.email,
+    fullName: profile.full_name,
+    adminRole: profile.admin_role,
+  }
+}
+
+function getRequestIp(req: Request) {
+  const forwardedFor = req.headers.get("x-forwarded-for")
+
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || null
+  }
+
+  return (
+    req.headers.get("x-real-ip") ||
+    req.headers.get("cf-connecting-ip") ||
+    null
+  )
+}
+
+function getUserAgent(req: Request) {
+  return req.headers.get("user-agent") || null
 }
 
 function normalizeRegistrationMode(value: unknown): RegistrationMode {
@@ -40,6 +108,32 @@ function normalizeRegistrationMode(value: unknown): RegistrationMode {
   }
 
   return "private_beta"
+}
+
+function modeLabel(mode: RegistrationMode) {
+  if (mode === "private_beta") return "Private beta"
+  if (mode === "public") return "Public"
+  if (mode === "closed") return "Closed"
+  return mode
+}
+
+async function readCurrentRegistrationMode() {
+  const supabase = getAdminClient()
+
+  const { data, error } = await supabase
+    .from("feature_flags")
+    .select("value")
+    .eq("key", "registration_mode")
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    mode: normalizeRegistrationMode(data?.value),
+    rawValue: data?.value ?? null,
+  }
 }
 
 export async function GET() {
@@ -78,8 +172,12 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const admin = await requireSettingsAdmin()
+    if ("error" in admin) return admin.error
+
     const body = await req.json().catch(() => null)
     const mode = normalizeRegistrationMode(body?.mode)
+    const before = await readCurrentRegistrationMode()
 
     const supabase = getAdminClient()
     const now = new Date().toISOString()
@@ -106,6 +204,32 @@ export async function POST(req: Request) {
         { status: 500 }
       )
     }
+
+    await logUserActivity({
+      userId: admin.userId,
+      actorUserId: admin.userId,
+      action: "admin.registration_mode_updated",
+      entityType: "feature_flag",
+      entityId: "registration_mode",
+      title: "Updated registration mode",
+      body: `Registration mode changed from ${modeLabel(before.mode)} to ${modeLabel(mode)}.`,
+      metadata: {
+        actor: {
+          id: admin.userId,
+          email: admin.email,
+          full_name: admin.fullName,
+          admin_role: admin.adminRole,
+        },
+        feature_flag: {
+          key: "registration_mode",
+          before: before.mode,
+          after: mode,
+          raw_before: before.rawValue,
+        },
+      },
+      ipAddress: getRequestIp(req),
+      userAgent: getUserAgent(req),
+    })
 
     return NextResponse.json({ ok: true, mode })
   } catch (error) {
