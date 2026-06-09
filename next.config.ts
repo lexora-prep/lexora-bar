@@ -1,4 +1,5 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
+import { withSentryConfig } from "@sentry/nextjs"
 
 const nextConfig: NextConfig = {
   async rewrites() {
@@ -12,7 +13,8 @@ const nextConfig: NextConfig = {
     }
   },
   productionBrowserSourceMaps: false,
-  /* config options here */
-};
+}
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: true,
+})
