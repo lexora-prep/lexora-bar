@@ -17,9 +17,44 @@ type AuditSeverity = "all" | "low" | "normal" | "high" | "critical"
 type ActorType = "all" | "admin" | "user" | "system"
 type IpFilter = "all" | "present" | "missing"
 
-const MAX_LOOKBACK_ROWS = 1500
-const MAX_RESULT_LIMIT = 250
-const DEFAULT_LIMIT = 100
+const MAX_LOOKBACK_ROWS = 2500
+const DEFAULT_LIMIT = 75
+const MAX_LIMIT = 250
+
+type ProfileLookup = {
+  id: string
+  email: string
+  full_name: string | null
+  is_admin: boolean
+  role: string
+  admin_role: string | null
+}
+
+type AuditEvent = {
+  id: string
+  createdAt: string
+  createdAtLabel: string
+  timeLabel: string
+  action: string
+  actionLabel: string
+  category: Exclude<AuditCategory, "all">
+  severity: Exclude<AuditSeverity, "all">
+  riskScore: number
+  actorId: string | null
+  actorName: string
+  actorEmail: string
+  actorType: Exclude<ActorType, "all">
+  userId: string
+  userName: string
+  userEmail: string
+  entityType: string
+  entityId: string
+  title: string
+  detail: string
+  ipAddress: string
+  userAgent: string
+  metadata: unknown
+}
 
 function cleanText(value: unknown, fallback = "") {
   const text = String(value ?? "").trim()
@@ -34,46 +69,108 @@ function normalizeLower(value: unknown, fallback = "all") {
 function parseLimit(value: string | null) {
   const parsed = Number(value)
   if (!Number.isFinite(parsed)) return DEFAULT_LIMIT
-  return Math.min(MAX_RESULT_LIMIT, Math.max(25, Math.floor(parsed)))
+  return Math.min(MAX_LIMIT, Math.max(25, Math.floor(parsed)))
 }
 
-function getDateStart(value: string | null) {
-  const range = normalizeLower(value, "7d")
+function parseDate(value: string | null, endOfDay = false) {
+  if (!value) return null
+
+  const date = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}`)
+  if (Number.isNaN(date.getTime())) return null
+
+  return date
+}
+
+function getDateWhere(range: string, startDate: string | null, endDate: string | null) {
+  const cleanRange = normalizeLower(range, "7d")
+  const customStart = parseDate(startDate, false)
+  const customEnd = parseDate(endDate, true)
+
+  if (cleanRange === "custom") {
+    if (customStart && customEnd) {
+      return { gte: customStart, lte: customEnd }
+    }
+
+    if (customStart) {
+      return { gte: customStart }
+    }
+
+    if (customEnd) {
+      return { lte: customEnd }
+    }
+
+    return undefined
+  }
+
+  if (cleanRange === "all") return undefined
+
   const now = new Date()
+  const date = new Date(now)
 
-  if (range === "24h") {
-    const date = new Date(now)
-    date.setHours(date.getHours() - 24)
-    return date
-  }
+  if (cleanRange === "24h") date.setHours(date.getHours() - 24)
+  else if (cleanRange === "7d") date.setDate(date.getDate() - 7)
+  else if (cleanRange === "10d") date.setDate(date.getDate() - 10)
+  else if (cleanRange === "30d") date.setDate(date.getDate() - 30)
+  else if (cleanRange === "90d") date.setDate(date.getDate() - 90)
+  else date.setDate(date.getDate() - 7)
 
-  if (range === "7d") {
-    const date = new Date(now)
-    date.setDate(date.getDate() - 7)
-    return date
-  }
-
-  if (range === "30d") {
-    const date = new Date(now)
-    date.setDate(date.getDate() - 30)
-    return date
-  }
-
-  if (range === "90d") {
-    const date = new Date(now)
-    date.setDate(date.getDate() - 90)
-    return date
-  }
-
-  return null
+  return { gte: date }
 }
 
-function deriveCategory(action: string, entityType?: string | null): AuditCategory {
+function metadataObject(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {}
+  return value as Record<string, unknown>
+}
+
+function metadataString(value: unknown, keys: string[]) {
+  const metadata = metadataObject(value)
+
+  for (const key of keys) {
+    const item = metadata[key]
+    if (item !== null && item !== undefined && String(item).trim()) {
+      return String(item).trim()
+    }
+  }
+
+  return ""
+}
+
+function metadataIdentity(value: unknown) {
+  const email = metadataString(value, [
+    "email",
+    "userEmail",
+    "targetEmail",
+    "relatedUserEmail",
+    "actorEmail",
+    "adminEmail",
+    "customerEmail",
+  ])
+
+  const name = metadataString(value, [
+    "fullName",
+    "full_name",
+    "userName",
+    "targetName",
+    "actorName",
+    "adminName",
+    "customerName",
+  ])
+
+  return { email, name }
+}
+
+function safeJson(value: unknown) {
+  try {
+    return JSON.stringify(value ?? {}, null, 2)
+  } catch {
+    return "{}"
+  }
+}
+
+function deriveCategory(action: string, entityType?: string | null): Exclude<AuditCategory, "all"> {
   const value = `${action} ${entityType ?? ""}`.toLowerCase()
 
-  if (value.includes("auth") || value.includes("login") || value.includes("session")) {
-    return "auth"
-  }
+  if (value.includes("auth") || value.includes("login") || value.includes("session")) return "auth"
 
   if (
     value.includes("admin") ||
@@ -104,9 +201,7 @@ function deriveCategory(action: string, entityType?: string | null): AuditCatego
     return "content"
   }
 
-  if (value.includes("support") || value.includes("ticket")) {
-    return "support"
-  }
+  if (value.includes("support") || value.includes("ticket")) return "support"
 
   if (
     value.includes("workspace") ||
@@ -124,7 +219,7 @@ function deriveCategory(action: string, entityType?: string | null): AuditCatego
   return "user"
 }
 
-function deriveSeverity(action: string, entityType?: string | null) {
+function deriveSeverity(action: string, entityType?: string | null): Exclude<AuditSeverity, "all"> {
   const value = `${action} ${entityType ?? ""}`.toLowerCase()
 
   if (
@@ -132,8 +227,7 @@ function deriveSeverity(action: string, entityType?: string | null) {
     value.includes("remove_admin") ||
     value.includes("downgrade") ||
     value.includes("purge") ||
-    value.includes("service_role") ||
-    value.includes("blocked_admin")
+    value.includes("service_role")
   ) {
     return "critical"
   }
@@ -164,6 +258,24 @@ function deriveSeverity(action: string, entityType?: string | null) {
   return "low"
 }
 
+function riskScore(severity: Exclude<AuditSeverity, "all">, action: string) {
+  let score = 10
+
+  if (severity === "critical") score = 90
+  else if (severity === "high") score = 65
+  else if (severity === "normal") score = 28
+
+  const lowered = action.toLowerCase()
+
+  if (lowered.includes("delete")) score += 6
+  if (lowered.includes("block")) score += 5
+  if (lowered.includes("admin")) score += 8
+  if (lowered.includes("permission")) score += 8
+  if (lowered.includes("billing")) score += 5
+
+  return Math.min(99, Math.max(1, score))
+}
+
 function formatAction(action: string) {
   return cleanText(action, "activity.logged")
     .replace(/[._-]/g, " ")
@@ -173,12 +285,64 @@ function formatAction(action: string) {
     .join(" ")
 }
 
-function safeJson(value: unknown) {
-  try {
-    return JSON.stringify(value ?? {}, null, 2)
-  } catch {
-    return "{}"
-  }
+function formatDateTime(value: Date) {
+  return new Intl.DateTimeFormat("en", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(value)
+}
+
+function formatTime(value: Date) {
+  return new Intl.DateTimeFormat("en", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(value)
+}
+
+function actorTypeFor(profile: ProfileLookup | undefined | null): Exclude<ActorType, "all"> {
+  if (!profile) return "system"
+  if (profile.is_admin || profile.role === "admin" || profile.admin_role) return "admin"
+  return "user"
+}
+
+function profileName(profile: ProfileLookup | undefined | null, fallback: string) {
+  if (!profile) return fallback
+  if (profile.full_name?.trim()) return profile.full_name.trim()
+  return profile.email.split("@")[0] || fallback
+}
+
+function matchesSearch(row: AuditEvent, search: string) {
+  if (!search) return true
+
+  const haystack = [
+    row.id,
+    row.createdAt,
+    row.action,
+    row.actionLabel,
+    row.category,
+    row.severity,
+    row.actorId,
+    row.actorName,
+    row.actorEmail,
+    row.actorType,
+    row.userId,
+    row.userName,
+    row.userEmail,
+    row.entityType,
+    row.entityId,
+    row.title,
+    row.detail,
+    row.ipAddress,
+    row.userAgent,
+    safeJson(row.metadata),
+  ]
+    .join(" ")
+    .toLowerCase()
+
+  return haystack.includes(search.toLowerCase())
 }
 
 function csvCell(value: unknown) {
@@ -190,10 +354,13 @@ function toCsv(rows: AuditEvent[]) {
   const header = [
     "time",
     "severity",
+    "risk_score",
     "category",
     "actor",
     "actor_email",
     "actor_type",
+    "related_user",
+    "related_user_email",
     "action",
     "entity_type",
     "entity_id",
@@ -209,10 +376,13 @@ function toCsv(rows: AuditEvent[]) {
     [
       row.createdAt,
       row.severity,
+      row.riskScore,
       row.category,
       row.actorName,
       row.actorEmail,
       row.actorType,
+      row.userName,
+      row.userEmail,
       row.actionLabel,
       row.entityType,
       row.entityId,
@@ -228,6 +398,22 @@ function toCsv(rows: AuditEvent[]) {
   )
 
   return [header.join(","), ...body].join("\n")
+}
+
+function chartBucketKey(date: Date, range: string) {
+  const cleanRange = normalizeLower(range, "7d")
+
+  if (cleanRange === "24h") {
+    return new Intl.DateTimeFormat("en", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date)
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "2-digit",
+  }).format(date)
 }
 
 async function requireAuditViewer() {
@@ -269,93 +455,7 @@ async function requireAuditViewer() {
     }
   }
 
-  return {
-    userId: user.id,
-  }
-}
-
-type ProfileLookup = {
-  id: string
-  email: string
-  full_name: string | null
-  is_admin: boolean
-  role: string
-  admin_role: string | null
-}
-
-type AuditEvent = {
-  id: string
-  createdAt: string
-  createdAtLabel: string
-  action: string
-  actionLabel: string
-  category: AuditCategory
-  severity: Exclude<AuditSeverity, "all">
-  actorId: string | null
-  actorName: string
-  actorEmail: string
-  actorType: Exclude<ActorType, "all">
-  userId: string
-  userEmail: string
-  entityType: string
-  entityId: string
-  title: string
-  detail: string
-  ipAddress: string
-  userAgent: string
-  metadata: unknown
-}
-
-function actorTypeFor(profile: ProfileLookup | undefined | null): Exclude<ActorType, "all"> {
-  if (!profile) return "system"
-  if (profile.is_admin || profile.role === "admin" || profile.admin_role) return "admin"
-  return "user"
-}
-
-function displayName(profile: ProfileLookup | undefined | null, fallback: string) {
-  if (!profile) return fallback
-  if (profile.full_name?.trim()) return profile.full_name.trim()
-  return profile.email.split("@")[0] || fallback
-}
-
-function matchesSearch(row: AuditEvent, search: string) {
-  if (!search) return true
-
-  const haystack = [
-    row.id,
-    row.createdAt,
-    row.action,
-    row.actionLabel,
-    row.category,
-    row.severity,
-    row.actorId,
-    row.actorName,
-    row.actorEmail,
-    row.actorType,
-    row.userId,
-    row.userEmail,
-    row.entityType,
-    row.entityId,
-    row.title,
-    row.detail,
-    row.ipAddress,
-    row.userAgent,
-    safeJson(row.metadata),
-  ]
-    .join(" ")
-    .toLowerCase()
-
-  return haystack.includes(search.toLowerCase())
-}
-
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("en", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(value)
+  return { userId: user.id }
 }
 
 export async function GET(req: Request) {
@@ -369,23 +469,20 @@ export async function GET(req: Request) {
     const category = normalizeLower(searchParams.get("category"), "all") as AuditCategory
     const severity = normalizeLower(searchParams.get("severity"), "all") as AuditSeverity
     const actorType = normalizeLower(searchParams.get("actorType"), "all") as ActorType
+    const actorId = cleanText(searchParams.get("actorId"))
     const ipFilter = normalizeLower(searchParams.get("ip"), "all") as IpFilter
-    const dateStart = getDateStart(searchParams.get("range"))
+    const entity = cleanText(searchParams.get("entity"))
+    const range = normalizeLower(searchParams.get("range"), "7d")
+    const startDate = cleanText(searchParams.get("startDate"))
+    const endDate = cleanText(searchParams.get("endDate"))
     const limit = parseLimit(searchParams.get("limit"))
     const format = normalizeLower(searchParams.get("format"), "json")
+    const dateWhere = getDateWhere(range, startDate, endDate)
 
     const logs = await prisma.user_activity_logs.findMany({
-      where: dateStart
-        ? {
-            created_at: {
-              gte: dateStart,
-            },
-          }
-        : {},
-      orderBy: {
-        created_at: "desc",
-      },
-      take: format === "csv" ? MAX_LOOKBACK_ROWS : MAX_LOOKBACK_ROWS,
+      where: dateWhere ? { created_at: dateWhere } : {},
+      orderBy: { created_at: "desc" },
+      take: MAX_LOOKBACK_ROWS,
       select: {
         id: true,
         user_id: true,
@@ -413,11 +510,7 @@ export async function GET(req: Request) {
     const profiles =
       profileIds.length > 0
         ? await prisma.profiles.findMany({
-            where: {
-              id: {
-                in: profileIds,
-              },
-            },
+            where: { id: { in: profileIds } },
             select: {
               id: true,
               email: true,
@@ -432,54 +525,85 @@ export async function GET(req: Request) {
     const profileMap = new Map(profiles.map((profile) => [profile.id, profile]))
 
     const rows: AuditEvent[] = logs.map((log) => {
-      const actorId = log.actor_user_id ?? log.user_id ?? null
-      const actorProfile = actorId ? profileMap.get(actorId) : null
-      const userProfile = profileMap.get(log.user_id)
+      const relatedProfile = profileMap.get(log.user_id)
+      const actorProfile = log.actor_user_id ? profileMap.get(log.actor_user_id) : relatedProfile
+      const identity = metadataIdentity(log.metadata)
 
       const action = cleanText(log.action, "activity.logged")
       const entityType = cleanText(log.entity_type, "activity")
       const categoryValue = deriveCategory(action, entityType)
       const severityValue = deriveSeverity(action, entityType)
 
-      const title = cleanText(log.title)
-      const body = cleanText(log.body)
-      const metadataText = safeJson(log.metadata)
-      const detail =
-        body ||
-        title ||
-        (userProfile?.email ? `Related user: ${userProfile.email}` : "") ||
-        metadataText
+      const userEmail = relatedProfile?.email || identity.email || ""
+      const userName = profileName(
+        relatedProfile,
+        identity.name || userEmail || "Unknown user"
+      )
+
+      const actorName = profileName(
+        actorProfile,
+        identity.name || userName || (log.actor_user_id ? "Unknown admin" : "System")
+      )
 
       return {
         id: log.id,
         createdAt: log.created_at.toISOString(),
         createdAtLabel: formatDateTime(log.created_at),
+        timeLabel: formatTime(log.created_at),
         action,
         actionLabel: formatAction(action),
         category: categoryValue,
         severity: severityValue,
-        actorId,
-        actorName: displayName(actorProfile, actorId ? `User ${actorId.slice(0, 8)}` : "System"),
-        actorEmail: actorProfile?.email ?? "",
+        riskScore: riskScore(severityValue, action),
+        actorId: log.actor_user_id ?? log.user_id ?? null,
+        actorName,
+        actorEmail: actorProfile?.email || identity.email || "",
         actorType: actorTypeFor(actorProfile),
         userId: log.user_id,
-        userEmail: userProfile?.email ?? "",
+        userName,
+        userEmail,
         entityType,
         entityId: cleanText(log.entity_id),
-        title,
-        detail,
+        title: cleanText(log.title),
+        detail:
+          cleanText(log.body) ||
+          cleanText(log.title) ||
+          (userEmail ? `Related user: ${userEmail}` : "No additional detail."),
         ipAddress: cleanText(log.ip_address),
         userAgent: cleanText(log.user_agent),
         metadata: log.metadata ?? {},
       }
     })
 
+    const actorOptions = Array.from(
+      new Map(
+        rows.map((row) => [
+          row.actorId || row.actorName,
+          {
+            id: row.actorId || row.actorName,
+            name: row.actorName,
+            email: row.actorEmail,
+            label: row.actorEmail ? `${row.actorName} · ${row.actorEmail}` : row.actorName,
+            actorType: row.actorType,
+          },
+        ])
+      ).values()
+    )
+      .filter((actor) => actor.name !== "Unknown user")
+      .sort((a, b) => a.label.localeCompare(b.label))
+
+    const entityOptions = Array.from(
+      new Set(rows.map((row) => row.entityType).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b))
+
     const filteredRows = rows.filter((row) => {
       if (category !== "all" && row.category !== category) return false
       if (severity !== "all" && row.severity !== severity) return false
       if (actorType !== "all" && row.actorType !== actorType) return false
+      if (actorId && row.actorId !== actorId && row.actorName !== actorId) return false
       if (ipFilter === "present" && !row.ipAddress) return false
       if (ipFilter === "missing" && row.ipAddress) return false
+      if (entity && row.entityType !== entity) return false
       if (!matchesSearch(row, search)) return false
       return true
     })
@@ -491,10 +615,42 @@ export async function GET(req: Request) {
       uniqueActors: new Set(filteredRows.map((row) => row.actorId || row.actorName)).size,
       uniqueIps: new Set(filteredRows.map((row) => row.ipAddress).filter(Boolean)).size,
       latestEventAt: filteredRows[0]?.createdAt ?? null,
+      averageRisk:
+        filteredRows.length === 0
+          ? 0
+          : Math.round(
+              filteredRows.reduce((sum, row) => sum + row.riskScore, 0) /
+                filteredRows.length
+            ),
     }
 
+    const chartMap = new Map<
+      string,
+      { label: string; total: number; critical: number; high: number; normal: number; low: number }
+    >()
+
+    for (const row of filteredRows) {
+      const label = chartBucketKey(new Date(row.createdAt), range)
+      const existing =
+        chartMap.get(label) ??
+        {
+          label,
+          total: 0,
+          critical: 0,
+          high: 0,
+          normal: 0,
+          low: 0,
+        }
+
+      existing.total += 1
+      existing[row.severity] += 1
+      chartMap.set(label, existing)
+    }
+
+    const chart = Array.from(chartMap.values()).reverse().slice(-18)
+
     if (format === "csv") {
-      const csv = toCsv(filteredRows.slice(0, MAX_LOOKBACK_ROWS))
+      const csv = toCsv(filteredRows)
 
       return new NextResponse(csv, {
         status: 200,
@@ -510,10 +666,15 @@ export async function GET(req: Request) {
     return NextResponse.json({
       ok: true,
       summary,
+      chart,
       events: filteredRows.slice(0, limit),
       totalMatched: filteredRows.length,
       returned: Math.min(filteredRows.length, limit),
       maxLookbackRows: MAX_LOOKBACK_ROWS,
+      filters: {
+        actors: actorOptions,
+        entities: entityOptions,
+      },
     })
   } catch (error: any) {
     console.error("ADMIN AUDIT LOG ERROR:", error)
