@@ -396,6 +396,12 @@ export function CompactCompareMetric({
       ? "bg-[linear-gradient(90deg,#cbd5e1,#94a3b8)]"
       : "bg-[linear-gradient(90deg,#ddd6fe,#a78bfa)]"
 
+  const hasAvg = avg !== null && avg !== undefined && Number.isFinite(Number(avg))
+  const hasTop = top !== null && top !== undefined && Number.isFinite(Number(top))
+  const safeYou = Math.max(0, Math.min(you ?? 0, 100))
+  const safeAvg = hasAvg ? Math.max(0, Math.min(Number(avg), 100)) : 0
+  const difference = hasAvg ? (you ?? 0) - Number(avg) : null
+
   return (
     <div className="space-y-2 px-0 py-0">
       <div className="flex items-center justify-between text-[12px]">
@@ -411,8 +417,12 @@ export function CompactCompareMetric({
             <span className="font-semibold text-emerald-600">
               You: {you ?? 0}%
             </span>
-            <span className="text-slate-500">Avg: {avg ?? 0}%</span>
-            <span className="text-orange-500">Top: {top ?? 0}%</span>
+            <span className="text-slate-500">
+              Avg: {hasAvg ? `${Number(avg)}%` : "N/A"}
+            </span>
+            <span className="text-orange-500">
+              Top: {hasTop ? `${Number(top)}%` : "N/A"}
+            </span>
           </div>
         )}
       </div>
@@ -422,16 +432,16 @@ export function CompactCompareMetric({
           <div
             className={`h-[6px] rounded-full ${userBar}`}
             style={{
-              width: `${locked ? 0 : Math.max(0, Math.min(you ?? 0, 100))}%`,
+              width: `${locked ? 0 : safeYou}%`,
             }}
           />
         </div>
 
-        {!locked && (
+        {!locked && hasAvg && (
           <div className="h-[6px] overflow-hidden rounded-full bg-slate-200">
             <div
               className={`h-[6px] rounded-full ${avgBar}`}
-              style={{ width: `${Math.max(0, Math.min(avg ?? 0, 100))}%` }}
+              style={{ width: `${safeAvg}%` }}
             />
           </div>
         )}
@@ -442,10 +452,12 @@ export function CompactCompareMetric({
           <span className="premium-glow-text font-medium">
             MBE state comparison coming soon
           </span>
+        ) : difference === null ? (
+          "Not enough state data yet"
         ) : (
-          `Difference: ${
-            (you ?? 0) - (avg ?? 0) >= 0 ? "+" : ""
-          }${((you ?? 0) - (avg ?? 0)).toFixed(0)}% vs state avg`
+          `Difference: ${difference >= 0 ? "+" : ""}${difference.toFixed(
+            0
+          )}% vs state avg`
         )}
       </div>
     </div>
