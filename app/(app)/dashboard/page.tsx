@@ -1477,9 +1477,17 @@ export default function Dashboard() {
     (dashboard?.todayBLL ?? 0) === 0 &&
     (dashboard?.todayMBE ?? 0) === 0
 
-  const bllDiff =
-    (stateData?.userBLL ?? dashboard?.userBLL ?? 0) -
-    (stateData?.stateBLLAvg ?? dashboard?.stateBLLAvg ?? 0)
+  const bllStateAverage =
+    stateData?.stateBLLAvg ?? dashboard?.stateBLLAvg ?? null
+
+  const hasBllStateAverage =
+    bllStateAverage !== null &&
+    bllStateAverage !== undefined &&
+    Number.isFinite(Number(bllStateAverage))
+
+  const bllDiff = hasBllStateAverage
+    ? (stateData?.userBLL ?? dashboard?.userBLL ?? 0) - Number(bllStateAverage)
+    : null
 
   const goalMbe = dashboard?.goalMBE ?? 60
   const goalBll = todayRuleTarget
@@ -1892,9 +1900,11 @@ export default function Dashboard() {
               <MetricCard
                 title="BLL Score"
                 value={`${stateData?.userBLL ?? dashboard?.userBLL ?? 0}%`}
-                subtitle={`State avg: ${
-                  stateData?.stateBLLAvg ?? dashboard?.stateBLLAvg ?? 0
-                }%`}
+                subtitle={
+                  hasBllStateAverage
+                    ? `State avg: ${Number(bllStateAverage)}%`
+                    : "State avg: Not enough data yet"
+                }
                 accent="emerald"
                 progress={stateData?.userBLL ?? dashboard?.userBLL ?? 0}
                 delta={bllDiff}
@@ -2199,12 +2209,12 @@ export default function Dashboard() {
                   <CompactCompareMetric
                     label="BLL Score"
                     you={stateData?.userBLL ?? dashboard?.userBLL ?? 0}
-                    avg={stateData?.stateBLLAvg ?? dashboard?.stateBLLAvg ?? 0}
+                    avg={hasBllStateAverage ? Number(bllStateAverage) : null}
                     top={
                       stateData?.topBLL ??
                       Math.max(
-                        stateData?.stateBLLAvg ?? 0,
-                        stateData?.userBLL ?? 0
+                        hasBllStateAverage ? Number(bllStateAverage) : 0,
+                        stateData?.userBLL ?? dashboard?.userBLL ?? 0
                       )
                     }
                     accent="violet"

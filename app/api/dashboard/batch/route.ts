@@ -40,10 +40,11 @@ type DashboardMetricsResult = {
   totalRules: number
   userBLL: number
   userMBE: number
-  stateBLLAvg: number
-  stateMBEAvg: number
-  topBLL: number
-  topMBE: number
+  stateBLLAvg: number | null
+  stateMBEAvg: number | null
+  topBLL: number | null
+  topMBE: number | null
+  stateUsers: number
   spacedReviewsDue: number
   weeklyStudyTimeHours: number
   weeklyRulesDone: number
@@ -606,6 +607,8 @@ function buildDashboardMetricsFromRows({
   userRuleProgress,
   ruleAttemptDates,
   userMbeAttempts,
+  comparisonUserRuleProgress,
+  comparisonMbeAttempts,
   goalBLL,
   totalRules,
   ruleSet,
@@ -624,6 +627,8 @@ function buildDashboardMetricsFromRows({
   userRuleProgress: any[]
   ruleAttemptDates: any[]
   userMbeAttempts: any[]
+  comparisonUserRuleProgress: any[]
+  comparisonMbeAttempts: any[]
   goalBLL: number
   totalRules: number
   ruleSet: RuleSet
@@ -653,6 +658,95 @@ function buildDashboardMetricsFromRows({
   const mbeTotal = userMbeAttempts.length
   const mbeCorrect = userMbeAttempts.filter((row) => row.is_correct).length
 
+  const filteredComparisonRuleProgress = comparisonUserRuleProgress.filter((row) => {
+    const progressRule: ActiveRuleIdentity = {
+      subject_id: row.rules?.subject_id ?? null,
+      topic_id: null,
+      subtopic_id: null,
+      title: "comparison-progress-rule",
+      rule_type: row.rules?.rule_type ?? null,
+    }
+
+    return shouldIncludeRuleForSet(progressRule, ruleSet)
+  })
+
+  const comparisonActivityUsers = new Set<string>()
+
+  for (const row of filteredComparisonRuleProgress) {
+    if (Number(row.attempts ?? 0) > 0 && row.user_id) {
+      comparisonActivityUsers.add(String(row.user_id))
+    }
+  }
+
+  for (const row of comparisonMbeAttempts) {
+    if (row.user_id) {
+      comparisonActivityUsers.add(String(row.user_id))
+    }
+  }
+
+  const stateUsers = comparisonActivityUsers.size
+
+  const stateRuleCorrect = filteredComparisonRuleProgress.reduce(
+    (sum, row) => sum + Number(row.correct_count ?? 0),
+    0
+  )
+
+  const stateRuleAttempts = filteredComparisonRuleProgress.reduce(
+    (sum, row) => sum + Number(row.attempts ?? 0),
+    0
+  )
+
+  const stateMbeCorrect = comparisonMbeAttempts.filter((row) => row.is_correct).length
+  const stateMbeAttempts = comparisonMbeAttempts.length
+
+  const bllByComparisonUser = new Map<string, { correct: number; total: number }>()
+
+  for (const row of filteredComparisonRuleProgress) {
+    const rowUserId = String(row.user_id ?? "")
+    if (!rowUserId) continue
+
+    const current =
+      bllByComparisonUser.get(rowUserId) ??
+      {
+        correct: 0,
+        total: 0,
+      }
+
+    current.correct += Number(row.correct_count ?? 0)
+    current.total += Number(row.attempts ?? 0)
+
+    bllByComparisonUser.set(rowUserId, current)
+  }
+
+  const mbeByComparisonUser = new Map<string, { correct: number; total: number }>()
+
+  for (const row of comparisonMbeAttempts) {
+    const rowUserId = String(row.user_id ?? "")
+    if (!rowUserId) continue
+
+    const current =
+      mbeByComparisonUser.get(rowUserId) ??
+      {
+        correct: 0,
+        total: 0,
+      }
+
+    current.total += 1
+    if (row.is_correct) current.correct += 1
+
+    mbeByComparisonUser.set(rowUserId, current)
+  }
+
+  const topBLL = Array.from(bllByComparisonUser.values()).reduce((top, score) => {
+    if (!score.total) return top
+    return Math.max(top, percent(score.correct, score.total))
+  }, 0)
+
+  const topMBE = Array.from(mbeByComparisonUser.values()).reduce((top, score) => {
+    if (!score.total) return top
+    return Math.max(top, percent(score.correct, score.total))
+  }, 0)
+
   const weakAreasCount = filteredUserRuleProgress.filter((row) => {
     if (row.needs_practice) return true
     if (!row.attempts || row.attempts < 3) return false
@@ -678,10 +772,11 @@ function buildDashboardMetricsFromRows({
     totalRules,
     userBLL: percent(bllCorrect, bllAttempts),
     userMBE: percent(mbeCorrect, mbeTotal),
-    stateBLLAvg: 0,
-    stateMBEAvg: 0,
-    topBLL: 0,
-    topMBE: 0,
+    stateBLLAvg: stateRuleAttempts > 0 ? percent(stateRuleCorrect, stateRuleAttempts) : null,
+    stateMBEAvg: stateMbeAttempts > 0 ? percent(stateMbeCorrect, stateMbeAttempts) : null,
+    topBLL: topBLL > 0 ? topBLL : null,
+    topMBE: topMBE > 0 ? topMBE : null,
+    stateUsers,
     spacedReviewsDue,
     weeklyStudyTimeHours: Number(
       ((weeklyStudySessionAgg._sum.durationSeconds ?? 0) / 3600).toFixed(1)
@@ -925,6 +1020,66 @@ export async function GET(request: Request) {
 
     const effectiveDailyRules = getEffectiveTodayBLLGoal(studyPlan, totalRules)
 
+    const comparisonJurisdiction =
+      requestedState?.trim() || profile.jurisdiction?.trim() || null
+
+    let comparisonUserRuleProgress: any[] = []
+    let comparisonMbeAttempts: any[] = []
+
+    if (comparisonJurisdiction) {
+      const comparisonProfiles = await prisma.profiles.findMany({
+        where: {
+          jurisdiction: comparisonJurisdiction,
+          id: {
+            not: user.id,
+          },
+        },
+        select: {
+          id: true,
+        },
+      })
+
+      const comparisonUserIds = comparisonProfiles.map((row) => row.id)
+
+      if (comparisonUserIds.length > 0) {
+        const [comparisonRuleProgressResult, comparisonMbeAttemptsResult] =
+          await Promise.all([
+            prisma.user_rule_progress.findMany({
+              where: {
+                user_id: {
+                  in: comparisonUserIds,
+                },
+              },
+              select: {
+                user_id: true,
+                correct_count: true,
+                attempts: true,
+                rules: {
+                  select: {
+                    subject_id: true,
+                    rule_type: true,
+                  },
+                },
+              },
+            }),
+            prisma.user_mbe_attempts.findMany({
+              where: {
+                user_id: {
+                  in: comparisonUserIds,
+                },
+              },
+              select: {
+                user_id: true,
+                is_correct: true,
+              },
+            }),
+          ])
+
+        comparisonUserRuleProgress = comparisonRuleProgressResult
+        comparisonMbeAttempts = comparisonMbeAttemptsResult
+      }
+    }
+
     const subjectAnalytics = buildSubjectAnalyticsFromRows({
       subjects,
       activeRules,
@@ -947,6 +1102,8 @@ export async function GET(request: Request) {
       userRuleProgress,
       ruleAttemptDates,
       userMbeAttempts,
+      comparisonUserRuleProgress,
+      comparisonMbeAttempts,
       goalBLL: effectiveDailyRules,
       totalRules,
       ruleSet,
@@ -987,6 +1144,7 @@ export async function GET(request: Request) {
             userBLL: dashboardMetrics.userBLL,
             stateMBEAvg: dashboardMetrics.stateMBEAvg,
             stateBLLAvg: dashboardMetrics.stateBLLAvg,
+            stateUsers: dashboardMetrics.stateUsers,
             topMBE: dashboardMetrics.topMBE,
             topBLL: dashboardMetrics.topBLL,
           }
