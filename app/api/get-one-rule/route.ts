@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { enforceRateLimit } from "@/lib/rate-limit"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,6 +8,16 @@ const supabase = createClient(
 )
 
 export async function GET(req: Request) {
+  const rateLimitResponse = await enforceRateLimit(req, {
+    key: "get-one-rule",
+    limit: 120,
+    window: "1 m",
+  })
+
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   const { searchParams } = new URL(req.url)
 
   const subjectId = searchParams.get("subject")

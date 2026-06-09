@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { enforceRateLimit } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 
 function makeRuleKey(rule: {
@@ -126,6 +127,17 @@ export async function GET(req: Request) {
 
     const mode = searchParams.get("mode") || "random"
     const userId = searchParams.get("userId")
+
+    const rateLimitResponse = await enforceRateLimit(req, {
+      key: "rules-next",
+      limit: 120,
+      window: "1 m",
+      identifier: userId ? `user:${userId}` : null,
+    })
+
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
 
     let rule: any = null
 

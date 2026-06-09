@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { Resend } from "resend"
+import { enforceRateLimit } from "@/lib/rate-limit"
 
 export const runtime = "nodejs"
 
@@ -20,6 +21,16 @@ function clean(value: FormDataEntryValue | null) {
 
 export async function POST(request: Request) {
   try {
+    const rateLimitResponse = await enforceRateLimit(request, {
+      key: "contact",
+      limit: 5,
+      window: "10 m",
+    })
+
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const apiKey = process.env.RESEND_API_KEY
 
     if (!apiKey) {
