@@ -2210,13 +2210,7 @@ export default function Dashboard() {
                     label="BLL Score"
                     you={stateData?.userBLL ?? dashboard?.userBLL ?? 0}
                     avg={hasBllStateAverage ? Number(bllStateAverage) : null}
-                    top={
-                      stateData?.topBLL ??
-                      Math.max(
-                        hasBllStateAverage ? Number(bllStateAverage) : 0,
-                        stateData?.userBLL ?? dashboard?.userBLL ?? 0
-                      )
-                    }
+                    top={stateData?.topBLL ?? dashboard?.topBLL ?? null}
                     accent="violet"
                   />
                 </div>
