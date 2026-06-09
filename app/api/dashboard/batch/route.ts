@@ -249,39 +249,51 @@ function buildLevelAndProgress(attempts: number, accuracy: number) {
 function shouldIncludeRuleForSet(rule: ActiveRuleIdentity, ruleSet: RuleSet) {
   const type = String(rule.rule_type ?? "").trim().toLowerCase()
 
-  if (ruleSet === "core") return rule.rule_type === null || type === "core"
+  const isNationalCoreRule =
+    rule.rule_type === null || type === "core" || type === "definition"
+
+  if (ruleSet === "core") return isNationalCoreRule
   if (ruleSet === "full") return true
 
   if (ruleSet === "golden") {
-    return [
-      "golden",
-      "golden_120",
-      "most_tested",
-      "high_yield",
-      "priority",
-    ].includes(type)
+    return (
+      isNationalCoreRule ||
+      [
+        "golden",
+        "golden_120",
+        "most_tested",
+        "high_yield",
+        "priority",
+      ].includes(type)
+    )
   }
 
   if (ruleSet === "priority") {
-    return [
-      "priority",
-      "golden",
-      "golden_120",
-      "most_tested",
-      "high_yield",
-      "emergency",
-    ].includes(type)
+    return (
+      isNationalCoreRule ||
+      [
+        "priority",
+        "golden",
+        "golden_120",
+        "most_tested",
+        "high_yield",
+        "emergency",
+      ].includes(type)
+    )
   }
 
   if (ruleSet === "emergency") {
-    return [
-      "emergency",
-      "priority",
-      "golden",
-      "golden_120",
-      "most_tested",
-      "high_yield",
-    ].includes(type)
+    return (
+      isNationalCoreRule ||
+      [
+        "emergency",
+        "priority",
+        "golden",
+        "golden_120",
+        "most_tested",
+        "high_yield",
+      ].includes(type)
+    )
   }
 
   return rule.rule_type === null
