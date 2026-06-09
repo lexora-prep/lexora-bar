@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { logUserActivity } from "@/lib/user-activity"
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 
@@ -19,6 +20,8 @@ async function requireAdmin() {
     where: { id: user.id },
     select: {
       id: true,
+      email: true,
+      full_name: true,
       is_admin: true,
       role: true,
       admin_role: true,
@@ -41,6 +44,8 @@ async function requireAdmin() {
 
   return {
     userId: user.id,
+    email: profile.email,
+    fullName: profile.full_name,
     adminRole: profile.admin_role,
   }
 }
@@ -57,13 +62,150 @@ function isOnline(lastActiveAt: Date | null) {
   return diffMs <= 2 * 60 * 1000
 }
 
+function getRequestIp(req: Request) {
+  const forwardedFor = req.headers.get("x-forwarded-for")
+
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() || null
+  }
+
+  return (
+    req.headers.get("x-real-ip") ||
+    req.headers.get("cf-connecting-ip") ||
+    null
+  )
+}
+
+function getUserAgent(req: Request) {
+  return req.headers.get("user-agent") || null
+}
+
+function displayName(user: {
+  email: string | null
+  full_name: string | null
+}) {
+  if (user.full_name && user.full_name.trim()) return user.full_name.trim()
+  if (user.email && user.email.trim()) return user.email.trim()
+  return "Unknown user"
+}
+
+function actionLabel(action: string) {
+  if (action === "block") return "Blocked user"
+  if (action === "unblock") return "Unblocked user"
+  if (action === "make_admin") return "Granted admin access"
+  if (action === "remove_admin") return "Removed admin access"
+  return "Updated user"
+}
+
+function auditActionName(action: string) {
+  if (action === "block") return "admin.user_blocked"
+  if (action === "unblock") return "admin.user_unblocked"
+  if (action === "make_admin") return "admin.user_admin_granted"
+  if (action === "remove_admin") return "admin.user_admin_removed"
+  return "admin.user_updated"
+}
+
+function auditBody(action: string, targetName: string) {
+  if (action === "block") return `${targetName} was blocked from accessing the platform.`
+  if (action === "unblock") return `${targetName} was unblocked and can access the platform again.`
+  if (action === "make_admin") return `${targetName} was granted admin access.`
+  if (action === "remove_admin") return `${targetName} had admin access removed.`
+  return `${targetName} was updated by an admin.`
+}
+
+function auditState(user: {
+  id: string
+  email: string | null
+  full_name: string | null
+  role: string | null
+  admin_role: string | null
+  is_admin: boolean | null
+  is_blocked: boolean | null
+  can_manage_questions: boolean | null
+  can_manage_rules: boolean | null
+  can_manage_users: boolean | null
+  can_manage_announcements: boolean | null
+  can_view_billing: boolean | null
+  can_manage_coupons: boolean | null
+  can_manage_settings: boolean | null
+  can_view_audit_log: boolean | null
+  can_manage_workspace_members: boolean | null
+  can_create_workspace_channels: boolean | null
+  can_manage_workspace_channels: boolean | null
+  can_manage_hidden_channels: boolean | null
+  can_manage_workspace_notes: boolean | null
+  can_create_shared_notes: boolean | null
+  can_create_workspace_polls: boolean | null
+  can_send_workspace_wake_alerts: boolean | null
+  can_view_workspace_member_details: boolean | null
+  can_manage_all_workspace: boolean | null
+}) {
+  return {
+    id: user.id,
+    email: user.email,
+    full_name: user.full_name,
+    role: user.role,
+    admin_role: user.admin_role,
+    is_admin: user.is_admin,
+    is_blocked: user.is_blocked,
+    permissions: {
+      can_manage_questions: user.can_manage_questions,
+      can_manage_rules: user.can_manage_rules,
+      can_manage_users: user.can_manage_users,
+      can_manage_announcements: user.can_manage_announcements,
+      can_view_billing: user.can_view_billing,
+      can_manage_coupons: user.can_manage_coupons,
+      can_manage_settings: user.can_manage_settings,
+      can_view_audit_log: user.can_view_audit_log,
+      can_manage_workspace_members: user.can_manage_workspace_members,
+      can_create_workspace_channels: user.can_create_workspace_channels,
+      can_manage_workspace_channels: user.can_manage_workspace_channels,
+      can_manage_hidden_channels: user.can_manage_hidden_channels,
+      can_manage_workspace_notes: user.can_manage_workspace_notes,
+      can_create_shared_notes: user.can_create_shared_notes,
+      can_create_workspace_polls: user.can_create_workspace_polls,
+      can_send_workspace_wake_alerts: user.can_send_workspace_wake_alerts,
+      can_view_workspace_member_details: user.can_view_workspace_member_details,
+      can_manage_all_workspace: user.can_manage_all_workspace,
+    },
+  }
+}
+
+const auditSelect = {
+  id: true,
+  email: true,
+  full_name: true,
+  role: true,
+  admin_role: true,
+  is_admin: true,
+  is_blocked: true,
+  can_manage_questions: true,
+  can_manage_rules: true,
+  can_manage_users: true,
+  can_manage_announcements: true,
+  can_view_billing: true,
+  can_manage_coupons: true,
+  can_manage_settings: true,
+  can_view_audit_log: true,
+  can_manage_workspace_members: true,
+  can_create_workspace_channels: true,
+  can_manage_workspace_channels: true,
+  can_manage_hidden_channels: true,
+  can_manage_workspace_notes: true,
+  can_create_shared_notes: true,
+  can_create_workspace_polls: true,
+  can_send_workspace_wake_alerts: true,
+  can_view_workspace_member_details: true,
+  can_manage_all_workspace: true,
+}
+
 export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin()
-    if (admin.error) return admin.error
+    if ("error" in admin) return admin.error
 
     const { id } = await context.params
 
@@ -192,7 +334,7 @@ export async function PATCH(
 ) {
   try {
     const admin = await requireAdmin()
-    if (admin.error) return admin.error
+    if ("error" in admin) return admin.error
 
     const { id } = await context.params
     const body = await req.json()
@@ -217,6 +359,7 @@ export async function PATCH(
 
     const existing = await prisma.profiles.findUnique({
       where: { id },
+      select: auditSelect,
     })
 
     if (!existing) {
@@ -235,6 +378,7 @@ export async function PATCH(
           is_blocked: true,
           updated_at: new Date(),
         },
+        select: auditSelect,
       })
     } else if (action === "unblock") {
       updated = await prisma.profiles.update({
@@ -243,6 +387,7 @@ export async function PATCH(
           is_blocked: false,
           updated_at: new Date(),
         },
+        select: auditSelect,
       })
     } else if (action === "make_admin") {
       updated = await prisma.profiles.update({
@@ -252,6 +397,7 @@ export async function PATCH(
           role: "admin",
           updated_at: new Date(),
         },
+        select: auditSelect,
       })
     } else if (action === "remove_admin") {
       updated = await prisma.profiles.update({
@@ -280,6 +426,7 @@ export async function PATCH(
           can_manage_all_workspace: false,
           updated_at: new Date(),
         },
+        select: auditSelect,
       })
     } else {
       return NextResponse.json(
@@ -287,6 +434,36 @@ export async function PATCH(
         { status: 400 }
       )
     }
+
+    const targetName = displayName(updated)
+
+    await logUserActivity({
+      userId: updated.id,
+      actorUserId: admin.userId,
+      action: auditActionName(action),
+      entityType: "profile",
+      entityId: updated.id,
+      title: actionLabel(action),
+      body: auditBody(action, targetName),
+      metadata: {
+        action,
+        actor: {
+          id: admin.userId,
+          email: admin.email,
+          full_name: admin.fullName,
+          admin_role: admin.adminRole,
+        },
+        target: {
+          id: updated.id,
+          email: updated.email,
+          full_name: updated.full_name,
+        },
+        before: auditState(existing),
+        after: auditState(updated),
+      },
+      ipAddress: getRequestIp(req),
+      userAgent: getUserAgent(req),
+    })
 
     return NextResponse.json({ ok: true, user: updated })
   } catch (err: any) {
