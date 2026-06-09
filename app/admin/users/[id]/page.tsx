@@ -8,38 +8,31 @@ import {
   Activity,
   ArrowLeft,
   Ban,
+  Bell,
   CalendarDays,
   CheckCircle2,
   Clock,
-  CreditCard,
-  FileText,
-  Globe2,
-  Laptop,
-  MapPin,
-  Shield,
-  Tag,
-  UserCog,
-  Wallet,
-  AlertTriangle,
-  Bell,
-  Check,
-  ChevronRight,
-  CircleDollarSign,
   Copy,
+  CreditCard,
   Database,
+  FileText,
   Fingerprint,
+  Globe2,
   KeyRound,
   Lock,
   Mail,
+  MapPin,
   MonitorSmartphone,
   MousePointerClick,
   Network,
-  Receipt,
   RefreshCw,
+  Shield,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
+  Tag,
   User,
+  UserCog,
+  Wallet,
   XCircle,
 } from "lucide-react"
 
@@ -109,7 +102,6 @@ type AdminUserDetail = {
 }
 
 type TabKey = "overview" | "billing" | "activity" | "permissions"
-
 type BadgeTone = "neutral" | "green" | "red" | "blue" | "yellow" | "purple" | "orange" | "cyan"
 
 function safeName(user: AdminUserDetail) {
@@ -118,22 +110,32 @@ function safeName(user: AdminUserDetail) {
 }
 
 function initials(user: AdminUserDetail) {
-  return (
-    safeName(user)
-      .split(" ")
-      .filter(Boolean)
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "U"
-  )
+  const name = safeName(user)
+  const parts = name.split(" ").filter(Boolean)
+
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+  }
+
+  return name.slice(0, 2).toUpperCase()
+}
+
+function cleanLawSchool(value?: string | null) {
+  if (!value) return "No law school"
+
+  const normalized = value.trim().toUpperCase()
+
+  if (normalized === "HILS") return "Handong International Law School"
+  if (normalized === "HLS") return "Harvard Law School"
+
+  return value.trim()
 }
 
 function formatRelative(dateString?: string | null) {
-  if (!dateString) return "—"
+  if (!dateString) return "No activity yet"
 
   const date = new Date(dateString)
-  if (Number.isNaN(date.getTime())) return "—"
+  if (Number.isNaN(date.getTime())) return "No activity yet"
 
   const diffMs = Date.now() - date.getTime()
   const mins = Math.floor(diffMs / 60000)
@@ -155,10 +157,10 @@ function formatRelative(dateString?: string | null) {
 }
 
 function formatDateTime(value?: string | null) {
-  if (!value) return "—"
+  if (!value) return "Not recorded"
 
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "—"
+  if (Number.isNaN(date.getTime())) return "Not recorded"
 
   return new Intl.DateTimeFormat("en", {
     year: "numeric",
@@ -170,7 +172,7 @@ function formatDateTime(value?: string | null) {
 }
 
 function normalizeSource(value?: string | null) {
-  if (!value) return "—"
+  if (!value) return "No source captured"
 
   return value
     .replace(/_/g, " ")
@@ -185,7 +187,7 @@ function locationLabel(user: AdminUserDetail) {
     .filter(Boolean)
     .map((part) => String(part))
 
-  if (parts.length === 0) return "—"
+  if (parts.length === 0) return "No location captured"
   return parts.join(", ")
 }
 
@@ -197,7 +199,7 @@ function statusLabel(user: AdminUserDetail) {
 }
 
 function planLabel(user: AdminUserDetail) {
-  return user.subscription_tier?.trim() || "free"
+  return user.subscription_tier?.trim() || "Free"
 }
 
 function planTone(user: AdminUserDetail): BadgeTone {
@@ -218,8 +220,8 @@ function accountRisk(user: AdminUserDetail) {
     return {
       label: "Deleted",
       tone: "red" as BadgeTone,
-      title: "Account deleted",
-      description: "This user has a deletion timestamp.",
+      title: "Deleted account",
+      description: "This user record has a deletion timestamp.",
       icon: <XCircle className="h-5 w-5" />,
     }
   }
@@ -236,11 +238,11 @@ function accountRisk(user: AdminUserDetail) {
 
   if (user.pending_deletion) {
     return {
-      label: "Deletion pending",
+      label: "Pending deletion",
       tone: "orange" as BadgeTone,
-      title: "Deletion pending",
+      title: "Deletion requested",
       description: "The user requested account deletion.",
-      icon: <AlertTriangle className="h-5 w-5" />,
+      icon: <ShieldAlert className="h-5 w-5" />,
     }
   }
 
@@ -248,17 +250,17 @@ function accountRisk(user: AdminUserDetail) {
     return {
       label: "Privileged",
       tone: "purple" as BadgeTone,
-      title: "Admin account",
-      description: "This account has elevated permissions.",
+      title: "Privileged admin account",
+      description: "This user has elevated admin access. Review permissions carefully.",
       icon: <Shield className="h-5 w-5" />,
     }
   }
 
   return {
-    label: "Normal",
+    label: "Standard",
     tone: "green" as BadgeTone,
-    title: "No account restriction",
-    description: "The account is active and not blocked.",
+    title: "Standard active account",
+    description: "No block, deletion request, or elevated admin status is active.",
     icon: <ShieldCheck className="h-5 w-5" />,
   }
 }
@@ -266,9 +268,9 @@ function accountRisk(user: AdminUserDetail) {
 function toneStyle(tone: BadgeTone): CSSProperties {
   const styles: Record<BadgeTone, CSSProperties> = {
     neutral: {
-      background: "#F4F6FA",
-      color: "#667085",
-      border: "1px solid #E6EAF2",
+      background: "#F8FAFC",
+      color: "#475467",
+      border: "1px solid #E2E8F0",
     },
     green: {
       background: "#ECFDF3",
@@ -319,7 +321,7 @@ function Badge({
 }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold"
       style={toneStyle(tone)}
     >
       {children}
@@ -327,7 +329,7 @@ function Badge({
   )
 }
 
-function ActionButton({
+function Button({
   children,
   onClick,
   disabled,
@@ -336,28 +338,26 @@ function ActionButton({
   children: ReactNode
   onClick: () => void
   disabled?: boolean
-  tone?: "neutral" | "danger" | "success" | "primary"
+  tone?: "neutral" | "danger" | "success"
 }) {
   const styles: Record<string, CSSProperties> = {
     neutral: {
       background: "#FFFFFF",
       color: "#344054",
       border: "1px solid #D0D5DD",
+      boxShadow: "0 1px 2px rgba(16, 24, 40, 0.06)",
     },
     danger: {
       background: "#D92D20",
       color: "#FFFFFF",
       border: "1px solid #D92D20",
+      boxShadow: "0 8px 18px rgba(217, 45, 32, 0.22)",
     },
     success: {
       background: "#039855",
       color: "#FFFFFF",
       border: "1px solid #039855",
-    },
-    primary: {
-      background: "#2563EB",
-      color: "#FFFFFF",
-      border: "1px solid #2563EB",
+      boxShadow: "0 8px 18px rgba(3, 152, 85, 0.18)",
     },
   }
 
@@ -366,11 +366,80 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-[12.5px] font-semibold shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-[12.5px] font-semibold transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
       style={styles[tone]}
     >
       {children}
     </button>
+  )
+}
+
+function Panel({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+}) {
+  return (
+    <section
+      className="overflow-hidden rounded-[24px] bg-white"
+      style={{
+        border: "1px solid #E5E7EB",
+        boxShadow: "0 16px 40px rgba(15, 23, 42, 0.045)",
+      }}
+    >
+      <div className="px-5 py-4">
+        <h2 className="text-[15px] font-bold tracking-[-0.02em] text-slate-950">
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-1 text-[12.5px] leading-5 text-slate-500">
+            {description}
+          </p>
+        ) : null}
+      </div>
+
+      <div style={{ borderTop: "1px solid #EEF2F7" }}>{children}</div>
+    </section>
+  )
+}
+
+function InfoGrid({
+  children,
+  columns = 2,
+}: {
+  children: ReactNode
+  columns?: 2 | 3
+}) {
+  return (
+    <div
+      className="grid gap-px bg-[#EEF2F7]"
+      style={{ gridTemplateColumns: columns === 3 ? "repeat(3, minmax(0, 1fr))" : "repeat(2, minmax(0, 1fr))" }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function InfoItem({
+  label,
+  value,
+}: {
+  label: string
+  value: ReactNode
+}) {
+  return (
+    <div className="bg-white px-5 py-4">
+      <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.11em] text-slate-400">
+        {label}
+      </div>
+      <div className="break-words text-[13px] font-semibold leading-6 text-slate-950">
+        {value || "—"}
+      </div>
+    </div>
   )
 }
 
@@ -389,111 +458,38 @@ function MetricCard({
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl bg-white p-4"
+      className="relative overflow-hidden rounded-[22px] bg-white p-5"
       style={{
-        border: "1px solid #EAECF0",
-        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.04)",
+        border: "1px solid #E5E7EB",
+        boxShadow: "0 16px 40px rgba(15, 23, 42, 0.045)",
       }}
     >
       <div
-        className="absolute right-0 top-0 h-20 w-20 rounded-bl-[40px] opacity-60"
+        className="absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-80"
         style={{ background: toneStyle(tone).background }}
       />
 
-      <div className="relative mb-4 flex items-center justify-between gap-3">
-        <div className="text-[12px] font-semibold uppercase tracking-[0.08em]" style={{ color: "#667085" }}>
-          {label}
+      <div className="relative flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            {label}
+          </div>
+          <div className="mt-5 text-[25px] font-bold tracking-[-0.05em] text-slate-950">
+            {value}
+          </div>
+          {sub ? (
+            <div className="mt-1 text-[12.5px] leading-5 text-slate-500">
+              {sub}
+            </div>
+          ) : null}
         </div>
+
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-xl"
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
           style={toneStyle(tone)}
         >
           {icon}
         </div>
-      </div>
-
-      <div className="relative text-[24px] font-bold tracking-[-0.04em]" style={{ color: "#101828" }}>
-        {value}
-      </div>
-
-      {sub ? (
-        <div className="relative mt-1 text-[12px] leading-5" style={{ color: "#667085" }}>
-          {sub}
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-function Panel({
-  title,
-  description,
-  action,
-  children,
-}: {
-  title: string
-  description?: string
-  action?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section
-      className="overflow-hidden rounded-2xl bg-white"
-      style={{
-        border: "1px solid #EAECF0",
-        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.04)",
-      }}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
-        <div>
-          <h2 className="text-[15px] font-semibold tracking-[-0.02em]" style={{ color: "#101828" }}>
-            {title}
-          </h2>
-          {description ? (
-            <p className="mt-1 text-[12px] leading-5" style={{ color: "#667085" }}>
-              {description}
-            </p>
-          ) : null}
-        </div>
-        {action}
-      </div>
-
-      <div style={{ borderTop: "1px solid #EAECF0" }}>{children}</div>
-    </section>
-  )
-}
-
-function InfoGrid({
-  children,
-  columns = 2,
-}: {
-  children: ReactNode
-  columns?: 2 | 3
-}) {
-  return (
-    <div
-      className="grid gap-px bg-[#EAECF0]"
-      style={{ gridTemplateColumns: columns === 3 ? "repeat(3, minmax(0, 1fr))" : "repeat(2, minmax(0, 1fr))" }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function InfoItem({
-  label,
-  value,
-}: {
-  label: string
-  value: ReactNode
-}) {
-  return (
-    <div className="bg-white px-5 py-4">
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "#98A2B3" }}>
-        {label}
-      </div>
-      <div className="break-words text-[13px] font-semibold leading-6" style={{ color: "#101828" }}>
-        {value || "—"}
       </div>
     </div>
   )
@@ -512,7 +508,7 @@ function PermissionTile({
     <div
       className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4"
       style={{
-        border: "1px solid #EAECF0",
+        border: "1px solid #E5E7EB",
       }}
     >
       <div className="flex items-center gap-3">
@@ -522,7 +518,7 @@ function PermissionTile({
         >
           {icon}
         </div>
-        <span className="text-[13px] font-semibold" style={{ color: "#344054" }}>
+        <span className="text-[13px] font-semibold text-slate-700">
           {label}
         </span>
       </div>
@@ -547,7 +543,7 @@ function TimelineItem({
   return (
     <div className="flex gap-3">
       <div
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
         style={toneStyle(tone)}
       >
         {icon}
@@ -555,10 +551,10 @@ function TimelineItem({
       <div className="min-w-0 flex-1 border-b border-slate-100 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-[13px] font-semibold text-slate-950">{title}</div>
-            <div className="mt-1 text-[12px] leading-5 text-slate-500">{description}</div>
+            <div className="text-[13px] font-bold text-slate-950">{title}</div>
+            <div className="mt-1 text-[12.5px] leading-5 text-slate-500">{description}</div>
           </div>
-          <div className="shrink-0 text-[12px] font-medium text-slate-400">{time}</div>
+          <div className="shrink-0 text-[12px] font-semibold text-slate-400">{time}</div>
         </div>
       </div>
     </div>
@@ -579,11 +575,11 @@ function EmptyBillingState() {
         <CreditCard className="h-5 w-5" />
       </div>
 
-      <h3 className="text-[14px] font-semibold" style={{ color: "#101828" }}>
+      <h3 className="text-[14px] font-bold text-slate-950">
         Paddle billing history is not connected yet
       </h3>
 
-      <p className="mx-auto mt-2 max-w-xl text-[13px] leading-6" style={{ color: "#667085" }}>
+      <p className="mx-auto mt-2 max-w-xl text-[13px] leading-6 text-slate-500">
         This page will show real Paddle customer, subscription, transaction, discount,
         and invoice data after those records are stored in the database.
       </p>
@@ -718,11 +714,8 @@ export default function AdminUserDetailPage() {
     return (
       <div className="min-h-[calc(100vh-64px)] bg-[#F8FAFC] p-6">
         <div
-          className="rounded-2xl bg-white p-6 text-[13px]"
-          style={{
-            border: "1px solid #EAECF0",
-            color: "#667085",
-          }}
+          className="rounded-2xl bg-white p-6 text-[13px] text-slate-500"
+          style={{ border: "1px solid #EAECF0" }}
         >
           Loading user record...
         </div>
@@ -735,8 +728,7 @@ export default function AdminUserDetailPage() {
       <div className="min-h-[calc(100vh-64px)] bg-[#F8FAFC] p-6">
         <Link
           href="/admin/users"
-          className="mb-4 inline-flex items-center gap-2 text-[13px] font-medium"
-          style={{ color: "#344054" }}
+          className="mb-4 inline-flex items-center gap-2 text-[13px] font-semibold text-slate-700"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to users
@@ -770,21 +762,26 @@ export default function AdminUserDetailPage() {
   const examDate =
     user.exam_month || user.exam_year
       ? `${user.exam_month || "—"} / ${user.exam_year || "—"}`
-      : "—"
+      : "No exam date"
+
+  const mainLocation =
+    user.last_country || user.last_ip_address || "No location"
+
+  const locationSub =
+    user.last_country ? user.last_ip_address || "No IP captured" : "No country captured"
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#F8FAFC] text-[#101828]">
+    <div className="min-h-[calc(100vh-64px)] bg-[#F6F8FB] text-slate-950">
       <div
-        className="sticky top-0 z-20 bg-[#F8FAFC]/95 px-6 py-4 backdrop-blur"
-        style={{ borderBottom: "1px solid #EAECF0" }}
+        className="sticky top-0 z-20 bg-[#F6F8FB]/95 px-6 py-4 backdrop-blur"
+        style={{ borderBottom: "1px solid #E5E7EB" }}
       >
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-3">
           <Link
             href="/admin/users"
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3 text-[12.5px] font-semibold"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-3 text-[12.5px] font-semibold text-slate-700"
             style={{
               border: "1px solid #D0D5DD",
-              color: "#344054",
               boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
             }}
           >
@@ -793,12 +790,8 @@ export default function AdminUserDetailPage() {
           </Link>
 
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold" style={{ color: "#101828" }}>
-              User record
-            </div>
-            <div className="truncate text-[12px]" style={{ color: "#667085" }}>
-              {user.email}
-            </div>
+            <div className="text-[13px] font-bold text-slate-950">User record</div>
+            <div className="truncate text-[12px] text-slate-500">{user.email}</div>
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -840,52 +833,55 @@ export default function AdminUserDetailPage() {
         <section
           className="overflow-hidden rounded-[28px] bg-white"
           style={{
-            border: "1px solid #EAECF0",
-            boxShadow: "0 18px 50px rgba(15, 23, 42, 0.06)",
+            border: "1px solid #E5E7EB",
+            boxShadow: "0 24px 70px rgba(15, 23, 42, 0.06)",
           }}
         >
-          <div className="relative overflow-hidden p-6">
+          <div className="relative overflow-hidden p-7">
             <div
-              className="absolute right-0 top-0 h-full w-[380px] opacity-80"
+              className="absolute inset-y-0 right-0 w-[520px]"
               style={{
                 background:
-                  "radial-gradient(circle at top right, rgba(37,99,235,0.12), transparent 50%), radial-gradient(circle at bottom right, rgba(16,185,129,0.10), transparent 45%)",
+                  "radial-gradient(circle at 75% 25%, rgba(37, 99, 235, 0.12), transparent 38%), radial-gradient(circle at 85% 75%, rgba(20, 184, 166, 0.12), transparent 34%)",
               }}
             />
 
             <div className="relative flex flex-wrap items-start gap-5">
               <div
-                className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[24px] text-[28px] font-bold text-white shadow-lg"
-                style={{ background: "linear-gradient(135deg, #1D2939, #475467)" }}
+                className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[26px] text-[28px] font-bold text-white"
+                style={{
+                  background: "linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)",
+                  boxShadow: "0 18px 34px rgba(37, 99, 235, 0.28)",
+                }}
               >
                 {initials(user)}
               </div>
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-[34px] font-bold tracking-[-0.055em]" style={{ color: "#101828" }}>
+                  <h1 className="text-[34px] font-bold tracking-[-0.055em] text-slate-950">
                     {safeName(user)}
                   </h1>
                   {user.mbe_access ? <Badge tone="green">MBE access</Badge> : <Badge>No MBE access</Badge>}
                   <Badge tone={risk.tone}>{risk.label}</Badge>
                 </div>
 
-                <div className="mt-3 grid gap-2 text-[13px] md:grid-cols-4" style={{ color: "#667085" }}>
+                <div className="mt-4 grid gap-3 text-[13px] text-slate-500" style={{ gridTemplateColumns: "1.4fr 1fr 1.5fr 1fr" }}>
                   <div className="flex min-w-0 items-center gap-2 truncate">
-                    <Mail className="h-4 w-4 shrink-0" />
+                    <Mail className="h-4 w-4 shrink-0 text-slate-400" />
                     <span className="truncate">{user.email}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="h-4 w-4 text-slate-400" />
                     <span>{user.jurisdiction || "No jurisdiction"}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <span>{user.law_school || "No law school"}</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <FileText className="h-4 w-4 shrink-0 text-slate-400" />
+                    <span className="truncate">{cleanLawSchool(user.law_school)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4" />
-                    <span>Exam {examDate}</span>
+                    <CalendarDays className="h-4 w-4 text-slate-400" />
+                    <span>{examDate}</span>
                   </div>
                 </div>
 
@@ -912,47 +908,47 @@ export default function AdminUserDetailPage() {
 
               <div className="relative flex flex-wrap justify-end gap-2">
                 {user.is_blocked ? (
-                  <ActionButton
+                  <Button
                     tone="success"
                     onClick={() => void runAction("unblock")}
                     disabled={savingAction === "unblock"}
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     Unblock
-                  </ActionButton>
+                  </Button>
                 ) : (
-                  <ActionButton
+                  <Button
                     tone="danger"
                     onClick={() => void runAction("block")}
                     disabled={savingAction === "block"}
                   >
                     <Ban className="h-4 w-4" />
                     Block
-                  </ActionButton>
+                  </Button>
                 )}
 
                 {user.is_admin ? (
-                  <ActionButton
+                  <Button
                     onClick={() => void runAction("remove_admin")}
                     disabled={savingAction === "remove_admin"}
                   >
                     <UserCog className="h-4 w-4" />
                     Remove admin
-                  </ActionButton>
+                  </Button>
                 ) : (
-                  <ActionButton
+                  <Button
                     onClick={() => void runAction("make_admin")}
                     disabled={savingAction === "make_admin"}
                   >
                     <UserCog className="h-4 w-4" />
                     Make admin
-                  </ActionButton>
+                  </Button>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="grid gap-px bg-[#EAECF0]" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+          <div className="grid gap-px bg-[#EEF2F7]" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
             <MetricCard
               label="Current plan"
               value={planLabel(user)}
@@ -963,7 +959,7 @@ export default function AdminUserDetailPage() {
             <MetricCard
               label="Last active"
               value={formatRelative(user.last_active_at)}
-              sub={normalizeSource(user.last_activity_source)}
+              sub={`${formatDateTime(user.last_active_at)} · ${normalizeSource(user.last_activity_source)}`}
               tone={user.is_online ? "green" : "blue"}
               icon={<Activity className="h-4 w-4" />}
             />
@@ -975,9 +971,9 @@ export default function AdminUserDetailPage() {
               icon={<Clock className="h-4 w-4" />}
             />
             <MetricCard
-              label="Location"
-              value={user.last_country || "—"}
-              sub={user.last_ip_address || "No IP captured"}
+              label="Location / IP"
+              value={mainLocation}
+              sub={locationSub}
               tone="cyan"
               icon={<Globe2 className="h-4 w-4" />}
             />
@@ -1002,19 +998,19 @@ export default function AdminUserDetailPage() {
                 <div className="mt-4 space-y-3 text-[13px]">
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Role</span>
-                    <span className="font-semibold text-slate-950">{user.role || "user"}</span>
+                    <span className="font-bold text-slate-950">{user.role || "user"}</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Admin role</span>
-                    <span className="font-semibold text-slate-950">{user.admin_role || "—"}</span>
+                    <span className="font-bold text-slate-950">{user.admin_role || "—"}</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Account age</span>
-                    <span className="font-semibold text-slate-950">{user.account_age_days} days</span>
+                    <span className="font-bold text-slate-950">{user.account_age_days} days</span>
                   </div>
                   <div className="flex justify-between gap-4">
                     <span className="text-slate-500">Workspace</span>
-                    <span className="font-semibold text-slate-950">{user.workspace_status || "—"}</span>
+                    <span className="font-bold text-slate-950">{user.workspace_status || "—"}</span>
                   </div>
                 </div>
               </div>
@@ -1025,7 +1021,7 @@ export default function AdminUserDetailPage() {
                 <div className="flex items-start gap-3">
                   <MonitorSmartphone className="mt-0.5 h-5 w-5 text-slate-400" />
                   <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-slate-950">User agent</div>
+                    <div className="text-[13px] font-bold text-slate-950">User agent</div>
                     <div className="mt-1 break-words text-[12px] leading-5 text-slate-500">
                       {user.last_user_agent || "No user agent captured"}
                     </div>
@@ -1035,15 +1031,15 @@ export default function AdminUserDetailPage() {
                 <div className="flex items-start gap-3">
                   <Network className="mt-0.5 h-5 w-5 text-slate-400" />
                   <div>
-                    <div className="text-[13px] font-semibold text-slate-950">IP address</div>
-                    <div className="mt-1 text-[12px] text-slate-500">{user.last_ip_address || "—"}</div>
+                    <div className="text-[13px] font-bold text-slate-950">IP address</div>
+                    <div className="mt-1 text-[12px] text-slate-500">{user.last_ip_address || "No IP captured"}</div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <Globe2 className="mt-0.5 h-5 w-5 text-slate-400" />
                   <div>
-                    <div className="text-[13px] font-semibold text-slate-950">Location</div>
+                    <div className="text-[13px] font-bold text-slate-950">Location</div>
                     <div className="mt-1 text-[12px] text-slate-500">{locationLabel(user)}</div>
                   </div>
                 </div>
@@ -1055,8 +1051,8 @@ export default function AdminUserDetailPage() {
             <div
               className="inline-flex rounded-2xl bg-white p-1"
               style={{
-                border: "1px solid #EAECF0",
-                boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
+                border: "1px solid #E5E7EB",
+                boxShadow: "0 10px 28px rgba(15, 23, 42, 0.045)",
               }}
             >
               {tabs.map((tab) => (
@@ -1064,16 +1060,16 @@ export default function AdminUserDetailPage() {
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold transition"
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-bold transition"
                   style={
                     activeTab === tab.key
                       ? {
-                          background: "#101828",
+                          background: "#111827",
                           color: "#ffffff",
                         }
                       : {
                           background: "transparent",
-                          color: "#667085",
+                          color: "#64748B",
                         }
                   }
                 >
@@ -1090,7 +1086,7 @@ export default function AdminUserDetailPage() {
                     <InfoItem label="Full name" value={user.full_name || "—"} />
                     <InfoItem label="Email" value={user.email} />
                     <InfoItem label="Phone" value={user.phone_number || "—"} />
-                    <InfoItem label="Law school" value={user.law_school || "—"} />
+                    <InfoItem label="Law school" value={cleanLawSchool(user.law_school)} />
                     <InfoItem label="Jurisdiction" value={user.jurisdiction || "—"} />
                     <InfoItem label="Exam date" value={examDate} />
                   </InfoGrid>
@@ -1113,7 +1109,7 @@ export default function AdminUserDetailPage() {
                       tone="blue"
                       icon={<Activity className="h-4 w-4" />}
                       title="Last activity"
-                      description={normalizeSource(user.last_activity_source)}
+                      description={`${formatDateTime(user.last_active_at)} · ${normalizeSource(user.last_activity_source)}`}
                       time={formatRelative(user.last_active_at)}
                     />
                     <TimelineItem
@@ -1125,10 +1121,10 @@ export default function AdminUserDetailPage() {
                     />
                     <TimelineItem
                       tone="green"
-                      icon={<Check className="h-4 w-4" />}
+                      icon={<CheckCircle2 className="h-4 w-4" />}
                       title="Account created"
                       description={formatDateTime(user.created_at)}
-                      time={`${user.account_age_days} days ago`}
+                      time={`${user.account_age_days} days old`}
                     />
                   </div>
                 </Panel>
@@ -1263,10 +1259,9 @@ export default function AdminUserDetailPage() {
         </section>
 
         <div
-          className="rounded-2xl bg-white px-5 py-4 text-[12px] leading-5"
+          className="rounded-2xl bg-white px-5 py-4 text-[12px] leading-5 text-slate-500"
           style={{
-            border: "1px solid #EAECF0",
-            color: "#667085",
+            border: "1px solid #E5E7EB",
           }}
         >
           Paddle billing data is intentionally shown as unavailable until Paddle customer,
