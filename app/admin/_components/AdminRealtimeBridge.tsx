@@ -55,6 +55,20 @@ type ToastState = {
   type: string
 }
 
+type AblyTokenRequestPayload = {
+  keyName: string
+  ttl: number
+  timestamp: number
+  capability: string
+  clientId: string
+  nonce: string
+  mac: string
+}
+
+let cachedTokenRequest: AblyTokenRequestPayload | null = null
+let cachedTokenFetchedAt = 0
+let tokenRequestPromise: Promise<AblyTokenRequestPayload> | null = null
+
 function cleanText(value: unknown, fallback: string) {
   const text = typeof value === "string" ? value.trim() : ""
   return text || fallback
@@ -62,7 +76,6 @@ function cleanText(value: unknown, fallback: string) {
 
 function getPopupsEnabled() {
   if (typeof window === "undefined") return true
-
   const value = window.localStorage.getItem("lexora:admin:notification-popups-enabled")
   return value !== "false"
 }
@@ -71,7 +84,6 @@ function getMutedDmMemberIds() {
   if (typeof window === "undefined") return new Set<string>()
 
   const raw = window.localStorage.getItem("lexora:admin:workspace-muted-dm-member-ids")
-
   if (!raw) return new Set<string>()
 
   try {
@@ -83,6 +95,70 @@ function getMutedDmMemberIds() {
   }
 }
 
+async function getCachedAblyTokenRequest(): Promise<AblyTokenRequestPayload> {
+  const now = Date.now()
+  const token = cachedTokenRequest
+
+  if (token && cachedTokenFetchedAt > 0 && now - cachedTokenFetchedAt < 45 * 60 * 1000) {
+    return token
+  }
+
+  if (tokenRequestPromise) {
+    return tokenRequestPromise
+  }
+
+  tokenRequestPromise = fetch("/api/admin/ably-token", {
+    cache: "no-store",
+  })
+    .then(async (res): Promise<AblyTokenRequestPayload> => {
+      const data = (await res.json().catch(() => null)) as AblyTokenRequestPayload | null
+
+      if (
+        !res.ok ||
+        !data ||
+        typeof data.clientId !== "string" ||
+        typeof data.keyName !== "string" ||
+        typeof data.capability !== "string" ||
+        typeof data.nonce !== "string" ||
+        typeof data.mac !== "string"
+      ) {
+        throw new Error("Failed to load admin realtime token.")
+      }
+
+      cachedTokenRequest = data
+      cachedTokenFetchedAt = Date.now()
+      return data
+    })
+    .finally(() => {
+      tokenRequestPromise = null
+    })
+
+  return tokenRequestPromise
+}
+
+function waitForConnected(client: Ably.Realtime) {
+  return new Promise<void>((resolve, reject) => {
+    if (client.connection.state === "connected") {
+      resolve()
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      reject(new Error("Admin realtime connection timed out."))
+    }, 12000)
+
+    client.connection.once("connected", () => {
+      window.clearTimeout(timeout)
+      resolve()
+    })
+
+    client.connection.once("failed", () => {
+      window.clearTimeout(timeout)
+      reject(new Error("Admin realtime connection failed."))
+    })
+  })
+}
+
 export default function AdminRealtimeBridge() {
   const clientRef = useRef<Ably.Realtime | null>(null)
   const typingChannelRef = useRef<{
@@ -91,6 +167,7 @@ export default function AdminRealtimeBridge() {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const seenEventIdsRef = useRef<Set<string>>(new Set())
   const activeDmIdRef = useRef<string | null>(null)
+  const startedRef = useRef(false)
 
   const [toast, setToast] = useState<ToastState | null>(null)
 
@@ -101,10 +178,7 @@ export default function AdminRealtimeBridge() {
     }
 
     window.addEventListener("admin:workspace-active-dm-changed", handleActiveDmChanged)
-
-    return () => {
-      window.removeEventListener("admin:workspace-active-dm-changed", handleActiveDmChanged)
-    }
+    return () => window.removeEventListener("admin:workspace-active-dm-changed", handleActiveDmChanged)
   }, [])
 
   useEffect(() => {
@@ -123,22 +197,16 @@ export default function AdminRealtimeBridge() {
     }
 
     window.addEventListener("admin:workspace-typing-publish", handleTypingPublish)
-
-    return () => {
-      window.removeEventListener("admin:workspace-typing-publish", handleTypingPublish)
-    }
+    return () => window.removeEventListener("admin:workspace-typing-publish", handleTypingPublish)
   }, [])
 
   useEffect(() => {
+    if (startedRef.current) return
+    startedRef.current = true
+
     let alive = true
-
-    const client = new Ably.Realtime({
-      authUrl: "/api/admin/ably-token",
-      autoConnect: true,
-      closeOnUnload: true,
-    })
-
-    clientRef.current = client
+    let userChannel: any = null
+    let typingChannel: any = null
 
     async function markNotificationRead(notificationId: string) {
       if (!notificationId) return
@@ -146,6 +214,7 @@ export default function AdminRealtimeBridge() {
       try {
         await fetch(`/api/admin/notifications/${notificationId}/read`, {
           method: "POST",
+          cache: "no-store",
         })
       } catch {
         // Do not break realtime UI because read-sync failed.
@@ -154,16 +223,35 @@ export default function AdminRealtimeBridge() {
 
     async function subscribe() {
       try {
-        const tokenDetails = await client.auth.authorize()
-        const clientId = tokenDetails.clientId
+        const firstTokenRequest = await getCachedAblyTokenRequest()
+        const clientId = firstTokenRequest.clientId
 
         if (!alive || !clientId) return
 
-        const channel = client.channels.get(`admin:user:${clientId}`)
-        const typingChannel = client.channels.get("admin:workspace:typing")
+        const client = new Ably.Realtime({
+          authCallback: (_tokenParams, callback) => {
+            void getCachedAblyTokenRequest()
+              .then((nextTokenRequest) => {
+                callback(null, nextTokenRequest as any)
+              })
+              .catch((error) => {
+                callback(error, null)
+              })
+          },
+          autoConnect: true,
+          closeOnUnload: true,
+        })
+
+        clientRef.current = client
+        await waitForConnected(client)
+
+        if (!alive) return
+
+        userChannel = client.channels.get(`admin:user:${clientId}`)
+        typingChannel = client.channels.get("admin:workspace:typing")
         typingChannelRef.current = typingChannel
 
-        await typingChannel.subscribe("typing", (message) => {
+        await typingChannel.subscribe("typing", (message: any) => {
           const data = message.data as WorkspaceTypingPayload | null
           if (!data || data.type !== "workspace_typing") return
           if (data.senderId === clientId) return
@@ -175,7 +263,7 @@ export default function AdminRealtimeBridge() {
           )
         })
 
-        await channel.subscribe((message) => {
+        await userChannel.subscribe((message: any) => {
           const data = message.data as AdminRealtimeEvent | null
           if (!data) return
 
@@ -210,9 +298,7 @@ export default function AdminRealtimeBridge() {
           const popupsEnabled = getPopupsEnabled()
 
           if (isSameOpenDm) {
-            if (notificationId) {
-              void markNotificationRead(notificationId)
-            }
+            if (notificationId) void markNotificationRead(notificationId)
             return
           }
 
@@ -224,9 +310,7 @@ export default function AdminRealtimeBridge() {
             )
           }
 
-          if (!popupsEnabled || isMutedSender) {
-            return
-          }
+          if (!popupsEnabled || isMutedSender) return
 
           const notification = data.notification
 
@@ -248,9 +332,7 @@ export default function AdminRealtimeBridge() {
 
           setToast(nextToast)
 
-          if (toastTimerRef.current) {
-            clearTimeout(toastTimerRef.current)
-          }
+          if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
 
           toastTimerRef.current = setTimeout(() => {
             setToast(null)
@@ -265,18 +347,18 @@ export default function AdminRealtimeBridge() {
 
     return () => {
       alive = false
+      startedRef.current = false
 
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current)
-      }
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+
+      if (userChannel) void userChannel.unsubscribe()
+      if (typingChannel) void typingChannel.unsubscribe("typing")
 
       const activeClient = clientRef.current
       clientRef.current = null
       typingChannelRef.current = null
 
-      if (activeClient) {
-        activeClient.close()
-      }
+      if (activeClient) activeClient.close()
     }
   }, [])
 
@@ -287,9 +369,7 @@ export default function AdminRealtimeBridge() {
       <button
         type="button"
         onClick={() => {
-          if (toast.href) {
-            window.location.href = toast.href
-          }
+          if (toast.href) window.location.href = toast.href
         }}
         className="group flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-2xl shadow-slate-900/15 transition hover:-translate-y-0.5 hover:shadow-slate-900/20"
       >

@@ -24,6 +24,16 @@ type AdminNotification = {
   createdAt: string
 }
 
+type RealtimeNotificationPayload = {
+  id?: string
+  title?: string
+  body?: string
+  href?: string | null
+  type?: string
+  severity?: string
+  createdAt?: string
+}
+
 type NotificationsResponse = {
   ok: boolean
   unreadCount: number
@@ -62,20 +72,36 @@ function notificationIcon(type: string) {
   return <Bell size={15} />
 }
 
+function toNotification(payload: RealtimeNotificationPayload): AdminNotification | null {
+  if (!payload.id) return null
+
+  return {
+    id: payload.id,
+    adminId: "",
+    actorAdminId: null,
+    type: payload.type || "system_alert",
+    title: payload.title || "New notification",
+    body: payload.body || "Something new happened.",
+    href: payload.href || null,
+    metadata: {},
+    readAt: null,
+    createdAt: payload.createdAt || new Date().toISOString(),
+  }
+}
+
 export default function AdminNotificationsBell() {
   const router = useRouter()
 
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loadingInitial, setLoadingInitial] = useState(false)
+  const [loadingList, setLoadingList] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifications, setNotifications] = useState<AdminNotification[]>([])
-  const [toast, setToast] = useState<AdminNotification | null>(null)
+  const [loadedFullList, setLoadedFullList] = useState(false)
 
   const wrapperRef = useRef<HTMLDivElement | null>(null)
   const knownUnreadIdsRef = useRef<Set<string>>(new Set())
-  const initializedRef = useRef(false)
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const hasUnread = unreadCount > 0
 
@@ -83,23 +109,33 @@ export default function AdminNotificationsBell() {
     return notifications.slice(0, 12)
   }, [notifications])
 
-  async function loadNotifications(showLoading = false) {
+  async function loadNotifications(options?: {
+    showInitialLoading?: boolean
+    showListLoading?: boolean
+    limit?: number
+  }) {
+    const limit = options?.limit || 20
+
     try {
-      if (showLoading) {
-        setLoading(true)
-      } else {
+      if (options?.showInitialLoading) {
+        setLoadingInitial(true)
+      }
+
+      if (options?.showListLoading) {
+        setLoadingList(true)
+      }
+
+      if (!options?.showInitialLoading && !options?.showListLoading) {
         setRefreshing(true)
       }
 
-      const res = await fetch("/api/admin/notifications?limit=20", {
+      const res = await fetch(`/api/admin/notifications?limit=${limit}`, {
         cache: "no-store",
       })
 
       const data = (await res.json().catch(() => null)) as NotificationsResponse | null
 
-      if (!res.ok || !data?.ok) {
-        return
-      }
+      if (!res.ok || !data?.ok) return
 
       const nextNotifications = Array.isArray(data.notifications)
         ? data.notifications
@@ -111,17 +147,19 @@ export default function AdminNotificationsBell() {
           .map((item) => item.id),
       )
 
-      // Realtime popups are handled by AdminRealtimeBridge.
-      // This bell only maintains the dropdown list and unread badge.
       knownUnreadIdsRef.current = nextUnreadIds
-      initializedRef.current = true
 
       setNotifications(nextNotifications)
       setUnreadCount(typeof data.unreadCount === "number" ? data.unreadCount : 0)
+
+      if (limit >= 20) {
+        setLoadedFullList(true)
+      }
     } catch (error) {
       console.error("ADMIN NOTIFICATIONS LOAD ERROR:", error)
     } finally {
-      setLoading(false)
+      setLoadingInitial(false)
+      setLoadingList(false)
       setRefreshing(false)
     }
   }
@@ -174,7 +212,6 @@ export default function AdminNotificationsBell() {
   async function openNotification(notification: AdminNotification) {
     await markOneRead(notification.id)
     setOpen(false)
-    setToast(null)
 
     if (notification.href) {
       router.push(notification.href)
@@ -182,19 +219,56 @@ export default function AdminNotificationsBell() {
     }
   }
 
-  useEffect(() => {
-    loadNotifications(true)
+  function toggleOpen() {
+    setOpen((value) => {
+      const nextOpen = !value
 
-    const interval = window.setInterval(() => {
-      loadNotifications(false)
-    }, 12000)
+      if (nextOpen && !loadedFullList && !loadingList) {
+        void loadNotifications({
+          showListLoading: true,
+          limit: 20,
+        })
+      }
+
+      return nextOpen
+    })
+  }
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void loadNotifications({
+        showInitialLoading: true,
+        limit: 5,
+      })
+    }, 1200)
 
     return () => {
-      window.clearInterval(interval)
+      window.clearTimeout(timeout)
+    }
+  }, [])
 
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current)
+  useEffect(() => {
+    function handleNotificationCreated(event: Event) {
+      const customEvent = event as CustomEvent<RealtimeNotificationPayload>
+      const nextNotification = toNotification(customEvent.detail)
+
+      if (!nextNotification) return
+
+      setNotifications((items) => {
+        if (items.some((item) => item.id === nextNotification.id)) return items
+        return [nextNotification, ...items].slice(0, 20)
+      })
+
+      if (!knownUnreadIdsRef.current.has(nextNotification.id)) {
+        knownUnreadIdsRef.current.add(nextNotification.id)
+        setUnreadCount((value) => value + 1)
       }
+    }
+
+    window.addEventListener("admin:notification-created", handleNotificationCreated)
+
+    return () => {
+      window.removeEventListener("admin:notification-created", handleNotificationCreated)
     }
   }, [])
 
@@ -212,174 +286,148 @@ export default function AdminNotificationsBell() {
   }, [])
 
   return (
-    <>
-      <div ref={wrapperRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          className={`relative flex h-8 w-8 items-center justify-center rounded-md border transition ${
-            open
-              ? "border-blue-200 bg-blue-50 text-blue-600"
-              : "border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-          }`}
-          aria-label="Admin notifications"
-          title="Notifications"
-        >
-          {loading ? <Loader2 size={15} className="animate-spin" /> : <Bell size={15} />}
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={toggleOpen}
+        className={`relative flex h-8 w-8 items-center justify-center rounded-md border transition ${
+          open
+            ? "border-blue-200 bg-blue-50 text-blue-600"
+            : "border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+        }`}
+        aria-label="Admin notifications"
+        title="Notifications"
+      >
+        {loadingInitial ? <Loader2 size={15} className="animate-spin" /> : <Bell size={15} />}
 
-          {hasUnread ? (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          ) : null}
-        </button>
+        {hasUnread ? (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        ) : null}
+      </button>
 
-        {open ? (
-          <div className="absolute right-0 top-10 z-50 w-[380px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
-              <div>
-                <div className="text-[13px] font-semibold text-slate-950">
-                  Notifications
-                </div>
-                <div className="mt-0.5 text-[11.5px] text-slate-400">
-                  {unreadCount > 0
-                    ? `${unreadCount} unread admin notification${unreadCount === 1 ? "" : "s"}`
-                    : "You are all caught up"}
-                </div>
+      {open ? (
+        <div className="absolute right-0 top-10 z-50 w-[380px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+          <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+            <div>
+              <div className="text-[13px] font-semibold text-slate-950">
+                Notifications
               </div>
+              <div className="mt-0.5 text-[11.5px] text-slate-400">
+                {unreadCount > 0
+                  ? `${unreadCount} unread admin notification${unreadCount === 1 ? "" : "s"}`
+                  : "You are all caught up"}
+              </div>
+            </div>
 
-              <div className="flex items-center gap-1">
-                {unreadCount > 0 ? (
-                  <button
-                    type="button"
-                    onClick={markAllRead}
-                    className="flex h-7 items-center gap-1 rounded-md px-2 text-[11.5px] font-semibold text-blue-600 hover:bg-blue-50"
-                  >
-                    <CheckCheck size={13} />
-                    Read all
-                  </button>
-                ) : null}
-
+            <div className="flex items-center gap-1">
+              {unreadCount > 0 ? (
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  onClick={markAllRead}
+                  className="flex h-7 items-center gap-1 rounded-md px-2 text-[11.5px] font-semibold text-blue-600 hover:bg-blue-50"
                 >
-                  <X size={14} />
+                  <CheckCheck size={13} />
+                  Read all
                 </button>
-              </div>
-            </div>
-
-            <div className="max-h-[430px] overflow-y-auto">
-              {visibleNotifications.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400">
-                    <Bell size={18} />
-                  </div>
-                  <div className="mt-3 text-[13px] font-semibold text-slate-700">
-                    No notifications yet
-                  </div>
-                  <div className="mt-1 text-[12px] text-slate-400">
-                    Assigned tickets and admin alerts will appear here.
-                  </div>
-                </div>
-              ) : (
-                visibleNotifications.map((notification) => {
-                  const unread = !notification.readAt
-
-                  return (
-                    <button
-                      key={notification.id}
-                      type="button"
-                      onClick={() => openNotification(notification)}
-                      className={`grid w-full grid-cols-[32px_minmax(0,1fr)_auto] gap-3 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 ${
-                        unread ? "bg-blue-50/55 hover:bg-blue-50" : "bg-white hover:bg-slate-50"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                          unread
-                            ? "bg-blue-100 text-blue-600"
-                            : "bg-slate-50 text-slate-400"
-                        }`}
-                      >
-                        {notificationIcon(notification.type)}
-                      </span>
-
-                      <span className="min-w-0">
-                        <span className="flex items-center gap-2">
-                          {unread ? (
-                            <Circle size={7} className="fill-blue-600 text-blue-600" />
-                          ) : null}
-                          <span className="truncate text-[13px] font-semibold text-slate-950">
-                            {notification.title}
-                          </span>
-                        </span>
-
-                        <span className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500">
-                          {notification.body}
-                        </span>
-                      </span>
-
-                      <span className="text-[11px] font-medium text-slate-400">
-                        {formatNotificationTime(notification.createdAt)}
-                      </span>
-                    </button>
-                  )
-                })
-              )}
-            </div>
-
-            <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2">
-              <span className="text-[11.5px] text-slate-400">
-                Auto refreshes every 12 seconds
-              </span>
+              ) : null}
 
               <button
                 type="button"
-                onClick={() => loadNotifications(false)}
-                disabled={refreshing}
-                className="text-[11.5px] font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                onClick={() => setOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
               >
-                {refreshing ? "Refreshing..." : "Refresh"}
+                <X size={14} />
               </button>
             </div>
           </div>
-        ) : null}
-      </div>
 
-      {toast ? (
-        <div className="fixed bottom-5 right-5 z-[120] w-[360px] overflow-hidden rounded-xl border border-blue-200 bg-white shadow-2xl">
-          <button
-            type="button"
-            onClick={() => openNotification(toast)}
-            className="grid w-full grid-cols-[36px_minmax(0,1fr)_24px] gap-3 px-4 py-3 text-left hover:bg-blue-50/50"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              {notificationIcon(toast.type)}
+          <div className="max-h-[430px] overflow-y-auto">
+            {loadingList ? (
+              <div className="flex items-center justify-center gap-2 px-4 py-8 text-[13px] font-medium text-slate-500">
+                <Loader2 size={15} className="animate-spin" />
+                Loading notifications...
+              </div>
+            ) : visibleNotifications.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400">
+                  <Bell size={18} />
+                </div>
+                <div className="mt-3 text-[13px] font-semibold text-slate-700">
+                  No notifications yet
+                </div>
+                <div className="mt-1 text-[12px] text-slate-400">
+                  Assigned tickets and admin alerts will appear here.
+                </div>
+              </div>
+            ) : (
+              visibleNotifications.map((notification) => {
+                const unread = !notification.readAt
+
+                return (
+                  <button
+                    key={notification.id}
+                    type="button"
+                    onClick={() => openNotification(notification)}
+                    className={`grid w-full grid-cols-[32px_minmax(0,1fr)_auto] gap-3 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 ${
+                      unread ? "bg-blue-50/55 hover:bg-blue-50" : "bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                        unread
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-slate-50 text-slate-400"
+                      }`}
+                    >
+                      {notificationIcon(notification.type)}
+                    </span>
+
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2">
+                        {unread ? (
+                          <Circle size={7} className="fill-blue-600 text-blue-600" />
+                        ) : null}
+                        <span className="truncate text-[13px] font-semibold text-slate-950">
+                          {notification.title}
+                        </span>
+                      </span>
+
+                      <span className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500">
+                        {notification.body}
+                      </span>
+                    </span>
+
+                    <span className="text-[11px] font-medium text-slate-400">
+                      {formatNotificationTime(notification.createdAt)}
+                    </span>
+                  </button>
+                )
+              })
+            )}
+          </div>
+
+          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2">
+            <span className="text-[11.5px] text-slate-400">
+              Realtime updates enabled
             </span>
 
-            <span className="min-w-0">
-              <span className="block text-[13px] font-semibold text-slate-950">
-                {toast.title}
-              </span>
-              <span className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500">
-                {toast.body}
-              </span>
-            </span>
-
-            <span
-              onClick={(event) => {
-                event.stopPropagation()
-                setToast(null)
-              }}
-              className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            <button
+              type="button"
+              onClick={() =>
+                loadNotifications({
+                  limit: 20,
+                })
+              }
+              disabled={refreshing || loadingList}
+              className="text-[11.5px] font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50"
             >
-              <X size={14} />
-            </span>
-          </button>
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
       ) : null}
-    </>
+    </div>
   )
 }
