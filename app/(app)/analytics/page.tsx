@@ -139,7 +139,9 @@ export default function AnalyticsPage() {
   const [bllSubjects, setBLLSubjects] = useState<BLLSubjectStat[]>([])
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([])
 
-  const [range] = useState("30d")
+  const [range, setRange] = useState("30d")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
 
   useEffect(() => {
     async function loadUser() {
@@ -218,7 +220,18 @@ export default function AnalyticsPage() {
       if (!userId) return
 
       try {
-        const res = await fetch(`/api/trend-analytics?userId=${userId}&range=${range}`, {
+        let url = `/api/trend-analytics?userId=${userId}&range=${range}`
+
+        if (range === "custom") {
+          if (!startDate || !endDate) {
+            setTrend([])
+            return
+          }
+
+          url = `/api/trend-analytics?userId=${userId}&start=${startDate}&end=${endDate}`
+        }
+
+        const res = await fetch(url, {
           cache: "no-store",
         })
         const data = await res.json()
@@ -231,7 +244,7 @@ export default function AnalyticsPage() {
     }
 
     loadTrend()
-  }, [userId, range])
+  }, [userId, range, startDate, endDate])
 
   if (loadingUser || !userId) {
     return <LoadingState text="Loading analytics..." />
@@ -304,9 +317,37 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-10 items-center gap-3 rounded-xl border border-[#e5e8f0] bg-white px-4 text-[12px] font-normal text-[#0c123a] shadow-[0_6px_16px_rgba(15,23,42,0.04)]">
-              <span>{rangeLabel(range)}</span>
-              <CalendarDays size={16} className="text-[#1b2452]" />
+            <div className="flex min-h-10 items-center gap-2 rounded-xl border border-[#e5e8f0] bg-white px-3 text-[12px] font-normal text-[#0c123a] shadow-[0_6px_16px_rgba(15,23,42,0.04)]">
+              <CalendarDays size={15} className="text-[#1b2452]" />
+              <select
+                value={range}
+                onChange={(event) => setRange(event.target.value)}
+                className="h-8 bg-transparent text-[12px] font-normal outline-none"
+              >
+                <option value="today">Today</option>
+                <option value="7d">7 days</option>
+                <option value="14d">14 days</option>
+                <option value="30d">30 days</option>
+                <option value="90d">3 months</option>
+                <option value="custom">Custom</option>
+              </select>
+
+              {range === "custom" ? (
+                <>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(event) => setStartDate(event.target.value)}
+                    className="h-8 rounded-md border border-[#e5e8f0] bg-white px-2 text-[11px] outline-none"
+                  />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(event) => setEndDate(event.target.value)}
+                    className="h-8 rounded-md border border-[#e5e8f0] bg-white px-2 text-[11px] outline-none"
+                  />
+                </>
+              ) : null}
             </div>
 
             <button
@@ -486,7 +527,7 @@ function Overview({
                 <div className="mb-3 text-[12px] font-normal text-[#11183d]">
                   AI Performance Snapshot
                 </div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 items-stretch gap-3">
                   <SnapshotMetric label="Accuracy" value={`${currentScore}%`} />
                   <SnapshotMetric label="Strong Areas" value={strongSubjects.length} />
                   <SnapshotMetric label="Consistency" value={`${consistencyScore} / 5`} />
@@ -569,9 +610,9 @@ function Overview({
                     <XAxis dataKey="day" tick={{ fontSize: 11, fontWeight: 400 }} tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 400 }} tickLine={false} axisLine={false} />
                     <Tooltip content={<ForecastTooltip />} />
-                    <Area type="monotone" dataKey="followPlan" stroke="#7c3aed" strokeWidth={2} fill="url(#followPlanGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
-                    <Area type="monotone" dataKey="consistent" stroke="#0ea5e9" strokeWidth={2} fill="url(#consistentGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
-                    <Area type="monotone" dataKey="ignoreWeak" stroke="#f43f5e" strokeWidth={2} fill="url(#ignoreWeakGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
+                    <Area name="If you follow the plan" type="monotone" dataKey="followPlan" stroke="#7c3aed" strokeWidth={2} fill="url(#followPlanGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
+                    <Area name="If you stay consistent" type="monotone" dataKey="consistent" stroke="#0ea5e9" strokeWidth={2} fill="url(#consistentGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
+                    <Area name="If you ignore weak areas" type="monotone" dataKey="ignoreWeak" stroke="#f43f5e" strokeWidth={2} fill="url(#ignoreWeakGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -991,7 +1032,7 @@ function RiskColumn({
           : "border-rose-100 bg-rose-50 text-rose-700"
 
   return (
-    <div className={`rounded-xl border p-4 ${toneClass}`}>
+    <div className={`flex h-full min-h-[205px] flex-col rounded-xl border p-4 ${toneClass}`}>
       <div className="flex items-center gap-2 text-[13px] font-normal">
         <CheckCircle2 size={16} />
         {title}
@@ -1001,7 +1042,7 @@ function RiskColumn({
         {text}
       </p>
 
-      <div className="mt-3 min-h-[70px] space-y-2">
+      <div className="mt-3 min-h-[70px] flex-1 space-y-2">
         {items.length === 0 ? (
           <div className="text-[11px] font-normal opacity-70">No subjects yet.</div>
         ) : (
@@ -1014,7 +1055,7 @@ function RiskColumn({
         )}
       </div>
 
-      <button type="button" className="mt-3 h-9 w-full rounded-lg border border-current bg-white/50 text-[12px] font-normal">
+      <button type="button" className="mt-auto h-9 w-full rounded-lg border border-current bg-white/50 text-[12px] font-normal">
         {button}
       </button>
     </div>
