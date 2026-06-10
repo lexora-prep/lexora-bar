@@ -236,12 +236,16 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {false && (
         <StatCard
           title="TOTAL MBE QS"
           value={isPremium ? dashboard.totalMBEQuestions : "—"}
           delta={0}
           locked={!isPremium}
         />
+        )}
+        )}
+        {false && (
         <StatCard
           title="MBE ACCURACY"
           value={isPremium ? `${dashboard.mbeAccuracy}%` : "—"}
