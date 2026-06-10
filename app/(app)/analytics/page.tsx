@@ -702,7 +702,7 @@ function Overview({
           {trendLoading ? (
             <EmptyCompact text="Loading selected date range..." />
           ) : canUseBLLAnalytics && hasTrendData ? (
-            <div className="h-[245px]">
+            <div className="h-[195px]">
               <ResponsiveContainer>
                 <AreaChart data={chartData}>
                   <defs>
@@ -780,45 +780,45 @@ function LearningInsights({
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <section className="relative overflow-hidden rounded-2xl border border-[#e2e7f1] bg-gradient-to-br from-white via-[#fbf8ff] to-[#f4edff] p-7 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="relative overflow-hidden rounded-2xl border border-[#e2e7f1] bg-gradient-to-br from-white via-[#fbf8ff] to-[#f4edff] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
           <div>
             <div className="inline-flex items-center gap-2 rounded-lg bg-violet-100 px-3 py-2 text-[12px] font-normal text-violet-700">
               <Sparkles size={15} />
               Lexora AI
             </div>
 
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-4 flex items-center gap-3">
               <Brain size={26} className="text-violet-700" />
-              <h2 className="text-[22px] font-medium tracking-[-0.03em] text-[#080d31]">
+              <h2 className="text-[20px] font-medium tracking-[-0.03em] text-[#080d31]">
                 How You Learn Best
               </h2>
             </div>
 
-            <p className="mt-5 max-w-2xl text-[25px] font-normal leading-[1.35] tracking-[-0.04em] text-[#070c2d]">
+            <p className="mt-3 max-w-2xl text-[21px] font-normal leading-[1.35] tracking-[-0.04em] text-[#070c2d]">
               Short, focused study sessions with{" "}
               <span className="text-violet-700">active rule recall</span>{" "}
               help you retain rules better.
             </p>
 
-            <p className="mt-4 max-w-xl text-[14px] font-normal leading-6 text-[#4d5a78]">
+            <p className="mt-3 max-w-xl text-[13px] font-normal leading-6 text-[#4d5a78]">
               {learningMessage}
             </p>
           </div>
 
-          <div className="relative flex min-h-[210px] items-center justify-center">
-            <div className="absolute h-52 w-52 rounded-full bg-violet-400/20 blur-3xl" />
-            <div className="absolute h-72 w-72 rounded-full border border-violet-200/70" />
-            <div className="absolute h-44 w-72 -rotate-12 rounded-[100%] border border-violet-300/60" />
-            <div className="relative flex h-44 w-44 items-center justify-center rounded-full bg-gradient-to-br from-violet-200 via-violet-500 to-violet-800 shadow-[0_24px_60px_rgba(124,58,237,0.35)]">
-              <Brain size={104} className="text-white drop-shadow-xl" />
+          <div className="relative flex min-h-[165px] items-center justify-center">
+            <div className="absolute h-40 w-40 rounded-full bg-violet-400/20 blur-3xl" />
+            <div className="absolute h-56 w-56 rounded-full border border-violet-200/70" />
+            <div className="absolute h-32 w-56 -rotate-12 rounded-[100%] border border-violet-300/60" />
+            <div className="relative flex h-34 w-34 items-center justify-center rounded-full bg-gradient-to-br from-violet-200 via-violet-500 to-violet-800 shadow-[0_24px_60px_rgba(124,58,237,0.35)]">
+              <Brain size={82} className="text-white drop-shadow-xl" />
             </div>
           </div>
         </div>
 
-        <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
           <LearningTopCard
-            icon={<Brain size={28} />}
+            icon={<Brain size={23} />}
             label="TOP INSIGHT"
             title="Active Rule Recall"
             text={
@@ -831,7 +831,7 @@ function LearningInsights({
           />
 
           <LearningTopCard
-            icon={<Clock3 size={28} />}
+            icon={<Clock3 size={23} />}
             label="REAL SIGNAL"
             title="Recent Score Movement"
             text={
@@ -846,7 +846,7 @@ function LearningInsights({
           />
 
           <LearningTopCard
-            icon={<AlertTriangle size={28} />}
+            icon={<AlertTriangle size={23} />}
             label="WEAK AREA"
             title={primaryWeakArea?.subject || "Review Weak Areas"}
             text={
@@ -860,13 +860,13 @@ function LearningInsights({
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <section className="grid grid-cols-1 gap-3 xl:grid-cols-3">
         <GlassCard
           title="Retention Signal"
           info="This uses real BLL accuracy trend. A true retention curve needs a separate retention endpoint."
         >
           {hasTrendData ? (
-            <div className="h-[230px]">
+            <div className="h-[185px]">
               <ResponsiveContainer>
                 <AreaChart data={chartData}>
                   <defs>
@@ -895,7 +895,7 @@ function LearningInsights({
             <EmptyCompact text="No real BLL trend exists for the selected range." />
           )}
 
-          <div className="mt-4 rounded-xl bg-blue-50 px-4 py-3 text-[12px] font-normal leading-5 text-blue-700">
+          <div className="mt-4 rounded-xl bg-blue-50 px-3 py-2.5 text-[12px] font-normal leading-5 text-blue-700">
             Retention insight will become more accurate as more BLL attempts are recorded over time.
           </div>
         </GlassCard>
@@ -912,7 +912,7 @@ function LearningInsights({
             <PatternRow rank="5" text="Study Plan → Daily Review" badge="Available" />
           </div>
 
-          <div className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-[12px] font-normal leading-5 text-emerald-700">
+          <div className="mt-4 rounded-xl bg-emerald-50 px-3 py-2.5 text-[12px] font-normal leading-5 text-emerald-700">
             Current recommendation is based on weak-area count and subject accuracy.
           </div>
         </GlassCard>
@@ -928,7 +928,7 @@ function LearningInsights({
         </GlassCard>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_0.85fr]">
         <GlassCard
           title="Time of Day Performance"
           badge="Premium"
@@ -951,21 +951,21 @@ function LearningInsights({
             <ImpactRow label="Consistency" value={Math.round(consistencyScore * 20)} text={`${consistencyScore}/5`} />
           </div>
 
-          <div className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-[12px] font-normal leading-5 text-emerald-700">
+          <div className="mt-4 rounded-xl bg-emerald-50 px-3 py-2.5 text-[12px] font-normal leading-5 text-emerald-700">
             These values are calculated from current real analytics, not generated estimates.
           </div>
         </GlassCard>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[0.9fr_1.1fr]">
         <GlassCard
           title="Consistency Insights"
           info="Consistency is calculated from recent days with real BLL trend activity."
         >
-          <div className="flex items-center gap-6">
-            <div className="flex h-36 w-36 items-center justify-center rounded-full border-[14px] border-violet-700 bg-white shadow-inner">
+          <div className="flex items-center gap-4">
+            <div className="flex h-28 w-28 items-center justify-center rounded-full border-[10px] border-violet-700 bg-white shadow-inner">
               <div className="text-center">
-                <div className="text-[42px] font-normal tracking-[-0.05em] text-[#090f35]">
+                <div className="text-[32px] font-normal tracking-[-0.05em] text-[#090f35]">
                   {consistencyScore}
                 </div>
                 <div className="text-[13px] font-normal text-slate-500">/ 5</div>
@@ -979,7 +979,7 @@ function LearningInsights({
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-[12px] font-normal leading-5 text-emerald-700">
+          <div className="mt-4 rounded-xl bg-emerald-50 px-3 py-2.5 text-[12px] font-normal leading-5 text-emerald-700">
             Consistency is strongest when you produce real activity across multiple recent days.
           </div>
         </GlassCard>
@@ -998,8 +998,8 @@ function LearningInsights({
 
       <section className="rounded-2xl border border-[#e2e7f1] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-violet-700 text-white">
-            <Sparkles size={26} />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-700 text-white">
+            <Sparkles size={22} />
           </div>
 
           <div className="min-w-[260px] flex-1">
@@ -1060,25 +1060,25 @@ function LearningTopCard({
   const stroke = tone === "green" ? "#10b981" : tone === "red" ? "#f43f5e" : "#7c3aed"
 
   return (
-    <div className="rounded-2xl border border-[#e2e7f1] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+    <div className="rounded-2xl border border-[#e2e7f1] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
       <div className="flex items-start gap-4">
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${toneClass}`}>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${toneClass}`}>
           {icon}
         </div>
         <div>
           <div className={`text-[10px] font-normal ${toneClass.replace("bg-", "text-").replace(" text-", " ")}`}>
             {label}
           </div>
-          <div className="mt-3 text-[16px] font-medium tracking-[-0.02em] text-[#080d31]">
+          <div className="mt-2 text-[14px] font-medium tracking-[-0.02em] text-[#080d31]">
             {title}
           </div>
-          <p className="mt-2 text-[12px] font-normal leading-5 text-[#4d5a78]">
+          <p className="mt-1.5 text-[11px] font-normal leading-5 text-[#4d5a78]">
             {text}
           </p>
         </div>
       </div>
 
-      <div className="mt-5 h-10">
+      <div className="mt-3 h-8">
         <MiniSparkline data={data} stroke={stroke} />
       </div>
     </div>
@@ -1119,9 +1119,9 @@ function LockedMetric({
   text: string
 }) {
   return (
-    <div className="flex min-h-[230px] items-center justify-center rounded-xl border border-dashed border-violet-200 bg-violet-50 p-6 text-center">
+    <div className="flex min-h-[185px] items-center justify-center rounded-xl border border-dashed border-violet-200 bg-violet-50 p-4 text-center">
       <div>
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-violet-700">
+        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-violet-700">
           <Lock size={20} />
         </div>
         <div className="mt-3 text-[14px] font-normal text-[#11183d]">{title}</div>
@@ -1374,7 +1374,7 @@ function GlassCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-2xl border border-[#e2e7f1] bg-white/90 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
+    <section className="rounded-2xl border border-[#e2e7f1] bg-white/90 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -1585,7 +1585,7 @@ function StepCard({
   return (
     <div className="rounded-xl bg-violet-50 p-4">
       <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-700 text-lg font-normal text-white">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-700 text-lg font-normal text-white">
           {step}
         </div>
 
@@ -1703,7 +1703,7 @@ function RiskColumn({
 
 function PremiumInline({ text }: { text: string }) {
   return (
-    <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-violet-200 bg-violet-50 p-5 text-center">
+    <div className="flex min-h-[165px] items-center justify-center rounded-xl border border-dashed border-violet-200 bg-violet-50 p-5 text-center">
       <div>
         <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-700">
           <Lock size={18} />
@@ -1717,7 +1717,7 @@ function PremiumInline({ text }: { text: string }) {
 
 function EmptyCompact({ text }: { text: string }) {
   return (
-    <div className="flex min-h-[170px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-[12px] font-normal leading-5 text-slate-500">
+    <div className="flex min-h-[135px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-[12px] font-normal leading-5 text-slate-500">
       {text}
     </div>
   )
