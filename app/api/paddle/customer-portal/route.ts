@@ -210,7 +210,7 @@ export async function POST(req: Request) {
         {
           ok: false,
           error:
-            "No active Paddle billing portal is available for this account. If you used a 100% coupon, there may be no payable subscription to manage.",
+            "Billing management is not available for this account. Please choose a subscription plan or contact support.",
         },
         { status: 409 },
       )

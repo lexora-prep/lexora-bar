@@ -41,6 +41,9 @@ declare global {
             priceId: string
             quantity: number
           }>
+          customer?: {
+            email?: string
+          }
           customData?: Record<string, string>
         }) => void
       }
@@ -219,6 +222,11 @@ function CheckoutContent() {
             quantity: 1,
           },
         ],
+        customer: userEmail
+          ? {
+              email: userEmail,
+            }
+          : undefined,
         customData: {
           user_id: userId,
           email: userEmail,

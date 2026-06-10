@@ -531,6 +531,12 @@ export default function SubscriptionPage() {
               onUpdatePayment={() => openBillingPortal("update_payment_method")}
               onInvoices={() => openBillingPortal("invoices")}
               onCancel={() => openBillingPortal("cancel_subscription")}
+              onChooseBLL={() => {
+                window.location.href = "/checkout?plan=bll-monthly"
+              }}
+              onChoosePremium={() => {
+                window.location.href = "/checkout?plan=premium"
+              }}
             />
           </div>
         ) : null}
