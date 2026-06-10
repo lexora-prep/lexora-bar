@@ -53,7 +53,7 @@ const PLANS: Record<PlanKey, Plan> = {
     id: "bll-monthly",
     label: "BLL Monthly",
     eyebrow: "Core memorization",
-    price: "$19.99",
+    price: "$29.99",
     billing: "/mo",
     description:
       "Full Black Letter Law rule training access for focused bar preparation.",
@@ -69,7 +69,7 @@ const PLANS: Record<PlanKey, Plan> = {
     id: "premium",
     label: "Premium",
     eyebrow: "Advanced training",
-    price: "$24.99",
+    price: "$39.99",
     billing: "/mo",
     description:
       "Advanced rule memory tools, premium rule sets, and priority training features.",

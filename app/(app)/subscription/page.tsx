@@ -101,12 +101,12 @@ const plans = {
   },
   "bll-monthly": {
     label: "BLL Monthly",
-    price: "$19.99",
+    price: "$29.99",
     note: "Black Letter Law memorization access",
   },
   premium: {
     label: "Premium",
-    price: "$24.99",
+    price: "$39.99",
     note: "Full memorization access with premium tools",
   },
 }

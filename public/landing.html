@@ -67,47 +67,6 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 
-body,
-nav,
-main,
-footer,
-.legal-card,
-.demo-shell,
-.price-card,
-.cta-band,
-section,
-div,
-p,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-span,
-a,
-button,
-li{
-  -webkit-user-select:none;
-  user-select:none;
-}
-
-input,
-textarea,
-select,
-button{
-  font-family:inherit;
-  -webkit-user-select:auto;
-  user-select:auto;
-}
-
-textarea,
-input,
-select{
-  -webkit-user-select:text;
-  user-select:text;
-}
-
 a{
   text-decoration:none;
   color:inherit;
@@ -115,6 +74,40 @@ a{
 
 button{
   cursor:pointer;
+  font-family:inherit;
+}
+
+input,
+textarea,
+select{
+  font-family:inherit;
+}
+
+textarea,
+input,
+select,
+.legal-card,
+.footer-legal,
+.footer-col,
+.cookie-banner,
+.cookie-modal{
+  -webkit-user-select:text;
+  user-select:text;
+}
+
+.hero-section,
+.rules-strip,
+.demo-section,
+.analytics-showcase,
+.how-section,
+.mee-section,
+.features-section,
+.pricing-section,
+.cta-section,
+.demo-shell,
+.performance-window{
+  -webkit-user-select:none;
+  user-select:none;
 }
 
 .page{
@@ -125,24 +118,9 @@ button{
   display:block;
 }
 
-::selection{
-  background:transparent;
-  color:inherit;
-}
-
-::-moz-selection{
-  background:transparent;
-  color:inherit;
-}
-
 @keyframes fadeUp{
   from{opacity:0;transform:translateY(22px)}
   to{opacity:1;transform:translateY(0)}
-}
-
-@keyframes fadeIn{
-  from{opacity:0}
-  to{opacity:1}
 }
 
 @keyframes blink{
@@ -158,21 +136,6 @@ button{
 @keyframes float{
   0%,100%{transform:translateY(0)}
   50%{transform:translateY(-7px)}
-}
-
-@keyframes cardFloat{
-  0%,100%{transform:translateY(0) rotate(-1deg)}
-  50%{transform:translateY(-10px) rotate(-1deg)}
-}
-
-@keyframes cardFloat2{
-  0%,100%{transform:translateY(0) rotate(1.5deg)}
-  50%{transform:translateY(-8px) rotate(1.5deg)}
-}
-
-@keyframes pulseDot{
-  0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,0.4)}
-  70%{box-shadow:0 0 0 6px rgba(5,150,105,0)}
 }
 
 @keyframes orbDrift{
@@ -413,7 +376,6 @@ nav{
   font-weight:700;
   color:var(--purple);
   margin-bottom:28px;
-  animation:fadeIn .5s ease forwards;
   width:max-content;
 }
 
@@ -574,180 +536,376 @@ nav{
   opacity:.5;
 }
 
-.hero-mockup{
+.hero-performance{
   position:relative;
-  z-index:1;
-  width:min(100%,520px);
-  max-width:520px;
+  z-index:2;
+  width:min(100%,620px);
 }
 
-.mock-rule-card{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:var(--rl);
-  padding:26px 28px;
-  box-shadow:var(--sh-xl);
-  margin-bottom:16px;
-  animation:float 5s ease-in-out infinite;
+.performance-window{
+  overflow:hidden;
+  border-radius:30px;
+  border:1px solid rgba(203,213,225,0.95);
+  background:#fff;
+  box-shadow:
+    0 34px 90px rgba(14,27,53,0.14),
+    0 0 70px rgba(124,58,237,0.10);
 }
 
-.mock-rule-subject{
+.performance-windowbar{
+  height:42px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 18px;
+  background:#F1F5FB;
+  border-bottom:1px solid #DCE3EF;
+}
+
+.wdot{
+  width:11px;
+  height:11px;
+  border-radius:50%;
+}
+
+.performance-url{
+  margin-left:8px;
+  font-family:"JetBrains Mono",monospace;
+  color:#94A3B8;
+  font-size:12px;
+  font-weight:800;
+}
+
+.performance-body{
+  padding:18px;
+  background:linear-gradient(180deg,#FFFFFF,#F8FAFF);
+}
+
+.performance-top{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 112px;
+  gap:16px;
+  align-items:center;
+  padding:16px;
+  border:1px solid #E2E8F0;
+  border-radius:22px;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(124,58,237,0.10) 0%,transparent 35%),
+    #FFFFFF;
+  margin-bottom:12px;
+}
+
+.performance-kicker{
   display:inline-flex;
   align-items:center;
-  gap:6px;
-  font-size:10.5px;
-  font-weight:700;
-  color:var(--purple-2);
+  height:24px;
+  padding:0 10px;
+  border-radius:999px;
+  background:#F3F0FF;
+  border:1px solid #DDD6FE;
+  color:#7C3AED;
+  font-size:10px;
+  font-weight:900;
   letter-spacing:.12em;
   text-transform:uppercase;
-  margin-bottom:12px;
-  background:var(--purple-dim);
-  border:1px solid var(--purple-mid);
-  border-radius:999px;
-  padding:4px 10px;
+  margin-bottom:10px;
 }
 
-.mock-rule-label{
-  font-size:11px;
+.performance-top h3{
+  color:#0E1B35;
+  font-size:24px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:-.05em;
+  margin-bottom:8px;
+}
+
+.performance-top p{
+  color:#475569;
+  font-size:13px;
+  line-height:1.65;
   font-weight:600;
-  color:var(--text-4);
-  letter-spacing:.08em;
+}
+
+.performance-score{
+  display:grid;
+  place-items:center;
+  gap:8px;
+}
+
+.performance-score-ring{
+  width:82px;
+  height:82px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  background:
+    radial-gradient(circle at center,#FFFFFF 55%,transparent 57%),
+    conic-gradient(#10B981 0deg 295deg,#E2E8F0 295deg 360deg);
+  color:#0E1B35;
+  font-size:22px;
+  font-weight:950;
+  letter-spacing:-.04em;
+  box-shadow:0 12px 26px rgba(16,185,129,.12);
+}
+
+.performance-score span{
+  color:#64748B;
+  font-size:11px;
+  font-weight:850;
+  text-align:center;
+}
+
+.performance-kpis{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.performance-kpi{
+  min-height:112px;
+  border-radius:20px;
+  border:1px solid #E2E8F0;
+  background:#FFFFFF;
+  padding:15px;
+}
+
+.performance-kpi.dark{
+  background:linear-gradient(135deg,#0E1B35,#162B55 55%,#5B21B6);
+  border-color:rgba(124,58,237,0.35);
+}
+
+.performance-label{
+  color:#94A3B8;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.13em;
   text-transform:uppercase;
   margin-bottom:8px;
 }
 
-.mock-rule-text{
-  font-family:"DM Serif Display",serif;
-  font-size:17px;
-  line-height:1.7;
-  color:var(--navy);
-  margin-bottom:18px;
-}
-
-.mock-rule-text .kw{
-  background:rgba(79,70,229,0.08);
-  border-bottom:1.5px solid var(--blue-2);
-  border-radius:3px;
-  padding:0 2px;
-  color:var(--blue);
-  font-style:italic;
-}
-
-.mock-tags{
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-}
-
-.mock-tag{
-  font-size:10.5px;
-  font-weight:600;
-  padding:4px 10px;
-  border-radius:999px;
-  background:var(--blue-dim);
-  border:1px solid var(--blue-mid);
-  color:var(--blue);
-}
-
-.mock-score-row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.mock-score-card{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  padding:16px 18px;
-  box-shadow:var(--sh-sm);
-  animation:cardFloat 6s ease-in-out infinite;
-}
-
-.mock-score-card:nth-child(2){
-  animation-name:cardFloat2;
-  animation-delay:.5s;
-}
-
-.mock-score-label{
-  font-size:10px;
-  font-weight:700;
-  color:var(--text-4);
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  margin-bottom:6px;
-}
-
-.mock-score-num{
-  font-size:28px;
-  font-weight:800;
-  letter-spacing:-1px;
+.performance-value{
+  color:#0E1B35;
+  font-size:30px;
   line-height:1;
+  font-weight:950;
+  letter-spacing:-.06em;
 }
 
-.mock-score-num.green{
-  color:var(--green);
+.performance-kpi.dark .performance-value{
+  color:#FFFFFF;
 }
 
-.mock-score-num.gold{
-  color:var(--purple-2);
-}
-
-.mock-score-bar{
-  height:4px;
-  border-radius:999px;
-  background:var(--border);
+.performance-sub{
+  color:#94A3B8;
+  font-size:11px;
+  font-weight:850;
   margin-top:8px;
+}
+
+.performance-sub.good{
+  color:#10B981;
+}
+
+.performance-line{
+  height:5px;
+  margin-top:12px;
+  border-radius:999px;
+  background:#E2E8F0;
   overflow:hidden;
 }
 
-.mock-score-bar-fill{
+.performance-line span{
+  display:block;
   height:100%;
-  border-radius:999px;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#7C3AED,#A78BFA);
 }
 
-.mock-score-bar-fill.green{
-  background:linear-gradient(90deg,var(--green),#34D399);
-  width:82%;
+.performance-grid{
+  display:grid;
+  grid-template-columns:1.12fr .88fr;
+  gap:10px;
+  margin-bottom:10px;
 }
 
-.mock-score-bar-fill.gold{
-  background:linear-gradient(90deg,var(--purple-2),var(--purple-3));
-  width:67%;
+.performance-card{
+  border-radius:20px;
+  border:1px solid #E2E8F0;
+  background:#FFFFFF;
+  padding:15px;
+  min-width:0;
 }
 
-.mock-chip{
-  position:absolute;
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:999px;
-  padding:6px 12px;
-  box-shadow:var(--sh);
-  font-size:11px;
-  font-weight:600;
-  color:var(--navy);
+.performance-card-head{
   display:flex;
   align-items:center;
-  gap:5px;
-  animation:float 4s ease-in-out infinite;
-  z-index:2;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
 }
 
-.mock-chip-dot{
-  width:6px;
+.performance-card-head span{
+  color:#0E1B35;
+  font-size:13px;
+  font-weight:950;
+}
+
+.performance-card-head strong{
+  color:#7C3AED;
+  font-size:11px;
+  font-weight:900;
+  background:#F3F0FF;
+  border:1px solid #DDD6FE;
+  border-radius:999px;
+  padding:4px 9px;
+}
+
+.subject-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 42px 84px;
+  gap:9px;
+  align-items:center;
+  padding:8px 0;
+  border-top:1px solid #EEF2F7;
+}
+
+.subject-row:first-of-type{
+  border-top:0;
+}
+
+.subject-name{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#0E1B35;
+  font-size:12.5px;
+  font-weight:900;
+}
+
+.subject-name span{
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  flex-shrink:0;
+}
+
+.subject-count{
+  color:#64748B;
+  font-size:12px;
+  font-weight:900;
+  text-align:right;
+}
+
+.subject-bar{
   height:6px;
-  border-radius:50%;
+  border-radius:999px;
+  background:#E2E8F0;
+  overflow:hidden;
 }
 
-.mock-chip-1{
-  top:22px;
-  right:-8px;
+.subject-bar span{
+  display:block;
+  height:100%;
+  border-radius:inherit;
 }
 
-.mock-chip-2{
-  bottom:90px;
-  left:-14px;
-  animation-delay:.6s;
+.trend-svg{
+  width:100%;
+  height:118px;
+}
+
+.trend-caption{
+  color:#64748B;
+  font-size:11.5px;
+  line-height:1.55;
+  font-weight:750;
+}
+
+.performance-rule{
+  border-radius:22px;
+  border:1px solid rgba(124,58,237,.18);
+  background:#FFFFFF;
+  padding:16px;
+}
+
+.performance-pill{
+  display:inline-flex;
+  align-items:center;
+  height:26px;
+  padding:0 11px;
+  border-radius:999px;
+  background:#F3F0FF;
+  color:#7C3AED;
+  border:1px solid #DDD6FE;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+
+.performance-rule p{
+  color:#0E1B35;
+  font-family:"DM Serif Display",serif;
+  font-size:18px;
+  line-height:1.55;
+  letter-spacing:-.02em;
+}
+
+.performance-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:12px;
+}
+
+.performance-tags span{
+  min-height:24px;
+  display:inline-flex;
+  align-items:center;
+  padding:0 10px;
+  border-radius:999px;
+  background:#ECFDF5;
+  border:1px solid #A7F3D0;
+  color:#059669;
+  font-size:11px;
+  font-weight:850;
+}
+
+.performance-tags span.missed{
+  background:#F3F0FF;
+  border-color:#DDD6FE;
+  color:#7C3AED;
+}
+
+.performance-float{
+  position:absolute;
+  z-index:3;
+  display:flex;
+  align-items:center;
+  height:34px;
+  padding:0 14px;
+  border-radius:999px;
+  background:#FFFFFF;
+  border:1px solid #E2E8F0;
+  box-shadow:0 14px 30px rgba(14,27,53,0.12);
+  color:#0E1B35;
+  font-size:12px;
+  font-weight:900;
+  animation:float 4s ease-in-out infinite;
+}
+
+.performance-float.one{
+  right:-14px;
+  top:42px;
+}
+
+.performance-float.two{
+  left:-20px;
+  bottom:74px;
+  animation-delay:.65s;
 }
 
 .marquee-wrap{
@@ -1063,12 +1221,6 @@ nav{
   border-radius:var(--rxl) var(--rxl) 0 0;
 }
 
-.wdot{
-  width:11px;
-  height:11px;
-  border-radius:50%;
-}
-
 .demo-title-text{
   font-family:"JetBrains Mono",monospace;
   font-size:11.5px;
@@ -1081,15 +1233,6 @@ nav{
   padding:24px;
   overflow:hidden;
   border-radius:0 0 var(--rxl) var(--rxl);
-}
-
-.rule-prompt-card{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  padding:22px;
-  margin-bottom:18px;
-  box-shadow:var(--sh-sm);
 }
 
 .rule-question-card{
@@ -1141,6 +1284,15 @@ nav{
   font-weight:800;
   color:var(--navy);
   letter-spacing:-.3px;
+}
+
+.rule-prompt-card{
+  background:var(--white);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:22px;
+  margin-bottom:18px;
+  box-shadow:var(--sh-sm);
 }
 
 .prompt-topline{
@@ -1854,12 +2006,6 @@ nav{
     0 0 0 1px rgba(124,58,237,0.12);
 }
 
-.price-card.featured::before,
-.price-card.featured::after{
-  content:none;
-  display:none;
-}
-
 .popular-badge{
   position:absolute;
   top:-22px;
@@ -2138,14 +2284,16 @@ nav{
 footer{
   background:var(--navy);
   border-top:1px solid rgba(255,255,255,0.07);
-  padding:60px 52px 34px;
+  padding:44px 52px 26px;
 }
 
 .footer-top{
+  max-width:1200px;
+  margin:0 auto 34px;
   display:grid;
-  grid-template-columns:2fr 1fr 1fr 1fr;
-  gap:44px;
-  margin-bottom:44px;
+  grid-template-columns:1.45fr .8fr .8fr .9fr;
+  gap:34px;
+  align-items:start;
 }
 
 .footer-brand-logo{
@@ -2178,7 +2326,7 @@ footer{
 }
 
 .footer-brand p{
-  max-width:240px;
+  max-width:300px;
   font-size:12.5px;
   line-height:1.8;
   color:rgba(255,255,255,0.62);
@@ -2223,36 +2371,25 @@ footer{
 }
 
 .footer-bottom{
+  max-width:1200px;
+  margin:0 auto;
   border-top:1px solid rgba(255,255,255,0.07);
   padding-top:24px;
   display:flex;
   justify-content:space-between;
   gap:20px;
-  align-items:flex-start;
+  align-items:center;
 }
 
 .footer-legal{
   font-size:11px;
   color:rgba(255,255,255,0.62);
   line-height:1.85;
-  max-width:640px;
+  max-width:760px;
 }
 
 .footer-links{
-  display:flex;
-  gap:16px;
-  flex-wrap:wrap;
-  flex-shrink:0;
-}
-
-.footer-links a{
-  font-size:11px;
-  color:rgba(255,255,255,0.72);
-  transition:.15s;
-}
-
-.footer-links a:hover{
-  color:rgba(255,255,255,0.95);
+  display:none;
 }
 
 .cookie-banner{
@@ -2492,6 +2629,18 @@ footer{
     grid-template-columns:1fr;
   }
 
+  .performance-grid{
+    grid-template-columns:1fr;
+  }
+
+  .performance-float{
+    display:none;
+  }
+
+  .footer-top{
+    grid-template-columns:repeat(2,1fr);
+  }
+
   .try-now-seal{
     top:-56px;
     right:24px;
@@ -2590,12 +2739,34 @@ footer{
     grid-template-columns:1fr;
   }
 
+  .performance-kpis{
+    grid-template-columns:1fr;
+  }
+
+  .performance-top{
+    grid-template-columns:1fr;
+  }
+
+  .performance-score{
+    justify-items:start;
+  }
+
+  .subject-row{
+    grid-template-columns:minmax(0,1fr) 42px;
+  }
+
+  .subject-bar{
+    grid-column:1 / -1;
+  }
+
   .footer-top{
     grid-template-columns:1fr;
+    gap:24px;
   }
 
   .footer-bottom{
     flex-direction:column;
+    align-items:flex-start;
   }
 
   .cta-section{
@@ -2664,447 +2835,6 @@ footer{
     font-size:10px;
   }
 }
-
-/* ===== HERO PERFORMANCE DASHBOARD FIX ===== */
-.hero-performance{
-  position:relative;
-  z-index:2;
-  width:min(100%,620px);
-}
-
-.performance-window{
-  overflow:hidden;
-  border-radius:30px;
-  border:1px solid rgba(203,213,225,0.95);
-  background:#fff;
-  box-shadow:
-    0 34px 90px rgba(14,27,53,0.14),
-    0 0 70px rgba(124,58,237,0.10);
-}
-
-.performance-windowbar{
-  height:42px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:0 18px;
-  background:#F1F5FB;
-  border-bottom:1px solid #DCE3EF;
-}
-
-.performance-url{
-  margin-left:8px;
-  font-family:"JetBrains Mono",monospace;
-  color:#94A3B8;
-  font-size:12px;
-  font-weight:800;
-}
-
-.performance-body{
-  padding:18px;
-  background:linear-gradient(180deg,#FFFFFF,#F8FAFF);
-}
-
-.performance-top{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 112px;
-  gap:16px;
-  align-items:center;
-  padding:16px;
-  border:1px solid #E2E8F0;
-  border-radius:22px;
-  background:
-    radial-gradient(circle at 12% 0%,rgba(124,58,237,0.10) 0%,transparent 35%),
-    #FFFFFF;
-  margin-bottom:12px;
-}
-
-.performance-kicker{
-  display:inline-flex;
-  align-items:center;
-  height:24px;
-  padding:0 10px;
-  border-radius:999px;
-  background:#F3F0FF;
-  border:1px solid #DDD6FE;
-  color:#7C3AED;
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  margin-bottom:10px;
-}
-
-.performance-top h3{
-  color:#0E1B35;
-  font-size:24px;
-  line-height:1;
-  font-weight:950;
-  letter-spacing:-.05em;
-  margin-bottom:8px;
-}
-
-.performance-top p{
-  color:#475569;
-  font-size:13px;
-  line-height:1.65;
-  font-weight:600;
-}
-
-.performance-score{
-  display:grid;
-  place-items:center;
-  gap:8px;
-}
-
-.performance-score-ring{
-  width:82px;
-  height:82px;
-  border-radius:999px;
-  display:grid;
-  place-items:center;
-  background:
-    radial-gradient(circle at center,#FFFFFF 55%,transparent 57%),
-    conic-gradient(#10B981 0deg 295deg,#E2E8F0 295deg 360deg);
-  color:#0E1B35;
-  font-size:22px;
-  font-weight:950;
-  letter-spacing:-.04em;
-  box-shadow:0 12px 26px rgba(16,185,129,.12);
-}
-
-.performance-score span{
-  color:#64748B;
-  font-size:11px;
-  font-weight:850;
-  text-align:center;
-}
-
-.performance-kpis{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
-  margin-bottom:10px;
-}
-
-.performance-kpi{
-  min-height:112px;
-  border-radius:20px;
-  border:1px solid #E2E8F0;
-  background:#FFFFFF;
-  padding:15px;
-}
-
-.performance-kpi.dark{
-  background:linear-gradient(135deg,#0E1B35,#162B55 55%,#5B21B6);
-  border-color:rgba(124,58,237,0.35);
-}
-
-.performance-label{
-  color:#94A3B8;
-  font-size:10px;
-  font-weight:950;
-  letter-spacing:.13em;
-  text-transform:uppercase;
-  margin-bottom:8px;
-}
-
-.performance-value{
-  color:#0E1B35;
-  font-size:30px;
-  line-height:1;
-  font-weight:950;
-  letter-spacing:-.06em;
-}
-
-.performance-kpi.dark .performance-value{
-  color:#FFFFFF;
-}
-
-.performance-sub{
-  color:#94A3B8;
-  font-size:11px;
-  font-weight:850;
-  margin-top:8px;
-}
-
-.performance-sub.good{
-  color:#10B981;
-}
-
-.performance-line{
-  height:5px;
-  margin-top:12px;
-  border-radius:999px;
-  background:#E2E8F0;
-  overflow:hidden;
-}
-
-.performance-line span{
-  display:block;
-  height:100%;
-  border-radius:inherit;
-  background:linear-gradient(90deg,#7C3AED,#A78BFA);
-}
-
-.performance-grid{
-  display:grid;
-  grid-template-columns:1.12fr .88fr;
-  gap:10px;
-  margin-bottom:10px;
-}
-
-.performance-card{
-  border-radius:20px;
-  border:1px solid #E2E8F0;
-  background:#FFFFFF;
-  padding:15px;
-  min-width:0;
-}
-
-.performance-card-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-bottom:10px;
-}
-
-.performance-card-head span{
-  color:#0E1B35;
-  font-size:13px;
-  font-weight:950;
-}
-
-.performance-card-head strong{
-  color:#7C3AED;
-  font-size:11px;
-  font-weight:900;
-  background:#F3F0FF;
-  border:1px solid #DDD6FE;
-  border-radius:999px;
-  padding:4px 9px;
-}
-
-.subject-row{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 42px 84px;
-  gap:9px;
-  align-items:center;
-  padding:8px 0;
-  border-top:1px solid #EEF2F7;
-}
-
-.subject-row:first-of-type{
-  border-top:0;
-}
-
-.subject-name{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  color:#0E1B35;
-  font-size:12.5px;
-  font-weight:900;
-}
-
-.subject-name span{
-  width:7px;
-  height:7px;
-  border-radius:999px;
-  flex-shrink:0;
-}
-
-.subject-count{
-  color:#64748B;
-  font-size:12px;
-  font-weight:900;
-  text-align:right;
-}
-
-.subject-bar{
-  height:6px;
-  border-radius:999px;
-  background:#E2E8F0;
-  overflow:hidden;
-}
-
-.subject-bar span{
-  display:block;
-  height:100%;
-  border-radius:inherit;
-}
-
-.trend-svg{
-  width:100%;
-  height:118px;
-}
-
-.trend-caption{
-  color:#64748B;
-  font-size:11.5px;
-  line-height:1.55;
-  font-weight:750;
-}
-
-.performance-rule{
-  border-radius:22px;
-  border:1px solid rgba(124,58,237,.18);
-  background:#FFFFFF;
-  padding:16px;
-}
-
-.performance-pill{
-  display:inline-flex;
-  align-items:center;
-  height:26px;
-  padding:0 11px;
-  border-radius:999px;
-  background:#F3F0FF;
-  color:#7C3AED;
-  border:1px solid #DDD6FE;
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  margin-bottom:10px;
-}
-
-.performance-rule p{
-  color:#0E1B35;
-  font-family:"DM Serif Display",serif;
-  font-size:18px;
-  line-height:1.55;
-  letter-spacing:-.02em;
-}
-
-.performance-tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:7px;
-  margin-top:12px;
-}
-
-.performance-tags span{
-  min-height:24px;
-  display:inline-flex;
-  align-items:center;
-  padding:0 10px;
-  border-radius:999px;
-  background:#ECFDF5;
-  border:1px solid #A7F3D0;
-  color:#059669;
-  font-size:11px;
-  font-weight:850;
-}
-
-.performance-tags span.missed{
-  background:#F3F0FF;
-  border-color:#DDD6FE;
-  color:#7C3AED;
-}
-
-.performance-float{
-  position:absolute;
-  z-index:3;
-  display:flex;
-  align-items:center;
-  height:34px;
-  padding:0 14px;
-  border-radius:999px;
-  background:#FFFFFF;
-  border:1px solid #E2E8F0;
-  box-shadow:0 14px 30px rgba(14,27,53,0.12);
-  color:#0E1B35;
-  font-size:12px;
-  font-weight:900;
-  animation:float 4s ease-in-out infinite;
-}
-
-.performance-float.one{
-  right:-14px;
-  top:42px;
-}
-
-.performance-float.two{
-  left:-20px;
-  bottom:74px;
-  animation-delay:.65s;
-}
-
-/* ===== FOOTER INLINE CLEAN FIX ===== */
-footer{
-  padding:44px 52px 26px;
-}
-
-.footer-top{
-  max-width:1200px;
-  margin:0 auto 34px;
-  display:grid;
-  grid-template-columns:1.45fr .8fr .8fr .9fr .8fr;
-  gap:34px;
-  align-items:start;
-}
-
-.footer-bottom{
-  max-width:1200px;
-  margin:0 auto;
-  align-items:center;
-}
-
-.footer-brand p{
-  max-width:300px;
-}
-
-.footer-links{
-  display:none;
-}
-
-.lexora-connect-col a{
-  display:block;
-}
-
-@media(max-width:1060px){
-  .performance-grid{
-    grid-template-columns:1fr;
-  }
-
-  .performance-float{
-    display:none;
-  }
-
-  .footer-top{
-    grid-template-columns:repeat(2,1fr);
-  }
-}
-
-@media(max-width:768px){
-  .performance-kpis{
-    grid-template-columns:1fr;
-  }
-
-  .performance-top{
-    grid-template-columns:1fr;
-  }
-
-  .performance-score{
-    justify-items:start;
-  }
-
-  .subject-row{
-    grid-template-columns:minmax(0,1fr) 42px;
-  }
-
-  .subject-bar{
-    grid-column:1 / -1;
-  }
-
-  .footer-top{
-    grid-template-columns:1fr;
-    gap:24px;
-  }
-}
-
 </style>
 </head>
 
@@ -3221,7 +2951,7 @@ footer{
             <div class="performance-body">
               <div class="performance-top">
                 <div>
-                  <div class="performance-kicker">Today’s rule memory</div>
+                  <div class="performance-kicker">Sample rule memory</div>
                   <h3>Performance snapshot</h3>
                   <p>Lexora tracks recall accuracy, missed rule elements, weak subjects, and spaced review pressure as you train.</p>
                 </div>
@@ -3236,7 +2966,7 @@ footer{
                 <div class="performance-kpi dark">
                   <div class="performance-label">BLL Score</div>
                   <div class="performance-value">82%</div>
-                  <div class="performance-sub good">+29% improved</div>
+                  <div class="performance-sub good">Sample progress</div>
                   <div class="performance-line"><span style="width:82%;background:#10B981"></span></div>
                 </div>
 
@@ -3259,7 +2989,7 @@ footer{
                 <div class="performance-card wide">
                   <div class="performance-card-head">
                     <span>Subject performance</span>
-                    <strong>Live analytics</strong>
+                    <strong>Preview analytics</strong>
                   </div>
 
                   <div class="subject-row">
@@ -3289,7 +3019,7 @@ footer{
 
                 <div class="performance-card">
                   <div class="performance-card-head">
-                    <span>30D trend</span>
+                    <span>Sample 30D trend</span>
                     <strong>+18%</strong>
                   </div>
 
@@ -3305,12 +3035,12 @@ footer{
                     <circle cx="320" cy="35" r="6" fill="#7C3AED"/>
                   </svg>
 
-                  <div class="trend-caption">Your rule recall is getting stronger, but Property still needs review.</div>
+                  <div class="trend-caption">A preview of how rule recall trends and weaker subjects may appear inside Lexora.</div>
                 </div>
               </div>
 
               <div class="performance-rule">
-                <div class="performance-pill">Property · Weak rule</div>
+                <div class="performance-pill">Property · Weak rule preview</div>
                 <p>Adverse possession requires actual, open and notorious, exclusive, hostile, and continuous possession for the statutory period.</p>
                 <div class="performance-tags">
                   <span>actual ✓</span>
@@ -3583,7 +3313,7 @@ footer{
         <div class="analytics-card">
           <div class="analytics-number">53%</div>
           <h3>BLL score tracking</h3>
-          <p>Watch your rule recall performance improve over time with measurable score trends.</p>
+          <p>Watch your rule recall performance over time with measurable score trends.</p>
         </div>
 
         <div class="analytics-card">
@@ -3793,7 +3523,7 @@ footer{
         <div class="price-card featured">
           <div class="popular-badge">Most popular</div>
           <div class="price-tier navy">BLL Monthly</div>
-          <div class="price-amount">$19<span class="mo">.99/mo</span></div>
+          <div class="price-amount">$29<span class="mo">.99/mo</span></div>
           <div class="price-desc">Full Black Letter Law rule training access.</div>
           <div class="price-divider"></div>
 
@@ -3822,7 +3552,7 @@ footer{
 
         <div class="price-card">
           <div class="price-tier gold">Premium</div>
-          <div class="price-amount">$24<span class="mo">.99/mo</span></div>
+          <div class="price-amount">$39<span class="mo">.99/mo</span></div>
           <div class="price-desc">Advanced rule sets and priority training tools.</div>
           <div class="price-divider"></div>
 
@@ -3881,7 +3611,7 @@ footer{
       <p>Lexora Prep is designed for bar exam candidates who want to strengthen their Black Letter Law rule memory, particularly for the MEE essay portion, where recalling precise rule statements is critical.</p>
 
       <h2>What is included in the Premium plan?</h2>
-      <p>The Premium plan is $24.99 per month and includes everything in BLL Monthly, plus 120 Golden Rules, 120 Golden Flashcards, and priority support.</p>
+      <p>The Premium plan is $39.99 per month and includes everything in BLL Monthly, plus 120 Golden Rules, 120 Golden Flashcards, and priority support.</p>
 
       <h2>How does Lexora Prep help with the MEE?</h2>
       <p>MEE essay performance depends heavily on recognizing the issue and stating the correct legal rule precisely. Lexora Prep trains users to recall and recite Black Letter Law rule statements through structured practice.</p>
@@ -3902,7 +3632,7 @@ footer{
       <p>Payments are processed through Paddle. Lexora Prep does not store full credit card numbers on its own servers.</p>
 
       <h2>How do refunds work?</h2>
-      <p>A full refund may be available within 14 calendar days of purchase only if within 14 calendar days of paid materials have been accessed. Refunds are not automatic and are handled according to the Refund Policy.</p>
+      <p>A refund may be available within 14 calendar days of purchase if the user has accessed less than 20% of the paid materials available under the purchased plan. Refunds are not automatic and are reviewed according to the Refund Policy.</p>
 
       <div class="legal-note">For support, contact: support@lexoraprep.com</div>
     </div>
@@ -3952,7 +3682,7 @@ footer{
       <p>You may cancel your subscription at any time. Cancellation stops future renewal charges but does not automatically create a refund unless the refund requirements in the Refund Policy are satisfied.</p>
 
       <h2>10. Refunds</h2>
-      <p>Refunds are governed by the Refund Policy. A full refund may be available within 14 calendar days of purchase only if within 14 calendar days of paid materials have been accessed.</p>
+      <p>Refunds are governed by the Refund Policy. A refund may be available within 14 calendar days of purchase if the user has accessed less than 20% of the paid materials available under the purchased plan. Refund eligibility is reviewed based on purchase date, account activity, content access, and compliance with these Terms.</p>
 
       <h2>11. Content Accuracy</h2>
       <p>Legal rules may vary by jurisdiction, change over time, or require more detailed analysis than a memorization tool can provide. We do not warrant that all content is complete, current, or error free.</p>
@@ -3996,7 +3726,7 @@ footer{
       <p>Payments are processed through Paddle. Lexora Prep does not store full credit card numbers or payment card information on its own servers.</p>
 
       <h2>4. How We Use Information</h2>
-      <p>We use information to create and manage accounts, provide platform features, process billing through Paddle, respond to support requests, improve the platform, prevent fraud, and comply with legal obligations.</p>
+      <p>We use information to create and manage accounts, provide platform features, process billing through payment processors, respond to support requests, improve the platform, prevent fraud, and comply with legal obligations.</p>
 
       <h2>5. We Do Not Sell Personal Data</h2>
       <p>Lexora Prep does not sell your personal data or provide it to third parties for their independent advertising purposes.</p>
@@ -4028,24 +3758,27 @@ footer{
       <p>This Refund Policy explains when users may request a refund for Lexora Prep paid subscriptions or premium access.</p>
 
       <h2>1. Fourteen Day Refund Window</h2>
-      <p>You may request a full refund within 14 calendar days of your initial purchase if you meet the usage requirement below.</p>
+      <p>You may request a refund within 14 calendar days of your initial purchase. Refund requests submitted after 14 calendar days are generally not eligible for a refund.</p>
 
       <h2>2. Usage Requirement</h2>
-      <p>To qualify for a full refund, you must have accessed within 14 calendar days of the paid materials available under your plan. If outside the 14 calendar day refund window of paid materials have been used, Lexora Prep may deny the refund request.</p>
+      <p>To qualify for a refund, your account must have accessed less than 20% of the paid materials available under the purchased plan. Lexora Prep may review account activity, rule access, flashcard access, premium content access, and other usage records to determine refund eligibility.</p>
 
       <h2>3. Non Refundable Situations</h2>
-      <p>Refunds are generally not available if the request is late, outside the 14 calendar day refund window of materials were used, the account violated the Terms, or the user forgot to cancel before renewal.</p>
+      <p>Refunds are generally not available if the request is submitted after the 14 calendar day refund window, if 20% or more of the paid materials have been accessed, if the account violated the Terms and Conditions, if the user shared account access, or if the user forgot to cancel before renewal.</p>
 
       <h2>4. Subscription Cancellation</h2>
-      <p>You may cancel your subscription to stop future billing. Cancellation does not automatically create a refund unless the refund request satisfies this Refund Policy.</p>
+      <p>You may cancel your subscription at any time to stop future billing. Cancellation does not automatically create a refund unless the refund request satisfies this Refund Policy.</p>
 
       <h2>5. Payment Processor</h2>
-      <p>Refunds are processed through Paddle.</p>
+      <p>Payments and refunds are processed through Paddle. Refund timing may depend on the payment processor, bank, card issuer, or payment method.</p>
 
       <h2>6. How to Request a Refund</h2>
-      <p>Contact support@lexoraprep.com within the applicable refund window. Include the email used for purchase, the date of purchase, and the reason for the request.</p>
+      <p>Contact support@lexoraprep.com within the applicable refund window. Include the email address used for purchase, the date of purchase, and the reason for the request.</p>
 
-      <div class="legal-note">Full refund may be available within 14 calendar days only if within 14 calendar days of paid materials were used.</div>
+      <h2>7. Review of Refund Requests</h2>
+      <p>Refund requests are reviewed case by case. Lexora Prep may deny a refund request if the account shows substantial use of paid materials, misuse of the platform, account sharing, abuse of the refund policy, or violation of the Terms and Conditions.</p>
+
+      <div class="legal-note">Refunds may be available within 14 calendar days of purchase if less than 20% of paid materials have been accessed.</div>
     </div>
   </div>
 </section>
@@ -4074,8 +3807,8 @@ footer{
       <h2>5. Marketing Cookies</h2>
       <p>May help measure advertising performance. Not enabled without your consent where legally required.</p>
 
-      <h2>6. Paddle and Payment Cookies</h2>
-      <p>Paddle may use its own cookies for checkout, fraud prevention, and subscription management. Lexora Prep does not control all cookies set by Paddle during checkout.</p>
+      <h2>6. Payment Processor Cookies</h2>
+      <p>Payment processors may use their own cookies for checkout, fraud prevention, and subscription management. Lexora Prep does not control all cookies set by payment processors during checkout.</p>
 
       <h2>7. Consent and Preferences</h2>
       <p>You can accept all cookies, reject non-essential cookies, or manage your preferences. Update choices anytime via Cookie Preferences in the footer.</p>
@@ -4168,7 +3901,7 @@ footer{
           <h4>Strictly necessary</h4>
           <p>Required for login, security, checkout, and basic platform functions.</p>
         </div>
-        <button class="cookie-switch on locked" type="button"></button>
+        <button class="cookie-switch on locked" type="button" aria-label="Strictly necessary cookies enabled"></button>
       </div>
 
       <div class="cookie-option">
@@ -4176,7 +3909,7 @@ footer{
           <h4>Preferences</h4>
           <p>Remember your display settings, saved preferences, and cookie choices.</p>
         </div>
-        <button class="cookie-switch" id="prefSwitch" type="button" onclick="toggleCookieSwitch('preferences')"></button>
+        <button class="cookie-switch" id="prefSwitch" type="button" onclick="toggleCookieSwitch('preferences')" aria-label="Toggle preference cookies"></button>
       </div>
 
       <div class="cookie-option">
@@ -4184,7 +3917,7 @@ footer{
           <h4>Analytics</h4>
           <p>Help us understand website usage and which features users interact with.</p>
         </div>
-        <button class="cookie-switch" id="analyticsSwitch" type="button" onclick="toggleCookieSwitch('analytics')"></button>
+        <button class="cookie-switch" id="analyticsSwitch" type="button" onclick="toggleCookieSwitch('analytics')" aria-label="Toggle analytics cookies"></button>
       </div>
 
       <div class="cookie-option">
@@ -4192,7 +3925,7 @@ footer{
           <h4>Marketing</h4>
           <p>Support referral tracking and future advertising features.</p>
         </div>
-        <button class="cookie-switch" id="marketingSwitch" type="button" onclick="toggleCookieSwitch('marketing')"></button>
+        <button class="cookie-switch" id="marketingSwitch" type="button" onclick="toggleCookieSwitch('marketing')" aria-label="Toggle marketing cookies"></button>
       </div>
     </div>
 
@@ -4219,18 +3952,26 @@ footer{
     var hash=window.location.hash.replace("#","")||"home";
 
     if(hash==="features"||hash==="pricing"||hash==="howitworks"){
-      Object.keys(pages).forEach(function(k){pages[k].classList.remove("active")});
+      Object.keys(pages).forEach(function(k){
+        if(pages[k])pages[k].classList.remove("active");
+      });
+
       pages.home.classList.add("active");
+
       setTimeout(function(){
         var t=document.getElementById(hash);
         if(t)t.scrollIntoView({behavior:"smooth",block:"start"});
       },50);
+
       return;
     }
 
     if(!pages[hash])hash="home";
 
-    Object.keys(pages).forEach(function(k){pages[k].classList.remove("active")});
+    Object.keys(pages).forEach(function(k){
+      if(pages[k])pages[k].classList.remove("active");
+    });
+
     pages[hash].classList.add("active");
     window.scrollTo({top:0,behavior:"smooth"});
   }
@@ -4293,8 +4034,10 @@ footer{
     if(ci===0){
       sub.textContent=r.subject;
       if(question)question.textContent=r.question||"Recall the applicable rule statement.";
+
       el.classList.add("waiting");
       el.innerHTML='<div><strong>Type your answer from memory first.</strong><span class="wait-note">The rule statement will appear in 10 seconds so you can compare your wording.</span></div>';
+
       tags.innerHTML="";
       hideResult(false);
 
@@ -4313,6 +4056,7 @@ footer{
       ci++;
       typingTimer=setTimeout(typeRule,ci<20?55:22);
     }else{
+      tags.innerHTML="";
       r.tags.forEach(function(tag){
         var s=document.createElement("span");
         s.className="rule-tag";
@@ -4324,17 +4068,25 @@ footer{
 
   function restartTyping(){
     if(typingTimer)clearTimeout(typingTimer);
+
     ci=0;
+
     var a=document.getElementById("demoAnswer");
     var el=document.getElementById("rc-text");
+
     if(a)a.value="";
     if(el)el.classList.remove("waiting");
+
     hideResult(false);
     typeRule();
   }
 
   function norm(v){
-    return String(v||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+    return String(v||"")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g," ")
+      .replace(/\s+/g," ")
+      .trim();
   }
 
   function kwMatch(ans,kw){
@@ -4359,7 +4111,10 @@ footer{
     if(!a.length||!b.length)return 0;
 
     var sa={};
-    a.forEach(function(w){sa[w]=true});
+
+    a.forEach(function(w){
+      sa[w]=true;
+    });
 
     return Math.round(b.filter(function(w){
       return sa[w];
@@ -4367,6 +4122,8 @@ footer{
   }
 
   function renderPills(container,items,cls){
+    if(!container)return;
+
     container.innerHTML="";
 
     if(!items.length){
@@ -4403,8 +4160,11 @@ footer{
 
   function animBar(id,pct){
     var el=document.getElementById(id);
+
     if(!el)return;
+
     el.style.width="0";
+
     setTimeout(function(){
       el.style.width=pct+"%";
     },60);
@@ -4435,12 +4195,20 @@ footer{
 
     function step(ts){
       if(!st)st=ts;
+
       var p=Math.min((ts-st)/dur,1);
+
       num.textContent=Math.round(start+(end-start)*p)+"%";
+
       if(p<1)requestAnimationFrame(step);
     }
 
     requestAnimationFrame(step);
+  }
+
+  function setText(id,value){
+    var el=document.getElementById(id);
+    if(el)el.textContent=value;
   }
 
   function showResult(){
@@ -4467,18 +4235,18 @@ footer{
 
     animRing(final,cls);
 
-    document.getElementById("resultStatus").textContent=final>=85?"Strong recall ✓":final>=65?"Almost there — review missed terms":"Missed key rule elements";
-    document.getElementById("resultSubStatus").textContent=final>=85?"Rule memory is solid for this statement":"Repeat this rule until recall reaches 85%+";
-    document.getElementById("keywordCount").textContent=found.length+" / "+r.keywords.length+" keywords matched";
+    setText("resultStatus",final>=85?"Strong recall ✓":final>=65?"Almost there — review missed terms":"Missed key rule elements");
+    setText("resultSubStatus",final>=85?"Rule memory is solid for this statement":"Repeat this rule until recall reaches 85%+");
+    setText("keywordCount",found.length+" / "+r.keywords.length+" keywords matched");
 
     animBar("barKeyword",kwS);
-    document.getElementById("pctKeyword").textContent=kwS+"%";
+    setText("pctKeyword",kwS+"%");
 
     animBar("barSimilarity",simS);
-    document.getElementById("pctSimilarity").textContent=simS+"%";
+    setText("pctSimilarity",simS+"%");
 
     animBar("barOverall",final);
-    document.getElementById("pctOverall").textContent=final+"%";
+    setText("pctOverall",final+"%");
 
     var circ=113;
     var fp=found.length/r.keywords.length;
@@ -4505,15 +4273,18 @@ footer{
       },300);
     }
 
-    document.getElementById("donutFoundLabel").textContent="Matched: "+found.length;
-    document.getElementById("donutMissedLabel").textContent="Missed: "+missing.length;
-    document.getElementById("donutTotalLabel").textContent="Total: "+r.keywords.length+" keywords";
+    setText("donutFoundLabel","Matched: "+found.length);
+    setText("donutMissedLabel","Missed: "+missing.length);
+    setText("donutTotalLabel","Total: "+r.keywords.length+" keywords");
 
     renderPills(document.getElementById("keywordsFound"),found,"blue");
     renderPills(document.getElementById("keywordsMissing"),missing,"amber");
 
-    document.getElementById("correctRuleText").innerHTML=hlMissed(r.text,missing);
-    document.getElementById("resultPanel").classList.add("show");
+    var correctRuleText=document.getElementById("correctRuleText");
+    var resultPanel=document.getElementById("resultPanel");
+
+    if(correctRuleText)correctRuleText.innerHTML=hlMissed(r.text,missing);
+    if(resultPanel)resultPanel.classList.add("show");
   }
 
   function hideResult(clear){
@@ -4573,13 +4344,15 @@ footer{
   }
 
   function store(p){
-    localStorage.setItem("lexora_cp",JSON.stringify({
-      necessary:true,
-      preferences:!!p.preferences,
-      analytics:!!p.analytics,
-      marketing:!!p.marketing,
-      savedAt:new Date().toISOString()
-    }));
+    try{
+      localStorage.setItem("lexora_cp",JSON.stringify({
+        necessary:true,
+        preferences:!!p.preferences,
+        analytics:!!p.analytics,
+        marketing:!!p.marketing,
+        savedAt:new Date().toISOString()
+      }));
+    }catch(e){}
   }
 
   function apply(p){
@@ -4589,7 +4362,63 @@ footer{
       analytics:!!p.analytics,
       marketing:!!p.marketing
     };
+
     updateSwitches();
+
+    if(prefs.analytics){
+      loadAnalyticsScripts();
+    }
+
+    if(prefs.marketing){
+      loadMarketingScripts();
+    }
+  }
+
+  function loadScriptOnce(id,src,onload){
+    if(document.getElementById(id)){
+      if(typeof onload==="function")onload();
+      return;
+    }
+
+    var s=document.createElement("script");
+    s.id=id;
+    s.src=src;
+    s.async=true;
+
+    if(typeof onload==="function"){
+      s.onload=onload;
+    }
+
+    document.head.appendChild(s);
+  }
+
+  function loadAnalyticsScripts(){
+    var GA_ID="G-XXXXXXXXXX";
+
+    if(GA_ID==="G-XXXXXXXXXX")return;
+
+    loadScriptOnce(
+      "ga-script",
+      "https://www.googletagmanager.com/gtag/js?id="+encodeURIComponent(GA_ID),
+      function(){
+        window.dataLayer=window.dataLayer||[];
+
+        function gtag(){
+          window.dataLayer.push(arguments);
+        }
+
+        window.gtag=window.gtag||gtag;
+
+        gtag("js",new Date());
+        gtag("config",GA_ID,{
+          anonymize_ip:true
+        });
+      }
+    );
+  }
+
+  function loadMarketingScripts(){
+    return;
   }
 
   function updateSwitches(){
@@ -4611,6 +4440,7 @@ footer{
 
   window.openCookieSettings=function(){
     var modal=document.getElementById("cookieModal");
+
     if(modal){
       updateSwitches();
       modal.classList.add("show");
@@ -4623,7 +4453,13 @@ footer{
   };
 
   window.acceptAllCookies=function(){
-    var p={necessary:true,preferences:true,analytics:true,marketing:true};
+    var p={
+      necessary:true,
+      preferences:true,
+      analytics:true,
+      marketing:true
+    };
+
     store(p);
     apply(p);
     hideBanner();
@@ -4631,7 +4467,13 @@ footer{
   };
 
   window.rejectAllCookies=function(){
-    var p={necessary:true,preferences:false,analytics:false,marketing:false};
+    var p={
+      necessary:true,
+      preferences:false,
+      analytics:false,
+      marketing:false
+    };
+
     store(p);
     apply(p);
     hideBanner();
@@ -4664,7 +4506,13 @@ footer{
     }
 
     if(navigator.globalPrivacyControl===true){
-      var p={necessary:true,preferences:false,analytics:false,marketing:false};
+      var p={
+        necessary:true,
+        preferences:false,
+        analytics:false,
+        marketing:false
+      };
+
       store(p);
       apply(p);
       return;
@@ -4675,28 +4523,36 @@ footer{
 
   function isEditable(el){
     if(!el)return false;
+
     var tag=(el.tagName||"").toLowerCase();
+
     return tag==="input"||tag==="textarea"||tag==="select"||el.isContentEditable;
   }
 
+  function isCopyAllowed(el){
+    if(!el)return false;
+
+    if(isEditable(el))return true;
+
+    return !!(
+      el.closest(".legal-card") ||
+      el.closest(".footer-legal") ||
+      el.closest(".footer-col") ||
+      el.closest(".cookie-banner") ||
+      el.closest(".cookie-modal")
+    );
+  }
+
   document.addEventListener("selectstart",function(e){
-    if(!isEditable(e.target))e.preventDefault();
+    if(!isCopyAllowed(e.target))e.preventDefault();
   });
 
   document.addEventListener("dragstart",function(e){
-    if(!isEditable(e.target))e.preventDefault();
+    if(!isCopyAllowed(e.target))e.preventDefault();
   });
 
   document.addEventListener("copy",function(e){
-    if(!isEditable(e.target))e.preventDefault();
-  });
-
-  document.querySelectorAll('a[href="/register?plan=bll-monthly"]').forEach(function(a){
-    a.setAttribute("href","/register?plan=bll-monthly");
-  });
-
-  document.querySelectorAll('a[href="/register?plan=premium"]').forEach(function(a){
-    a.setAttribute("href","/register?plan=premium");
+    if(!isCopyAllowed(e.target))e.preventDefault();
   });
 
   setTimeout(typeRule,800);
