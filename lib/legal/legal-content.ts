@@ -92,14 +92,14 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         title: "Subscriptions and Payments",
         body: [
           "Paid subscriptions are billed according to the plan selected at checkout.",
-          "Payments may be processed through a third-party payment processor. Lexora Prep does not store full credit card numbers on its own servers.",
+          "Payments are processed through Paddle as Merchant of Record. Lexora Prep does not store full credit card numbers on its own servers.",
         ],
       },
       {
         number: "9",
         title: "Cancellation",
         body: [
-          "You may cancel your subscription according to the cancellation tools or instructions available through the payment processor or platform.",
+          "You may cancel your subscription according to the cancellation tools or instructions available through Paddle or the platform.",
           "Cancellation stops future renewal charges but does not automatically create a refund unless the refund requirements in the Refund Policy are satisfied.",
         ],
       },
@@ -194,8 +194,8 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         number: "4",
         title: "Payment Information",
         body: [
-          "Payments may be processed through a third-party payment processor. Lexora Prep does not store full credit card numbers or full payment card information on its own servers.",
-          "Payment processors may collect and process payment, tax, billing, fraud prevention, and subscription information according to their own policies.",
+          "Payments are processed through Paddle as Merchant of Record. Lexora Prep does not store full credit card numbers or full payment card information on its own servers.",
+          "Paddle may collect and process payment, tax, billing, fraud prevention, and subscription information according to its own policies.",
         ],
       },
       {
@@ -204,7 +204,7 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         bullets: [
           "To create and manage user accounts.",
           "To provide platform features, rule training, flashcards, analytics, and study planning.",
-          "To process billing and subscription status through third-party payment processors.",
+          "To process billing and subscription status through Paddle.",
           "To respond to support requests and user communications.",
           "To improve security, performance, reliability, and product quality.",
           "To prevent fraud, misuse, scraping, unauthorized access, or policy violations.",
@@ -256,7 +256,7 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         body: ["For privacy questions, contact support@lexoraprep.com."],
       },
     ],
-    note: "Lexora Prep does not store full card details. Payment processing is handled by third-party payment processors.",
+    note: "Lexora Prep does not store full card details. Payment processing is handled through Paddle as Merchant of Record.",
   },
 
   refund: {
@@ -385,8 +385,8 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         number: "6",
         title: "Payment Processor Cookies",
         body: [
-          "Third-party payment processors may use their own cookies for checkout, tax calculation, fraud prevention, payment processing, invoices, and subscription management.",
-          "Lexora Prep does not control all cookies set by third-party payment processors during checkout.",
+          "Paddle may use its own cookies or similar technologies for checkout, tax calculation, fraud prevention, payment processing, invoices, and subscription management.",
+          "Lexora Prep does not control all cookies or similar technologies set by Paddle during checkout.",
         ],
       },
       {
