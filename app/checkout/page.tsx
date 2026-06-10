@@ -326,7 +326,7 @@ function CheckoutContent() {
         }}
       >
         <header className="sticky top-0 z-20 flex h-[66px] items-center justify-between border-b border-[#E2E6F0] bg-[#F7F8FC]/95 px-5 backdrop-blur-xl md:px-12">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/subscription" className="flex items-center gap-3">
             <img
               src="/icon.png"
               alt="Lexora Prep logo"
@@ -342,7 +342,7 @@ function CheckoutContent() {
             className="group inline-flex items-center gap-2 rounded-[12px] border border-[#CDD3E6] bg-white px-4 py-2 text-sm font-bold text-[#1E293B] shadow-sm transition hover:border-[#0E1B35] hover:text-[#0E1B35]"
           >
             <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
-            Back to main page
+            Back to subscription
           </Link>
         </header>
 

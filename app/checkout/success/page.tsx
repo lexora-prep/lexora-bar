@@ -7,7 +7,7 @@ import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react"
 
 type ActivationState = "checking" | "active" | "pending" | "error"
 
-function normalizePlanLabel(plan: string | null) {
+function planLabel(plan: string | null) {
   if (plan === "premium") return "Premium"
   if (plan === "bll-monthly") return "BLL Monthly"
   return "Subscription"
@@ -26,16 +26,16 @@ function isPaidProfile(profile: any) {
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const plan = searchParams.get("plan")
-  const planLabel = useMemo(() => normalizePlanLabel(plan), [plan])
+  const label = useMemo(() => planLabel(plan), [plan])
 
   const [state, setState] = useState<ActivationState>("checking")
   const [attempts, setAttempts] = useState(1)
 
   useEffect(() => {
-    let cancelled = false
+    let stopped = false
     let timer: ReturnType<typeof setTimeout> | null = null
 
-    async function checkProfile(attempt: number) {
+    async function check(attempt: number) {
       try {
         setAttempts(attempt)
 
@@ -49,10 +49,13 @@ function CheckoutSuccessContent() {
         const data = await response.json()
         const profile = data?.profile || data?.user || data
 
-        if (cancelled) return
+        if (stopped) return
 
         if (isPaidProfile(profile)) {
           setState("active")
+          setTimeout(() => {
+            window.location.href = "/subscription?payment=success"
+          }, 1800)
           return
         }
 
@@ -61,25 +64,25 @@ function CheckoutSuccessContent() {
           return
         }
 
-        timer = setTimeout(() => checkProfile(attempt + 1), 2000)
+        timer = setTimeout(() => check(attempt + 1), 2000)
       } catch (error) {
         console.error("CHECKOUT SUCCESS PROFILE CHECK ERROR:", error)
 
-        if (cancelled) return
+        if (stopped) return
 
         if (attempt >= 15) {
           setState("error")
           return
         }
 
-        timer = setTimeout(() => checkProfile(attempt + 1), 2000)
+        timer = setTimeout(() => check(attempt + 1), 2000)
       }
     }
 
-    void checkProfile(1)
+    void check(1)
 
     return () => {
-      cancelled = true
+      stopped = true
       if (timer) clearTimeout(timer)
     }
   }, [])
@@ -88,12 +91,12 @@ function CheckoutSuccessContent() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#F7F8FC] px-5 text-[#0E1B35]">
-      <div className="w-full max-w-xl rounded-[30px] border border-[#E2E6F0] bg-white p-8 text-center shadow-[0_24px_60px_rgba(14,27,53,0.12)]">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+      <div className="w-full max-w-xl rounded-[32px] border border-[#E2E6F0] bg-white p-8 text-center shadow-[0_24px_60px_rgba(14,27,53,0.12)]">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-600">
           {active ? (
-            <CheckCircle2 className="h-7 w-7" />
+            <CheckCircle2 className="h-8 w-8" />
           ) : (
-            <Loader2 className="h-7 w-7 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin" />
           )}
         </div>
 
@@ -102,17 +105,17 @@ function CheckoutSuccessContent() {
         </div>
 
         <h1 className="font-serif text-[38px] font-normal tracking-[-0.04em] text-[#0E1B35]">
-          {active ? `${planLabel} is active.` : "Activating your access..."}
+          {active ? `${label} is active.` : "Activating your access..."}
         </h1>
 
         <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-[#64748B]">
           {active
-            ? "Your subscription is active and your Lexora access is ready."
+            ? "Your subscription is active. Redirecting you to your subscription page..."
             : state === "pending"
               ? "Your payment was received. Billing confirmation is still syncing. Please refresh your subscription page in a moment."
               : state === "error"
                 ? "Your payment was received, but we could not confirm access yet. Please refresh or contact support."
-                : `We are confirming your ${planLabel} access through Paddle. Attempt ${attempts}/15.`}
+                : `We are confirming your ${label} access through Paddle. Attempt ${attempts}/15.`}
         </p>
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
