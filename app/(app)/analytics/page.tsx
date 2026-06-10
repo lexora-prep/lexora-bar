@@ -99,7 +99,7 @@ export default function AnalyticsPage() {
   const [trend, setTrend] = useState<TrendPoint[]>([])
   const [subjects, setSubjects] = useState<SubjectStat[]>([])
   const [bllSubjects, setBLLSubjects] = useState<BLLSubjectStat[]>([])
-  const [tab, setTab] = useState<"bll">("bll")
+  const [tab, setTab] = useState<"mbe" | "bll">("bll")
   const [modeStats, setModeStats] = useState<ModeStats | null>(null)
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([])
 
