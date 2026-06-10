@@ -86,13 +86,6 @@ type SubjectDiagnostic = {
   total: number
 }
 
-type ForecastPoint = {
-  day: string
-  followPlan: number
-  consistent: number
-  ignoreWeak: number
-}
-
 type RiskBuckets = {
   safe: SubjectDiagnostic[]
   maintenance: SubjectDiagnostic[]
@@ -142,6 +135,7 @@ export default function AnalyticsPage() {
   const [range, setRange] = useState("30d")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+  const [trendLoading, setTrendLoading] = useState(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -220,6 +214,8 @@ export default function AnalyticsPage() {
       if (!userId) return
 
       try {
+        setTrendLoading(true)
+
         let url = `/api/trend-analytics?userId=${userId}&range=${range}`
 
         if (range === "custom") {
@@ -234,12 +230,14 @@ export default function AnalyticsPage() {
         const res = await fetch(url, {
           cache: "no-store",
         })
-        const data = await res.json()
 
+        const data = await res.json()
         setTrend(Array.isArray(data?.trend) ? data.trend : [])
       } catch (error) {
         console.error("Trend analytics load error:", error)
         setTrend([])
+      } finally {
+        setTrendLoading(false)
       }
     }
 
@@ -295,7 +293,6 @@ export default function AnalyticsPage() {
   )[0]
   const primaryWeakArea = weakAreas[0]
   const riskBuckets = buildRiskBuckets(subjects)
-  const forecast = buildForecast(currentScore, delta, weakAreas.length)
   const consistencyScore = buildConsistencyScore(chartData)
 
   return (
@@ -316,43 +313,20 @@ export default function AnalyticsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex min-h-10 items-center gap-2 rounded-xl border border-[#e5e8f0] bg-white px-3 text-[12px] font-normal text-[#0c123a] shadow-[0_6px_16px_rgba(15,23,42,0.04)]">
-              <CalendarDays size={15} className="text-[#1b2452]" />
-              <select
-                value={range}
-                onChange={(event) => setRange(event.target.value)}
-                className="h-8 bg-transparent text-[12px] font-normal outline-none"
-              >
-                <option value="today">Today</option>
-                <option value="7d">7 days</option>
-                <option value="14d">14 days</option>
-                <option value="30d">30 days</option>
-                <option value="90d">3 months</option>
-                <option value="custom">Custom</option>
-              </select>
-
-              {range === "custom" ? (
-                <>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
-                    className="h-8 rounded-md border border-[#e5e8f0] bg-white px-2 text-[11px] outline-none"
-                  />
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(event) => setEndDate(event.target.value)}
-                    className="h-8 rounded-md border border-[#e5e8f0] bg-white px-2 text-[11px] outline-none"
-                  />
-                </>
-              ) : null}
-            </div>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <DateRangeControl
+              range={range}
+              setRange={setRange}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+            />
 
             <button
               type="button"
               disabled
+              title="Export is locked until the real export endpoint is connected."
               className="flex h-10 cursor-not-allowed items-center gap-2 rounded-xl border border-[#e5e8f0] bg-white px-4 text-[12px] font-normal text-[#6c7897] shadow-[0_6px_16px_rgba(15,23,42,0.04)]"
             >
               <Download size={15} />
@@ -390,6 +364,7 @@ export default function AnalyticsPage() {
           <Overview
             dashboard={dashboard}
             chartData={chartData}
+            trendLoading={trendLoading}
             currentScore={currentScore}
             delta={delta}
             canUseBLLAnalytics={canUseBLLAnalytics}
@@ -400,9 +375,9 @@ export default function AnalyticsPage() {
             weakestSubject={weakestSubject}
             weakAreas={weakAreas}
             primaryWeakArea={primaryWeakArea}
-            forecast={forecast}
             riskBuckets={riskBuckets}
             consistencyScore={consistencyScore}
+            range={range}
           />
         ) : (
           <TabPlaceholder
@@ -434,6 +409,7 @@ export default function AnalyticsPage() {
 function Overview({
   dashboard,
   chartData,
+  trendLoading,
   currentScore,
   delta,
   canUseBLLAnalytics,
@@ -444,12 +420,13 @@ function Overview({
   weakestSubject,
   weakAreas,
   primaryWeakArea,
-  forecast,
   riskBuckets,
   consistencyScore,
+  range,
 }: {
   dashboard: DashboardData
   chartData: Array<{ date: string; score: number }>
+  trendLoading: boolean
   currentScore: number
   delta: number
   canUseBLLAnalytics: boolean
@@ -460,12 +437,13 @@ function Overview({
   weakestSubject?: SubjectDiagnostic
   weakAreas: WeakArea[]
   primaryWeakArea?: WeakArea
-  forecast: ForecastPoint[]
   riskBuckets: RiskBuckets
   consistencyScore: number
+  range: string
 }) {
   const router = useRouter()
   const weakCountDelta = weakAreas.length > 0 ? weakAreas.length : 0
+  const hasTrendData = chartData.some((point) => point.score > 0)
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -517,17 +495,57 @@ function Overview({
               </h2>
 
               <div className="mt-7 grid grid-cols-4 gap-4">
-                <SummaryMini icon={<TrendingUp size={22} />} title="Main Progress" text={delta >= 0 ? `Your score improved by ${Math.abs(delta)} points recently.` : `Your score dropped by ${Math.abs(delta)} points recently.`} tone="green" />
-                <SummaryMini icon={<ShieldCheck size={22} />} title="Biggest Strength" text={strongestSubject ? `${strongestSubject.name} is your strongest subject.` : "No strength confirmed yet."} tone="green" />
-                <SummaryMini icon={<AlertTriangle size={22} />} title="Biggest Weakness" text={weakestSubject ? `${weakestSubject.name} needs the most attention.` : "No weak subject confirmed yet."} tone="red" />
-                <SummaryMini icon={<Target size={22} />} title="Recommendation" text={primaryWeakArea ? `Focus on ${primaryWeakArea.subject}.` : "Complete more rules for a recommendation."} tone="purple" />
+                <SummaryMini
+                  icon={<TrendingUp size={22} />}
+                  title="Main Progress"
+                  text={
+                    delta >= 0
+                      ? `Your score improved by ${Math.abs(delta)} points recently.`
+                      : `Your score dropped by ${Math.abs(delta)} points recently.`
+                  }
+                  tone="green"
+                  onClick={() => router.push("/analytics")}
+                />
+                <SummaryMini
+                  icon={<ShieldCheck size={22} />}
+                  title="Biggest Strength"
+                  text={
+                    strongestSubject
+                      ? `${strongestSubject.name} is your strongest subject.`
+                      : "No strength confirmed yet."
+                  }
+                  tone="green"
+                  onClick={() => router.push("/rule-bank")}
+                />
+                <SummaryMini
+                  icon={<AlertTriangle size={22} />}
+                  title="Biggest Weakness"
+                  text={
+                    weakestSubject
+                      ? `${weakestSubject.name} needs the most attention.`
+                      : "No weak subject confirmed yet."
+                  }
+                  tone="red"
+                  onClick={() => router.push("/weak-areas")}
+                />
+                <SummaryMini
+                  icon={<Target size={22} />}
+                  title="Recommendation"
+                  text={
+                    primaryWeakArea
+                      ? `Focus on ${primaryWeakArea.subject}.`
+                      : "Complete more rules for a recommendation."
+                  }
+                  tone="purple"
+                  onClick={() => router.push("/rule-training")}
+                />
               </div>
 
               <div className="mt-6 rounded-xl bg-violet-50 p-4">
                 <div className="mb-3 text-[12px] font-normal text-[#11183d]">
                   AI Performance Snapshot
                 </div>
-                <div className="grid grid-cols-4 items-stretch gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   <SnapshotMetric label="Accuracy" value={`${currentScore}%`} />
                   <SnapshotMetric label="Strong Areas" value={strongSubjects.length} />
                   <SnapshotMetric label="Consistency" value={`${consistencyScore} / 5`} />
@@ -546,18 +564,62 @@ function Overview({
               <div className="mb-3 text-[13px] font-normal text-emerald-700">
                 Helping Your Score
               </div>
-              <DriverRow icon={<BookOpen size={20} />} title={strongestSubject?.name || "No strong subject yet"} text={strongestSubject ? `${strongestSubject.accuracy}% accuracy` : "Complete more rules to calculate strengths."} value={strongestSubject ? `+${strongestSubject.accuracy}%` : "—"} tone="green" />
-              <DriverRow icon={<Zap size={20} />} title="Recent score movement" text={delta >= 0 ? "Recent BLL score is moving up." : "Recent BLL score decreased."} value={`${delta >= 0 ? "+" : "-"}${Math.abs(delta)} pts`} tone={delta >= 0 ? "green" : "red"} />
-              <DriverRow icon={<CalendarDays size={20} />} title="Consistency" text="Recent activity is used to measure stability." value={`${consistencyScore}/5`} tone="green" />
+              <DriverRow
+                icon={<BookOpen size={20} />}
+                title={strongestSubject?.name || "No strong subject yet"}
+                text={
+                  strongestSubject
+                    ? `${strongestSubject.accuracy}% accuracy`
+                    : "Complete more rules to calculate strengths."
+                }
+                value={strongestSubject ? `+${strongestSubject.accuracy}%` : "—"}
+                tone="green"
+              />
+              <DriverRow
+                icon={<Zap size={20} />}
+                title="Recent score movement"
+                text={delta >= 0 ? "Recent BLL score is moving up." : "Recent BLL score decreased."}
+                value={`${delta >= 0 ? "+" : "-"}${Math.abs(delta)} pts`}
+                tone={delta >= 0 ? "green" : "red"}
+              />
+              <DriverRow
+                icon={<CalendarDays size={20} />}
+                title="Consistency"
+                text="Recent activity is used to measure stability."
+                value={`${consistencyScore}/5`}
+                tone="green"
+              />
             </div>
 
             <div>
               <div className="mb-3 text-[13px] font-normal text-rose-700">
                 Hurting Your Score
               </div>
-              <DriverRow icon={<Scale size={20} />} title={weakestSubject?.name || "No weak subject yet"} text={weakestSubject ? `${weakestSubject.accuracy}% accuracy` : "Weak subjects appear after more attempts."} value={weakestSubject ? `-${100 - weakestSubject.accuracy}%` : "—"} tone="red" />
-              <DriverRow icon={<AlertTriangle size={20} />} title={primaryWeakArea?.rule || primaryWeakArea?.title || "No weak rule yet"} text={primaryWeakArea?.subject || "Weak rules appear after repeated low recall."} value={primaryWeakArea?.accuracy !== undefined ? `${primaryWeakArea.accuracy}%` : "—"} tone="red" />
-              <DriverRow icon={<Clock3 size={20} />} title="Unstable rules" text="Rules below 70% accuracy need repeated recall." value={weakAreas.length.toString()} tone="red" />
+              <DriverRow
+                icon={<Scale size={20} />}
+                title={weakestSubject?.name || "No weak subject yet"}
+                text={
+                  weakestSubject
+                    ? `${weakestSubject.accuracy}% accuracy`
+                    : "Weak subjects appear after more attempts."
+                }
+                value={weakestSubject ? `-${100 - weakestSubject.accuracy}%` : "—"}
+                tone="red"
+              />
+              <DriverRow
+                icon={<AlertTriangle size={20} />}
+                title={primaryWeakArea?.rule || primaryWeakArea?.title || "No weak rule yet"}
+                text={primaryWeakArea?.subject || "Weak rules appear after repeated low recall."}
+                value={primaryWeakArea?.accuracy !== undefined ? `${primaryWeakArea.accuracy}%` : "—"}
+                tone="red"
+              />
+              <DriverRow
+                icon={<Clock3 size={20} />}
+                title="Unstable rules"
+                text="Rules below 70% accuracy need repeated recall."
+                value={weakAreas.length.toString()}
+                tone="red"
+              />
             </div>
           </div>
         </GlassCard>
@@ -565,8 +627,23 @@ function Overview({
         <GlassCard title="Next Best Move" icon={<Rocket size={18} className="text-violet-700" />}>
           {primaryWeakArea ? (
             <div className="space-y-4">
-              <StepCard step="1" title={`Review ${primaryWeakArea.subject}`} subtitle={primaryWeakArea.rule || primaryWeakArea.title || primaryWeakArea.topic || "Focus on rules, exceptions, and common mistakes."} time="25 min" />
-              <StepCard step="2" title="Then do targeted rule recall" subtitle="Repeat the rule until recall becomes stable." time="10 min" />
+              <StepCard
+                step="1"
+                title={`Review ${primaryWeakArea.subject}`}
+                subtitle={
+                  primaryWeakArea.rule ||
+                  primaryWeakArea.title ||
+                  primaryWeakArea.topic ||
+                  "Focus on rules, exceptions, and common mistakes."
+                }
+                time="25 min"
+              />
+              <StepCard
+                step="2"
+                title="Then do targeted rule recall"
+                subtitle="Repeat the rule until recall becomes stable."
+                time="10 min"
+              />
               <button
                 type="button"
                 onClick={() => router.push("/rule-training")}
@@ -586,45 +663,37 @@ function Overview({
       </section>
 
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1fr]">
-        <GlassCard title="7-Day Improvement Forecast">
-          {canUseBLLAnalytics && chartData.some((point) => point.score > 0) ? (
-            <div className="grid grid-cols-[1fr_190px] gap-4">
-              <div className="h-[235px]">
-                <ResponsiveContainer>
-                  <AreaChart data={forecast}>
-                    <defs>
-                      <linearGradient id="followPlanGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="10%" stopColor="#7c3aed" stopOpacity={0.16} />
-                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id="consistentGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="10%" stopColor="#0ea5e9" stopOpacity={0.11} />
-                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id="ignoreWeakGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="10%" stopColor="#f43f5e" stopOpacity={0.12} />
-                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="#eef1f6" vertical={false} />
-                    <XAxis dataKey="day" tick={{ fontSize: 11, fontWeight: 400 }} tickLine={false} axisLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 400 }} tickLine={false} axisLine={false} />
-                    <Tooltip content={<ForecastTooltip />} />
-                    <Area name="If you follow the plan" type="monotone" dataKey="followPlan" stroke="#7c3aed" strokeWidth={2} fill="url(#followPlanGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
-                    <Area name="If you stay consistent" type="monotone" dataKey="consistent" stroke="#0ea5e9" strokeWidth={2} fill="url(#consistentGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
-                    <Area name="If you ignore weak areas" type="monotone" dataKey="ignoreWeak" stroke="#f43f5e" strokeWidth={2} fill="url(#ignoreWeakGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="space-y-4 pt-5 text-[12px] font-normal">
-                <LegendLine color="bg-violet-700" label="If you follow the plan" value={`${forecast.at(-1)?.followPlan ?? currentScore}%`} />
-                <LegendLine color="bg-sky-500" label="If you stay consistent" value={`${forecast.at(-1)?.consistent ?? currentScore}%`} />
-                <LegendLine color="bg-rose-500" label="If you ignore weak areas" value={`${forecast.at(-1)?.ignoreWeak ?? currentScore}%`} />
-              </div>
+        <GlassCard title="BLL Accuracy Trend" subtitle={`Real trend from ${rangeLabel(range).toLowerCase()}.`}>
+          {trendLoading ? (
+            <EmptyCompact text="Loading selected date range..." />
+          ) : canUseBLLAnalytics && hasTrendData ? (
+            <div className="h-[245px]">
+              <ResponsiveContainer>
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="realTrendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="10%" stopColor="#7c3aed" stopOpacity={0.18} />
+                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#eef1f6" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 400 }} tickLine={false} axisLine={false} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 400 }} tickLine={false} axisLine={false} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area
+                    name="BLL Accuracy"
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#7c3aed"
+                    strokeWidth={2}
+                    fill="url(#realTrendGradient)"
+                    dot={{ r: 3, strokeWidth: 2, fill: "#fff" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyCompact text="Complete more BLL training to generate a real forecast." />
+            <EmptyCompact text="No BLL activity found for this selected date range." />
           )}
         </GlassCard>
 
@@ -636,6 +705,57 @@ function Overview({
           )}
         </GlassCard>
       </section>
+    </div>
+  )
+}
+
+function DateRangeControl({
+  range,
+  setRange,
+  startDate,
+  setStartDate,
+  endDate,
+  setEndDate,
+}: {
+  range: string
+  setRange: (value: string) => void
+  startDate: string
+  setStartDate: (value: string) => void
+  endDate: string
+  setEndDate: (value: string) => void
+}) {
+  return (
+    <div className="flex min-h-10 flex-wrap items-center gap-2 rounded-xl border border-[#e5e8f0] bg-white px-3 text-[12px] font-normal text-[#0c123a] shadow-[0_6px_16px_rgba(15,23,42,0.04)]">
+      <CalendarDays size={15} className="text-[#1b2452]" />
+      <select
+        value={range}
+        onChange={(event) => setRange(event.target.value)}
+        className="h-8 bg-transparent text-[12px] font-normal outline-none"
+      >
+        <option value="today">Today</option>
+        <option value="7d">7 days</option>
+        <option value="14d">14 days</option>
+        <option value="30d">30 days</option>
+        <option value="90d">3 months</option>
+        <option value="custom">Custom</option>
+      </select>
+
+      {range === "custom" ? (
+        <>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(event) => setStartDate(event.target.value)}
+            className="h-8 rounded-md border border-[#e5e8f0] bg-white px-2 text-[11px] outline-none"
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(event) => setEndDate(event.target.value)}
+            className="h-8 rounded-md border border-[#e5e8f0] bg-white px-2 text-[11px] outline-none"
+          />
+        </>
+      ) : null}
     </div>
   )
 }
@@ -685,26 +805,6 @@ function buildRiskBuckets(subjects: SubjectDiagnostic[]): RiskBuckets {
 function buildConsistencyScore(chartData: Array<{ date: string; score: number }>) {
   const activeDays = chartData.filter((point) => point.score > 0).slice(-7).length
   return Math.max(0, Math.min(5, Number(((activeDays / 7) * 5).toFixed(1))))
-}
-
-function buildForecast(currentScore: number, delta: number, weakAreaCount: number): ForecastPoint[] {
-  const base = Math.max(0, Math.min(100, currentScore || 0))
-  const positiveDelta = Math.max(1, Math.min(4, Math.abs(delta || 1)))
-  const weakPenalty = weakAreaCount > 0 ? 2 : 1
-
-  return Array.from({ length: 7 }).map((_, index) => {
-    const day = index === 0 ? "Today" : `Day ${index}`
-    const followPlan = Math.min(100, Math.round(base + index * positiveDelta))
-    const consistent = Math.min(100, Math.round(base + index * Math.max(1, positiveDelta / 2)))
-    const ignoreWeak = Math.max(0, Math.round(base - index * weakPenalty))
-
-    return {
-      day,
-      followPlan,
-      consistent,
-      ignoreWeak,
-    }
-  })
 }
 
 function safeNumber(value: unknown) {
@@ -843,11 +943,13 @@ function SummaryMini({
   title,
   text,
   tone,
+  onClick,
 }: {
   icon: ReactNode
   title: string
   text: string
   tone: "green" | "red" | "purple"
+  onClick: () => void
 }) {
   const toneClass =
     tone === "green"
@@ -865,7 +967,11 @@ function SummaryMini({
       <p className="mt-2 pr-3 text-[11px] font-normal leading-5 text-[#52617f]">
         {text}
       </p>
-      <button type="button" className="mt-3 text-[11px] font-normal text-violet-700">
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-3 text-[11px] font-normal text-violet-700"
+      >
         View details →
       </button>
     </div>
@@ -1000,11 +1106,11 @@ function MiniSparkline({
 
 function RiskMap({ buckets }: { buckets: RiskBuckets }) {
   return (
-    <div className="grid grid-cols-4 gap-3">
-      <RiskColumn title="Safe" text="Strong performance. Keep it up!" tone="green" items={buckets.safe} button="Maintain" />
-      <RiskColumn title="Needs Maintenance" text="Performing well, but needs consistent review." tone="yellow" items={buckets.maintenance} button="Review this week" />
-      <RiskColumn title="High Risk" text="Focus soon to prevent further score impact." tone="orange" items={buckets.high} button="Focus soon" />
-      <RiskColumn title="Critical" text="Immediate focus recommended." tone="red" items={buckets.critical} button="Start today" />
+    <div className="grid grid-cols-4 items-stretch gap-3">
+      <RiskColumn title="Safe" text="Strong performance. Keep it up!" tone="green" items={buckets.safe} button="Maintain" href="/rule-bank" />
+      <RiskColumn title="Needs Maintenance" text="Performing well, but needs consistent review." tone="yellow" items={buckets.maintenance} button="Review this week" href="/study-plan" />
+      <RiskColumn title="High Risk" text="Focus soon to prevent further score impact." tone="orange" items={buckets.high} button="Focus soon" href="/weak-areas" />
+      <RiskColumn title="Critical" text="Immediate focus recommended." tone="red" items={buckets.critical} button="Start today" href="/rule-training" />
     </div>
   )
 }
@@ -1015,13 +1121,17 @@ function RiskColumn({
   tone,
   items,
   button,
+  href,
 }: {
   title: string
   text: string
   tone: "green" | "yellow" | "orange" | "red"
   items: SubjectDiagnostic[]
   button: string
+  href: string
 }) {
+  const router = useRouter()
+
   const toneClass =
     tone === "green"
       ? "border-emerald-100 bg-emerald-50 text-emerald-700"
@@ -1055,29 +1165,13 @@ function RiskColumn({
         )}
       </div>
 
-      <button type="button" className="mt-auto h-9 w-full rounded-lg border border-current bg-white/50 text-[12px] font-normal">
+      <button
+        type="button"
+        onClick={() => router.push(href)}
+        className="mt-auto h-9 w-full rounded-lg border border-current bg-white/50 text-[12px] font-normal"
+      >
         {button}
       </button>
-    </div>
-  )
-}
-
-function LegendLine({
-  color,
-  label,
-  value,
-}: {
-  color: string
-  label: string
-  value: string
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${color}`} />
-      <div>
-        <div className="text-[#11183d]">{label}</div>
-        <div className="text-violet-700">{value}</div>
-      </div>
     </div>
   )
 }
@@ -1113,21 +1207,6 @@ function ChartTooltip({ active, payload, label }: any) {
       <div className="mt-1 text-xs font-normal text-violet-700">
         BLL Accuracy: {payload[0]?.value ?? 0}%
       </div>
-    </div>
-  )
-}
-
-function ForecastTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null
-
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg">
-      <div className="text-xs font-normal text-[#11183d]">{label}</div>
-      {payload.map((item: any) => (
-        <div key={item.dataKey} className="mt-1 text-xs font-normal" style={{ color: item.color }}>
-          {item.name || item.dataKey}: {item.value}%
-        </div>
-      ))}
     </div>
   )
 }
