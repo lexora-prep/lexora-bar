@@ -137,24 +137,26 @@ async function getCachedAblyTokenRequest(): Promise<AblyTokenRequestPayload> {
 }
 
 function waitForConnected(client: Ably.Realtime) {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<boolean>((resolve) => {
     if (client.connection.state === "connected") {
-      resolve()
+      resolve(true)
       return
     }
 
     const timeout = window.setTimeout(() => {
-      reject(new Error("Admin realtime connection timed out."))
+      console.warn("Admin realtime connection timed out. Realtime notifications disabled for this session.")
+      resolve(false)
     }, 12000)
 
     client.connection.once("connected", () => {
       window.clearTimeout(timeout)
-      resolve()
+      resolve(true)
     })
 
     client.connection.once("failed", () => {
       window.clearTimeout(timeout)
-      reject(new Error("Admin realtime connection failed."))
+      console.warn("Admin realtime connection failed. Realtime notifications disabled for this session.")
+      resolve(false)
     })
   })
 }
@@ -243,9 +245,12 @@ export default function AdminRealtimeBridge() {
         })
 
         clientRef.current = client
-        await waitForConnected(client)
+        const connected = await waitForConnected(client)
 
-        if (!alive) return
+        if (!alive || !connected) {
+          client.close()
+          return
+        }
 
         userChannel = client.channels.get(`admin:user:${clientId}`)
         typingChannel = client.channels.get("admin:workspace:typing")
