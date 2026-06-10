@@ -178,7 +178,7 @@ export default function Sidebar({
     ...(mbePublicVisible
       ? [
           {
-            name: "MBE Practice",
+            name: "Practice Module",
             href: "/mbe",
             icon: BookOpen,
             locked: !mbeAccess,

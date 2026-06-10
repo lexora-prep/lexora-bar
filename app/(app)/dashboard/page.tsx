@@ -1866,7 +1866,7 @@ export default function Dashboard() {
 
             <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-4">
               <MetricCard
-                title="MBE Questions"
+                title="Practice Questions"
                 value={isPremium ? `${todayMbe}` : "—"}
                 suffix={isPremium ? `/ ${goalMbe}` : ""}
                 subtitle="Coming soon"
@@ -1895,7 +1895,7 @@ export default function Dashboard() {
               />
 
               <MetricCard
-                title="Overall MBE"
+                title="Overall Practice"
                 value={
                   isPremium
                     ? `${stateData?.userMBE ?? dashboard?.userMBE ?? 0}%`
@@ -2087,7 +2087,7 @@ export default function Dashboard() {
                 subtitle={`${
                   analyticsMode === "BLL"
                     ? `${getJurisdictionDisplayName(selectedStudyJurisdiction)} BLL accuracy over time`
-                    : "MBE accuracy over time"
+                    : "Practice accuracy over time"
                 } • ${chartRangeLabel}`}
                 premium
               >
@@ -2111,8 +2111,8 @@ export default function Dashboard() {
                   analyticsMode === "BLL"
                     ? `${getJurisdictionDisplayName(selectedStudyJurisdiction)} subjects`
                     : isPremium
-                      ? "Your MBE percentage vs state average"
-                      : "Premium only. Unlock MBE analytics."
+                      ? "Your practice percentage vs state average"
+                      : "This analytics module is not active yet."
                 }
               >
                 {analyticsMode === "MBE" ? (
@@ -2209,7 +2209,7 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {mbePublicVisible && (
                     <CompactCompareMetric
-                      label="MBE Accuracy"
+                      label="Practice Accuracy"
                       you={
                         isPremium
                           ? stateData?.userMBE ?? dashboard?.userMBE ?? 0
@@ -2244,7 +2244,7 @@ export default function Dashboard() {
 
               {mbePublicVisible && (
                 <QuickStartCard
-                  title="MBE Practice"
+                  title="Practice Module"
                   subtitle="Practice multiple-choice questions"
                   onClick={() => router.push("/mbe")}
                   locked={!isPremium}
@@ -2801,7 +2801,7 @@ export default function Dashboard() {
 
                       {mbePublicVisible && (
                         <InfoRow
-                          label="MBE Questions"
+                          label="Practice Questions"
                           value={
                             isPremium ? (
                               <span className="font-semibold text-slate-400">
