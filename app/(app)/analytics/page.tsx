@@ -68,8 +68,11 @@ type WeakArea = {
   mastered: number
 }
 
+type SubscriptionTier = "free" | "bll-monthly" | "premium" | string
+
 type ProfileData = {
-  mbe_access?: boolean
+  subscription_tier?: SubscriptionTier
+  billing_status?: string
 }
 
 const ALL_BLL_SUBJECTS = [
@@ -93,11 +96,11 @@ export default function AnalyticsPage() {
 
   const [userId, setUserId] = useState<string | null>(null)
   const [loadingUser, setLoadingUser] = useState(true)
-  const [isPremium, setIsPremium] = useState(false)
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>("free")
+  const [billingStatus, setBillingStatus] = useState("free")
 
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [trend, setTrend] = useState<TrendPoint[]>([])
-  const [subjects, setSubjects] = useState<SubjectStat[]>([])
   const [bllSubjects, setBLLSubjects] = useState<BLLSubjectStat[]>([])
   const [modeStats, setModeStats] = useState<ModeStats | null>(null)
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([])
@@ -133,7 +136,8 @@ export default function AnalyticsPage() {
 
         if (profileRes.ok) {
           const profile: ProfileData = await profileRes.json()
-          setIsPremium(!!profile?.mbe_access)
+          setSubscriptionTier(profile?.subscription_tier || "free")
+          setBillingStatus(profile?.billing_status || "free")
         }
       } catch (error) {
         console.error("LOAD USER ERROR:", error)
@@ -150,22 +154,19 @@ export default function AnalyticsPage() {
       if (!userId) return
 
       try {
-        const [dashRes, subRes, bllRes, modeRes, weakRes] = await Promise.all([
+        const [dashRes, bllRes, modeRes, weakRes] = await Promise.all([
           fetch(`/api/dashboard-analytics?userId=${userId}`, { cache: "no-store" }),
-          fetch(`/api/mbe-subject-analytics?userId=${userId}`, { cache: "no-store" }),
           fetch(`/api/bll-subject-analytics?userId=${userId}`, { cache: "no-store" }),
           fetch(`/api/bll-mode-analytics?userId=${userId}`, { cache: "no-store" }),
           fetch(`/api/weak-areas?userId=${userId}`, { cache: "no-store" }),
         ])
 
         const dashData = await dashRes.json()
-        const subData = await subRes.json()
         const bllData = await bllRes.json()
         const modeData = await modeRes.json()
         const weakData = await weakRes.json()
 
         setDashboard(dashData)
-        setSubjects(Array.isArray(subData?.subjects) ? subData.subjects : [])
         setBLLSubjects(Array.isArray(bllData?.subjects) ? bllData.subjects : [])
         setModeStats(modeData ?? null)
         setWeakAreas(Array.isArray(weakData?.weakAreas) ? weakData.weakAreas : [])
@@ -219,6 +220,14 @@ export default function AnalyticsPage() {
     date: shortDateLabel(item.date),
     score: Number(item.bll ?? 0),
   }))
+
+  const hasActivePaidAccess =
+    billingStatus === "active" || billingStatus === "trialing"
+
+  const isBLL = hasActivePaidAccess && subscriptionTier === "bll-monthly"
+  const isPremium = hasActivePaidAccess && subscriptionTier === "premium"
+  const canUseBLLAnalytics = isBLL || isPremium
+  const canUsePremiumAnalytics = isPremium
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-4 md:p-5 space-y-4">
