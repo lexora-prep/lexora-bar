@@ -34,9 +34,17 @@ declare global {
       Environment?: {
         set: (environment: "sandbox" | "production") => void
       }
-      Initialize?: (options: { token: string }) => void
+      Initialize?: (options: {
+        token: string
+        eventCallback?: (event: { name?: string; data?: any }) => void
+      }) => void
       Checkout?: {
         open: (options: {
+          settings?: {
+            displayMode?: "overlay" | "inline"
+            theme?: "light" | "dark"
+            successUrl?: string
+          }
           items: Array<{
             priceId: string
             quantity: number
@@ -169,6 +177,13 @@ function CheckoutContent() {
 
       window.Paddle.Initialize?.({
         token: clientToken,
+        eventCallback: (event) => {
+          if (event?.name === "checkout.completed") {
+            const successUrl = new URL("/checkout/success", window.location.origin)
+            successUrl.searchParams.set("plan", selectedPlanId)
+            window.location.assign(successUrl.toString())
+          }
+        },
       })
 
       setPaddleReady(true)
@@ -215,7 +230,15 @@ function CheckoutContent() {
     try {
       setOpeningCheckout(true)
 
+      const successUrl = new URL("/checkout/success", window.location.origin)
+      successUrl.searchParams.set("plan", selectedPlanId)
+
       window.Paddle.Checkout.open({
+        settings: {
+          displayMode: "overlay",
+          theme: "light",
+          successUrl: successUrl.toString(),
+        },
         items: [
           {
             priceId,
