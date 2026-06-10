@@ -99,7 +99,6 @@ export default function AnalyticsPage() {
   const [trend, setTrend] = useState<TrendPoint[]>([])
   const [subjects, setSubjects] = useState<SubjectStat[]>([])
   const [bllSubjects, setBLLSubjects] = useState<BLLSubjectStat[]>([])
-  const [tab, setTab] = useState<"mbe" | "bll">("bll")
   const [modeStats, setModeStats] = useState<ModeStats | null>(null)
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([])
 
@@ -216,13 +215,10 @@ export default function AnalyticsPage() {
     return <div className="p-6 text-sm text-slate-500">Loading analytics...</div>
   }
 
-  const chartData =
-    tab === "mbe" && !isPremium
-      ? []
-      : trend.map((item) => ({
-          date: shortDateLabel(item.date),
-          score: tab === "mbe" ? Number(item.mbe ?? 0) : Number(item.bll ?? 0),
-        }))
+  const chartData = trend.map((item) => ({
+    date: shortDateLabel(item.date),
+    score: Number(item.bll ?? 0),
+  }))
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-4 md:p-5 space-y-4">
@@ -235,19 +231,7 @@ export default function AnalyticsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <StatCard
-          title="TOTAL QUESTIONS"
-          value={isPremium ? dashboard.totalPracticeQuestions : "—"}
-          delta={0}
-          locked={!isPremium}
-        />
-        <StatCard
-          title="ACCURACY"
-          value={isPremium ? `${dashboard.mbeAccuracy}%` : "—"}
-          delta={isPremium ? dashboard.mbeAccuracy - dashboard.prevPractice : 0}
-          locked={!isPremium}
-        />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <StatCard
           title="BLL SCORE"
           value={`${dashboard.bllScore}%`}
@@ -268,31 +252,9 @@ export default function AnalyticsPage() {
                 Accuracy Trend
               </h2>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setTab("bll")}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    tab === "bll" ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  BLL
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (!isPremium) {
-                      router.push("/subscription")
-                      return
-                    }
-                    setTab("mbe")
-                  }}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    tab === "mbe" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  Practice
-                </button>
-              </div>
+              <span className="rounded-full bg-violet-600 px-3 py-1 text-xs font-semibold text-white">
+                BLL
+              </span>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -323,9 +285,7 @@ export default function AnalyticsPage() {
           )}
 
           <div className="h-[230px]">
-            {tab === "mbe" && !isPremium ? (
-              <LockedPanel text="This section is not active yet." />
-            ) : chartData.length === 0 ? (
+            {chartData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-slate-500">
                 No trend data yet.
               </div>
@@ -340,8 +300,8 @@ export default function AnalyticsPage() {
                   <Area
                     type="monotone"
                     dataKey="score"
-                    name={tab === "mbe" ? "Accuracy" : "BLL Accuracy"}
-                    stroke={tab === "mbe" ? "#2563eb" : "#7c3aed"}
+                    name="BLL Accuracy"
+                    stroke="#7c3aed"
                     fillOpacity={0.15}
                   />
                 </AreaChart>
@@ -356,68 +316,29 @@ export default function AnalyticsPage() {
               Accuracy by Subject
             </h2>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  if (!isPremium) {
-                    router.push("/subscription")
-                    return
-                  }
-                  setTab("mbe")
-                }}
-                className={`px-3 py-1 text-xs rounded-full ${
-                  tab === "mbe" ? "bg-blue-600 text-white" : "bg-slate-100"
-                }`}
-              >
-                Practice
-              </button>
-
-              <button
-                onClick={() => setTab("bll")}
-                className={`px-3 py-1 text-xs rounded-full ${
-                  tab === "bll" ? "bg-violet-600 text-white" : "bg-slate-100"
-                }`}
-              >
-                BLL
-              </button>
-            </div>
+            <span className="rounded-full bg-violet-600 px-3 py-1 text-xs font-semibold text-white">
+              BLL
+            </span>
           </div>
 
           <div className="max-h-[320px] space-y-3 overflow-y-auto pr-1">
-            {tab === "mbe" &&
-              (isPremium ? (
-                subjects.map((s) => (
-                  <SubjectRow
-                    key={s.subject}
-                    label={s.subject}
-                    value={s.accuracy}
-                    secondary={`${s.completed ?? 0} / ${s.total ?? 0}`}
-                    pillClass="bg-blue-100 text-blue-600"
-                    barClass="bg-blue-500"
-                  />
-                ))
-              ) : (
-                <LockedPanel text="This section is not active yet." compact />
-              ))}
+            {ALL_BLL_SUBJECTS.map((name) => {
+              const subject = bllSubjects.find((s) => s.name === name)
+              const percent = subject?.accuracy ?? 0
+              const completed = subject?.completed ?? 0
+              const total = subject?.total ?? 0
 
-            {tab === "bll" &&
-              ALL_BLL_SUBJECTS.map((name) => {
-                const subject = bllSubjects.find((s) => s.name === name)
-                const percent = subject?.accuracy ?? 0
-                const completed = subject?.completed ?? 0
-                const total = subject?.total ?? 0
-
-                return (
-                  <SubjectRow
-                    key={name}
-                    label={name}
-                    value={percent}
-                    secondary={`${completed} / ${total}`}
-                    pillClass="bg-violet-100 text-violet-600"
-                    barClass="bg-violet-500"
-                  />
-                )
-              })}
+              return (
+                <SubjectRow
+                  key={name}
+                  label={name}
+                  value={percent}
+                  secondary={`${completed} / ${total}`}
+                  pillClass="bg-violet-100 text-violet-600"
+                  barClass="bg-violet-500"
+                />
+              )
+            })}
           </div>
         </div>
       </div>
