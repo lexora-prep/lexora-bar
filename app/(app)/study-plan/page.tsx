@@ -1029,8 +1029,8 @@ export default function StudyPlanPage() {
               />
               {false && (
                 <InfoRow
-                  label="MBE Questions"
-                  value={<span className="text-amber-700">Not assigned</span>}
+                  label="Practice Questions"
+                  value={<span className="text-amber-700">Not active</span>}
                 />
               )}
             </PanelSection>

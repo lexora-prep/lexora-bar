@@ -20,7 +20,7 @@ type Rule = {
   keywords?: Keyword[]
 }
 
-const MBE_SUBJECTS = [
+const Core_SUBJECTS = [
   "Civil Procedure",
   "Constitutional Law",
   "Contracts",
@@ -337,15 +337,15 @@ export default function RuleBankPage() {
       )
     }
 
-    if (examType === "mbe") {
+    if (false) {
       result = result.filter((rule) =>
-        MBE_SUBJECTS.includes(String(rule?.subject?.name ?? ""))
+        Core_SUBJECTS.includes(String(rule?.subject?.name ?? ""))
       )
     }
 
     if (examType === "mee") {
       result = result.filter(
-        (rule) => !MBE_SUBJECTS.includes(String(rule?.subject?.name ?? ""))
+        (rule) => !Core_SUBJECTS.includes(String(rule?.subject?.name ?? ""))
       )
     }
 
@@ -399,12 +399,12 @@ export default function RuleBankPage() {
           </button>
 
           <button
-            onClick={() => setExamType("mbe")}
+            onClick={() => setExamType("all")}
             className={`px-4 py-2 text-sm ${
-              examType === "mbe" ? "bg-blue-600 text-white" : "bg-white"
+              false ? "bg-blue-600 text-white" : "bg-white"
             }`}
           >
-            MBE
+            Core
           </button>
 
           <button

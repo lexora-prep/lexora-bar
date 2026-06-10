@@ -365,7 +365,7 @@ export function LockedChartCard({ onClick }: { onClick: () => void }) {
         Coming soon
       </div>
       <div className="mt-1 text-[11px] text-slate-500">
-        MBE practice and MBE analytics are not active yet.
+        This practice module is not active yet.
       </div>
     </button>
   )
@@ -450,7 +450,7 @@ export function CompactCompareMetric({
       <div className="text-[11px] leading-5 text-slate-500">
         {locked ? (
           <span className="premium-glow-text font-medium">
-            MBE state comparison coming soon
+            State comparison coming soon
           </span>
         ) : difference === null ? (
           "Not enough state data yet"

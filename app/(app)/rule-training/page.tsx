@@ -3217,7 +3217,7 @@ return () => clearDirty()
                   Subjects
                 </div>
 
-                {renderSectionHeader("MBE", mbeSubjects.length, mbeOpen, () =>
+                {renderSectionHeader("Core", mbeSubjects.length, mbeOpen, () =>
                   setMbeOpen(!mbeOpen)
                 )}
                 {mbeOpen && mbeSubjects.map(renderSubjectRow)}
@@ -3630,7 +3630,7 @@ function SubjectSelectorBlock({
           onClick={() => applySubjectPreset("mbe")}
           className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[12px] font-medium text-blue-700"
         >
-          MBE Only
+          Core Only
         </button>
 
         <button

@@ -645,7 +645,7 @@ export default function MBEPage() {
     <div className="p-8 md:p-10 max-w-[1500px] mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-semibold text-slate-900">
-          MBE Practice
+          Practice is not active yet
         </h1>
         <p className="text-slate-500 mt-2">
           Choose your subjects, select topics, and launch a focused practice session.

@@ -23,11 +23,11 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 
 type DashboardData = {
-  totalMBEQuestions: number
+  totalPracticeQuestions: number
   mbeAccuracy: number
   bllScore: number
   ruleAttempts: number
-  prevMBE: number
+  prevPractice: number
   prevBLL: number
 }
 
@@ -99,7 +99,7 @@ export default function AnalyticsPage() {
   const [trend, setTrend] = useState<TrendPoint[]>([])
   const [subjects, setSubjects] = useState<SubjectStat[]>([])
   const [bllSubjects, setBLLSubjects] = useState<BLLSubjectStat[]>([])
-  const [tab, setTab] = useState<"mbe" | "bll">("bll")
+  const [tab, setTab] = useState<"bll">("bll")
   const [modeStats, setModeStats] = useState<ModeStats | null>(null)
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([])
 
@@ -237,15 +237,15 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
-          title="TOTAL MBE QS"
-          value={isPremium ? dashboard.totalMBEQuestions : "—"}
+          title="TOTAL QUESTIONS"
+          value={isPremium ? dashboard.totalPracticeQuestions : "—"}
           delta={0}
           locked={!isPremium}
         />
         <StatCard
-          title="MBE ACCURACY"
+          title="ACCURACY"
           value={isPremium ? `${dashboard.mbeAccuracy}%` : "—"}
-          delta={isPremium ? dashboard.mbeAccuracy - dashboard.prevMBE : 0}
+          delta={isPremium ? dashboard.mbeAccuracy - dashboard.prevPractice : 0}
           locked={!isPremium}
         />
         <StatCard
@@ -290,7 +290,7 @@ export default function AnalyticsPage() {
                     tab === "mbe" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"
                   }`}
                 >
-                  MBE
+                  Practice
                 </button>
               </div>
             </div>
@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
 
           <div className="h-[230px]">
             {tab === "mbe" && !isPremium ? (
-              <LockedPanel text="Upgrade to Premium to see MBE trend data." />
+              <LockedPanel text="This section is not active yet." />
             ) : chartData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-slate-500">
                 No trend data yet.
@@ -340,7 +340,7 @@ export default function AnalyticsPage() {
                   <Area
                     type="monotone"
                     dataKey="score"
-                    name={tab === "mbe" ? "MBE Accuracy" : "BLL Accuracy"}
+                    name={tab === "mbe" ? "Accuracy" : "BLL Accuracy"}
                     stroke={tab === "mbe" ? "#2563eb" : "#7c3aed"}
                     fillOpacity={0.15}
                   />
@@ -369,7 +369,7 @@ export default function AnalyticsPage() {
                   tab === "mbe" ? "bg-blue-600 text-white" : "bg-slate-100"
                 }`}
               >
-                MBE
+                Practice
               </button>
 
               <button
@@ -397,7 +397,7 @@ export default function AnalyticsPage() {
                   />
                 ))
               ) : (
-                <LockedPanel text="Upgrade to Premium to see MBE subject analytics." compact />
+                <LockedPanel text="This section is not active yet." compact />
               ))}
 
             {tab === "bll" &&
