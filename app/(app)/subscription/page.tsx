@@ -380,9 +380,25 @@ export default function SubscriptionPage() {
     }
   }
 
+  function isExternalBillingUrl(url: string | null | undefined) {
+    if (!url) return false
+
+    try {
+      const parsed = new URL(url, window.location.origin)
+
+      if (parsed.origin === window.location.origin) {
+        return false
+      }
+
+      return parsed.protocol === "https:" || parsed.protocol === "http:"
+    } catch {
+      return false
+    }
+  }
+
   function openPaymentRecord(record: PaymentHistoryRecord) {
-    if (record.receiptUrl) {
-      window.open(record.receiptUrl, "_blank", "noopener,noreferrer")
+    if (isExternalBillingUrl(record.receiptUrl)) {
+      window.open(record.receiptUrl as string, "_blank", "noopener,noreferrer")
       return
     }
 
@@ -395,8 +411,8 @@ export default function SubscriptionPage() {
       return
     }
 
-    if (profile?.billing_invoice_url) {
-      window.open(profile.billing_invoice_url, "_blank", "noopener,noreferrer")
+    if (isExternalBillingUrl(profile?.billing_invoice_url)) {
+      window.open(profile?.billing_invoice_url as string, "_blank", "noopener,noreferrer")
       return
     }
 
