@@ -298,28 +298,51 @@ function getPaidAt(event: PaddleEvent) {
   )
 }
 
+function isSafeBillingDocumentUrl(value: unknown) {
+  if (typeof value !== "string") return false
+
+  try {
+    const url = new URL(value)
+
+    if (url.hostname === "lexoraprep.com" && url.pathname.startsWith("/checkout")) {
+      return false
+    }
+
+    return url.protocol === "https:" || url.protocol === "http:"
+  } catch {
+    return false
+  }
+}
+
+function firstSafeBillingDocumentUrl(...values: unknown[]) {
+  for (const value of values) {
+    if (isSafeBillingDocumentUrl(value)) {
+      return value as string
+    }
+  }
+
+  return null
+}
+
 function getInvoiceUrl(event: PaddleEvent) {
   const data = event.data || {}
 
-  return (
-    data.invoice_url ||
-    data.invoiceUrl ||
-    data.receipt_url ||
-    data.receiptUrl ||
-    data.checkout?.url ||
-    null
+  return firstSafeBillingDocumentUrl(
+    data.invoice_url,
+    data.invoiceUrl,
+    data.receipt_url,
+    data.receiptUrl,
   )
 }
 
 function getReceiptUrl(event: PaddleEvent) {
   const data = event.data || {}
 
-  return (
-    data.receipt_url ||
-    data.receiptUrl ||
-    data.invoice_url ||
-    data.invoiceUrl ||
-    null
+  return firstSafeBillingDocumentUrl(
+    data.receipt_url,
+    data.receiptUrl,
+    data.invoice_url,
+    data.invoiceUrl,
   )
 }
 
