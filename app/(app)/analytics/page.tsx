@@ -133,9 +133,13 @@ export default function AnalyticsPage() {
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([])
 
   const [range, setRange] = useState("30d")
+  const [appliedRange, setAppliedRange] = useState("30d")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+  const [appliedStartDate, setAppliedStartDate] = useState("")
+  const [appliedEndDate, setAppliedEndDate] = useState("")
   const [trendLoading, setTrendLoading] = useState(false)
+  const [showInsightInfo, setShowInsightInfo] = useState(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -216,15 +220,15 @@ export default function AnalyticsPage() {
       try {
         setTrendLoading(true)
 
-        let url = `/api/trend-analytics?userId=${userId}&range=${range}`
+        let url = `/api/trend-analytics?userId=${userId}&range=${appliedRange}`
 
-        if (range === "custom") {
-          if (!startDate || !endDate) {
+        if (appliedRange === "custom") {
+          if (!appliedStartDate || !appliedEndDate) {
             setTrend([])
             return
           }
 
-          url = `/api/trend-analytics?userId=${userId}&start=${startDate}&end=${endDate}`
+          url = `/api/trend-analytics?userId=${userId}&start=${appliedStartDate}&end=${appliedEndDate}`
         }
 
         const res = await fetch(url, {
@@ -242,7 +246,7 @@ export default function AnalyticsPage() {
     }
 
     loadTrend()
-  }, [userId, range, startDate, endDate])
+  }, [userId, appliedRange, appliedStartDate, appliedEndDate])
 
   if (loadingUser || !userId) {
     return <LoadingState text="Loading analytics..." />
@@ -317,10 +321,14 @@ export default function AnalyticsPage() {
             <DateRangeControl
               range={range}
               setRange={setRange}
+              appliedRange={appliedRange}
+              setAppliedRange={setAppliedRange}
               startDate={startDate}
               setStartDate={setStartDate}
               endDate={endDate}
               setEndDate={setEndDate}
+              setAppliedStartDate={setAppliedStartDate}
+              setAppliedEndDate={setAppliedEndDate}
             />
 
             <button
@@ -394,13 +402,25 @@ export default function AnalyticsPage() {
             </span>
           </div>
           <div className="hidden items-center gap-2 font-normal md:flex">
-            <span>How insights work</span>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-violet-300 text-[11px]">
-              ?
-            </span>
-            <ArrowRight size={15} />
+            <button
+              type="button"
+              onClick={() => setShowInsightInfo((value) => !value)}
+              className="flex items-center gap-2 text-[12px] font-normal text-violet-700"
+            >
+              <span>How insights work</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-violet-300 text-[11px]">
+                ?
+              </span>
+              <ArrowRight size={15} />
+            </button>
           </div>
         </footer>
+
+        {showInsightInfo ? (
+          <div className="rounded-xl border border-violet-100 bg-white px-5 py-4 text-[12px] font-normal leading-5 text-[#4b5878] shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+            Lexora calculates analytics only from your real study activity: BLL rule attempts, rule scores, subject accuracy, weak-area records, and trend data from the selected date range. AI insight is not generated until the AI insight engine is connected.
+          </div>
+        ) : null}
       </div>
     </main>
   )
@@ -487,7 +507,7 @@ function Overview({
       </section>
 
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_1.05fr_0.85fr]">
-        <GlassCard title="AI Executive Summary" badge="Lexora AI">
+        <GlassCard title="AI Executive Summary" badge="Lexora AI" info="This section uses real analytics only. AI text is locked until the real AI insight endpoint is connected.">
           {canUsePremiumAnalytics ? (
             <div>
               <h2 className="text-[18px] font-normal leading-[1.35] tracking-[-0.03em] text-[#0a1038]">
@@ -558,7 +578,7 @@ function Overview({
           )}
         </GlassCard>
 
-        <GlassCard title="What’s Driving Your Score">
+        <GlassCard title="What’s Driving Your Score" info="This is calculated from your real BLL subjects, latest score movement, and weak-area records.">
           <div className="grid grid-cols-2 gap-7">
             <div>
               <div className="mb-3 text-[13px] font-normal text-emerald-700">
@@ -624,7 +644,7 @@ function Overview({
           </div>
         </GlassCard>
 
-        <GlassCard title="Next Best Move" icon={<Rocket size={18} className="text-violet-700" />}>
+        <GlassCard title="Next Best Move" icon={<Rocket size={18} className="text-violet-700" />} info="This action is based on the highest-priority real weak-area record.">
           {primaryWeakArea ? (
             <div className="space-y-4">
               <StepCard
@@ -663,7 +683,7 @@ function Overview({
       </section>
 
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1fr]">
-        <GlassCard title="BLL Accuracy Trend" subtitle={`Real trend from ${rangeLabel(range).toLowerCase()}.`}>
+        <GlassCard title="BLL Accuracy Trend" subtitle={`Real trend from ${rangeLabel(range).toLowerCase()}.`} info="This chart comes from /api/trend-analytics and only shows real BLL rule-attempt activity.">
           {trendLoading ? (
             <EmptyCompact text="Loading selected date range..." />
           ) : canUseBLLAnalytics && hasTrendData ? (
@@ -697,7 +717,7 @@ function Overview({
           )}
         </GlassCard>
 
-        <GlassCard title="Subject Risk Map">
+        <GlassCard title="Subject Risk Map" info="Subjects are grouped by real BLL accuracy: safe, maintenance, high risk, and critical.">
           {canUseBLLAnalytics ? (
             <RiskMap buckets={riskBuckets} />
           ) : (
@@ -712,21 +732,46 @@ function Overview({
 function DateRangeControl({
   range,
   setRange,
+  appliedRange,
+  setAppliedRange,
   startDate,
   setStartDate,
   endDate,
   setEndDate,
+  setAppliedStartDate,
+  setAppliedEndDate,
 }: {
   range: string
   setRange: (value: string) => void
+  appliedRange: string
+  setAppliedRange: (value: string) => void
   startDate: string
   setStartDate: (value: string) => void
   endDate: string
   setEndDate: (value: string) => void
+  setAppliedStartDate: (value: string) => void
+  setAppliedEndDate: (value: string) => void
 }) {
+  const canApplyCustom = range !== "custom" || (startDate && endDate)
+
+  function applyRange() {
+    if (!canApplyCustom) return
+
+    setAppliedRange(range)
+
+    if (range === "custom") {
+      setAppliedStartDate(startDate)
+      setAppliedEndDate(endDate)
+    } else {
+      setAppliedStartDate("")
+      setAppliedEndDate("")
+    }
+  }
+
   return (
-    <div className="flex min-h-10 flex-wrap items-center gap-2 rounded-xl border border-[#e5e8f0] bg-white px-3 text-[12px] font-normal text-[#0c123a] shadow-[0_6px_16px_rgba(15,23,42,0.04)]">
+    <div className="flex min-h-10 flex-wrap items-center gap-2 rounded-full border border-[#e5e8f0] bg-white/90 px-3 text-[12px] font-normal text-[#0c123a] shadow-[0_6px_16px_rgba(15,23,42,0.04)]">
       <CalendarDays size={15} className="text-[#1b2452]" />
+
       <select
         value={range}
         onChange={(event) => setRange(event.target.value)}
@@ -741,21 +786,39 @@ function DateRangeControl({
       </select>
 
       {range === "custom" ? (
-        <>
+        <div className="flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1">
           <input
             type="date"
             value={startDate}
             onChange={(event) => setStartDate(event.target.value)}
-            className="h-8 rounded-md border border-[#e5e8f0] bg-white px-2 text-[11px] outline-none"
+            className="h-7 bg-transparent px-1 text-[11px] outline-none"
           />
+          <span className="text-slate-300">—</span>
           <input
             type="date"
             value={endDate}
             onChange={(event) => setEndDate(event.target.value)}
-            className="h-8 rounded-md border border-[#e5e8f0] bg-white px-2 text-[11px] outline-none"
+            className="h-7 bg-transparent px-1 text-[11px] outline-none"
           />
-        </>
+        </div>
       ) : null}
+
+      <button
+        type="button"
+        onClick={applyRange}
+        disabled={!canApplyCustom}
+        className={`h-8 rounded-full px-4 text-[12px] font-normal transition ${
+          canApplyCustom
+            ? "bg-violet-700 text-white hover:bg-violet-800"
+            : "cursor-not-allowed bg-slate-100 text-slate-400"
+        }`}
+      >
+        Apply
+      </button>
+
+      <span className="text-[11px] text-slate-400">
+        Showing {rangeLabel(appliedRange).toLowerCase()}
+      </span>
     </div>
   )
 }
@@ -848,12 +911,14 @@ function GlassCard({
   subtitle,
   badge,
   icon,
+  info,
   children,
 }: {
   title: string
   subtitle?: string
   badge?: string
   icon?: ReactNode
+  info?: string
   children: ReactNode
 }) {
   return (
@@ -865,9 +930,14 @@ function GlassCard({
             <h2 className="text-[16px] font-normal tracking-[-0.02em] text-[#070c2d]">
               {title}
             </h2>
-            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-normal text-slate-400">
-              i
-            </span>
+            {info ? (
+              <span
+                title={info}
+                className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-normal text-slate-400"
+              >
+                i
+              </span>
+            ) : null}
           </div>
 
           {subtitle ? (
@@ -878,7 +948,10 @@ function GlassCard({
         </div>
 
         {badge ? (
-          <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-normal text-violet-700">
+          <span
+            title={badge === "Lexora AI" ? "AI insight is reserved for a real AI engine. It does not generate fake advice." : undefined}
+            className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-normal text-violet-700"
+          >
             {badge}
           </span>
         ) : null}
