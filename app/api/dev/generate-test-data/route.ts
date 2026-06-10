@@ -1,11 +1,28 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
+function productionNotFound() {
+  return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 })
+}
+
+function methodNotAllowed() {
+  return NextResponse.json(
+    { ok: false, error: "Use POST in local development." },
+    { status: 405 }
+  )
+}
+
 export async function GET() {
+  if (process.env.NODE_ENV !== "development") return productionNotFound()
+  return methodNotAllowed()
+}
+
+export async function POST() {
+  if (process.env.NODE_ENV !== "development") return productionNotFound()
+
   try {
     const userId = "demo-user"
 
-    // ensure demo user exists
     await prisma.user.upsert({
       where: { id: userId },
       update: {},
@@ -15,25 +32,24 @@ export async function GET() {
       },
     })
 
-    // check if at least one rule exists
     const rule = await prisma.rules.findFirst()
 
     if (!rule) {
-      return NextResponse.json({
-        error: "No rules in database. Add at least one rule first.",
-      })
+      return NextResponse.json(
+        { ok: false, error: "No rules in database. Add at least one rule first." },
+        { status: 400 }
+      )
     }
 
-    // check if at least one question exists
     const question = await prisma.mBEQuestion.findFirst()
 
     if (!question) {
-      return NextResponse.json({
-        error: "No MBE questions in database.",
-      })
+      return NextResponse.json(
+        { ok: false, error: "No MBE questions in database." },
+        { status: 400 }
+      )
     }
 
-    // create MBE attempts
     for (let i = 0; i < 50; i++) {
       const correct = Math.random() > 0.35
 
@@ -48,7 +64,6 @@ export async function GET() {
       })
     }
 
-    // create rule attempts
     for (let i = 0; i < 40; i++) {
       const correct = Math.random() > 0.4
 
@@ -63,13 +78,15 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      ok: true,
       success: true,
     })
   } catch (error) {
-    console.error(error)
+    console.error("GENERATE TEST DATA ERROR:", error)
 
-    return NextResponse.json({
-      error: "Generator failed",
-    })
+    return NextResponse.json(
+      { ok: false, error: "Generator failed" },
+      { status: 500 }
+    )
   }
 }

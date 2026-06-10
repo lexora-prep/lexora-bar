@@ -63,6 +63,17 @@ const TOPICS_BY_SUBJECT: Record<string, string[]> = {
   ],
 }
 
+function productionNotFound() {
+  return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 })
+}
+
+function methodNotAllowed() {
+  return NextResponse.json(
+    { ok: false, error: "Use POST in local development." },
+    { status: 405 }
+  )
+}
+
 function makeQuestionText(subject: string, topic: string, n: number) {
   return `${subject} ${topic} practice question ${n}. Which of the following is the best answer?`
 }
@@ -72,6 +83,13 @@ function makeExplanation(subject: string, topic: string) {
 }
 
 export async function GET() {
+  if (process.env.NODE_ENV !== "development") return productionNotFound()
+  return methodNotAllowed()
+}
+
+export async function POST() {
+  if (process.env.NODE_ENV !== "development") return productionNotFound()
+
   try {
     let createdSubjects = 0
     let createdTopics = 0
@@ -145,6 +163,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      ok: true,
       success: true,
       createdSubjects,
       createdTopics,
@@ -154,10 +173,7 @@ export async function GET() {
     console.error("SEED QUESTIONS ERROR:", error)
 
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to seed questions",
-      },
+      { ok: false, success: false, error: "Failed to seed questions" },
       { status: 500 }
     )
   }

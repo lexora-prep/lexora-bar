@@ -1,67 +1,33 @@
-"use client"
+import { notFound } from "next/navigation"
 
 export default function DevPanel() {
-
-  async function createData() {
-    await fetch("/api/dev/create-test-data", {
-      method: "POST"
-    })
-    alert("Test data shown")
-  }
-
-  async function resetData() {
-    await fetch("/api/dev/reset-analytics", {
-      method: "POST"
-    })
-    alert("Analytics reset")
-  }
-
-  async function seedQuestions() {
-    await fetch("/api/dev/seed-questions", {
-      method: "POST"
-    })
-    alert("Questions seeded")
-  }
-
   if (process.env.NODE_ENV !== "development") {
-    return null
+    notFound()
   }
 
   return (
-
-    <div className="p-10 space-y-6">
-
-      <h1 className="text-2xl font-bold">
-        Developer Panel
-      </h1>
+    <div className="space-y-6 p-10">
+      <h1 className="text-2xl font-bold">Developer Panel</h1>
 
       <div className="space-y-4">
+        <form action="/api/dev/generate-test-data" method="post">
+          <button className="rounded bg-blue-600 px-4 py-2 text-white" type="submit">
+            Create Test Attempts
+          </button>
+        </form>
 
-        <button
-          onClick={createData}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Create Test Attempts
-        </button>
+        <form action="/api/dev/reset-analytics" method="post">
+          <button className="rounded bg-red-600 px-4 py-2 text-white" type="submit">
+            Reset Analytics
+          </button>
+        </form>
 
-        <button
-          onClick={resetData}
-          className="bg-red-600 text-white px-4 py-2 rounded"
-        >
-          Reset Analytics
-        </button>
-
-        <button
-          onClick={seedQuestions}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          Seed MBE Questions
-        </button>
-
+        <form action="/api/dev/seed-questions" method="post">
+          <button className="rounded bg-green-600 px-4 py-2 text-white" type="submit">
+            Seed MBE Questions
+          </button>
+        </form>
       </div>
-
     </div>
-
   )
-
 }
