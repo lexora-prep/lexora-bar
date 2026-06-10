@@ -308,12 +308,48 @@ export async function GET(
       )
     }
 
+    const paymentRecords = await prisma.paddle_payment_records.findMany({
+      where: { user_id: id },
+      orderBy: [{ paid_at: "desc" }, { created_at: "desc" }],
+      take: 25,
+      select: {
+        id: true,
+        paddle_event_id: true,
+        paddle_customer_id: true,
+        paddle_subscription_id: true,
+        paddle_transaction_id: true,
+        paddle_price_id: true,
+        plan: true,
+        status: true,
+        currency: true,
+        amount_cents: true,
+        tax_cents: true,
+        total_cents: true,
+        billing_period_starts_at: true,
+        billing_period_ends_at: true,
+        paid_at: true,
+        discount_id: true,
+        discount_code: true,
+        discount_amount: true,
+        invoice_url: true,
+        receipt_url: true,
+        created_at: true,
+      },
+    })
+
     const now = new Date()
 
     return NextResponse.json({
       ok: true,
       user: {
         ...user,
+        payment_records: paymentRecords.map((record) => ({
+          ...record,
+          billing_period_starts_at: record.billing_period_starts_at?.toISOString() || null,
+          billing_period_ends_at: record.billing_period_ends_at?.toISOString() || null,
+          paid_at: record.paid_at?.toISOString() || null,
+          created_at: record.created_at.toISOString(),
+        })),
         account_age_days: daysBetween(new Date(user.created_at), now),
         is_online: isOnline(user.last_active_at),
       },

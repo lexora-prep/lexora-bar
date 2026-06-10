@@ -36,6 +36,30 @@ import {
   XCircle,
 } from "lucide-react"
 
+type AdminPaymentRecord = {
+  id: string
+  paddle_event_id: string | null
+  paddle_customer_id: string | null
+  paddle_subscription_id: string | null
+  paddle_transaction_id: string
+  paddle_price_id: string | null
+  plan: string | null
+  status: string | null
+  currency: string | null
+  amount_cents: number | null
+  tax_cents: number | null
+  total_cents: number | null
+  billing_period_starts_at: string | null
+  billing_period_ends_at: string | null
+  paid_at: string | null
+  discount_id: string | null
+  discount_code: string | null
+  discount_amount: string | null
+  invoice_url: string | null
+  receipt_url: string | null
+  created_at: string
+}
+
 type AdminUserDetail = {
   id: string
   email: string
@@ -52,6 +76,27 @@ type AdminUserDetail = {
   admin_role: string | null
   is_admin: boolean
   is_blocked: boolean
+
+  paddle_customer_id: string | null
+  paddle_subscription_id: string | null
+  paddle_transaction_id: string | null
+  paddle_price_id: string | null
+  billing_status: string | null
+  billing_currency: string | null
+  billing_amount_cents: number | null
+  billing_tax_cents: number | null
+  billing_total_cents: number | null
+  billing_interval: string | null
+  billing_started_at: string | null
+  billing_period_starts_at: string | null
+  billing_period_ends_at: string | null
+  billing_cancelled_at: string | null
+  billing_last_paid_at: string | null
+  billing_discount_id: string | null
+  billing_discount_code: string | null
+  billing_discount_amount: string | null
+  billing_invoice_url: string | null
+  payment_records: AdminPaymentRecord[]
 
   email_announcements: boolean
   study_reminders: boolean
@@ -129,6 +174,54 @@ function cleanLawSchool(value?: string | null) {
   if (normalized === "HLS") return "Harvard Law School"
 
   return value.trim()
+}
+
+function formatMoney(cents?: number | null, currency?: string | null) {
+  if (typeof cents !== "number") return "—"
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency || "USD",
+  }).format(cents / 100)
+}
+
+function formatBillingStatus(value?: string | null) {
+  if (!value) return "Free"
+
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+function paymentTotal(records: AdminPaymentRecord[]) {
+  return records.reduce((sum, record) => sum + (record.total_cents ?? record.amount_cents ?? 0), 0)
+}
+
+function firstPayment(records: AdminPaymentRecord[]) {
+  if (!records.length) return null
+  return records[records.length - 1]?.paid_at || records[records.length - 1]?.created_at || null
+}
+
+function latestPayment(records: AdminPaymentRecord[]) {
+  if (!records.length) return null
+  return records[0]?.paid_at || records[0]?.created_at || null
+}
+
+function latestCurrency(user: AdminUserDetail) {
+  return user.billing_currency || user.payment_records[0]?.currency || "USD"
+}
+
+function mrrValue(user: AdminUserDetail) {
+  const amount = user.billing_total_cents ?? user.billing_amount_cents
+  if (typeof amount !== "number") return "—"
+
+  if (user.billing_interval === "year") {
+    return formatMoney(Math.round(amount / 12), latestCurrency(user))
+  }
+
+  return formatMoney(amount, latestCurrency(user))
 }
 
 function formatRelative(dateString?: string | null) {
@@ -576,12 +669,12 @@ function EmptyBillingState() {
       </div>
 
       <h3 className="text-[14px] font-bold text-slate-950">
-        Paddle billing history is not connected yet
+        No stored Paddle payments yet
       </h3>
 
       <p className="mx-auto mt-2 max-w-xl text-[13px] leading-6 text-slate-500">
-        This page will show real Paddle customer, subscription, transaction, discount,
-        and invoice data after those records are stored in the database.
+        This user has no saved Paddle payment records yet. When Paddle sends a successful
+        transaction webhook, the payment will appear here.
       </p>
     </div>
   )
@@ -1135,43 +1228,89 @@ export default function AdminUserDetailPage() {
               <div className="space-y-5">
                 <Panel
                   title="Billing & Subscription"
-                  description="Only real stored billing values are shown. Paddle transaction data needs database tables."
+                  description="Real stored Paddle profile and payment data."
                 >
                   <InfoGrid columns={3}>
                     <InfoItem label="Current plan" value={planLabel(user)} />
                     <InfoItem label="Billing provider" value="Paddle" />
-                    <InfoItem label="Subscription status" value="Not connected" />
-                    <InfoItem label="Paddle customer ID" value="—" />
-                    <InfoItem label="Paddle subscription ID" value="—" />
-                    <InfoItem label="Billing interval" value="—" />
-                    <InfoItem label="Paid months" value="—" />
-                    <InfoItem label="Total paid" value="—" />
-                    <InfoItem label="MRR" value="—" />
+                    <InfoItem label="Subscription status" value={formatBillingStatus(user.billing_status)} />
+                    <InfoItem label="Paddle customer ID" value={user.paddle_customer_id || "—"} />
+                    <InfoItem label="Paddle subscription ID" value={user.paddle_subscription_id || "—"} />
+                    <InfoItem label="Paddle transaction ID" value={user.paddle_transaction_id || "—"} />
+                    <InfoItem label="Billing interval" value={user.billing_interval || "—"} />
+                    <InfoItem label="Current charge" value={formatMoney(user.billing_total_cents ?? user.billing_amount_cents, latestCurrency(user))} />
+                    <InfoItem label="MRR" value={mrrValue(user)} />
                   </InfoGrid>
                 </Panel>
 
                 <div className="grid gap-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
-                  <Panel title="Discounts & coupons" description="Requires real Paddle discount records.">
+                  <Panel title="Discounts & coupons" description="Stored Paddle discount values from the latest billing sync.">
                     <InfoGrid>
-                      <InfoItem label="Discount used" value="—" />
-                      <InfoItem label="Coupon code" value="—" />
-                      <InfoItem label="Discount type" value="—" />
-                      <InfoItem label="Discount amount" value="—" />
+                      <InfoItem label="Discount used" value={user.billing_discount_id ? "Yes" : "No"} />
+                      <InfoItem label="Coupon code" value={user.billing_discount_code || "—"} />
+                      <InfoItem label="Discount ID" value={user.billing_discount_id || "—"} />
+                      <InfoItem label="Discount amount" value={user.billing_discount_amount || "—"} />
                     </InfoGrid>
                   </Panel>
 
-                  <Panel title="Payment status" description="Requires real Paddle transaction records.">
+                  <Panel title="Payment status" description="Stored payment dates and totals from Paddle records.">
                     <InfoGrid>
-                      <InfoItem label="First payment" value="—" />
-                      <InfoItem label="Last payment" value="—" />
-                      <InfoItem label="Next billing date" value="—" />
-                      <InfoItem label="Refunds" value="—" />
+                      <InfoItem label="First payment" value={formatDateTime(firstPayment(user.payment_records))} />
+                      <InfoItem label="Last payment" value={formatDateTime(user.billing_last_paid_at || latestPayment(user.payment_records))} />
+                      <InfoItem label="Next billing date" value={formatDateTime(user.billing_period_ends_at)} />
+                      <InfoItem label="Total paid" value={formatMoney(paymentTotal(user.payment_records), latestCurrency(user))} />
                     </InfoGrid>
                   </Panel>
                 </div>
 
-                <Panel title="Payment history" description="Future Paddle transactions will appear here.">
-                  <EmptyBillingState />
+                <Panel title="Payment history" description="Latest stored Paddle transactions for this user.">
+                  {user.payment_records.length ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[900px] border-collapse text-left text-[13px]">
+                        <thead>
+                          <tr className="border-b border-slate-100 bg-slate-50 text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                            <th className="px-5 py-3 font-bold">Paid</th>
+                            <th className="px-5 py-3 font-bold">Status</th>
+                            <th className="px-5 py-3 font-bold">Plan</th>
+                            <th className="px-5 py-3 font-bold">Transaction</th>
+                            <th className="px-5 py-3 font-bold">Amount</th>
+                            <th className="px-5 py-3 font-bold">Tax</th>
+                            <th className="px-5 py-3 font-bold">Total</th>
+                            <th className="px-5 py-3 font-bold">Invoice</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {user.payment_records.map((record) => (
+                            <tr key={record.id} className="border-b border-slate-100">
+                              <td className="px-5 py-4 font-semibold text-slate-700">{formatDateTime(record.paid_at || record.created_at)}</td>
+                              <td className="px-5 py-4"><Badge tone={record.status === "paid" ? "green" : "neutral"}>{formatBillingStatus(record.status)}</Badge></td>
+                              <td className="px-5 py-4 text-slate-600">{record.plan || "—"}</td>
+                              <td className="px-5 py-4 font-mono text-[12px] text-slate-500">{record.paddle_transaction_id}</td>
+                              <td className="px-5 py-4 text-slate-600">{formatMoney(record.amount_cents, record.currency)}</td>
+                              <td className="px-5 py-4 text-slate-600">{formatMoney(record.tax_cents, record.currency)}</td>
+                              <td className="px-5 py-4 font-bold text-slate-900">{formatMoney(record.total_cents ?? record.amount_cents, record.currency)}</td>
+                              <td className="px-5 py-4">
+                                {record.invoice_url || record.receipt_url ? (
+                                  <a
+                                    href={record.invoice_url || record.receipt_url || "#"}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="font-bold text-blue-600 hover:text-blue-700"
+                                  >
+                                    Open
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <EmptyBillingState />
+                  )}
                 </Panel>
               </div>
             ) : null}
@@ -1258,16 +1397,7 @@ export default function AdminUserDetailPage() {
           </section>
         </section>
 
-        <div
-          className="rounded-2xl bg-white px-5 py-4 text-[12px] leading-5 text-slate-500"
-          style={{
-            border: "1px solid #E5E7EB",
-          }}
-        >
-          Paddle billing data is intentionally shown as unavailable until Paddle customer,
-          subscription, transaction, discount, and webhook event tables are added to the database.
-          This avoids showing fake revenue or fake paid-month calculations.
-        </div>
+
       </main>
     </div>
   )
