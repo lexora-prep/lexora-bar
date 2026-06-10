@@ -5,9 +5,6 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -16,12 +13,10 @@ import {
 import {
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   BookOpen,
   CalendarDays,
   CheckCircle2,
   Clock3,
-  Crown,
   Download,
   FileText,
   Lock,
@@ -79,7 +74,7 @@ type ProfileData = {
 type TabKey =
   | "overview"
   | "learning"
-  | "question"
+  | "rules"
   | "time"
   | "strengths"
   | "history"
@@ -123,7 +118,7 @@ const ALL_BLL_SUBJECTS = [
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: "overview", label: "Overview" },
   { key: "learning", label: "Learning Insights" },
-  { key: "question", label: "Question Analysis" },
+  { key: "rules", label: "Rule Analytics" },
   { key: "time", label: "Time Analysis" },
   { key: "strengths", label: "Strengths & Weaknesses" },
   { key: "history", label: "Progress History" },
@@ -144,9 +139,7 @@ export default function AnalyticsPage() {
   const [bllSubjects, setBLLSubjects] = useState<BLLSubjectStat[]>([])
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([])
 
-  const [range, setRange] = useState("30d")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
+  const [range] = useState("30d")
 
   useEffect(() => {
     async function loadUser() {
@@ -194,9 +187,15 @@ export default function AnalyticsPage() {
 
       try {
         const [dashRes, bllRes, weakRes] = await Promise.all([
-          fetch(`/api/dashboard-analytics?userId=${userId}`, { cache: "no-store" }),
-          fetch(`/api/bll-subject-analytics?userId=${userId}`, { cache: "no-store" }),
-          fetch(`/api/weak-areas?userId=${userId}`, { cache: "no-store" }),
+          fetch(`/api/dashboard-analytics?userId=${userId}`, {
+            cache: "no-store",
+          }),
+          fetch(`/api/bll-subject-analytics?userId=${userId}`, {
+            cache: "no-store",
+          }),
+          fetch(`/api/weak-areas?userId=${userId}`, {
+            cache: "no-store",
+          }),
         ])
 
         const dashData = await dashRes.json()
@@ -219,18 +218,9 @@ export default function AnalyticsPage() {
       if (!userId) return
 
       try {
-        let url = `/api/trend-analytics?userId=${userId}&range=${range}`
-
-        if (range === "custom") {
-          if (!startDate || !endDate) {
-            setTrend([])
-            return
-          }
-
-          url = `/api/trend-analytics?userId=${userId}&start=${startDate}&end=${endDate}`
-        }
-
-        const res = await fetch(url, { cache: "no-store" })
+        const res = await fetch(`/api/trend-analytics?userId=${userId}&range=${range}`, {
+          cache: "no-store",
+        })
         const data = await res.json()
 
         setTrend(Array.isArray(data?.trend) ? data.trend : [])
@@ -241,7 +231,7 @@ export default function AnalyticsPage() {
     }
 
     loadTrend()
-  }, [userId, range, startDate, endDate])
+  }, [userId, range])
 
   if (loadingUser || !userId) {
     return <LoadingState text="Loading analytics..." />
@@ -262,7 +252,7 @@ export default function AnalyticsPage() {
   const canUseBLLAnalytics = isBLL || isPremium
   const canUsePremiumAnalytics = isPremium
 
-  const tierLabel = isPremium ? "Premium" : isBLL ? "Premium" : "Free"
+  const tierLabel = isPremium ? "Premium" : isBLL ? "Black Letter Law" : "Free"
 
   const chartData = trend.map((item) => ({
     date: shortDateLabel(item.date),
@@ -281,41 +271,48 @@ export default function AnalyticsPage() {
   const subjects = buildSubjectDiagnostics(bllSubjects)
   const attemptedSubjects = subjects.filter((subject) => subject.completed > 0)
   const strongSubjects = attemptedSubjects.filter((subject) => subject.accuracy >= 75)
-  const weakSubjects = attemptedSubjects.filter((subject) => subject.accuracy > 0 && subject.accuracy < 70)
-  const strongestSubject = [...attemptedSubjects].sort((a, b) => b.accuracy - a.accuracy)[0]
-  const weakestSubject = [...attemptedSubjects].sort((a, b) => a.accuracy - b.accuracy)[0]
+  const weakSubjects = attemptedSubjects.filter(
+    (subject) => subject.accuracy > 0 && subject.accuracy < 70
+  )
+  const strongestSubject = [...attemptedSubjects].sort(
+    (a, b) => b.accuracy - a.accuracy
+  )[0]
+  const weakestSubject = [...attemptedSubjects].sort(
+    (a, b) => a.accuracy - b.accuracy
+  )[0]
   const primaryWeakArea = weakAreas[0]
   const riskBuckets = buildRiskBuckets(subjects)
   const forecast = buildForecast(currentScore, delta, weakAreas.length)
+  const consistencyScore = buildConsistencyScore(chartData)
 
   return (
-    <main className="min-h-screen bg-[#fbfcff] px-4 py-5 text-slate-950 md:px-6">
-      <div className="mx-auto max-w-[1500px] space-y-4">
+    <main className="min-h-screen select-none bg-white px-5 py-5 text-[#0a1038] md:px-6">
+      <div className="w-full space-y-4">
         <header className="flex items-start justify-between gap-5">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-[25px] font-bold tracking-[-0.03em] text-[#080d2f]">
+              <h1 className="text-[24px] font-medium tracking-[-0.03em] text-[#060b2b]">
                 Analytics
               </h1>
-              <span className="rounded-md bg-violet-100 px-2.5 py-1 text-xs font-bold text-violet-700">
+              <span className="rounded-md bg-violet-100 px-2.5 py-1 text-[11px] font-medium text-violet-700">
                 {tierLabel}
               </span>
             </div>
-            <p className="mt-2 text-[13px] font-medium text-[#46587a]">
+            <p className="mt-2 text-[13px] font-normal text-[#425274]">
               Deep insights to help you master Black Letter Law.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-10 items-center gap-3 rounded-xl border border-[#e4e8f3] bg-white px-4 text-[12px] font-semibold text-[#0c123a] shadow-sm">
-              <span>{range === "custom" && startDate && endDate ? `${startDate} — ${endDate}` : rangeLabel(range)}</span>
+            <div className="flex h-10 items-center gap-3 rounded-xl border border-[#e5e8f0] bg-white px-4 text-[12px] font-normal text-[#0c123a] shadow-[0_6px_16px_rgba(15,23,42,0.04)]">
+              <span>{rangeLabel(range)}</span>
               <CalendarDays size={16} className="text-[#1b2452]" />
             </div>
 
             <button
               type="button"
               disabled
-              className="flex h-10 cursor-not-allowed items-center gap-2 rounded-xl border border-[#e4e8f3] bg-white px-4 text-[12px] font-semibold text-[#6c7897] shadow-sm"
+              className="flex h-10 cursor-not-allowed items-center gap-2 rounded-xl border border-[#e5e8f0] bg-white px-4 text-[12px] font-normal text-[#6c7897] shadow-[0_6px_16px_rgba(15,23,42,0.04)]"
             >
               <Download size={15} />
               Export Report
@@ -324,7 +321,7 @@ export default function AnalyticsPage() {
           </div>
         </header>
 
-        <nav className="flex items-center gap-7 border-b border-[#e9edf5]">
+        <nav className="flex items-center gap-7 border-b border-[#edf0f6]">
           {TABS.map((tab) => {
             const active = activeTab === tab.key
 
@@ -333,13 +330,13 @@ export default function AnalyticsPage() {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative pb-4 text-[12px] font-semibold transition-all duration-300 ${
+                className={`relative pb-4 text-[12px] font-normal transition-all duration-300 ${
                   active ? "text-violet-700" : "text-[#11183d] hover:text-violet-700"
                 }`}
               >
                 {tab.label}
                 <span
-                  className={`absolute bottom-0 left-0 h-[3px] rounded-full bg-violet-700 transition-all duration-300 ${
+                  className={`absolute bottom-0 left-0 h-[2px] rounded-full bg-violet-700 transition-all duration-300 ${
                     active ? "w-full opacity-100" : "w-0 opacity-0"
                   }`}
                 />
@@ -354,15 +351,8 @@ export default function AnalyticsPage() {
             chartData={chartData}
             currentScore={currentScore}
             delta={delta}
-            range={range}
-            setRange={setRange}
-            startDate={startDate}
-            setStartDate={setStartDate}
-            endDate={endDate}
-            setEndDate={setEndDate}
             canUseBLLAnalytics={canUseBLLAnalytics}
             canUsePremiumAnalytics={canUsePremiumAnalytics}
-            subjects={subjects}
             strongSubjects={strongSubjects}
             weakSubjects={weakSubjects}
             strongestSubject={strongestSubject}
@@ -371,6 +361,7 @@ export default function AnalyticsPage() {
             primaryWeakArea={primaryWeakArea}
             forecast={forecast}
             riskBuckets={riskBuckets}
+            consistencyScore={consistencyScore}
           />
         ) : (
           <TabPlaceholder
@@ -379,14 +370,18 @@ export default function AnalyticsPage() {
           />
         )}
 
-        <footer className="flex min-h-10 items-center justify-between rounded-xl bg-violet-50 px-5 py-3 text-[12px] font-medium text-[#3b2b8f]">
+        <footer className="flex min-h-10 items-center justify-between rounded-xl bg-violet-50 px-5 py-3 text-[12px] font-normal text-[#3b2b8f]">
           <div className="flex items-center gap-2">
             <Sparkles size={15} />
-            <span>Insights are updated daily based on your activity. The more consistent you are, the smarter Lexora gets.</span>
+            <span>
+              Insights are updated daily based on your activity. The more consistent you are, the smarter Lexora gets.
+            </span>
           </div>
-          <div className="hidden items-center gap-2 font-bold md:flex">
+          <div className="hidden items-center gap-2 font-normal md:flex">
             <span>How insights work</span>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-violet-300 text-[11px]">?</span>
+            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-violet-300 text-[11px]">
+              ?
+            </span>
             <ArrowRight size={15} />
           </div>
         </footer>
@@ -400,15 +395,8 @@ function Overview({
   chartData,
   currentScore,
   delta,
-  range,
-  setRange,
-  startDate,
-  setStartDate,
-  endDate,
-  setEndDate,
   canUseBLLAnalytics,
   canUsePremiumAnalytics,
-  subjects,
   strongSubjects,
   weakSubjects,
   strongestSubject,
@@ -417,20 +405,14 @@ function Overview({
   primaryWeakArea,
   forecast,
   riskBuckets,
+  consistencyScore,
 }: {
   dashboard: DashboardData
   chartData: Array<{ date: string; score: number }>
   currentScore: number
   delta: number
-  range: string
-  setRange: (value: string) => void
-  startDate: string
-  setStartDate: (value: string) => void
-  endDate: string
-  setEndDate: (value: string) => void
   canUseBLLAnalytics: boolean
   canUsePremiumAnalytics: boolean
-  subjects: SubjectDiagnostic[]
   strongSubjects: SubjectDiagnostic[]
   weakSubjects: SubjectDiagnostic[]
   strongestSubject?: SubjectDiagnostic
@@ -439,33 +421,39 @@ function Overview({
   primaryWeakArea?: WeakArea
   forecast: ForecastPoint[]
   riskBuckets: RiskBuckets
+  consistencyScore: number
 }) {
   const router = useRouter()
   const weakCountDelta = weakAreas.length > 0 ? weakAreas.length : 0
-  const consistencyScore = buildConsistencyScore(chartData)
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr]">
-        <div className="relative overflow-hidden rounded-2xl border border-[#d9d0ff] bg-gradient-to-br from-[#efe7ff] via-white to-white p-5 shadow-sm">
-          <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-violet-200/40 blur-2xl" />
+        <div className="relative overflow-hidden rounded-2xl border border-[#d9d0ff] bg-gradient-to-br from-[#f1eaff] via-white to-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
+          <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-violet-200/35 blur-2xl" />
           <div className="relative">
-            <div className="flex items-center gap-2 text-[13px] font-bold text-[#10163f]">
+            <div className="flex items-center gap-2 text-[13px] font-normal text-[#10163f]">
               BLL Readiness Score
-              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] text-slate-400">i</span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] text-slate-400">
+                i
+              </span>
             </div>
 
             <div className="mt-6 flex items-end justify-between gap-4">
               <div>
-                <div className="text-[56px] font-extrabold leading-none tracking-[-0.05em] text-violet-700">
+                <div className="text-[52px] font-normal leading-none tracking-[-0.06em] text-violet-700">
                   {currentScore}%
                 </div>
-                <div className={`mt-4 text-[12px] font-bold ${delta >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                <div
+                  className={`mt-4 text-[12px] font-normal ${
+                    delta >= 0 ? "text-emerald-600" : "text-rose-600"
+                  }`}
+                >
                   {delta >= 0 ? "↑" : "↓"} {Math.abs(delta)} pts vs previous active day
                 </div>
               </div>
 
-              <div className="h-[88px] w-[145px]">
+              <div className="h-[86px] w-[145px]">
                 <MiniSparkline data={chartData} stroke="#7c3aed" />
               </div>
             </div>
@@ -483,7 +471,7 @@ function Overview({
         <GlassCard title="AI Executive Summary" badge="Lexora AI">
           {canUsePremiumAnalytics ? (
             <div>
-              <h2 className="text-[20px] font-extrabold leading-[1.35] tracking-[-0.03em] text-[#0a1038]">
+              <h2 className="text-[18px] font-normal leading-[1.35] tracking-[-0.03em] text-[#0a1038]">
                 AI insight engine is not connected yet.
               </h2>
 
@@ -495,7 +483,7 @@ function Overview({
               </div>
 
               <div className="mt-6 rounded-xl bg-violet-50 p-4">
-                <div className="mb-3 text-[12px] font-bold text-[#11183d]">
+                <div className="mb-3 text-[12px] font-normal text-[#11183d]">
                   AI Performance Snapshot
                 </div>
                 <div className="grid grid-cols-4 gap-3">
@@ -514,7 +502,7 @@ function Overview({
         <GlassCard title="What’s Driving Your Score">
           <div className="grid grid-cols-2 gap-7">
             <div>
-              <div className="mb-3 text-[13px] font-bold text-emerald-700">
+              <div className="mb-3 text-[13px] font-normal text-emerald-700">
                 Helping Your Score
               </div>
               <DriverRow icon={<BookOpen size={20} />} title={strongestSubject?.name || "No strong subject yet"} text={strongestSubject ? `${strongestSubject.accuracy}% accuracy` : "Complete more rules to calculate strengths."} value={strongestSubject ? `+${strongestSubject.accuracy}%` : "—"} tone="green" />
@@ -523,7 +511,7 @@ function Overview({
             </div>
 
             <div>
-              <div className="mb-3 text-[13px] font-bold text-rose-700">
+              <div className="mb-3 text-[13px] font-normal text-rose-700">
                 Hurting Your Score
               </div>
               <DriverRow icon={<Scale size={20} />} title={weakestSubject?.name || "No weak subject yet"} text={weakestSubject ? `${weakestSubject.accuracy}% accuracy` : "Weak subjects appear after more attempts."} value={weakestSubject ? `-${100 - weakestSubject.accuracy}%` : "—"} tone="red" />
@@ -541,12 +529,12 @@ function Overview({
               <button
                 type="button"
                 onClick={() => router.push("/rule-training")}
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-violet-700 text-[13px] font-bold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-800"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-violet-700 text-[13px] font-normal text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-800"
               >
                 Start Recommended Session
                 <ArrowRight size={15} />
               </button>
-              <p className="text-center text-[12px] font-medium text-slate-500">
+              <p className="text-center text-[12px] font-normal text-slate-500">
                 Estimated time: 35 minutes
               </p>
             </div>
@@ -563,18 +551,32 @@ function Overview({
               <div className="h-[235px]">
                 <ResponsiveContainer>
                   <AreaChart data={forecast}>
+                    <defs>
+                      <linearGradient id="followPlanGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="10%" stopColor="#7c3aed" stopOpacity={0.16} />
+                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="consistentGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="10%" stopColor="#0ea5e9" stopOpacity={0.11} />
+                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="ignoreWeakGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="10%" stopColor="#f43f5e" stopOpacity={0.12} />
+                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid stroke="#eef1f6" vertical={false} />
-                    <XAxis dataKey="day" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <XAxis dataKey="day" tick={{ fontSize: 11, fontWeight: 400 }} tickLine={false} axisLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 400 }} tickLine={false} axisLine={false} />
                     <Tooltip content={<ForecastTooltip />} />
-                    <Area type="monotone" dataKey="followPlan" stroke="#7c3aed" strokeWidth={2.5} fill="#ede9fe" fillOpacity={0.5} />
-                    <Area type="monotone" dataKey="consistent" stroke="#0ea5e9" strokeWidth={2.5} fill="#e0f2fe" fillOpacity={0.35} />
-                    <Area type="monotone" dataKey="ignoreWeak" stroke="#f43f5e" strokeWidth={2.5} fill="#ffe4e6" fillOpacity={0.35} />
+                    <Area type="monotone" dataKey="followPlan" stroke="#7c3aed" strokeWidth={2} fill="url(#followPlanGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
+                    <Area type="monotone" dataKey="consistent" stroke="#0ea5e9" strokeWidth={2} fill="url(#consistentGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
+                    <Area type="monotone" dataKey="ignoreWeak" stroke="#f43f5e" strokeWidth={2} fill="url(#ignoreWeakGradient)" dot={{ r: 3, strokeWidth: 2, fill: "#fff" }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="space-y-4 pt-5 text-[12px] font-bold">
+              <div className="space-y-4 pt-5 text-[12px] font-normal">
                 <LegendLine color="bg-violet-700" label="If you follow the plan" value={`${forecast.at(-1)?.followPlan ?? currentScore}%`} />
                 <LegendLine color="bg-sky-500" label="If you stay consistent" value={`${forecast.at(-1)?.consistent ?? currentScore}%`} />
                 <LegendLine color="bg-rose-500" label="If you ignore weak areas" value={`${forecast.at(-1)?.ignoreWeak ?? currentScore}%`} />
@@ -641,7 +643,7 @@ function buildRiskBuckets(subjects: SubjectDiagnostic[]): RiskBuckets {
 
 function buildConsistencyScore(chartData: Array<{ date: string; score: number }>) {
   const activeDays = chartData.filter((point) => point.score > 0).slice(-7).length
-  return Math.max(0, Math.min(5, Number((activeDays / 7 * 5).toFixed(1))))
+  return Math.max(0, Math.min(5, Number(((activeDays / 7) * 5).toFixed(1))))
 }
 
 function buildForecast(currentScore: number, delta: number, weakAreaCount: number): ForecastPoint[] {
@@ -692,8 +694,8 @@ function rangeLabel(range: string) {
 
 function LoadingState({ text }: { text: string }) {
   return (
-    <main className="min-h-screen bg-[#fbfcff] p-6">
-      <div className="rounded-xl border border-[#e5e9f3] bg-white p-5 text-sm font-medium text-slate-500 shadow-sm">
+    <main className="min-h-screen bg-white p-6">
+      <div className="rounded-xl border border-[#e5e9f3] bg-white p-5 text-sm font-normal text-slate-500 shadow-sm">
         {text}
       </div>
     </main>
@@ -714,28 +716,28 @@ function GlassCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-2xl border border-[#e2e7f1] bg-white/85 p-5 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md">
+    <section className="rounded-2xl border border-[#e2e7f1] bg-white/90 p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             {icon}
-            <h2 className="text-[16px] font-extrabold tracking-[-0.02em] text-[#070c2d]">
+            <h2 className="text-[16px] font-normal tracking-[-0.02em] text-[#070c2d]">
               {title}
             </h2>
-            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-bold text-slate-400">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-normal text-slate-400">
               i
             </span>
           </div>
 
           {subtitle ? (
-            <p className="mt-1 text-[12px] font-medium leading-5 text-[#5d6a87]">
+            <p className="mt-1 text-[12px] font-normal leading-5 text-[#5d6a87]">
               {subtitle}
             </p>
           ) : null}
         </div>
 
         {badge ? (
-          <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700">
+          <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-normal text-violet-700">
             {badge}
           </span>
         ) : null}
@@ -771,24 +773,24 @@ function KpiCard({
           : "bg-violet-50 text-violet-700"
 
   return (
-    <div className="rounded-2xl border border-[#e3e8f3] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="rounded-2xl border border-[#e3e8f3] bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.035)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
       <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${toneClass}`}>
         {icon}
       </div>
 
-      <div className="text-[12px] font-bold text-[#11183d]">
+      <div className="text-[12px] font-normal text-[#11183d]">
         {title}
       </div>
 
-      <div className="mt-2 text-[28px] font-extrabold tracking-[-0.04em] text-[#070c2d]">
+      <div className="mt-2 text-[26px] font-normal tracking-[-0.04em] text-[#070c2d]">
         {value}
       </div>
 
-      <div className={`mt-3 text-[12px] font-bold ${negative ? "text-rose-600" : "text-emerald-600"}`}>
+      <div className={`mt-3 text-[12px] font-normal ${negative ? "text-rose-600" : "text-emerald-600"}`}>
         {typeof delta === "number" ? `${delta >= 0 ? "↑" : "↓"} ${Math.abs(delta)}` : "Real data"}
       </div>
 
-      <div className="mt-1 text-[11px] font-medium text-slate-500">
+      <div className="mt-1 text-[11px] font-normal text-slate-500">
         vs previous period
       </div>
     </div>
@@ -816,13 +818,13 @@ function SummaryMini({
   return (
     <div className="border-r border-slate-100 last:border-r-0">
       <div className={toneClass}>{icon}</div>
-      <div className={`mt-3 text-[11px] font-bold ${toneClass}`}>
+      <div className={`mt-3 text-[11px] font-normal ${toneClass}`}>
         {title}
       </div>
-      <p className="mt-2 pr-3 text-[11px] font-medium leading-5 text-[#52617f]">
+      <p className="mt-2 pr-3 text-[11px] font-normal leading-5 text-[#52617f]">
         {text}
       </p>
-      <button type="button" className="mt-3 text-[11px] font-bold text-violet-700">
+      <button type="button" className="mt-3 text-[11px] font-normal text-violet-700">
         View details →
       </button>
     </div>
@@ -840,8 +842,8 @@ function SnapshotMetric({
 }) {
   return (
     <div>
-      <div className="text-[10px] font-bold text-slate-500">{label}</div>
-      <div className={`mt-1 text-[14px] font-extrabold ${danger ? "text-rose-600" : "text-[#10163f]"}`}>
+      <div className="text-[10px] font-normal text-slate-500">{label}</div>
+      <div className={`mt-1 text-[14px] font-normal ${danger ? "text-rose-600" : "text-[#10163f]"}`}>
         {value}
       </div>
       <div className="mt-2 h-1.5 rounded-full bg-slate-200">
@@ -877,15 +879,15 @@ function DriverRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="text-[12px] font-extrabold leading-5 text-[#11183d]">
+          <div className="text-[12px] font-normal leading-5 text-[#11183d]">
             {title}
           </div>
-          <div className={`text-[12px] font-extrabold ${tone === "green" ? "text-emerald-600" : "text-rose-600"}`}>
+          <div className={`text-[12px] font-normal ${tone === "green" ? "text-emerald-600" : "text-rose-600"}`}>
             {value}
           </div>
         </div>
 
-        <p className="mt-1 text-[11px] font-medium leading-4 text-[#66728e]">
+        <p className="mt-1 text-[11px] font-normal leading-4 text-[#66728e]">
           {text}
         </p>
 
@@ -911,20 +913,20 @@ function StepCard({
   return (
     <div className="rounded-xl bg-violet-50 p-4">
       <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-700 text-lg font-extrabold text-white">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-700 text-lg font-normal text-white">
           {step}
         </div>
 
         <div>
-          <div className="text-[13px] font-extrabold leading-5 text-[#11183d]">
+          <div className="text-[13px] font-normal leading-5 text-[#11183d]">
             {title}
           </div>
 
-          <span className="mt-2 inline-flex rounded-md bg-violet-200 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+          <span className="mt-2 inline-flex rounded-md bg-violet-200 px-2 py-0.5 text-[11px] font-normal text-violet-700">
             {time}
           </span>
 
-          <p className="mt-3 text-[12px] font-medium leading-5 text-[#5d6882]">
+          <p className="mt-3 text-[12px] font-normal leading-5 text-[#5d6882]">
             {subtitle}
           </p>
         </div>
@@ -949,7 +951,7 @@ function MiniSparkline({
   return (
     <ResponsiveContainer>
       <AreaChart data={sparkData}>
-        <Area type="monotone" dataKey="score" stroke={stroke} strokeWidth={3} fill="#ede9fe" fillOpacity={0.35} />
+        <Area type="monotone" dataKey="score" stroke={stroke} strokeWidth={2.5} fill="#ede9fe" fillOpacity={0.28} />
       </AreaChart>
     </ResponsiveContainer>
   )
@@ -990,21 +992,21 @@ function RiskColumn({
 
   return (
     <div className={`rounded-xl border p-4 ${toneClass}`}>
-      <div className="flex items-center gap-2 text-[13px] font-extrabold">
+      <div className="flex items-center gap-2 text-[13px] font-normal">
         <CheckCircle2 size={16} />
         {title}
       </div>
 
-      <p className="mt-2 min-h-[35px] text-[11px] font-medium leading-5">
+      <p className="mt-2 min-h-[35px] text-[11px] font-normal leading-5">
         {text}
       </p>
 
       <div className="mt-3 min-h-[70px] space-y-2">
         {items.length === 0 ? (
-          <div className="text-[11px] font-semibold opacity-70">No subjects yet.</div>
+          <div className="text-[11px] font-normal opacity-70">No subjects yet.</div>
         ) : (
           items.slice(0, 3).map((item) => (
-            <div key={item.name} className="flex items-center justify-between gap-2 text-[12px] font-extrabold text-[#11183d]">
+            <div key={item.name} className="flex items-center justify-between gap-2 text-[12px] font-normal text-[#11183d]">
               <span>{item.name}</span>
               <span>{item.accuracy}%</span>
             </div>
@@ -1012,7 +1014,7 @@ function RiskColumn({
         )}
       </div>
 
-      <button type="button" className="mt-3 h-9 w-full rounded-lg border border-current bg-white/50 text-[12px] font-extrabold">
+      <button type="button" className="mt-3 h-9 w-full rounded-lg border border-current bg-white/50 text-[12px] font-normal">
         {button}
       </button>
     </div>
@@ -1046,8 +1048,8 @@ function PremiumInline({ text }: { text: string }) {
         <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-700">
           <Lock size={18} />
         </div>
-        <div className="mt-3 text-[13px] font-extrabold text-[#11183d]">Upgrade required</div>
-        <p className="mx-auto mt-2 max-w-sm text-[12px] font-medium leading-5 text-[#5b6680]">{text}</p>
+        <div className="mt-3 text-[13px] font-normal text-[#11183d]">Upgrade required</div>
+        <p className="mx-auto mt-2 max-w-sm text-[12px] font-normal leading-5 text-[#5b6680]">{text}</p>
       </div>
     </div>
   )
@@ -1055,37 +1057,9 @@ function PremiumInline({ text }: { text: string }) {
 
 function EmptyCompact({ text }: { text: string }) {
   return (
-    <div className="flex min-h-[170px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-[12px] font-semibold leading-5 text-slate-500">
+    <div className="flex min-h-[170px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-[12px] font-normal leading-5 text-slate-500">
       {text}
     </div>
-  )
-}
-
-function RangeBtn({
-  label,
-  value,
-  range,
-  setRange,
-}: {
-  label: string
-  value: string
-  range: string
-  setRange: (value: string) => void
-}) {
-  const active = range === value
-
-  return (
-    <button
-      type="button"
-      onClick={() => setRange(value)}
-      className={`h-7 rounded-full px-3 text-[11px] font-extrabold transition-all duration-300 ${
-        active
-          ? "bg-violet-700 text-white shadow-sm"
-          : "bg-slate-100 text-[#50607d] hover:bg-slate-200"
-      }`}
-    >
-      {label}
-    </button>
   )
 }
 
@@ -1094,8 +1068,8 @@ function ChartTooltip({ active, payload, label }: any) {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg">
-      <div className="text-xs font-bold text-[#11183d]">{label}</div>
-      <div className="mt-1 text-xs font-bold text-violet-700">
+      <div className="text-xs font-normal text-[#11183d]">{label}</div>
+      <div className="mt-1 text-xs font-normal text-violet-700">
         BLL Accuracy: {payload[0]?.value ?? 0}%
       </div>
     </div>
@@ -1107,9 +1081,9 @@ function ForecastTooltip({ active, payload, label }: any) {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg">
-      <div className="text-xs font-bold text-[#11183d]">{label}</div>
+      <div className="text-xs font-normal text-[#11183d]">{label}</div>
       {payload.map((item: any) => (
-        <div key={item.dataKey} className="mt-1 text-xs font-bold" style={{ color: item.color }}>
+        <div key={item.dataKey} className="mt-1 text-xs font-normal" style={{ color: item.color }}>
           {item.name || item.dataKey}: {item.value}%
         </div>
       ))}
