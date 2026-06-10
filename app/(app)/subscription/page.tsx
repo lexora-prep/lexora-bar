@@ -523,7 +523,7 @@ export default function SubscriptionPage() {
               onViewAll={() => setInvoiceHistoryOpen(true)}
             />
 
-            <PlanAccessCard />
+            <PlanAccessCard planKey={planKey} />
 
             <ManageBillingCard
               isPaid={isPaid}

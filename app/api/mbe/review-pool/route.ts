@@ -73,10 +73,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "MBE Premium is coming soon",
+          error: "Not found",
           subjects: [],
         },
-        { status: 403 }
+        { status: 404 }
       )
     }
 

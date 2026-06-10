@@ -62,7 +62,7 @@ export async function GET() {
     if (!flags.mbePublicVisible || !flags.mbePremiumEnabled) {
       return NextResponse.json({
         success: false,
-        error: "MBE Premium is coming soon",
+        error: "Not found",
         subjects: [],
       })
     }

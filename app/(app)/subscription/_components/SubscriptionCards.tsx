@@ -1,7 +1,7 @@
 "use client"
 
 import { ReactNode, useEffect, useRef, useState } from "react"
-import { Check, ChevronDown, CreditCard, FileText, X } from "lucide-react"
+import { Check, ChevronDown, CreditCard, FileText, Lock, X } from "lucide-react"
 
 export type PaymentHistoryRecord = {
   id: string
@@ -15,14 +15,35 @@ export type PaymentHistoryRecord = {
   receiptUrl: string | null
 }
 
-const planAccessFeatures = [
-  "Full BLL rule access",
-  "Spaced repetition",
-  "Weak rule targeting",
-  "Study progress tracking",
-  "120 Golden Rules",
-  "120 Golden Flashcards",
-]
+const planAccessFeaturesByPlan = {
+  free: [
+    { label: "Limited sample rule access", unlocked: true },
+    { label: "Sample study plan", unlocked: true },
+    { label: "Full BLL rule access", unlocked: false },
+    { label: "Rule Bank", unlocked: false },
+    { label: "120 Golden Rules", unlocked: false },
+    { label: "120 Golden Flashcards", unlocked: false },
+  ],
+  "bll-monthly": [
+    { label: "Full BLL rule access", unlocked: true },
+    { label: "Spaced repetition", unlocked: true },
+    { label: "Weak rule targeting", unlocked: true },
+    { label: "Study progress tracking", unlocked: true },
+    { label: "120 Golden Rules", unlocked: false },
+    { label: "120 Golden Flashcards", unlocked: false },
+  ],
+  premium: [
+    { label: "Full BLL rule access", unlocked: true },
+    { label: "Spaced repetition", unlocked: true },
+    { label: "Weak rule targeting", unlocked: true },
+    { label: "Study progress tracking", unlocked: true },
+    { label: "120 Golden Rules", unlocked: true },
+    { label: "120 Golden Flashcards", unlocked: true },
+  ],
+} as const
+
+type PlanAccessKey = keyof typeof planAccessFeaturesByPlan
+
 
 function Card({ children }: { children: ReactNode }) {
   return (
@@ -427,29 +448,51 @@ function PaymentDetail({
   )
 }
 
-export function PlanAccessCard() {
+export function PlanAccessCard({ planKey }: { planKey: PlanAccessKey }) {
+  const features = planAccessFeaturesByPlan[planKey] ?? planAccessFeaturesByPlan.free
+  const unlockedCount = features.filter((feature) => feature.unlocked).length
+  const allUnlocked = unlockedCount === features.length
+
   return (
     <Card>
       <SectionHeader
         title="Plan access"
         right={
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700">
-            All unlocked
+          <span
+            className={`rounded-full px-3 py-1 text-[12px] font-semibold ${
+              allUnlocked
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-slate-100 text-slate-500"
+            }`}
+          >
+            {allUnlocked ? "All unlocked" : `${unlockedCount}/${features.length} unlocked`}
           </span>
         }
       />
 
       <div className="grid md:grid-cols-2">
-        {planAccessFeatures.map((feature) => (
+        {features.map((feature) => (
           <div
-            key={feature}
+            key={feature.label}
             className="flex min-h-[42px] items-center gap-3 border-b border-slate-200 px-5 even:md:border-l"
           >
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50">
-              <Check className="h-3 w-3 text-emerald-500" />
+            <span
+              className={`flex h-4 w-4 items-center justify-center rounded-full ${
+                feature.unlocked ? "bg-emerald-50" : "bg-slate-100"
+              }`}
+            >
+              {feature.unlocked ? (
+                <Check className="h-3 w-3 text-emerald-500" />
+              ) : (
+                <Lock className="h-3 w-3 text-slate-400" />
+              )}
             </span>
-            <span className="text-[13px] font-medium text-slate-600">
-              {feature}
+            <span
+              className={`text-[13px] font-medium ${
+                feature.unlocked ? "text-slate-600" : "text-slate-400"
+              }`}
+            >
+              {feature.label}
             </span>
           </div>
         ))}

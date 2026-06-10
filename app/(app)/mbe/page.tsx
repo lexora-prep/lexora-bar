@@ -606,7 +606,7 @@ export default function MBEPage() {
   }
 
   if (authLoading || flagsLoading) {
-    return <div className="p-10">Loading MBE...</div>
+    return <div className="p-10">Loading...</div>
   }
 
   if (mbeLocked) {
@@ -618,12 +618,12 @@ export default function MBEPage() {
           </div>
 
           <h1 className="text-3xl font-semibold text-slate-900">
-            MBE Premium is coming soon
+            
           </h1>
 
           <p className="mt-3 text-slate-600 max-w-2xl mx-auto leading-7">
             This section is currently disabled. Right now Lexora only allows Black
-            Letter Law training. MBE practice will be enabled later when you turn
+            Letter Law training. 
             the feature on.
           </p>
 

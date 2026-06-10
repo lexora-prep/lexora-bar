@@ -63,6 +63,7 @@ export default function Sidebar({
 
   const [time, setTime] = useState("")
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [mbePublicVisible, setMbePublicVisible] = useState(false)
   const [liveWeakAreasCount, setLiveWeakAreasCount] = useState<number>(
     weakAreasCount
   )
@@ -108,6 +109,31 @@ export default function Sidebar({
   }, [pathname])
 
   useEffect(() => {
+    let cancelled = false
+
+    async function loadMbeFlag() {
+      try {
+        const res = await fetch("/api/public-feature-flags", { cache: "no-store" })
+        const data = await res.json().catch(() => null)
+
+        if (!cancelled) {
+          setMbePublicVisible(!!data?.mbePublicVisible)
+        }
+      } catch {
+        if (!cancelled) {
+          setMbePublicVisible(false)
+        }
+      }
+    }
+
+    loadMbeFlag()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
     setLiveWeakAreasCount(Number.isFinite(weakAreasCount) ? weakAreasCount : 0)
   }, [weakAreasCount])
 
@@ -149,12 +175,16 @@ export default function Sidebar({
       icon: Brain,
       locked: false,
     },
-    {
-      name: "MBE Practice",
-      href: "/mbe",
-      icon: BookOpen,
-      locked: !mbeAccess,
-    },
+    ...(mbePublicVisible
+      ? [
+          {
+            name: "MBE Practice",
+            href: "/mbe",
+            icon: BookOpen,
+            locked: !mbeAccess,
+          },
+        ]
+      : []),
     {
       name: "Flashcard Trainer",
       href: "/flashcards",

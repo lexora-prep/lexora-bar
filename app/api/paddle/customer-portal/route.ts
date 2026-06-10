@@ -173,12 +173,36 @@ export async function POST(req: Request) {
     let customerId = profile.paddle_customer_id
 
     if (!isValidCustomerId(customerId)) {
+      const latestRecord = await prisma.paddle_payment_records.findFirst({
+        where: { user_id: profile.id },
+        orderBy: { created_at: "desc" },
+        select: {
+          paddle_customer_id: true,
+          paddle_subscription_id: true,
+          paddle_transaction_id: true,
+        },
+      })
+
       customerId = await recoverCustomerId({
         apiKey,
         profileId: profile.id,
-        subscriptionId: profile.paddle_subscription_id,
-        transactionId: profile.paddle_transaction_id,
+        subscriptionId:
+          profile.paddle_subscription_id || latestRecord?.paddle_subscription_id || null,
+        transactionId:
+          profile.paddle_transaction_id || latestRecord?.paddle_transaction_id || null,
       })
+
+      if (!isValidCustomerId(customerId) && isValidCustomerId(latestRecord?.paddle_customer_id)) {
+        customerId = latestRecord.paddle_customer_id
+
+        await prisma.profiles.update({
+          where: { id: profile.id },
+          data: {
+            paddle_customer_id: customerId,
+            updated_at: new Date(),
+          },
+        })
+      }
     }
 
     if (!isValidCustomerId(customerId)) {
@@ -186,9 +210,9 @@ export async function POST(req: Request) {
         {
           ok: false,
           error:
-            "Paddle customer ID is missing and could not be recovered from the subscription or transaction.",
+            "No active Paddle billing portal is available for this account. If you used a 100% coupon, there may be no payable subscription to manage.",
         },
-        { status: 400 },
+        { status: 409 },
       )
     }
 

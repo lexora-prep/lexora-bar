@@ -61,9 +61,9 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "MBE Premium is coming soon",
+          error: "Not found",
         },
-        { status: 403 }
+        { status: 404 }
       )
     }
 

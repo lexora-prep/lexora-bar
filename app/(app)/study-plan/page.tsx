@@ -1027,10 +1027,12 @@ export default function StudyPlanPage() {
                 label="Review Rules"
                 value={<span className="text-slate-400">From review queue</span>}
               />
-              <InfoRow
-                label="MBE Questions"
-                value={<span className="text-amber-700">Coming soon</span>}
-              />
+              {false && (
+                <InfoRow
+                  label="MBE Questions"
+                  value={<span className="text-amber-700">Not assigned</span>}
+                />
+              )}
             </PanelSection>
 
             {(saving || saveMessage || saveError || hasUnsavedChanges) && (

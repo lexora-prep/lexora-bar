@@ -1,3 +1,4 @@
+import { requireBLL } from "@/lib/access"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
@@ -29,6 +30,9 @@ function extractBuzzwords(value: unknown): string[] {
 
 export async function POST(req: Request) {
   try {
+    const access = await requireBLL("Flashcards")
+    if (!access.ok) return access.response
+
     let body: any = null
 
     try {
@@ -45,7 +49,6 @@ export async function POST(req: Request) {
     }
 
     const {
-      userId,
       subjects = [],
       topics = [],
       mode = "mixed",
@@ -56,15 +59,7 @@ export async function POST(req: Request) {
       timed = false,
     } = body
 
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Missing userId",
-        },
-        { status: 400 }
-      )
-    }
+    const userId = access.userId
 
     let subjectNames: string[] = []
     let topicNames: string[] = []

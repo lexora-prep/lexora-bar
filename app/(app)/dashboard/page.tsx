@@ -137,6 +137,7 @@ export default function Dashboard() {
   const [subscriptionTier, setSubscriptionTier] =
     useState<SubscriptionTier>("free")
   const [entitlements, setEntitlements] = useState(() => getEntitlements(null))
+  const [mbePublicVisible, setMbePublicVisible] = useState(false)
   const [authReady, setAuthReady] = useState(false)
 
   const [coreLoaded, setCoreLoaded] = useState(false)
@@ -238,6 +239,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     let cancelled = false
+
+    async function loadFeatureFlags() {
+      try {
+        const res = await fetch("/api/public-feature-flags", { cache: "no-store" })
+        const data = await res.json().catch(() => null)
+
+        if (!cancelled) {
+          setMbePublicVisible(!!data?.mbePublicVisible)
+        }
+      } catch {
+        if (!cancelled) {
+          setMbePublicVisible(false)
+        }
+      }
+    }
+
+    loadFeatureFlags()
 
     async function loadCurrentUser() {
       try {
@@ -2189,22 +2207,24 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  <CompactCompareMetric
-                    label="MBE Accuracy"
-                    you={
-                      isPremium
-                        ? stateData?.userMBE ?? dashboard?.userMBE ?? 0
-                        : null
-                    }
-                    avg={
-                      isPremium
-                        ? stateData?.stateMBEAvg ?? dashboard?.stateMBEAvg ?? 0
-                        : null
-                    }
-                    top={isPremium ? stateData?.topMBE ?? 0 : null}
-                    accent="blue"
-                    locked={!isPremium}
-                  />
+                  {mbePublicVisible && (
+                    <CompactCompareMetric
+                      label="MBE Accuracy"
+                      you={
+                        isPremium
+                          ? stateData?.userMBE ?? dashboard?.userMBE ?? 0
+                          : null
+                      }
+                      avg={
+                        isPremium
+                          ? stateData?.stateMBEAvg ?? dashboard?.stateMBEAvg ?? 0
+                          : null
+                      }
+                      top={isPremium ? stateData?.topMBE ?? 0 : null}
+                      accent="blue"
+                      locked={!isPremium}
+                    />
+                  )}
 
                   <CompactCompareMetric
                     label="BLL Score"
@@ -2222,12 +2242,14 @@ export default function Dashboard() {
                 Quick Start
               </div>
 
-              <QuickStartCard
-                title="MBE Practice"
-                subtitle="Coming soon"
-                onClick={() => undefined}
-                locked={false}
-              />
+              {mbePublicVisible && (
+                <QuickStartCard
+                  title="MBE Practice"
+                  subtitle="Practice multiple-choice questions"
+                  onClick={() => router.push("/mbe")}
+                  locked={!isPremium}
+                />
+              )}
               <QuickStartCard
                 title="Rule Training"
                 subtitle="Continue BLL memorization"
@@ -2777,18 +2799,20 @@ export default function Dashboard() {
                         }
                       />
 
-                      <InfoRow
-                        label="MBE Questions"
-                        value={
-                          isPremium ? (
-                            <span className="font-semibold text-slate-400">
-                              Coming soon
-                            </span>
-                          ) : (
-                            <PremiumBadge onClick={() => undefined} />
-                          )
-                        }
-                      />
+                      {mbePublicVisible && (
+                        <InfoRow
+                          label="MBE Questions"
+                          value={
+                            isPremium ? (
+                              <span className="font-semibold text-slate-400">
+                                Not assigned
+                              </span>
+                            ) : (
+                              <PremiumBadge onClick={() => router.push("/subscription")} />
+                            )
+                          }
+                        />
+                      )}
                     </div>
                   </StudyPanelSection>
 

@@ -87,6 +87,7 @@ export default function MBESessionPage({ params }: PageProps) {
   useEffect(() => {
     async function loadSession() {
       if (mbeLocked) {
+        router.replace("/dashboard")
         setLoading(false)
         return
       }
@@ -193,11 +194,11 @@ export default function MBESessionPage({ params }: PageProps) {
           </div>
 
           <h2 className="text-2xl font-semibold">
-            MBE Premium is coming soon
+            
           </h2>
 
           <p className="text-gray-500">
-            This MBE session is not available right now. Only Black Letter Law training is currently enabled.
+            
           </p>
 
           <button
