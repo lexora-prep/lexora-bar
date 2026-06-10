@@ -273,15 +273,16 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         number: "1",
         title: "Fourteen-Day Refund Window",
         body: [
-          "You may request a refund within 14 calendar days of your initial purchase if you satisfy the eligibility requirements below.",
+          "You may request a refund within 14 calendar days of your initial purchase only if the eligibility requirements below are satisfied. Refunds are not automatic and are reviewed based on account activity, content access, platform usage, and compliance with Lexora Prep policies.",
         ],
       },
       {
         number: "2",
         title: "Usage Requirement",
         body: [
-          "To qualify for a refund, your account must not have substantially accessed, used, copied, or benefited from paid materials beyond a limited review of the platform.",
-          "Lexora Prep may deny a refund request if paid materials were meaningfully accessed, used, downloaded, copied, scraped, shared, or otherwise consumed.",
+          "To qualify for a refund, your account must have accessed less than 20% of the paid materials available under the purchased plan and must not have substantially used, copied, downloaded, scraped, shared, or otherwise consumed Lexora Prep paid content.",
+          "Because Lexora Prep provides digital educational materials and intellectual property that can be accessed immediately after purchase, refund eligibility may be reviewed based on purchase date, rule access, flashcard access, premium content access, account activity, and other usage records.",
+          "Lexora Prep may deny a refund request if the account shows substantial access to paid materials, copying, scraping, redistribution, account sharing, misuse of the platform, abuse of the refund policy, or violation of the Terms and Conditions.",
         ],
       },
       {
@@ -289,7 +290,7 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         title: "Non-Refundable Situations",
         bullets: [
           "The refund request is submitted after the applicable refund window.",
-          "Paid materials were substantially accessed or used.",
+          "The account accessed 20% or more of the paid materials available under the purchased plan.",
           "The account violated the Terms and Conditions.",
           "The user forgot to cancel before renewal.",
           "The user shared, copied, scraped, resold, or misused platform content.",
@@ -308,8 +309,8 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         number: "5",
         title: "Payment Processor",
         body: [
-          "Refunds may be processed through the applicable third-party payment processor.",
-          "Processing times may depend on the payment processor, bank, card issuer, or payment method.",
+          "Payments and refunds are processed through Paddle as Merchant of Record.",
+          "Refund timing may depend on Paddle, the user’s bank, card issuer, or payment method.",
         ],
       },
       {
@@ -329,7 +330,7 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKey, LegalDocument> = {
         ],
       },
     ],
-    note: "Refunds are not automatic. Eligibility depends on timing, account activity, usage, and compliance with Lexora Prep policies.",
+    note: "Refunds are not automatic. A refund may be available within 14 calendar days of initial purchase only if less than 20% of paid materials have been accessed and the account has complied with Lexora Prep policies.",
   },
 
   cookies: {
