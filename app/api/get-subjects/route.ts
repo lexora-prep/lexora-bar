@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { requireAuthenticatedUser } from "@/lib/authenticated-user"
+import { LEARNING_PROGRESS_SELECT, resolveLearningProgress } from "@/lib/learning/analytics"
 
 function makeRuleKey(rule: {
   subject_id?: string | null
@@ -91,8 +93,8 @@ function buildExamBadge(subject: {
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const userId = searchParams.get("userId")
+    const auth = await requireAuthenticatedUser(req)
+    if (!auth.ok) return auth.response
 
     const subjects = await prisma.subjects.findMany({
       where: {
@@ -164,10 +166,10 @@ export async function GET(req: Request) {
     const attemptedBySubject = new Map<string, Set<string>>()
     const weakBySubject = new Map<string, Set<string>>()
 
-    if (userId) {
+    {
       const progress = await prisma.user_rule_progress.findMany({
         where: {
-          user_id: userId,
+          user_id: auth.userId,
           rules: {
             is_active: true,
             rule_type: null,
@@ -175,8 +177,7 @@ export async function GET(req: Request) {
         },
         select: {
           rule_id: true,
-          attempts: true,
-          mastery_level: true,
+          ...LEARNING_PROGRESS_SELECT,
         },
       })
 
@@ -187,13 +188,15 @@ export async function GET(req: Request) {
         const subjectId = canonicalKeyToSubjectId.get(canonicalKey)
         if (!subjectId) continue
 
-        if ((row.attempts ?? 0) > 0) {
+        const learning = resolveLearningProgress(row)
+
+        if (learning.attempts > 0) {
           const set = attemptedBySubject.get(subjectId) ?? new Set<string>()
           set.add(canonicalKey)
           attemptedBySubject.set(subjectId, set)
         }
 
-        if ((row.mastery_level ?? 0) < 60) {
+        if (learning.isWeak) {
           const set = weakBySubject.get(subjectId) ?? new Set<string>()
           set.add(canonicalKey)
           weakBySubject.set(subjectId, set)

@@ -1,31 +1,27 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { requireAuthenticatedUser } from "@/lib/authenticated-user"
+import {
+  LEARNING_PROGRESS_SELECT,
+  learningPriority,
+  resolveLearningProgress,
+} from "@/lib/learning/analytics"
 
 export async function GET(request: Request) {
   try {
-    const url = new URL(request.url)
-    const userId = url.searchParams.get("userId")
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Missing userId", weakAreas: [], count: 0 },
-        { status: 400 }
-      )
-    }
+    const auth = await requireAuthenticatedUser(request)
+    if (!auth.ok) return auth.response
 
     const stats = await prisma.user_rule_progress.findMany({
       where: {
-        user_id: userId,
+        user_id: auth.userId,
         attempts: { gte: 1 },
       },
       select: {
         rule_id: true,
-        attempts: true,
-        correct_count: true,
-        needs_practice: true,
-        mastery_level: true,
         updated_at: true,
         created_at: true,
+        ...LEARNING_PROGRESS_SELECT,
         rules: {
           select: {
             id: true,
@@ -34,87 +30,50 @@ export async function GET(request: Request) {
             application_example: true,
             common_trap: true,
             prompt_question: true,
-            topics: {
-              select: {
-                name: true,
-              },
-            },
-            subtopics: {
-              select: {
-                name: true,
-              },
-            },
-            subjects: {
-              select: {
-                name: true,
-              },
-            },
+            topics: { select: { name: true } },
+            subtopics: { select: { name: true } },
+            subjects: { select: { name: true } },
           },
         },
       },
     })
 
-    const now = new Date()
-
     const weakAreas = stats
-      .map((r) => {
-        const accuracy =
-          r.attempts === 0
-            ? 0
-            : Math.round((r.correct_count / r.attempts) * 100)
-
-        const lastAttempt = r.updated_at || r.created_at || new Date()
-
-        const daysAgo = Math.max(
-          1,
-          Math.floor(
-            (now.getTime() - new Date(lastAttempt).getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        )
-
-        const recencyWeight = Math.max(0, 30 - daysAgo)
-
-        const priority =
-          (100 - accuracy) * 0.6 +
-          r.attempts * 0.2 +
-          recencyWeight * 0.2
-
-        const trend = accuracy >= 60 ? "up" : "down"
-        const needsPractice =
-          !!r.needs_practice || Number(r.mastery_level ?? 0) < 60
+      .map((row) => {
+        const progress = resolveLearningProgress(row)
+        const updatedAt = row.updated_at ?? row.created_at ?? null
 
         return {
-          id: r.rule_id,
-          ruleId: r.rule_id,
-          subject: r.rules?.subjects?.name || "Unknown",
-          topic: r.rules?.topics?.name || "",
-          subtopic: r.rules?.subtopics?.name || "",
-          rule: r.rules?.title || "Untitled",
-          title: r.rules?.title || "Untitled",
-          ruleText: r.rules?.rule_text || "",
-          applicationExample: r.rules?.application_example || "",
-          commonTrap: r.rules?.common_trap || "",
-          promptQuestion: r.rules?.prompt_question || "",
-          accuracy,
-          attempts: r.attempts,
-          priority: Math.round(priority),
-          trend,
-          needsPractice,
+          id: row.rule_id,
+          ruleId: row.rule_id,
+          subject: row.rules?.subjects?.name || "Unknown",
+          topic: row.rules?.topics?.name || "",
+          subtopic: row.rules?.subtopics?.name || "",
+          rule: row.rules?.title || "Untitled",
+          title: row.rules?.title || "Untitled",
+          ruleText: row.rules?.rule_text || "",
+          applicationExample: row.rules?.application_example || "",
+          commonTrap: row.rules?.common_trap || "",
+          promptQuestion: row.rules?.prompt_question || "",
+          accuracy: progress.accuracy,
+          attempts: progress.attempts,
+          priority: learningPriority({ progress, updatedAt }),
+          trend: progress.isWeak ? "down" : "up",
+          needsPractice: progress.isWeak,
+          mastery: progress.mastery,
+          confidence: progress.confidence,
+          learningStatus: progress.status,
         }
       })
-      .filter((r) => r.needsPractice || r.accuracy < 70)
+      .filter((row) => row.needsPractice)
       .sort((a, b) => b.priority - a.priority)
 
-    return NextResponse.json({
-      weakAreas,
-      count: weakAreas.length,
-    })
+    return NextResponse.json(
+      { weakAreas, count: weakAreas.length },
+      { headers: { "Cache-Control": "private, no-store, max-age=0" } }
+    )
   } catch (error) {
     console.error("Weak areas error:", error)
-    return NextResponse.json(
-      { weakAreas: [], count: 0 },
-      { status: 500 }
-    )
+    return NextResponse.json({ weakAreas: [], count: 0 }, { status: 500 })
   }
 }

@@ -3,6 +3,12 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
+import {
+  calculateLearningReadiness,
+  countWeakLearningRows,
+  LEARNING_PROGRESS_SELECT,
+  resolveLearningProgress,
+} from "@/lib/learning/analytics"
 
 type DayStatus = "fire" | "ice" | "empty"
 
@@ -409,12 +415,12 @@ async function getDashboardMetrics(
       },
     }),
 
-    prisma.user_rule_attempts.findMany({
+    prisma.user_rule_progress.findMany({
       where: {
         user_id: userId,
       },
       select: {
-        score: true,
+        ...LEARNING_PROGRESS_SELECT,
       },
     }),
 
@@ -442,22 +448,15 @@ async function getDashboardMetrics(
       },
     }),
 
-    prisma.user_rule_progress.count({
+    prisma.user_rule_progress.findMany({
       where: {
         user_id: userId,
         attempts: {
           gte: 1,
         },
-        OR: [
-          {
-            needs_practice: true,
-          },
-          {
-            mastery_level: {
-              lt: 70,
-            },
-          },
-        ],
+      },
+      select: {
+        ...LEARNING_PROGRESS_SELECT,
       },
     }),
 
@@ -484,7 +483,9 @@ async function getDashboardMetrics(
   const safeWeeklyRules =
     weeklyRuleAttempts.status === "fulfilled" ? weeklyRuleAttempts.value : []
   const safeWeakRuleCount =
-    weakRuleCount.status === "fulfilled" ? weakRuleCount.value : 0
+    weakRuleCount.status === "fulfilled"
+      ? countWeakLearningRows(weakRuleCount.value)
+      : 0
   const safeSpacedReviews =
     spacedReviews.status === "fulfilled" ? spacedReviews.value : 0
 
@@ -551,17 +552,8 @@ async function getDashboardMetrics(
 
   const allMbeCorrect = safeAllMbe.filter((attempt) => attempt.is_correct).length
 
-  const allRuleScoreSum = safeAllRules.reduce(
-    (sum, attempt) => sum + Number(attempt.score ?? 0),
-    0
-  )
-
   const userMBE = calculateAccuracy(allMbeCorrect, safeAllMbe.length)
-
-  const userBLL =
-    safeAllRules.length === 0
-      ? 0
-      : Math.round(allRuleScoreSum / safeAllRules.length)
+  const userBLL = calculateLearningReadiness(safeAllRules)
 
   const comparisonMetrics = includeStateComparison
     ? await getStateComparisonMetrics(userId, requestedState)
@@ -681,8 +673,7 @@ async function getStateComparisonMetrics(
       },
       select: {
         user_id: true,
-        correct_count: true,
-        attempts: true,
+        ...LEARNING_PROGRESS_SELECT,
       },
     }),
   ])
@@ -697,17 +688,7 @@ async function getStateComparisonMetrics(
     stateMbeAttempts.length
   )
 
-  const stateRuleCorrect = stateRuleProgress.reduce(
-    (sum, row) => sum + Number(row.correct_count ?? 0),
-    0
-  )
-
-  const stateRuleTotal = stateRuleProgress.reduce(
-    (sum, row) => sum + Number(row.attempts ?? 0),
-    0
-  )
-
-  const stateBLLAvg = percentFromParts(stateRuleCorrect, stateRuleTotal)
+  const stateBLLAvg = calculateLearningReadiness(stateRuleProgress)
 
   const mbeByUser: Record<string, { correct: number; total: number }> = {}
 
@@ -735,26 +716,19 @@ async function getStateComparisonMetrics(
     }
   }
 
-  const bllByUser: Record<string, { correct: number; total: number }> = {}
+  const bllByUser: Record<string, typeof stateRuleProgress> = {}
 
   for (const row of stateRuleProgress) {
-    if (!bllByUser[row.user_id]) {
-      bllByUser[row.user_id] = {
-        correct: 0,
-        total: 0,
-      }
-    }
-
-    bllByUser[row.user_id].correct += Number(row.correct_count ?? 0)
-    bllByUser[row.user_id].total += Number(row.attempts ?? 0)
+    bllByUser[row.user_id] ??= []
+    bllByUser[row.user_id].push(row)
   }
 
   let topBLL = 0
 
-  for (const score of Object.values(bllByUser)) {
-    const accuracy = percentFromParts(score.correct, score.total)
-    if (accuracy > topBLL) {
-      topBLL = accuracy
+  for (const rows of Object.values(bllByUser)) {
+    const readiness = calculateLearningReadiness(rows)
+    if (readiness > topBLL) {
+      topBLL = readiness
     }
   }
 
@@ -795,9 +769,7 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
         },
         select: {
           rule_id: true,
-          attempts: true,
-          correct_count: true,
-          mastery_level: true,
+          ...LEARNING_PROGRESS_SELECT,
           rules: {
             select: {
               subject_id: true,
@@ -891,14 +863,12 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
         masterySum: 0,
       }
 
-    const attempts = Number(row.attempts ?? 0)
-    const correct = Number(row.correct_count ?? 0)
-    const mastery = Number(row.mastery_level ?? calculateAccuracy(correct, attempts))
+    const progress = resolveLearningProgress(row)
 
-    current.completed += attempts > 0 ? 1 : 0
-    current.correct += correct
-    current.attempts += attempts
-    current.masterySum += mastery
+    current.completed += progress.attempts > 0 ? 1 : 0
+    current.correct += Number(row.correct_count ?? 0)
+    current.attempts += progress.attempts
+    current.masterySum += progress.mastery
 
     bllMap.set(subjectName, current)
   }
@@ -1025,10 +995,7 @@ async function getWeakAreasSummary(userId: string): Promise<WeakAreasSummary> {
     },
     select: {
       rule_id: true,
-      attempts: true,
-      correct_count: true,
-      needs_practice: true,
-      mastery_level: true,
+      ...LEARNING_PROGRESS_SELECT,
       updated_at: true,
       created_at: true,
       rules: {
@@ -1059,11 +1026,7 @@ async function getWeakAreasSummary(userId: string): Promise<WeakAreasSummary> {
 
   const weakAreas = stats
     .map((row) => {
-      const attempts = Number(row.attempts ?? 0)
-      const correctCount = Number(row.correct_count ?? 0)
-      const accuracy = calculateAccuracy(correctCount, attempts)
-      const masteryLevel = Number(row.mastery_level ?? accuracy)
-      const needsPractice = !!row.needs_practice
+      const progress = resolveLearningProgress(row)
 
       return {
         id: row.rule_id,
@@ -1072,14 +1035,14 @@ async function getWeakAreasSummary(userId: string): Promise<WeakAreasSummary> {
         topic: row.rules?.topics?.name || "",
         rule: row.rules?.title || "Untitled",
         title: row.rules?.title || "Untitled",
-        accuracy,
-        attempts,
-        needsPractice,
-        mastery: masteryLevel,
+        accuracy: progress.accuracy,
+        attempts: progress.attempts,
+        needsPractice: progress.isWeak,
+        mastery: progress.mastery,
         updatedAt: row.updated_at ?? row.created_at ?? null,
       }
     })
-    .filter((row) => row.needsPractice || row.accuracy < 70)
+    .filter((row) => row.needsPractice)
     .sort((a, b) => {
       if (a.accuracy !== b.accuracy) {
         return a.accuracy - b.accuracy

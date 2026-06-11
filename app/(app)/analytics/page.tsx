@@ -7,6 +7,8 @@ import { ANALYTICS_TABS } from "./constants"
 import { useAnalyticsUser } from "./hooks/use-analytics-user"
 import { useCoreAnalytics } from "./hooks/use-core-analytics"
 import { useTrendAnalytics } from "./hooks/use-trend-analytics"
+import { useStrengthsWeaknesses } from "./hooks/use-strengths-weaknesses"
+import { useProgressHistory } from "./hooks/use-progress-history"
 import {
   buildAnalyticsAccess,
   buildChartData,
@@ -30,6 +32,7 @@ const OverviewTab = dynamic(
   () => import("./components/tabs/overview-tab"),
   {
     ssr: false,
+    loading: () => <LoadingState compact text="Loading Analytics Overview" />,
   }
 )
 
@@ -37,6 +40,7 @@ const LearningInsightsTab = dynamic(
   () => import("./components/tabs/learning-insights-tab"),
   {
     ssr: false,
+    loading: () => <LoadingState compact text="Loading Learning Insights" />,
   }
 )
 
@@ -44,6 +48,7 @@ const RuleAnalyticsTab = dynamic(
   () => import("./components/tabs/rule-analytics-tab"),
   {
     ssr: false,
+    loading: () => <LoadingState compact text="Loading Rule Analytics" />,
   }
 )
 
@@ -51,6 +56,7 @@ const TimeAnalysisTab = dynamic(
   () => import("./components/tabs/time-analysis-tab"),
   {
     ssr: false,
+    loading: () => <LoadingState compact text="Loading Time Analytics" />,
   }
 )
 
@@ -58,6 +64,9 @@ const StrengthsWeaknessesTab = dynamic(
   () => import("./components/tabs/strengths-weaknesses-tab"),
   {
     ssr: false,
+    loading: () => (
+      <LoadingState compact text="Loading Strengths & Weaknesses" />
+    ),
   }
 )
 
@@ -65,32 +74,19 @@ const ProgressHistoryTab = dynamic(
   () => import("./components/tabs/progress-history-tab"),
   {
     ssr: false,
+    loading: () => <LoadingState compact text="Loading Progress History" />,
   }
 )
 
 export default function AnalyticsPage() {
-  const [activeTab, setActiveTab] =
-    useState<TabKey>("overview")
-
+  const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const [range, setRange] = useState("30d")
-  const [appliedRange, setAppliedRange] =
-    useState("30d")
-
+  const [appliedRange, setAppliedRange] = useState("30d")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
-
-  const [
-    appliedStartDate,
-    setAppliedStartDate,
-  ] = useState("")
-
-  const [
-    appliedEndDate,
-    setAppliedEndDate,
-  ] = useState("")
-
-  const [showInsightInfo, setShowInsightInfo] =
-    useState(false)
+  const [appliedStartDate, setAppliedStartDate] = useState("")
+  const [appliedEndDate, setAppliedEndDate] = useState("")
+  const [showInsightInfo, setShowInsightInfo] = useState(false)
 
   const {
     userId,
@@ -119,6 +115,29 @@ export default function AnalyticsPage() {
     appliedEndDate,
   })
 
+  const {
+    data: strengthsWeaknessesData,
+    loading: strengthsWeaknessesLoading,
+    error: strengthsWeaknessesError,
+  } = useStrengthsWeaknesses({
+    enabled: activeTab === "strengths" && Boolean(userId),
+    appliedRange,
+    appliedStartDate,
+    appliedEndDate,
+  })
+
+  const {
+    data: progressHistoryData,
+    loading: progressHistoryLoading,
+    error: progressHistoryError,
+    refresh: refreshProgressHistory,
+  } = useProgressHistory({
+    enabled: activeTab === "history" && Boolean(userId),
+    appliedRange,
+    appliedStartDate,
+    appliedEndDate,
+  })
+
   const access = useMemo(
     () =>
       buildAnalyticsAccess({
@@ -128,10 +147,7 @@ export default function AnalyticsPage() {
     [subscriptionTier, billingStatus]
   )
 
-  const chartData = useMemo(
-    () => buildChartData(trend),
-    [trend]
-  )
+  const chartData = useMemo(() => buildChartData(trend), [trend])
 
   const subjects = useMemo(
     () => buildSubjectDiagnostics(bllSubjects),
@@ -139,96 +155,53 @@ export default function AnalyticsPage() {
   )
 
   const attemptedSubjects = useMemo(
-    () =>
-      subjects.filter(
-        (subject) => subject.completed > 0
-      ),
+    () => subjects.filter((subject) => subject.completed > 0),
     [subjects]
   )
 
   const strongSubjects = useMemo(
-    () =>
-      attemptedSubjects.filter(
-        (subject) => subject.accuracy >= 75
-      ),
-    [attemptedSubjects]
-  )
-
-  const weakSubjects = useMemo(
-    () =>
-      attemptedSubjects.filter(
-        (subject) =>
-          subject.accuracy > 0 &&
-          subject.accuracy < 70
-      ),
+    () => attemptedSubjects.filter((subject) => subject.accuracy >= 75),
     [attemptedSubjects]
   )
 
   const strongestSubject = useMemo(
-    () =>
-      [...attemptedSubjects].sort(
-        (a, b) => b.accuracy - a.accuracy
-      )[0],
+    () => [...attemptedSubjects].sort((a, b) => b.accuracy - a.accuracy)[0],
     [attemptedSubjects]
   )
 
   const weakestSubject = useMemo(
-    () =>
-      [...attemptedSubjects].sort(
-        (a, b) => a.accuracy - b.accuracy
-      )[0],
+    () => [...attemptedSubjects].sort((a, b) => a.accuracy - b.accuracy)[0],
     [attemptedSubjects]
   )
 
-  const riskBuckets = useMemo(
-    () => buildRiskBuckets(subjects),
-    [subjects]
-  )
-
+  const riskBuckets = useMemo(() => buildRiskBuckets(subjects), [subjects])
   const consistencyScore = useMemo(
     () => buildConsistencyScore(chartData),
     [chartData]
   )
 
   if (loadingUser || !userId) {
-    return (
-      <LoadingState text="Loading analytics..." />
-    )
+    return <LoadingState text="Loading Analytics Overview" />
   }
 
   if (userError) {
-    return (
-      <AnalyticsErrorState
-        message={userError}
-      />
-    )
+    return <AnalyticsErrorState message={userError} />
   }
 
   if (coreLoading || !dashboard) {
-    return (
-      <LoadingState text="Preparing analytics..." />
-    )
+    return <LoadingState text="Preparing Analytics Overview" />
   }
 
   if (coreError) {
-    return (
-      <AnalyticsErrorState
-        message={coreError}
-      />
-    )
+    return <AnalyticsErrorState message={coreError} />
   }
 
   const analyticsDashboard = dashboard
-
-  const {
-    currentScore,
-    delta,
-  } = getScoreMovement({
+  const { currentScore, delta } = getScoreMovement({
     chartData,
     currentFallback: analyticsDashboard.bllScore,
     previousFallback: analyticsDashboard.prevBLL,
   })
-
   const primaryWeakArea = weakAreas[0]
 
   function renderActiveTab() {
@@ -240,12 +213,8 @@ export default function AnalyticsPage() {
           trendLoading={trendLoading}
           currentScore={currentScore}
           delta={delta}
-          canUseBLLAnalytics={
-            access.canUseBLLAnalytics
-          }
-          canUsePremiumAnalytics={
-            access.canUsePremiumAnalytics
-          }
+          canUseBLLAnalytics={access.canUseBLLAnalytics}
+          canUsePremiumAnalytics={access.canUsePremiumAnalytics}
           strongSubjects={strongSubjects}
           strongestSubject={strongestSubject}
           weakestSubject={weakestSubject}
@@ -253,9 +222,7 @@ export default function AnalyticsPage() {
           primaryWeakArea={primaryWeakArea}
           riskBuckets={riskBuckets}
           consistencyScore={consistencyScore}
-          rangeLabelText={rangeLabel(
-            appliedRange
-          )}
+          rangeLabelText={rangeLabel(appliedRange)}
         />
       )
     }
@@ -267,9 +234,7 @@ export default function AnalyticsPage() {
           chartData={chartData}
           currentScore={currentScore}
           delta={delta}
-          canUseBLLAnalytics={
-            access.canUseBLLAnalytics
-          }
+          canUseBLLAnalytics={access.canUseBLLAnalytics}
           strongestSubject={strongestSubject}
           weakestSubject={weakestSubject}
           weakAreas={weakAreas}
@@ -281,9 +246,8 @@ export default function AnalyticsPage() {
 
     if (!access.canUseBLLAnalytics) {
       const tabTitle =
-        ANALYTICS_TABS.find(
-          (tab) => tab.key === activeTab
-        )?.label || "Analytics"
+        ANALYTICS_TABS.find((tab) => tab.key === activeTab)?.label ||
+        "Analytics"
 
       return (
         <GlassCard title={tabTitle}>
@@ -293,7 +257,8 @@ export default function AnalyticsPage() {
     }
 
     if (activeTab === "rules") {
-      return <RuleAnalyticsTab
+      return (
+        <RuleAnalyticsTab
           dashboard={analyticsDashboard}
           subjects={subjects}
           chartData={chartData}
@@ -304,25 +269,38 @@ export default function AnalyticsPage() {
           weakestSubject={weakestSubject}
           primaryWeakArea={primaryWeakArea}
         />
+      )
     }
 
     if (activeTab === "time") {
-      return <TimeAnalysisTab />
+      return (
+        <TimeAnalysisTab
+          appliedRange={appliedRange}
+          appliedStartDate={appliedStartDate}
+          appliedEndDate={appliedEndDate}
+        />
+      )
     }
 
     if (activeTab === "strengths") {
       return (
         <StrengthsWeaknessesTab
-          strongSubjects={strongSubjects}
-          weakSubjects={weakSubjects}
-          weakAreas={weakAreas}
+          data={strengthsWeaknessesData}
+          loading={strengthsWeaknessesLoading}
+          error={strengthsWeaknessesError}
         />
       )
     }
 
     return (
       <ProgressHistoryTab
-        chartData={chartData}
+        data={progressHistoryData}
+        loading={progressHistoryLoading}
+        error={progressHistoryError}
+        appliedRange={appliedRange}
+        appliedStartDate={appliedStartDate}
+        appliedEndDate={appliedEndDate}
+        onRefresh={refreshProgressHistory}
       />
     )
   }
@@ -340,23 +318,17 @@ export default function AnalyticsPage() {
           setStartDate={setStartDate}
           endDate={endDate}
           setEndDate={setEndDate}
-          setAppliedStartDate={
-            setAppliedStartDate
-          }
-          setAppliedEndDate={
-            setAppliedEndDate
-          }
+          appliedStartDate={appliedStartDate}
+          appliedEndDate={appliedEndDate}
+          setAppliedStartDate={setAppliedStartDate}
+          setAppliedEndDate={setAppliedEndDate}
         />
 
-        <AnalyticsTabs
-          activeTab={activeTab}
-          onChange={setActiveTab}
-        />
+        <AnalyticsTabs activeTab={activeTab} onChange={setActiveTab} />
 
         {trendError ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-800">
-            Trend data could not be loaded. Other
-            analytics remain available.
+            Trend data could not be loaded. Other analytics remain available.
           </div>
         ) : null}
 
@@ -365,9 +337,7 @@ export default function AnalyticsPage() {
         <AnalyticsFooter
           showInsightInfo={showInsightInfo}
           onToggleInsightInfo={() =>
-            setShowInsightInfo(
-              (current) => !current
-            )
+            setShowInsightInfo((current) => !current)
           }
         />
       </div>
@@ -375,17 +345,11 @@ export default function AnalyticsPage() {
   )
 }
 
-function AnalyticsErrorState({
-  message,
-}: {
-  message: string
-}) {
+function AnalyticsErrorState({ message }: { message: string }) {
   return (
     <main className="min-h-screen bg-white p-6">
       <GlassCard title="Analytics unavailable">
-        <EmptyCompact
-          text={`Analytics could not be loaded: ${message}`}
-        />
+        <EmptyCompact text={`Analytics could not be loaded: ${message}`} />
       </GlassCard>
     </main>
   )

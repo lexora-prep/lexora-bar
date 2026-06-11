@@ -151,32 +151,46 @@ model user_rule_attempts {
   missed_buzzwords Json?
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
   training_mode    String?   @db.VarChar(50)
+  training_context String?   @db.VarChar(50)
+  recall_seconds   Int?
+  revealed_answer  Boolean   @default(false)
+  self_reported    Boolean   @default(false)
+  engine_version   String?   @db.VarChar(20)
 
   @@index([user_id])
   @@index([user_id, created_at])
   @@index([user_id, training_mode])
   @@index([user_id, created_at(sort: Desc)], map: "idx_user_rule_attempts_user_created")
+  @@index([user_id, training_context], map: "idx_user_rule_attempts_user_context")
+  @@index([user_id, rule_id, created_at(sort: Desc)], map: "idx_user_rule_attempts_user_rule_created")
   @@schema("public")
 }
 
 model user_rule_progress {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id          String    @db.Uuid
-  rule_id          String    @db.Uuid
-  attempts         Int       @default(0)
-  correct_count    Int       @default(0)
-  incorrect_count  Int       @default(0)
-  saved_for_review Boolean   @default(false)
-  needs_practice   Boolean   @default(false)
-  mastery_level    Int       @default(0)
-  last_reviewed    DateTime? @db.Timestamptz(6)
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
-  last_score       Int?
-  rolling_average  Decimal?  @db.Decimal
-  next_review_at   DateTime? @db.Timestamptz(6)
-  interval_days    Int?      @default(1)
-  rules            rules     @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                 String    @db.Uuid
+  rule_id                 String    @db.Uuid
+  attempts                Int       @default(0)
+  correct_count           Int       @default(0)
+  incorrect_count         Int       @default(0)
+  saved_for_review        Boolean   @default(false)
+  needs_practice          Boolean   @default(false)
+  mastery_level           Int       @default(0)
+  last_reviewed           DateTime? @db.Timestamptz(6)
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime  @default(now()) @db.Timestamptz(6)
+  last_score              Int?
+  rolling_average         Decimal?  @db.Decimal
+  next_review_at          DateTime? @db.Timestamptz(6)
+  interval_days           Int?      @default(1)
+  interval_minutes        Int?      @default(1440)
+  mastery_confidence      Int       @default(0)
+  learning_status         String    @default("UNTRAINED") @db.VarChar(30)
+  effective_evidence      Decimal   @default(0) @db.Decimal(8, 2)
+  successful_recall_count Int       @default(0)
+  distinct_modes          Int       @default(0)
+  engine_version          String?   @db.VarChar(20)
+  rules                   rules     @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, rule_id], map: "user_rule_progress_user_rule_unique")
   @@index([rule_id])
@@ -184,6 +198,7 @@ model user_rule_progress {
   @@index([user_id, next_review_at])
   @@index([user_id, needs_practice], map: "idx_user_rule_progress_user_needs_practice")
   @@index([user_id, next_review_at], map: "idx_user_rule_progress_user_next_review")
+  @@index([user_id, learning_status], map: "idx_user_rule_progress_user_status")
   @@schema("public")
 }
 
@@ -241,6 +256,7 @@ model flashcard_session_cards {
   custom_rule_id String?            @db.Uuid
   position       Int
   result         String?
+  attempt_id     String?            @unique @db.Uuid
   time_spent     Int?
   created_at     DateTime           @default(now()) @db.Timestamptz(6)
   rules          rules?             @relation(fields: [rule_id], references: [id])

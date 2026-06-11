@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { requireAuthenticatedUser } from "@/lib/authenticated-user"
+import {
+  LEARNING_PROGRESS_SELECT,
+  calculateLearningReadiness,
+  countWeakLearningRows,
+} from "@/lib/learning/analytics"
 
 type DayStatus = "fire" | "ice" | "empty"
 
@@ -80,21 +86,6 @@ function buildCurrentAndBestStreak(activityDates: Date[]) {
   }
 }
 
-function calculateWeakAreasCount(
-  rows: Array<{
-    attempts: number
-    correct_count: number
-    needs_practice?: boolean | null
-  }>
-) {
-  return rows.filter((row) => {
-    if (row.needs_practice) return true
-    if (!row.attempts || row.attempts < 3) return false
-    const accuracy = Math.round((row.correct_count / row.attempts) * 100)
-    return accuracy < 70
-  }).length
-}
-
 function percent(correct: number, total: number) {
   if (!total) return 0
   return Math.round((correct / total) * 100)
@@ -102,13 +93,12 @@ function percent(correct: number, total: number) {
 
 export async function GET(request: Request) {
   try {
-    const url = new URL(request.url)
-    const userId = url.searchParams.get("userId")
-    const requestedState = url.searchParams.get("state")
+    const auth = await requireAuthenticatedUser(request)
+    if (!auth.ok) return auth.response
 
-    if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 })
-    }
+    const url = new URL(request.url)
+    const userId = auth.userId
+    const requestedState = url.searchParams.get("state")
 
     const now = new Date()
     const today = startOfDay(now)
@@ -133,7 +123,7 @@ export async function GET(request: Request) {
       todayBLL,
       userMbeTotal,
       userMbeCorrect,
-      ruleProgressAggregate,
+      ruleProgressRows,
       allRuleAttemptDates,
       allMbeAttemptDates,
       weeklyRuleAttempts,
@@ -175,13 +165,10 @@ export async function GET(request: Request) {
         },
       }),
 
-      prisma.user_rule_progress.aggregate({
-        where: {
-          user_id: userId,
-        },
-        _sum: {
-          correct_count: true,
-          attempts: true,
+      prisma.user_rule_progress.findMany({
+        where: { user_id: userId },
+        select: {
+          ...LEARNING_PROGRESS_SELECT,
         },
       }),
 
@@ -220,9 +207,7 @@ export async function GET(request: Request) {
           user_id: userId,
         },
         select: {
-          attempts: true,
-          correct_count: true,
-          needs_practice: true,
+          ...LEARNING_PROGRESS_SELECT,
         },
       }),
 
@@ -263,9 +248,11 @@ export async function GET(request: Request) {
     const mbeCorrect = userMbeCorrect
     const overallMBE = percent(mbeCorrect, mbeTotal)
 
-    const ruleCorrect = ruleProgressAggregate._sum.correct_count ?? 0
-    const ruleTotal = ruleProgressAggregate._sum.attempts ?? 0
-    const overallBLL = percent(ruleCorrect, ruleTotal)
+    const ruleTotal = ruleProgressRows.reduce(
+      (sum, row) => sum + Number(row.attempts ?? 0),
+      0
+    )
+    const overallBLL = calculateLearningReadiness(ruleProgressRows)
 
     let stateMBEAvg = 0
     let stateBLLAvg = 0
@@ -303,8 +290,7 @@ export async function GET(request: Request) {
             },
             select: {
               user_id: true,
-              correct_count: true,
-              attempts: true,
+              ...LEARNING_PROGRESS_SELECT,
             },
           }),
         ])
@@ -316,15 +302,27 @@ export async function GET(request: Request) {
         const stateMbeTotal = stateMbeAttempts.length
         stateMBEAvg = percent(stateMbeCorrect, stateMbeTotal)
 
-        const stateRuleCorrect = stateRuleProgress.reduce(
-          (sum, row) => sum + row.correct_count,
-          0
-        )
-        const stateRuleTotal = stateRuleProgress.reduce(
-          (sum, row) => sum + row.attempts,
-          0
-        )
-        stateBLLAvg = percent(stateRuleCorrect, stateRuleTotal)
+        const stateRowsByUser = new Map<
+          string,
+          Array<(typeof stateRuleProgress)[number]>
+        >()
+
+        for (const row of stateRuleProgress) {
+          const list = stateRowsByUser.get(row.user_id) ?? []
+          list.push(row)
+          stateRowsByUser.set(row.user_id, list)
+        }
+
+        const stateReadinessScores = Array.from(stateRowsByUser.values())
+          .map((rows) => calculateLearningReadiness(rows))
+          .filter((score) => score > 0)
+
+        stateBLLAvg = stateReadinessScores.length
+          ? Math.round(
+              stateReadinessScores.reduce((sum, score) => sum + score, 0) /
+                stateReadinessScores.length
+            )
+          : 0
 
         const mbeByUser: Record<string, { correct: number; total: number }> = {}
         for (const attempt of stateMbeAttempts) {
@@ -342,18 +340,9 @@ export async function GET(request: Request) {
           if (pct > topMBE) topMBE = pct
         }
 
-        const bllByUser: Record<string, { correct: number; total: number }> = {}
-        for (const row of stateRuleProgress) {
-          if (!bllByUser[row.user_id]) {
-            bllByUser[row.user_id] = { correct: 0, total: 0 }
-          }
-          bllByUser[row.user_id].correct += row.correct_count
-          bllByUser[row.user_id].total += row.attempts
-        }
-
-        for (const score of Object.values(bllByUser)) {
-          const pct = percent(score.correct, score.total)
-          if (pct > topBLL) topBLL = pct
+        for (const rows of stateRowsByUser.values()) {
+          const readiness = calculateLearningReadiness(rows)
+          if (readiness > topBLL) topBLL = readiness
         }
       }
     }
@@ -385,7 +374,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const weakAreasCount = calculateWeakAreasCount(weeklyRuleProgress)
+    const weakAreasCount = countWeakLearningRows(weeklyRuleProgress)
 
     const weeklyStudyTimeHours = Number(
       ((weeklyStudySessionAgg._sum.durationSeconds ?? 0) / 3600).toFixed(1)

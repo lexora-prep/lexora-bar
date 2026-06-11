@@ -91,6 +91,8 @@ type ModeAttemptPayload = {
   missedKeywords: string[]
   keywordScore: number
   similarity: number
+  revealedAnswer?: boolean
+  selfReported?: boolean
 }
 
 type SessionQuestionStyle = "prompt" | "recite" | "mixed"
@@ -1287,6 +1289,9 @@ return () => clearDirty()
           missedKeywordsOverride: payload.missedKeywords,
           keywordScoreOverride: payload.keywordScore,
           similarityOverride: payload.similarity,
+          recallSeconds,
+          revealedAnswer: Boolean(payload.revealedAnswer),
+          selfReported: Boolean(payload.selfReported),
         }),
       })
 
@@ -1385,7 +1390,7 @@ return () => clearDirty()
     }
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(submission?: { revealedAnswer?: boolean }) {
     if (selectedRuleIndex === null || isSubmitting || !currentUserId) return
     if (!rules[selectedRuleIndex]) return
 
@@ -1407,6 +1412,9 @@ return () => clearDirty()
           mode,
           exerciseMode: mode,
           trainingMode,
+          recallSeconds,
+          revealedAnswer: Boolean(submission?.revealedAnswer),
+          selfReported: false,
         }),
       })
 

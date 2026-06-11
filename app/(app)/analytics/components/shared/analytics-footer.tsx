@@ -1,52 +1,124 @@
 "use client"
 
-import { ArrowRight, Sparkles } from "lucide-react"
+import { useState } from "react"
+import {
+  ChevronDown,
+  CircleHelp,
+  Sparkles,
+} from "lucide-react"
+
+type AnalyticsFooterProps = {
+  showInsightInfo?: boolean
+  onToggleInsightInfo?: () => void
+}
 
 export function AnalyticsFooter({
   showInsightInfo,
   onToggleInsightInfo,
-}: {
-  showInsightInfo: boolean
-  onToggleInsightInfo: () => void
-}) {
+}: AnalyticsFooterProps) {
+  const [internalOpen, setInternalOpen] =
+    useState(false)
+
+  const isOpen =
+    showInsightInfo ?? internalOpen
+
+  function handleToggle() {
+    if (onToggleInsightInfo) {
+      onToggleInsightInfo()
+      return
+    }
+
+    setInternalOpen(
+      (current) => !current
+    )
+  }
+
   return (
-    <>
-      <footer className="flex min-h-10 items-center justify-between rounded-xl bg-violet-50 px-5 py-3 text-[12px] font-normal text-[#3b2b8f]">
-        <div className="flex items-center gap-2">
-          <Sparkles size={15} />
+    <section className="overflow-hidden rounded-xl border border-violet-100 bg-[#f8f7ff] shadow-[0_3px_12px_rgba(76,29,149,0.025)]">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls="analytics-insight-explanation"
+        onClick={handleToggle}
+        className="flex min-h-[46px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-200 hover:bg-[#f4f1ff]"
+      >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-violet-700 shadow-[0_2px_7px_rgba(76,29,149,0.06)]">
+          <Sparkles size={14} />
+        </div>
 
-          <span>
-            Insights are updated daily based on your activity.
-            The more consistent you are, the smarter Lexora gets.
+        <p className="min-w-0 flex-1 text-[10px] font-normal leading-4 text-[#4a4292] sm:text-[11px]">
+          Insights become more personalized as you
+          complete additional study activity.
+        </p>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2 text-[9px] font-normal text-violet-700 sm:text-[10px]">
+          <span className="hidden sm:inline">
+            {isOpen
+              ? "Hide explanation"
+              : "How insights work"}
           </span>
-        </div>
 
-        <div className="hidden items-center gap-2 font-normal md:flex">
-          <button
-            type="button"
-            onClick={onToggleInsightInfo}
-            className="flex items-center gap-2 text-[12px] font-normal text-violet-700"
+          <CircleHelp size={14} />
+
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isOpen
+                ? "rotate-180"
+                : "rotate-0"
+            }`}
+          />
+        </div>
+      </button>
+
+      <div
+        id="analytics-insight-explanation"
+        aria-hidden={!isOpen}
+        className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isOpen
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div
+            className={`border-t border-violet-100 bg-white/80 px-4 transition-[padding,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isOpen
+                ? "translate-y-0 py-3.5"
+                : "-translate-y-2 py-0"
+            }`}
           >
-            <span>How insights work</span>
+            <div
+              className={`flex items-start gap-3 transition-[filter,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                isOpen
+                  ? "translate-y-0 blur-0"
+                  : "-translate-y-1 blur-[1px]"
+              }`}
+            >
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-700">
+                <CircleHelp size={14} />
+              </div>
 
-            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-violet-300 text-[11px]">
-              ?
-            </span>
+              <div className="min-w-0">
+                <h3 className="text-[10px] font-normal text-[#171d42] sm:text-[11px]">
+                  Personalized analytics
+                </h3>
 
-            <ArrowRight size={15} />
-          </button>
+                <p className="mt-1 max-w-4xl text-[9px] font-normal leading-4 text-[#67708c] sm:text-[10px]">
+                  Lexora analyzes your recorded study
+                  activity to identify progress,
+                  consistency, learning patterns, and
+                  areas that need more attention. Your
+                  insights become more precise as you
+                  complete more rule training,
+                  flashcards, reviews, and study
+                  sessions.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </footer>
-
-      {showInsightInfo ? (
-        <div className="rounded-xl border border-violet-100 bg-white px-5 py-4 text-[12px] font-normal leading-5 text-[#4b5878] shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-          Lexora calculates analytics only from your real study
-          activity: BLL rule attempts, rule scores, subject
-          accuracy, weak-area records, and trend data from the
-          selected date range. AI insight is not generated until
-          the AI insight engine is connected.
-        </div>
-      ) : null}
-    </>
+      </div>
+    </section>
   )
 }

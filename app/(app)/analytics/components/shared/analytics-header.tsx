@@ -1,6 +1,6 @@
 "use client"
 
-import { Download, Lock } from "lucide-react"
+import { Download } from "lucide-react"
 import { DateRangeControl } from "./date-range-control"
 
 type AnalyticsHeaderProps = {
@@ -13,6 +13,8 @@ type AnalyticsHeaderProps = {
   setStartDate: (value: string) => void
   endDate: string
   setEndDate: (value: string) => void
+  appliedStartDate: string
+  appliedEndDate: string
   setAppliedStartDate: (value: string) => void
   setAppliedEndDate: (value: string) => void
 }
@@ -27,9 +29,25 @@ export function AnalyticsHeader({
   setStartDate,
   endDate,
   setEndDate,
+  appliedStartDate,
+  appliedEndDate,
   setAppliedStartDate,
   setAppliedEndDate,
 }: AnalyticsHeaderProps) {
+  const exportParams = new URLSearchParams({
+    format: "pdf",
+    range: appliedRange,
+  })
+
+  if (
+    appliedRange === "custom" &&
+    appliedStartDate &&
+    appliedEndDate
+  ) {
+    exportParams.set("start", appliedStartDate)
+    exportParams.set("end", appliedEndDate)
+  }
+
   return (
     <header className="flex items-start justify-between gap-5">
       <div>
@@ -62,16 +80,13 @@ export function AnalyticsHeader({
           setAppliedEndDate={setAppliedEndDate}
         />
 
-        <button
-          type="button"
-          disabled
-          title="Export is locked until the real export endpoint is connected."
-          className="flex h-10 cursor-not-allowed items-center gap-2 rounded-xl border border-[#e5e8f0] bg-white px-4 text-[12px] font-normal text-[#6c7897] shadow-[0_6px_16px_rgba(15,23,42,0.04)]"
+        <a
+          href={`/api/progress-history/export?${exportParams.toString()}`}
+          className="flex h-10 items-center gap-2 rounded-xl border border-[#e5e8f0] bg-white px-4 text-[12px] font-normal text-[#425274] shadow-[0_6px_16px_rgba(15,23,42,0.04)] transition hover:bg-slate-50"
         >
           <Download size={15} />
           Export Report
-          <Lock size={12} />
-        </button>
+        </a>
       </div>
     </header>
   )

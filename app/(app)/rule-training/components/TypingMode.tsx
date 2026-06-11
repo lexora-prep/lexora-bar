@@ -23,7 +23,7 @@ type Props = {
   defaultShowRule?: boolean
   answer?: string
   setAnswer: (v: string) => void
-  onSubmit: () => void
+  onSubmit: (submission?: { revealedAnswer?: boolean }) => void
   onTryAgain?: () => void
   onNextRule?: () => void
   onSaveRule?: () => void
@@ -460,7 +460,11 @@ export default function TypingMode({
               marginLeft: "auto",
             }}
           >
-            <MiniButton primary onClick={onSubmit} disabled={!!isSubmitting}>
+            <MiniButton
+              primary
+              onClick={() => onSubmit({ revealedAnswer: showRule })}
+              disabled={!!isSubmitting}
+            >
               {isSubmitting ? "Submitting..." : "Submit"}
             </MiniButton>
             <MiniButton onClick={onNextRule}>Next</MiniButton>

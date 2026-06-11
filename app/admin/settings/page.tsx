@@ -3,6 +3,11 @@ import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
+import { AnalyticsSettingsForm } from "@/components/admin/analytics-settings-form"
+import {
+  ANALYTICS_SETTING_PRESETS,
+  getStrengthsWeaknessesAnalyticsSettingsRecord,
+} from "@/lib/analytics-settings"
 
 function safeName(fullName: string | null, email: string) {
   if (fullName && fullName.trim()) return fullName
@@ -221,7 +226,7 @@ export default async function AdminSettingsPage() {
     redirect("/admin")
   }
 
-  const [teamMembers, rawFeatureFlags] = await Promise.all([
+  const [teamMembers, rawFeatureFlags, analyticsSettingsRecord] = await Promise.all([
     prisma.profiles.findMany({
       where: {
         deleted_at: null,
@@ -259,6 +264,8 @@ export default async function AdminSettingsPage() {
         order by "key" asc
       `
     ),
+
+    getStrengthsWeaknessesAnalyticsSettingsRecord(),
   ])
 
   const flagMap = new Map(rawFeatureFlags.map((row) => [row.key, row]))
@@ -270,6 +277,17 @@ export default async function AdminSettingsPage() {
   const mbePremiumEnabled = parseBooleanFlag(
     flagMap.get("mbe_premium_enabled")?.value ?? false
   )
+
+  const analyticsSettingsUpdater = analyticsSettingsRecord.updatedBy
+    ? await prisma.profiles.findUnique({
+        where: { id: analyticsSettingsRecord.updatedBy },
+        select: {
+          id: true,
+          email: true,
+          full_name: true,
+        },
+      })
+    : null
 
   const totalTeamMembers = teamMembers.length
   const blockedTeamMembers = teamMembers.filter((m) => m.is_blocked).length
@@ -420,6 +438,23 @@ export default async function AdminSettingsPage() {
         </div>
       </section>
 
+      <AnalyticsSettingsForm
+        initialSettings={analyticsSettingsRecord.settings}
+        presets={ANALYTICS_SETTING_PRESETS}
+        initialUpdatedAt={analyticsSettingsRecord.updatedAt?.toISOString() ?? null}
+        initialUpdatedBy={
+          analyticsSettingsUpdater
+            ? {
+                id: analyticsSettingsUpdater.id,
+                email: analyticsSettingsUpdater.email,
+                name: analyticsSettingsUpdater.full_name,
+              }
+            : null
+        }
+        initialIsDefault={analyticsSettingsRecord.isDefault}
+        canUseAdvanced={isSuperAdmin}
+      />
+
       <section className="border-t border-[#E6E0D4] bg-white">
         <div className="border-b border-[#E6E0D4] px-6 py-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -561,7 +596,7 @@ export default async function AdminSettingsPage() {
 
       <section className="border-t border-[#E6E0D4] bg-[#FCFBF8] px-6 py-3">
         <div className="text-[12px] text-[#6B7280]">
-          Settings now includes live feature controls for MBE visibility and MBE premium access.
+          Settings includes live feature controls and database-backed analytics classification thresholds.
         </div>
       </section>
     </div>
