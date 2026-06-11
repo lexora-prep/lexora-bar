@@ -106,6 +106,10 @@ type SessionRuleResult = {
   ruleId: string
   title: string
   score: number
+  masteryScore?: number
+  learningStatus?: string
+  masteryConfidence?: number
+  nextReviewAt?: string
   matchedKeywords: string[]
   missedKeywords: string[]
   keywordScore: number
@@ -452,6 +456,17 @@ function formatTimeShort(seconds: number) {
   const secs = seconds % 60
   if (mins <= 0) return `${secs}s`
   return `${mins}m ${secs}s`
+}
+
+function formatLearningStatus(value?: string) {
+  const normalized = String(value ?? "").trim().toUpperCase()
+  if (!normalized) return "Not available"
+
+  return normalized
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
 }
 
 function getSetupProgressPercent(input: {
@@ -1081,6 +1096,10 @@ return () => clearDirty()
       })
 
       const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data?.error || "The study session could not be started.")
+      }
       if (data.sessionId) {
         setStudySessionId(data.sessionId)
       }
@@ -1297,6 +1316,10 @@ return () => clearDirty()
 
       const data = await res.json()
 
+      if (!res.ok) {
+        throw new Error(data?.error || "The attempt could not be saved.")
+      }
+
       const matched_keywords = data.matched_keywords ?? payload.matchedKeywords ?? []
       const missed_keywords = data.missed_keywords ?? payload.missedKeywords ?? []
       const score = typeof data.score === "number" ? data.score : payload.score
@@ -1327,30 +1350,17 @@ return () => clearDirty()
         [rule.id]: score,
       }))
 
-      setRuleMastery((prev) => {
-        const previous = prev[rule.id] ?? 0
-        let change = 0
+      if (typeof data.masteryScore === "number") {
+        setRuleMastery((prev) => ({
+          ...prev,
+          [rule.id]: Math.max(0, Math.min(100, Math.round(data.masteryScore))),
+        }))
+      }
 
-        if (score >= 90) change = 10
-        else if (score >= 80) change = 6
-        else if (score >= 70) change = 3
-        else if (score >= 60) change = 0
-        else change = -8
-
-        const updated = Math.max(0, Math.min(100, previous + change))
-        return { ...prev, [rule.id]: updated }
-      })
-
-      const now = Date.now()
-      let delay = 0
-      if (score < 50) delay = 0
-      else if (score < 70 || recallSeconds > 40) delay = 1
-      else if (score < 85 || recallSeconds > 25) delay = 3
-      else if (score < 95 || recallSeconds > 15) delay = 7
-      else delay = 21
-
-      const nextReview = now + delay * 24 * 60 * 60 * 1000
-      setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+      const nextReview = Date.parse(String(data.nextReviewAt ?? ""))
+      if (Number.isFinite(nextReview)) {
+        setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+      }
 
       if (score >= 70 && drillFromWeakAreasFromUrl) {
         setDirectWeakCompletedRuleIds((prev) =>
@@ -1375,6 +1385,22 @@ return () => clearDirty()
           ruleId: rule.id,
           title: rule.title,
           score,
+          masteryScore:
+            typeof data.masteryScore === "number"
+              ? Math.max(0, Math.min(100, Math.round(data.masteryScore)))
+              : undefined,
+          learningStatus:
+            typeof data.learningStatus === "string"
+              ? data.learningStatus
+              : undefined,
+          masteryConfidence:
+            typeof data.masteryConfidence === "number"
+              ? Math.max(0, Math.min(100, Math.round(data.masteryConfidence)))
+              : undefined,
+          nextReviewAt:
+            typeof data.nextReviewAt === "string"
+              ? data.nextReviewAt
+              : undefined,
           matchedKeywords: Array.isArray(matched_keywords) ? matched_keywords : [],
           missedKeywords: Array.isArray(missed_keywords) ? missed_keywords : [],
           keywordScore,
@@ -1383,8 +1409,15 @@ return () => clearDirty()
         })
         return next
       })
+
+      window.dispatchEvent(
+        new CustomEvent("lexora:learning-progress-updated", {
+          detail: { ruleId: rule.id, updatedAt: Date.now() },
+        })
+      )
     } catch (err) {
       console.error(err)
+      alert(err instanceof Error ? err.message : "The attempt could not be saved.")
     } finally {
       setIsSubmitting(false)
     }
@@ -1420,6 +1453,10 @@ return () => clearDirty()
 
       const data = await res.json()
 
+      if (!res.ok) {
+        throw new Error(data?.error || "The attempt could not be saved.")
+      }
+
       const matched_keywords = data.matched_keywords ?? data.matchedBuzzwords ?? []
       const missed_keywords = data.missed_keywords ?? data.missedBuzzwords ?? []
       const score = typeof data.score === "number" ? data.score : 0
@@ -1452,30 +1489,17 @@ return () => clearDirty()
         [rule.id]: score,
       }))
 
-      setRuleMastery((prev) => {
-        const previous = prev[rule.id] ?? 0
-        let change = 0
+      if (typeof data.masteryScore === "number") {
+        setRuleMastery((prev) => ({
+          ...prev,
+          [rule.id]: Math.max(0, Math.min(100, Math.round(data.masteryScore))),
+        }))
+      }
 
-        if (score >= 90) change = 10
-        else if (score >= 80) change = 6
-        else if (score >= 70) change = 3
-        else if (score >= 60) change = 0
-        else change = -8
-
-        const updated = Math.max(0, Math.min(100, previous + change))
-        return { ...prev, [rule.id]: updated }
-      })
-
-      const now = Date.now()
-      let delay = 0
-      if (score < 50) delay = 0
-      else if (score < 70 || recallSeconds > 40) delay = 1
-      else if (score < 85 || recallSeconds > 25) delay = 3
-      else if (score < 95 || recallSeconds > 15) delay = 7
-      else delay = 21
-
-      const nextReview = now + delay * 24 * 60 * 60 * 1000
-      setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+      const nextReview = Date.parse(String(data.nextReviewAt ?? ""))
+      if (Number.isFinite(nextReview)) {
+        setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+      }
 
       if (score >= 70 && drillFromWeakAreasFromUrl) {
         setDirectWeakCompletedRuleIds((prev) =>
@@ -1500,6 +1524,22 @@ return () => clearDirty()
           ruleId: rule.id,
           title: rule.title,
           score,
+          masteryScore:
+            typeof data.masteryScore === "number"
+              ? Math.max(0, Math.min(100, Math.round(data.masteryScore)))
+              : undefined,
+          learningStatus:
+            typeof data.learningStatus === "string"
+              ? data.learningStatus
+              : undefined,
+          masteryConfidence:
+            typeof data.masteryConfidence === "number"
+              ? Math.max(0, Math.min(100, Math.round(data.masteryConfidence)))
+              : undefined,
+          nextReviewAt:
+            typeof data.nextReviewAt === "string"
+              ? data.nextReviewAt
+              : undefined,
           matchedKeywords: Array.isArray(matched_keywords) ? matched_keywords : [],
           missedKeywords: Array.isArray(missed_keywords) ? missed_keywords : [],
           keywordScore,
@@ -1508,8 +1548,15 @@ return () => clearDirty()
         })
         return next
       })
+
+      window.dispatchEvent(
+        new CustomEvent("lexora:learning-progress-updated", {
+          detail: { ruleId: rule.id, updatedAt: Date.now() },
+        })
+      )
     } catch (err) {
       console.error(err)
+      alert(err instanceof Error ? err.message : "The attempt could not be saved.")
     } finally {
       setIsSubmitting(false)
     }
@@ -4206,6 +4253,10 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
         />
       </div>
 
+      <div className="rounded-[14px] border border-blue-200 bg-blue-50 px-4 py-3 text-[12px] leading-5 text-blue-800">
+        Session score measures only this session. Current mastery combines this result with prior attempts, evidence quality, consistency, and recall history. A perfect session can improve a rule without immediately removing it from Weaknesses.
+      </div>
+
       {item.missedKeywords.length > 0 && (
         <div className="rounded-[16px] border border-slate-200 bg-white px-5 py-4">
           <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">
@@ -4256,6 +4307,15 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
                   ? `Missed: ${rule.missedKeywords.join(", ")}`
                   : "All keywords matched"
 
+              const learningSummary =
+                typeof rule.masteryScore === "number"
+                  ? `Mastery ${rule.masteryScore}% · ${formatLearningStatus(rule.learningStatus)}${
+                      typeof rule.masteryConfidence === "number"
+                        ? ` · Confidence ${rule.masteryConfidence}%`
+                        : ""
+                    }`
+                  : null
+
               return (
                 <div
                   key={rule.ruleId}
@@ -4266,6 +4326,11 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
                       {rule.title}
                     </div>
                     <div className="truncate text-[12px] text-slate-500">{sub}</div>
+                    {learningSummary && (
+                      <div className="mt-1 truncate text-[11px] text-blue-700">
+                        {learningSummary}
+                      </div>
+                    )}
                   </div>
                   <span className={`text-[13px] font-bold ${scoreTone}`}>{rule.score}%</span>
                 </div>

@@ -309,12 +309,16 @@ export async function POST(req: Request) {
           },
         },
         select: {
+          interval_minutes: true,
           interval_days: true,
         },
       })
 
       const previousIntervalMinutes =
-        Math.max(0, Number(existingProgress?.interval_days ?? 0)) * 1440
+        existingProgress?.interval_minutes !== null &&
+        existingProgress?.interval_minutes !== undefined
+          ? Math.max(0, Number(existingProgress.interval_minutes))
+          : Math.max(0, Number(existingProgress?.interval_days ?? 0)) * 1440
 
       const schedule = scheduleNextReview({
         attempt: {
@@ -354,7 +358,15 @@ export async function POST(req: Request) {
           needs_practice: status.isWeak,
           last_reviewed: now,
           next_review_at: schedule.nextReviewAt,
+          interval_minutes: schedule.intervalMinutes,
           interval_days: legacyIntervalDays,
+          mastery_confidence: mastery.confidence,
+          learning_status: status.status,
+          effective_evidence: mastery.effectiveEvidence,
+          successful_recall_count: mastery.successfulRecallCount,
+          distinct_modes: mastery.distinctModes,
+          engine_version: LEARNING_ENGINE_VERSION,
+          updated_at: now,
         },
         create: {
           user_id: user.id,
@@ -368,7 +380,15 @@ export async function POST(req: Request) {
           needs_practice: status.isWeak,
           last_reviewed: now,
           next_review_at: schedule.nextReviewAt,
+          interval_minutes: schedule.intervalMinutes,
           interval_days: legacyIntervalDays,
+          mastery_confidence: mastery.confidence,
+          learning_status: status.status,
+          effective_evidence: mastery.effectiveEvidence,
+          successful_recall_count: mastery.successfulRecallCount,
+          distinct_modes: mastery.distinctModes,
+          engine_version: LEARNING_ENGINE_VERSION,
+          updated_at: now,
         },
       })
 

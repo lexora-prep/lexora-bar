@@ -99,6 +99,7 @@ export function resolveLearningProgress(
 
   const usesLearningEngine = Boolean(
     String(row.engine_version ?? "").trim() ||
+      storedMastery > 5 ||
       (storedStatus && storedStatus !== "UNTRAINED") ||
       confidence > 0 ||
       effectiveEvidence > 0 ||

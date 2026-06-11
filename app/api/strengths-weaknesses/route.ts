@@ -413,7 +413,7 @@ export async function GET(request: Request) {
       if (!meta || !meta.showInAnalytics) continue
 
       const progress = progressMap.get(attempt.rule_id)
-      const existing = ruleAggregates.get(attempt.rule_id) ?? {
+      const existing: RuleAggregate = ruleAggregates.get(attempt.rule_id) ?? {
         ruleId: attempt.rule_id,
         title: meta.title,
         subjectId: meta.subjectId,
@@ -468,6 +468,8 @@ export async function GET(request: Request) {
       attempts: number
       correct: number
       scoreTotal: number
+      currentScoreTotal: number
+      currentScoreCount: number
       ruleIds: Set<string>
     }
 
@@ -475,36 +477,53 @@ export async function GET(request: Request) {
 
     for (const rule of ruleAggregates.values()) {
       const key = rule.subjectId || rule.subjectName
-      const existing = subjectAggregates.get(key) ?? {
+      const existing: SubjectAggregate = subjectAggregates.get(key) ?? {
         subjectId: rule.subjectId,
         subjectName: rule.subjectName,
         attempts: 0,
         correct: 0,
         scoreTotal: 0,
+        currentScoreTotal: 0,
+        currentScoreCount: 0,
         ruleIds: new Set<string>(),
       }
 
       existing.attempts += rule.attempts
       existing.correct += rule.correct
       existing.scoreTotal += rule.scoreTotal
+      const historicalAccuracy = round(rule.scoreTotal / Math.max(rule.attempts, 1), 0)
+      const currentScore = rule.usesLearningEngine
+        ? rule.mastery
+        : historicalAccuracy
+      existing.currentScoreTotal += currentScore
+      existing.currentScoreCount += 1
       existing.ruleIds.add(rule.ruleId)
       subjectAggregates.set(key, existing)
     }
 
     const classifiedSubjects = Array.from(subjectAggregates.values())
       .filter((subject) => subject.attempts > 0)
-      .map((subject) => ({
-        subjectId: subject.subjectId,
-        name: subject.subjectName,
-        attempts: subject.attempts,
-        correctAttempts: subject.correct,
-        accuracy: round(subject.scoreTotal / subject.attempts, 0),
-        attemptedRules: subject.ruleIds.size,
-        confidence:
-          subject.attempts >= confirmedSubjectAttempts
-            ? ("confirmed" as const)
-            : ("early" as const),
-      }))
+      .map((subject) => {
+        const historicalAccuracy = round(subject.scoreTotal / subject.attempts, 0)
+        const currentScore = round(
+          subject.currentScoreTotal / Math.max(subject.currentScoreCount, 1),
+          0
+        )
+
+        return {
+          subjectId: subject.subjectId,
+          name: subject.subjectName,
+          attempts: subject.attempts,
+          correctAttempts: subject.correct,
+          accuracy: currentScore,
+          historicalAccuracy,
+          attemptedRules: subject.ruleIds.size,
+          confidence:
+            subject.attempts >= confirmedSubjectAttempts
+              ? ("confirmed" as const)
+              : ("early" as const),
+        }
+      })
 
     const strengths = classifiedSubjects
       .filter(
@@ -542,8 +561,11 @@ export async function GET(request: Request) {
           : accuracy < weakRuleThreshold || rule.needsPractice
       })
       .map((rule) => {
-        const accuracy = round(rule.scoreTotal / rule.attempts, 0)
-        const averageScore = accuracy
+        const historicalAccuracy = round(rule.scoreTotal / rule.attempts, 0)
+        const currentScore = rule.usesLearningEngine
+          ? rule.mastery
+          : historicalAccuracy
+        const averageScore = historicalAccuracy
         const latestScore = rule.scores[rule.scores.length - 1] ?? 0
         const previousScores = rule.scores.slice(0, -1)
         const previousAccuracy =
@@ -555,7 +577,9 @@ export async function GET(request: Request) {
               )
             : null
         const accuracyChange =
-          previousAccuracy === null ? null : accuracy - previousAccuracy
+          previousAccuracy === null
+            ? null
+            : historicalAccuracy - previousAccuracy
         const trend =
           accuracyChange === null
             ? ("new" as const)
@@ -581,7 +605,7 @@ export async function GET(request: Request) {
           .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
 
         const priorityScore = round(
-          missShare * 0.65 + (100 - accuracy) * 0.35,
+          missShare * 0.55 + (100 - currentScore) * 0.45,
           2
         )
 
@@ -595,7 +619,8 @@ export async function GET(request: Request) {
           attempts: rule.attempts,
           correctAttempts: rule.correct,
           incorrectAttempts: rule.incorrect,
-          accuracy,
+          accuracy: currentScore,
+          historicalAccuracy,
           averageScore,
           latestScore,
           previousAccuracy,
@@ -605,15 +630,18 @@ export async function GET(request: Request) {
           impactPercentage: -impactMagnitude,
           missSharePercentage: missShare,
           priorityScore,
-          priority: getPriority(accuracy, {
+          priority: getPriority(currentScore, {
             critical: criticalPriorityThreshold,
             high: highPriorityThreshold,
           }),
           needsPractice: rule.needsPractice,
           mastery: rule.mastery,
+          masteryConfidence: rule.masteryConfidence,
+          learningStatus: rule.learningStatus,
+          usesLearningEngine: rule.usesLearningEngine,
           missedBuzzwords: missedBuzzwords.slice(0, 5),
           recommendation: buildRecommendation({
-            accuracy,
+            accuracy: currentScore,
             latestScore,
             accuracyChange,
             trend,
@@ -699,15 +727,15 @@ export async function GET(request: Request) {
     if (weaknesses[0]) {
       whyTopicsMatter.push({
         key: "largest-miss-share",
-        title: "Largest contribution to the recorded performance gap",
-        text: `${weaknesses[0].title} accounts for ${weaknesses[0].missSharePercentage}% of the recorded performance gap in this date range.`,
+        title: "Highest current learning priority",
+        text: `${weaknesses[0].title} is currently at ${weaknesses[0].accuracy}% ${weaknesses[0].usesLearningEngine ? "mastery" : "recorded average"} and accounts for ${weaknesses[0].missSharePercentage}% of the recorded performance gap in this date range.`,
       })
 
       if (weaknesses[0].trend === "improving") {
         whyTopicsMatter.push({
           key: "recent-improvement",
           title: "Recent improvement",
-          text: `The latest score was ${weaknesses[0].latestScore}%. The cumulative average increased from ${weaknesses[0].previousAccuracy ?? "—"}% to ${weaknesses[0].accuracy}% (${formatSignedChange(weaknesses[0].accuracyChange)}).`,
+          text: `The latest score was ${weaknesses[0].latestScore}%. The historical average increased from ${weaknesses[0].previousAccuracy ?? "—"}% to ${weaknesses[0].historicalAccuracy}% (${formatSignedChange(weaknesses[0].accuracyChange)}).`,
         })
       }
     }
@@ -745,8 +773,8 @@ export async function GET(request: Request) {
           ...weaknesses[0],
           reason:
             weaknesses[0].trend === "improving"
-              ? `${weaknesses[0].title} is improving: the latest score was ${weaknesses[0].latestScore}% and the cumulative average changed by ${formatSignedChange(weaknesses[0].accuracyChange)}.`
-              : `${weaknesses[0].title} ranks first because it combines ${weaknesses[0].accuracy}% average score with ${weaknesses[0].missSharePercentage}% of the recorded performance gap.`,
+              ? `${weaknesses[0].title} is improving: the latest score was ${weaknesses[0].latestScore}%, current ${weaknesses[0].usesLearningEngine ? "mastery" : "recorded average"} is ${weaknesses[0].accuracy}%, and the historical average changed by ${formatSignedChange(weaknesses[0].accuracyChange)}.`
+              : `${weaknesses[0].title} ranks first because its current ${weaknesses[0].usesLearningEngine ? "mastery" : "recorded average"} is ${weaknesses[0].accuracy}% and it contributes ${weaknesses[0].missSharePercentage}% of the recorded performance gap.`,
         }
       : null
 
@@ -754,7 +782,7 @@ export async function GET(request: Request) {
       ? {
           summary:
             nextBestAction.trend === "improving"
-              ? `${nextBestAction.title} is improving. The latest score was ${nextBestAction.latestScore}%, compared with a previous average of ${nextBestAction.previousAccuracy ?? "—"}%, bringing the current average to ${nextBestAction.accuracy}%.`
+              ? `${nextBestAction.title} is improving. The latest score was ${nextBestAction.latestScore}%, the historical average is now ${nextBestAction.historicalAccuracy}%, and current ${nextBestAction.usesLearningEngine ? "mastery" : "recorded average"} is ${nextBestAction.accuracy}%.`
               : `Begin with ${nextBestAction.title}. It currently has the highest calculated weakness priority in the selected date range.`,
           steps: [
             nextBestAction.missedBuzzwords.length > 0

@@ -159,26 +159,26 @@ export default function StrengthsWeaknessesTab({
                   <InsightStrip
                     tone="green"
                     icon={<Check size={13} />}
-                    text="These subjects currently meet the strength threshold using recorded scored attempts."
+                    text="These subjects currently meet the strength threshold using the latest stored learning level for each practiced rule."
                   />
                 </div>
               ) : (
                 <EmptyCompact
-                  text={`No subject currently has an average scored result of at least ${data.thresholds.strongSubjectAccuracy}%.`}
+                  text={`No subject currently has a learning level of at least ${data.thresholds.strongSubjectAccuracy}%.`}
                 />
               )}
             </GlassCard>
 
             <GlassCard
               title="Your Weaknesses"
-              info={`Weak rules appear from the first scored attempt. Results become confirmed after ${data.thresholds.confirmedRuleAttempts} attempts.`}
+              info={`Weak rules use current mastery when learning-engine evidence exists. Historical averages remain visible as context. Results become confirmed after ${data.thresholds.confirmedRuleAttempts} attempts.`}
             >
               {data.weaknesses.length > 0 ? (
                 <div>
                   <div className="hidden grid-cols-[52px_1.5fr_125px_72px_1.2fr] gap-3 border-b border-slate-100 pb-2 text-[8px] font-normal text-slate-400 md:grid">
                     <span>Priority</span>
                     <span>Area</span>
-                    <span>Accuracy</span>
+                    <span>Current Level</span>
                     <span>Impact</span>
                     <span>Recommended Action</span>
                   </div>
@@ -201,14 +201,14 @@ export default function StrengthsWeaknessesTab({
                             data.summary.highPriorityRuleCount === 1
                               ? "rule requires"
                               : "rules require"
-                          } immediate attention based on recorded accuracy.`
+                          } immediate attention based on current learning status.`
                         : "No displayed rule is currently below the high-priority threshold."
                     }
                   />
                 </div>
               ) : (
                 <EmptyCompact
-                  text={`No scored rule currently has an average score below ${data.thresholds.weakRuleAccuracy}% or is marked for practice.`}
+                  text={`No scored rule currently has a weak learning status or a recorded average below ${data.thresholds.weakRuleAccuracy}%.`}
                 />
               )}
             </GlassCard>
@@ -261,7 +261,7 @@ export default function StrengthsWeaknessesTab({
 
             <GlassCard
               title="Priority Focus This Week"
-              info="The order is calculated from each rule's performance-gap share and average score."
+              info="The order is calculated from each rule's current learning level and its share of the recorded performance gap."
             >
               {data.priorityFocus.length > 0 ? (
                 <div>
@@ -344,14 +344,14 @@ export default function StrengthsWeaknessesTab({
 
                       <div className="mt-1 text-[9px] font-normal text-slate-500">
                         {data.nextBestAction.subjectName} ·{" "}
-                        {data.nextBestAction.accuracy}% current average ·{" "}
+                        {data.nextBestAction.accuracy}% {data.nextBestAction.usesLearningEngine ? "current mastery" : "recorded average"} ·{" "}
                         {formatImpact(data.nextBestAction.impactPercentage)} impact
                       </div>
 
                       <div className={`mt-1 text-[8px] font-normal ${trendTextClass(data.nextBestAction.trend)}`}>
                         Latest {data.nextBestAction.latestScore}%
                         {data.nextBestAction.previousAccuracy !== null
-                          ? ` · Previous average ${data.nextBestAction.previousAccuracy}% · ${formatAccuracyChange(data.nextBestAction.accuracyChange)}`
+                          ? ` · Historical average ${data.nextBestAction.historicalAccuracy}% · ${formatAccuracyChange(data.nextBestAction.accuracyChange)}`
                           : " · First scored attempt"}
                         {` · ${trendLabel(data.nextBestAction.trend)}`}
                       </div>
@@ -477,6 +477,9 @@ function SubjectRow({
             {subject.confidence === "confirmed" ? "Confirmed" : "Early data"}
           </span>
         </div>
+        <div className="mt-1 text-[7px] font-normal text-slate-400">
+          Historical average {subject.historicalAccuracy}%
+        </div>
       </div>
 
       <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -515,10 +518,18 @@ function WeaknessRow({ item }: { item: WeakRuleAnalytics }) {
             {item.confidence === "confirmed" ? "Confirmed" : "Early data"}
           </span>
         </div>
+        {item.usesLearningEngine && (
+          <div className="mt-1 text-[7px] font-normal text-blue-600">
+            {formatLearningStatus(item.learningStatus)}
+            {item.masteryConfidence > 0
+              ? ` · Mastery confidence ${item.masteryConfidence}%`
+              : ""}
+          </div>
+        )}
         <div className={`mt-1 text-[7px] font-normal ${trendTextClass(item.trend)}`}>
           Latest {item.latestScore}%
           {item.previousAccuracy !== null
-            ? ` · Previous average ${item.previousAccuracy}% · ${formatAccuracyChange(item.accuracyChange)}`
+            ? ` · Historical average ${item.historicalAccuracy}% · ${formatAccuracyChange(item.accuracyChange)}`
             : " · First scored attempt"}
           {` · ${trendLabel(item.trend)}`}
         </div>
@@ -584,7 +595,7 @@ function PriorityFocusRow({ item }: { item: WeakRuleAnalytics }) {
           {item.subjectName} · {item.attempts} scored {item.attempts === 1 ? "attempt" : "attempts"}
         </div>
         <div className={`mt-1 text-[7px] font-normal ${trendTextClass(item.trend)}`}>
-          Latest {item.latestScore}% · {formatAccuracyChange(item.accuracyChange)} · {trendLabel(item.trend)}
+          Latest {item.latestScore}% · Historical {item.historicalAccuracy}% · {trendLabel(item.trend)}
         </div>
       </div>
 
@@ -713,6 +724,14 @@ function formatAccuracyChange(value: number | null) {
   if (value > 0) return `+${value} pts`
   if (value < 0) return `${value} pts`
   return "0 pts"
+}
+
+function formatLearningStatus(value: string) {
+  return String(value || "")
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
 }
 
 function trendLabel(trend: WeakRuleAnalytics["trend"]) {

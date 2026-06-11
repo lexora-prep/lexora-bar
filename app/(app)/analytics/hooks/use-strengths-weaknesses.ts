@@ -138,13 +138,25 @@ export function useStrengthsWeaknesses({
       void load()
     }
 
+    const refreshOnLearningProgress = () => {
+      void load()
+    }
+
     window.addEventListener("focus", refreshOnFocus)
     window.addEventListener("pageshow", refreshOnPageShow)
+    window.addEventListener(
+      "lexora:learning-progress-updated",
+      refreshOnLearningProgress
+    )
     document.addEventListener("visibilitychange", refreshWhenVisible)
 
     return () => {
       window.removeEventListener("focus", refreshOnFocus)
       window.removeEventListener("pageshow", refreshOnPageShow)
+      window.removeEventListener(
+        "lexora:learning-progress-updated",
+        refreshOnLearningProgress
+      )
       document.removeEventListener("visibilitychange", refreshWhenVisible)
       controllerRef.current?.abort()
     }

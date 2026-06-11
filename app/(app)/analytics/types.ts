@@ -114,6 +114,7 @@ export type StrengthSubjectAnalytics = {
   attempts: number
   correctAttempts: number
   accuracy: number
+  historicalAccuracy: number
   attemptedRules: number
   confidence: "early" | "confirmed"
 }
@@ -129,6 +130,7 @@ export type WeakRuleAnalytics = {
   correctAttempts: number
   incorrectAttempts: number
   accuracy: number
+  historicalAccuracy: number
   averageScore: number
   latestScore: number
   previousAccuracy: number | null
@@ -142,6 +144,9 @@ export type WeakRuleAnalytics = {
   priority: "critical" | "high" | "moderate"
   needsPractice: boolean
   mastery: number
+  masteryConfidence: number
+  learningStatus: string
+  usesLearningEngine: boolean
   missedBuzzwords: Array<{
     text: string
     count: number

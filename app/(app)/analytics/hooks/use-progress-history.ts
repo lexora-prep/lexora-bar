@@ -142,13 +142,25 @@ export function useProgressHistory({
       }
     }
 
+    function handleLearningProgress() {
+      void load()
+    }
+
     window.addEventListener("focus", handleFocus)
     window.addEventListener("pageshow", handleFocus)
+    window.addEventListener(
+      "lexora:learning-progress-updated",
+      handleLearningProgress
+    )
     document.addEventListener("visibilitychange", handleVisibility)
 
     return () => {
       window.removeEventListener("focus", handleFocus)
       window.removeEventListener("pageshow", handleFocus)
+      window.removeEventListener(
+        "lexora:learning-progress-updated",
+        handleLearningProgress
+      )
       document.removeEventListener("visibilitychange", handleVisibility)
     }
   }, [enabled, load])
