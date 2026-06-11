@@ -293,7 +293,17 @@ export default function AnalyticsPage() {
     }
 
     if (activeTab === "rules") {
-      return <RuleAnalyticsTab />
+      return <RuleAnalyticsTab
+          dashboard={analyticsDashboard}
+          subjects={subjects}
+          chartData={chartData}
+          currentScore={currentScore}
+          delta={delta}
+          weakAreas={weakAreas}
+          strongestSubject={strongestSubject}
+          weakestSubject={weakestSubject}
+          primaryWeakArea={primaryWeakArea}
+        />
     }
 
     if (activeTab === "time") {
