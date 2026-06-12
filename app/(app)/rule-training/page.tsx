@@ -191,6 +191,12 @@ type SessionHistoryItem = {
   plannedMinutes?: number
 }
 
+type RecommendationRuleCategory =
+  | "due_review"
+  | "priority_rule"
+  | "first_recall"
+  | "new_rule"
+
 type RecommendedRuleExplanation = {
   ruleId: string
   title: string
@@ -202,6 +208,7 @@ type RecommendedRuleExplanation = {
   dueAt: string | null
   failureStreak: number
   mastery: number
+  category?: RecommendationRuleCategory
 }
 
 type RecommendedSessionBlock = {
@@ -245,6 +252,9 @@ type DailyLearningRecommendation = {
     remainingRules: number
     weakRules: number
     dueRules: number
+    overdueRules: number
+    repeatedFailureRules: number
+    scheduledReviewRules: number
   }
   todayProgress: {
     plannedMinutes: number
@@ -537,8 +547,8 @@ function getSessionTypeMeta(sessionType: SessionType | null) {
       }
     case "weak_focus":
       return {
-        label: "Weak Focus",
-        shortLabel: "Weak Focus",
+        label: "Priority Review",
+        shortLabel: "Priority Review",
         icon: <Target size={15} />,
       }
     default:
@@ -559,21 +569,31 @@ function recommendationRequestedMinutes(recommendation: DailyLearningRecommendat
 }
 
 function recommendationCompletedMinutes(recommendation: DailyLearningRecommendation) {
-  const value = Number(recommendation.progress?.completedMinutes ?? 0)
+  const value = Number(
+    recommendation.progress?.completedMinutes ??
+      recommendation.todayProgress?.completedMinutes ??
+      0
+  )
   return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
 }
 
 function recommendationRemainingMinutes(recommendation: DailyLearningRecommendation) {
   const requested = recommendationRequestedMinutes(recommendation)
   const completed = recommendationCompletedMinutes(recommendation)
-  const explicit = Number(recommendation.progress?.remainingMinutes)
+  const explicit = Number(
+    recommendation.progress?.remainingMinutes ??
+      recommendation.todayProgress?.remainingMinutes
+  )
 
   if (Number.isFinite(explicit)) return Math.max(0, Math.round(explicit))
   return Math.max(0, requested - completed)
 }
 
 function recommendationIsComplete(recommendation: DailyLearningRecommendation) {
-  if (recommendation.progress?.planComplete === true) return true
+  if (
+    recommendation.progress?.planComplete === true ||
+    recommendation.todayProgress?.planComplete === true
+  ) return true
 
   const requested = recommendationRequestedMinutes(recommendation)
   const completed = recommendationCompletedMinutes(recommendation)
@@ -590,6 +610,66 @@ function recommendationRemainingRules(recommendation: DailyLearningRecommendatio
     Number(recommendation.totals.availableRules || 0) -
       Number(recommendation.totals.coveredRules || 0)
   )
+}
+
+function recommendationPlanState(recommendation: DailyLearningRecommendation) {
+  if (recommendationIsComplete(recommendation)) return "completed" as const
+  if (recommendationCompletedMinutes(recommendation) > 0) return "in_progress" as const
+  return "ready" as const
+}
+
+function inferRecommendationCategory(
+  explanation: RecommendedRuleExplanation
+): RecommendationRuleCategory {
+  if (explanation.category) return explanation.category
+
+  const combined = `${explanation.statusLabel} ${explanation.reason}`.toLowerCase()
+  if (combined.includes("first") && combined.includes("recall")) return "first_recall"
+  if (combined.includes("new this cycle") || combined.includes("not been covered")) {
+    return "new_rule"
+  }
+  if (
+    combined.includes("weak") ||
+    combined.includes("lapse") ||
+    combined.includes("missed repeatedly") ||
+    explanation.failureStreak >= 2
+  ) {
+    return "priority_rule"
+  }
+  return "due_review"
+}
+
+function recommendationCategoryCounts(recommendation: DailyLearningRecommendation) {
+  const seen = new Set<string>()
+  const counts = {
+    dueReview: 0,
+    priorityRule: 0,
+    firstRecall: 0,
+    newRule: 0,
+  }
+
+  for (const block of recommendation.blocks) {
+    for (const explanation of block.ruleExplanations ?? []) {
+      if (seen.has(explanation.ruleId)) continue
+      seen.add(explanation.ruleId)
+
+      const category = inferRecommendationCategory(explanation)
+      if (category === "priority_rule") counts.priorityRule += 1
+      else if (category === "first_recall") counts.firstRecall += 1
+      else if (category === "new_rule") counts.newRule += 1
+      else counts.dueReview += 1
+    }
+  }
+
+  return counts
+}
+
+function recommendationRuleCount(recommendation: DailyLearningRecommendation) {
+  const ids = new Set<string>()
+  for (const block of recommendation.blocks) {
+    for (const ruleId of block.ruleIds) ids.add(ruleId)
+  }
+  return ids.size
 }
 
 function getHistoryModeLabel(mode: SessionType) {
@@ -754,6 +834,8 @@ function RuleTrainingPageContent() {
     useState<RecommendationSessionContext | null>(null)
   const [latestCompletedSession, setLatestCompletedSession] =
     useState<SessionHistoryItem | null>(null)
+  const [whyPlanOpen, setWhyPlanOpen] = useState(false)
+  const [cycleSettingsOpen, setCycleSettingsOpen] = useState(false)
 
   const [savedRuleIds, setSavedRuleIds] = useState<string[]>([])
   const [reportedRuleIds, setReportedRuleIds] = useState<string[]>([])
@@ -2825,6 +2907,31 @@ return () => clearDirty()
     }
   }, [visibleSubjects])
 
+  const recommendationState = recommendation
+    ? recommendationPlanState(recommendation)
+    : null
+  const recommendationCounts = recommendation
+    ? recommendationCategoryCounts(recommendation)
+    : { dueReview: 0, priorityRule: 0, firstRecall: 0, newRule: 0 }
+  const primaryRecommendedBlock = recommendation
+    ? recommendation.blocks.find(
+        (block) => block.id === recommendation.primaryBlockId
+      ) ?? recommendation.blocks.find((block) => !block.completedToday) ?? null
+    : null
+  const recommendedPlanRuleCount = recommendation
+    ? recommendationRuleCount(recommendation)
+    : 0
+
+  const independentRecallAccuracy = useMemo(() => {
+    const values = allRules
+      .filter((rule) => rule.cycleAssessed)
+      .map((rule) => Number(ruleMastery[rule.id] ?? rule.avgScore))
+      .filter((value) => Number.isFinite(value))
+
+    if (values.length === 0) return null
+    return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+  }, [allRules, ruleMastery])
+
   const weakFocusSubjectCards = useMemo(() => {
     const subjectCounts = new Map<string, number>()
 
@@ -3179,513 +3286,592 @@ return () => clearDirty()
 
             {activeTab === "setup" && (
               <>
-                <div className="mb-5">
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-                    Session Configuration
-                  </div>
-                  <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-900">
-                    Choose your session
-                  </h1>
-                  <p className="mt-1.5 text-[14px] text-slate-500">
-                    Pick the mode first, then choose whole subjects or specific topics.
-                  </p>
-                </div>
-
-                <div className="mb-5 border-y border-slate-200 py-4">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex min-w-0 flex-1 items-center gap-4">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                        <RefreshCw size={16} />
-                      </div>
-
-                      <div className="flex min-w-0 flex-wrap items-center gap-y-2 text-[12px]">
-                        <span className="font-semibold text-blue-700">
-                          Learning Cycle {learningCycleStats.cycleNumber}
-                        </span>
-                        <span className="mx-4 hidden h-5 w-px bg-slate-200 sm:block" />
-                        <span className="font-medium text-slate-700">
-                          {learningCycleStats.coveredRules} of {learningCycleStats.totalRules} rules covered
-                        </span>
-                        <span className="mx-4 hidden h-5 w-px bg-slate-200 sm:block" />
-                        <span className="text-slate-500">
-                          {learningCycleStats.assessedRules} independently quizzed
-                        </span>
-                      </div>
+                <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-violet-600">
+                      Learning Studio
                     </div>
+                    <h1 className="mt-2 text-[30px] font-semibold tracking-[-0.045em] text-slate-950">
+                      Rule Training
+                    </h1>
+                    <p className="mt-2 max-w-2xl text-[14px] leading-6 text-slate-500">
+                      A focused daily memory plan, adapted to your review schedule, recall strength, and current learning cycle.
+                    </p>
+                  </div>
 
-                    <div className="flex shrink-0 items-center gap-5">
-                      <button
-                        type="button"
-                        disabled={cycleActionLoading}
-                        onClick={() => void handleCycleAction("restart_current")}
-                        className="inline-flex items-center gap-2 text-[12px] font-semibold text-slate-600 transition hover:text-blue-700 disabled:opacity-50"
-                      >
-                        <RefreshCw size={15} />
-                        Restart Cycle
-                      </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-expanded={cycleSettingsOpen}
+                      onClick={() => setCycleSettingsOpen((open) => !open)}
+                      className="inline-flex items-center gap-2 text-[12px] font-semibold text-slate-600 transition hover:text-violet-700"
+                    >
+                      Cycle settings
+                      <ChevronDown
+                        size={15}
+                        className={`transition ${cycleSettingsOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
 
-                      {learningCycleStats.isComplete && (
+                    {cycleSettingsOpen && (
+                      <div className="absolute right-0 top-8 z-30 w-64 rounded-[14px] border border-slate-200 bg-white p-2 shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
+                        <div className="px-3 py-2 text-[11px] leading-5 text-slate-500">
+                          Restarting resets cycle coverage only. Your attempt and mastery history stays intact.
+                        </div>
                         <button
                           type="button"
                           disabled={cycleActionLoading}
-                          onClick={() => void handleCycleAction("start_next")}
-                          className="inline-flex items-center gap-2 text-[12px] font-semibold text-violet-700 transition hover:text-violet-800 disabled:opacity-50"
+                          onClick={() => {
+                            setCycleSettingsOpen(false)
+                            void handleCycleAction("restart_current")
+                          }}
+                          className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                         >
-                          Start Cycle {learningCycleStats.cycleNumber + 1}
-                          <ArrowRight size={14} />
+                          <RefreshCw size={14} />
+                          Restart Cycle {learningCycleStats.cycleNumber}
                         </button>
-                      )}
+                        {learningCycleStats.isComplete && (
+                          <button
+                            type="button"
+                            disabled={cycleActionLoading}
+                            onClick={() => {
+                              setCycleSettingsOpen(false)
+                              void handleCycleAction("start_next")
+                            }}
+                            className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[12px] font-semibold text-violet-700 transition hover:bg-violet-50 disabled:opacity-50"
+                          >
+                            <ArrowRight size={14} />
+                            Start Cycle {learningCycleStats.cycleNumber + 1}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mb-6 border-y border-slate-200 py-4">
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-600">
+                        <RefreshCw size={17} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                          <span className="text-[13px] font-semibold text-slate-900">
+                            Learning Cycle {learningCycleStats.cycleNumber}
+                          </span>
+                          <span className="text-[12px] text-slate-500">
+                            {learningCycleStats.coveredRules.toLocaleString()} of {learningCycleStats.totalRules.toLocaleString()} rules covered
+                          </span>
+                          <span className="text-[12px] text-slate-500">
+                            {learningCycleStats.assessedRules.toLocaleString()} independently recalled
+                          </span>
+                        </div>
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-violet-600 transition-all"
+                            style={{ width: `${learningCycleStats.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-left lg:text-right">
+                      <div className="text-[24px] font-semibold tracking-[-0.03em] text-slate-950">
+                        {learningCycleStats.percentage}%
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-500">Cycle coverage</div>
                     </div>
                   </div>
                 </div>
 
-                {recommendation && recommendationIsComplete(recommendation) && (
-                  <section className="mb-5 border-b border-slate-200 pb-7 pt-3">
-                    <div className="flex flex-col gap-7 xl:flex-row xl:items-start xl:justify-between">
-                      <div className="flex min-w-0 items-start gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white shadow-[0_10px_28px_rgba(124,58,237,0.22)]">
-                          <Sparkles size={21} />
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-700">
-                            Today&apos;s Recommended Session
+                <section className="mb-7 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.07)]">
+                  <div className="grid xl:grid-cols-[minmax(0,1fr)_320px]">
+                    <div className="p-6 lg:p-8">
+                      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex min-w-0 items-start gap-4">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white shadow-[0_10px_28px_rgba(124,58,237,0.22)]">
+                            {recommendationState === "completed" ? (
+                              <CircleCheck size={22} />
+                            ) : (
+                              <Sparkles size={21} />
+                            )}
                           </div>
-                          <div className="mt-2 flex flex-wrap items-center gap-3">
-                            <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950">
-                              You completed today&apos;s plan.
-                            </h2>
-                            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                              <CircleCheck size={21} />
-                            </span>
-                          </div>
-                          <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-500">
-                            You completed today&apos;s {recommendationRequestedMinutes(recommendation)}-minute learning plan.
-                            <br />
-                            You can stop now or continue with optional practice.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 flex-wrap items-end gap-x-6 gap-y-3 text-[12px]">
-                        <span className="pb-2 font-medium text-slate-500">Daily budget</span>
-                        {[20, 30, 45, 60].map((minutes) => (
-                          <button
-                            key={minutes}
-                            type="button"
-                            onClick={() => updateRecommendedMinutes(minutes)}
-                            className={`border-b-2 px-1 pb-2 font-semibold transition ${
-                              recommendedMinutes === minutes
-                                ? "border-violet-600 text-slate-950"
-                                : "border-transparent text-slate-500 hover:text-slate-900"
-                            }`}
-                          >
-                            {minutes}m
-                          </button>
-                        ))}
-                        <label className={`flex items-center border-b-2 pb-2 transition ${
-                          ![20, 30, 45, 60].includes(recommendedMinutes)
-                            ? "border-violet-600"
-                            : "border-transparent"
-                        }`}>
-                          <span className="mr-1 font-semibold text-slate-700">Custom:</span>
-                          <input
-                            aria-label="Custom study minutes"
-                            type="number"
-                            min={10}
-                            max={120}
-                            value={recommendedMinutes}
-                            onChange={(event) =>
-                              setRecommendedMinutes(
-                                Math.max(10, Math.min(120, Number(event.target.value || 30)))
-                              )
-                            }
-                            onBlur={() => updateRecommendedMinutes(recommendedMinutes)}
-                            className="w-9 bg-transparent text-center font-semibold text-slate-950 outline-none"
-                          />
-                          <span className="font-semibold text-slate-700">min</span>
-                        </label>
-                        <button
-                          type="button"
-                          aria-label="Refresh recommended session"
-                          disabled={recommendationLoading}
-                          onClick={() => void loadRecommendedSession(recommendedMinutes)}
-                          className="mb-1 text-slate-500 transition hover:text-violet-700 disabled:opacity-50"
-                        >
-                          <RefreshCw
-                            size={17}
-                            className={recommendationLoading ? "animate-spin" : ""}
-                          />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="ml-0 mt-7 max-w-4xl sm:ml-16">
-                      <div className="flex items-center justify-between gap-4 text-[12px] font-semibold text-slate-900">
-                        <span>
-                          {recommendationCompletedMinutes(recommendation)} of {recommendationRequestedMinutes(recommendation)} minutes completed
-                        </span>
-                        <span className="text-violet-700">
-                          {recommendationRemainingMinutes(recommendation) === 0
-                            ? "Plan complete"
-                            : `${recommendationRemainingMinutes(recommendation)} min remaining`}
-                        </span>
-                      </div>
-                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600"
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              recommendationRequestedMinutes(recommendation) > 0
-                                ? (recommendationCompletedMinutes(recommendation) /
-                                    recommendationRequestedMinutes(recommendation)) *
-                                  100
-                                : 0
-                            )}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-8 grid grid-cols-1 gap-y-6 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1.55fr_auto] xl:items-center">
-                      {recommendation.daysUntilExam !== null && (
-                        <div className="flex items-center gap-4 xl:border-r xl:border-slate-200 xl:pr-8">
-                          <Calendar size={22} className="text-violet-600" />
-                          <div>
-                            <div className="text-[25px] font-semibold leading-none text-slate-950">
-                              {recommendation.daysUntilExam}
+                          <div className="min-w-0">
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.13em] text-violet-700">
+                              Today&apos;s Recommended Session
                             </div>
-                            <div className="mt-2 text-[11px] text-slate-500">days to exam</div>
+                            <h2 className="mt-2 text-[27px] font-semibold tracking-[-0.04em] text-slate-950">
+                              {recommendationLoading
+                                ? "Building today’s plan…"
+                                : recommendationState === "completed"
+                                  ? "You completed today’s plan."
+                                  : recommendationState === "in_progress"
+                                    ? "Continue today’s plan."
+                                    : recommendation
+                                      ? "Your daily plan is ready."
+                                      : "Build your adaptive daily plan."}
+                            </h2>
+                            <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-500">
+                              {recommendationState === "completed"
+                                ? "Your completed work remains recorded. Stop here, add more time, or choose optional practice without resetting today’s progress."
+                                : recommendation?.summary ??
+                                  "Lexora will prioritize due reviews, memory gaps, first recalls, and controlled new coverage."}
+                            </p>
                           </div>
+                        </div>
+
+                        <div className="shrink-0 lg:text-right">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-400">
+                            Time available today
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-3 text-[12px] lg:justify-end">
+                            {[10, 20, 30, 45, 60].map((minutes) => (
+                              <button
+                                key={minutes}
+                                type="button"
+                                onClick={() => updateRecommendedMinutes(minutes)}
+                                className={`border-b-2 px-0.5 pb-1.5 font-semibold transition ${
+                                  recommendedMinutes === minutes
+                                    ? "border-violet-600 text-slate-950"
+                                    : "border-transparent text-slate-500 hover:text-slate-900"
+                                }`}
+                              >
+                                {minutes}
+                              </button>
+                            ))}
+                            <label
+                              className={`flex items-center border-b-2 pb-1.5 transition ${
+                                ![10, 20, 30, 45, 60].includes(recommendedMinutes)
+                                  ? "border-violet-600"
+                                  : "border-transparent"
+                              }`}
+                            >
+                              <span className="mr-1 font-semibold text-slate-500">Custom</span>
+                              <input
+                                aria-label="Custom study minutes"
+                                type="number"
+                                min={10}
+                                max={120}
+                                value={recommendedMinutes}
+                                onChange={(event: { target: { value: string } }) =>
+                                  setRecommendedMinutes(
+                                    Math.max(10, Math.min(120, Number(event.target.value || 30)))
+                                  )
+                                }
+                                onBlur={() => updateRecommendedMinutes(recommendedMinutes)}
+                                className="w-9 bg-transparent text-center font-semibold text-slate-950 outline-none"
+                              />
+                              <span className="font-semibold text-slate-500">min</span>
+                            </label>
+                            <button
+                              type="button"
+                              title="Recalculate today’s plan"
+                              aria-label="Recalculate today’s plan"
+                              disabled={recommendationLoading}
+                              onClick={() => void loadRecommendedSession(recommendedMinutes)}
+                              className="mb-1 text-slate-400 transition hover:text-violet-700 disabled:opacity-50"
+                            >
+                              <RefreshCw
+                                size={16}
+                                className={recommendationLoading ? "animate-spin" : ""}
+                              />
+                            </button>
+                          </div>
+                          <div className="mt-2 text-[10px] text-slate-400">
+                            Changes today&apos;s recommendation only.
+                          </div>
+                        </div>
+                      </div>
+
+                      {recommendationError && (
+                        <div className="mt-6 border-l-2 border-rose-400 pl-3 text-[12px] leading-5 text-rose-600">
+                          {recommendationError}
                         </div>
                       )}
 
-                      <div className="flex items-center gap-4 xl:border-r xl:border-slate-200 xl:px-8">
-                        <CircleCheck size={22} className="text-emerald-600" />
-                        <div>
-                          <div className="text-[25px] font-semibold leading-none text-slate-950">
-                            {recommendation.totals.dueRules}
-                          </div>
-                          <div className="mt-2 text-[11px] text-slate-500">reviews due</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4 xl:px-8">
-                        <BookOpen size={23} className="text-blue-600" />
-                        <div>
-                          <div className="text-[25px] font-semibold leading-none text-slate-950">
-                            {recommendationRemainingRules(recommendation).toLocaleString()}
-                          </div>
-                          <div className="mt-2 text-[11px] text-slate-500">
-                            rules remaining in Cycle {recommendation.cycleNumber}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          document
-                            .getElementById("manual-session-modes")
-                            ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                        }
-                        className="inline-flex items-center gap-3 text-left text-[13px] font-semibold text-violet-700 transition hover:text-violet-900 xl:justify-self-end"
-                      >
-                        Continue with optional practice
-                        <ArrowRight size={17} />
-                      </button>
-                    </div>
-                  </section>
-                )}
-
-                <div className={`${recommendation && recommendationIsComplete(recommendation) ? "hidden" : "mb-5"} overflow-hidden rounded-[18px] border border-violet-200 bg-[linear-gradient(135deg,#F8FAFF_0%,#FFFFFF_48%,#FAF5FF_100%)] shadow-[0_18px_45px_rgba(79,70,229,0.08)]`}>
-                  <div className="border-b border-violet-100 px-5 py-4">
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-violet-600 text-white shadow-[0_8px_20px_rgba(124,58,237,0.25)]">
-                          <Sparkles size={18} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-[16px] font-semibold text-slate-900">
-                              Today&apos;s Recommended Session
-                            </h2>
-                            {recommendation && (
-                              <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-violet-700">
-                                {recommendation.phaseLabel}
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-[12px] leading-5 text-slate-500">
-                            Lexora selects the next rules from your current cycle, weak areas, due reviews, and exam timeline. You can still build a manual session below.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 flex-wrap items-center gap-2">
-                        <span className="mr-1 text-[11px] font-medium text-slate-500">
-                          Daily budget
-                        </span>
-                        {[20, 30, 45, 60].map((minutes) => (
-                          <button
-                            key={minutes}
-                            type="button"
-                            onClick={() => updateRecommendedMinutes(minutes)}
-                            className={`h-9 rounded-[10px] border px-3 text-[12px] font-semibold transition ${
-                              recommendedMinutes === minutes
-                                ? "border-violet-600 bg-violet-600 text-white"
-                                : "border-slate-200 bg-white text-slate-600 hover:border-violet-300"
-                            }`}
-                          >
-                            {minutes}m
-                          </button>
-                        ))}
-                        <div className="flex h-9 items-center rounded-[10px] border border-slate-200 bg-white px-2">
-                          <input
-                            aria-label="Custom study minutes"
-                            type="number"
-                            min={10}
-                            max={120}
-                            value={recommendedMinutes}
-                            onChange={(event) =>
-                              setRecommendedMinutes(
-                                Math.max(10, Math.min(120, Number(event.target.value || 30)))
-                              )
-                            }
-                            onBlur={() => updateRecommendedMinutes(recommendedMinutes)}
-                            className="w-11 bg-transparent text-center text-[12px] font-semibold text-slate-700 outline-none"
-                          />
-                          <span className="text-[10px] text-slate-400">min</span>
-                        </div>
-                        <button
-                          type="button"
-                          aria-label="Refresh recommended session"
-                          title="Recalculate the remaining plan using your latest completed work"
-                          disabled={recommendationLoading}
-                          onClick={() => void loadRecommendedSession(recommendedMinutes)}
-                          className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-500 transition hover:border-violet-300 hover:text-violet-600 disabled:opacity-50"
-                        >
-                          <RefreshCw
-                            size={14}
-                            className={recommendationLoading ? "animate-spin" : ""}
-                          />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="px-5 py-4">
-                    {recommendationLocked ? (
-                      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-500">
-                            <Lock size={15} />
-                          </div>
-                          <div>
-                            <div className="text-[13px] font-semibold text-slate-900">
-                              Daily recommendations are included with BLL Monthly and Premium.
-                            </div>
-                            <div className="mt-1 text-[11px] leading-5 text-slate-500">
-                              Free users can continue creating manual sessions with the available sample rules.
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : recommendationLoading && !recommendation ? (
-                      <div className="flex min-h-[126px] items-center justify-center rounded-[14px] border border-dashed border-violet-200 bg-white/70 text-[12px] text-slate-500">
-                        Generating today&apos;s adaptive session...
-                      </div>
-                    ) : recommendationError ? (
-                      <div className="rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">
-                        {recommendationError}
-                      </div>
-                    ) : recommendation ? (
-                      <>
-                        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                          <div>
-                            <div className="text-[15px] font-semibold text-slate-900">
-                              {recommendation.headline}
-                            </div>
-                            <p className="mt-1 max-w-4xl text-[12px] leading-5 text-slate-500">
-                              {recommendation.summary}
-                            </p>
-                            <div className="mt-3 max-w-xl">
-                              <div className="mb-1.5 flex items-center justify-between text-[10px] font-medium text-slate-500">
-                                <span>Today: {recommendation.todayProgress.completedMinutes} of {recommendation.todayProgress.plannedMinutes} min completed</span>
-                                <span>
-                                  {recommendation.todayProgress.planComplete
-                                    ? "Plan complete"
-                                    : `${recommendation.todayProgress.remainingMinutes} min remaining`}
-                                </span>
+                      {recommendationLocked ? (
+                        <div className="mt-7 border-t border-slate-200 pt-6">
+                          <div className="flex items-start gap-3">
+                            <Lock size={18} className="mt-0.5 text-slate-400" />
+                            <div>
+                              <div className="text-[13px] font-semibold text-slate-900">
+                                Adaptive daily plans are available with BLL access.
                               </div>
-                              <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                                <div
-                                  className="h-full rounded-full bg-[linear-gradient(90deg,#7C3AED,#2563EB)] transition-all"
-                                  style={{
-                                    width: `${Math.min(
-                                      100,
-                                      Math.round(
-                                        (recommendation.todayProgress.completedMinutes /
-                                          Math.max(1, recommendation.todayProgress.plannedMinutes)) *
-                                          100
-                                      )
-                                    )}%`,
-                                  }}
-                                />
+                              <div className="mt-1 text-[12px] leading-5 text-slate-500">
+                                Manual Study, Quiz, Timed, and Priority Review sessions remain available below.
                               </div>
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-2 text-[10px] font-medium text-slate-500">
-                            {recommendation.daysUntilExam !== null && (
-                              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                                {recommendation.daysUntilExam} days to exam
-                              </span>
-                            )}
-                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                              {recommendation.totals.dueRules} due
-                            </span>
-                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                              {recommendation.totals.weakRules} weak
-                            </span>
-                          </div>
                         </div>
-
-                        {recommendation.blocks.length > 0 ? (
-                          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                            {recommendation.blocks.map((block, index) => {
-                              const meta = getSessionTypeMeta(block.mode)
-                              const isPrimary = recommendation.primaryBlockId === block.id
-                              const isStarting = recommendationStartingId === block.id
-
-                              return (
-                                <div
-                                  key={block.id}
-                                  className={`rounded-[14px] border bg-white p-4 ${
-                                    isPrimary
-                                      ? "border-violet-300 shadow-[0_10px_24px_rgba(124,58,237,0.08)]"
-                                      : "border-slate-200"
-                                  }`}
-                                >
+                      ) : recommendation ? (
+                        <>
+                          {recommendationState === "completed" ? (
+                            <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                              {[
+                                {
+                                  label: "Studied today",
+                                  value: recommendation.todayProgress.studiedRules,
+                                  detail: "Coverage recorded",
+                                  icon: <BookOpen size={17} />,
+                                  tone: "bg-blue-50 text-blue-700",
+                                },
+                                {
+                                  label: "Recalled today",
+                                  value: recommendation.todayProgress.assessedRules,
+                                  detail: "Independent attempts",
+                                  icon: <BrainCircuit size={17} />,
+                                  tone: "bg-violet-50 text-violet-700",
+                                },
+                                {
+                                  label: "Reviews still due",
+                                  value: recommendation.totals.dueRules,
+                                  detail: recommendation.totals.overdueRules
+                                    ? `${recommendation.totals.overdueRules} overdue`
+                                    : "Nothing overdue",
+                                  icon: <Clock3 size={17} />,
+                                  tone: "bg-amber-50 text-amber-700",
+                                },
+                                {
+                                  label: "Rules remaining",
+                                  value: recommendationRemainingRules(recommendation),
+                                  detail: `Cycle ${recommendation.cycleNumber}`,
+                                  icon: <Layers3 size={17} />,
+                                  tone: "bg-emerald-50 text-emerald-700",
+                                },
+                              ].map((item) => (
+                                <div key={item.label} className="border-l border-slate-200 pl-4 first:border-l-0 first:pl-0 sm:first:border-l sm:first:pl-4 xl:first:border-l-0 xl:first:pl-0">
+                                  <div className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${item.tone}`}>
+                                    {item.icon}
+                                  </div>
+                                  <div className="mt-3 text-[25px] font-semibold tracking-[-0.04em] text-slate-950">
+                                    {item.value.toLocaleString()}
+                                  </div>
+                                  <div className="mt-1 text-[12px] font-semibold text-slate-700">
+                                    {item.label}
+                                  </div>
+                                  <div className="mt-1 text-[10px] text-slate-400">{item.detail}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                              {[
+                                {
+                                  label: "Reviews Due",
+                                  value: recommendationCounts.dueReview,
+                                  detail: recommendation.totals.overdueRules
+                                    ? `${recommendation.totals.overdueRules} overdue across your queue`
+                                    : "Scheduled for retrieval now",
+                                  icon: <Clock3 size={17} />,
+                                  tone: "border-amber-100 bg-amber-50/70 text-amber-700",
+                                },
+                                {
+                                  label: "Priority Rules",
+                                  value: recommendationCounts.priorityRule,
+                                  detail: "Weak or repeatedly missed",
+                                  icon: <Target size={17} />,
+                                  tone: "border-rose-100 bg-rose-50/70 text-rose-700",
+                                },
+                                {
+                                  label: "First Recall",
+                                  value: recommendationCounts.firstRecall,
+                                  detail: "Studied earlier, now test memory",
+                                  icon: <BrainCircuit size={17} />,
+                                  tone: "border-violet-100 bg-violet-50/70 text-violet-700",
+                                },
+                                {
+                                  label: "New Rules",
+                                  value: recommendationCounts.newRule,
+                                  detail: "New coverage in this cycle",
+                                  icon: <BookOpen size={17} />,
+                                  tone: "border-blue-100 bg-blue-50/70 text-blue-700",
+                                },
+                              ].map((item) => (
+                                <div key={item.label} className={`border p-4 ${item.tone}`}>
                                   <div className="flex items-start justify-between gap-3">
-                                    <div className="flex min-w-0 items-start gap-3">
-                                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${
-                                        block.mode === "study"
-                                          ? "bg-blue-50 text-blue-600"
-                                          : block.mode === "timed"
-                                            ? "bg-amber-50 text-amber-600"
-                                            : "bg-violet-50 text-violet-600"
-                                      }`}>
-                                        {meta.icon}
-                                      </div>
-                                      <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
-                                            Block {index + 1}
-                                          </span>
-                                          {block.completedToday && (
-                                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
-                                              Completed today
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="mt-1 text-[13px] font-semibold text-slate-900">
-                                          {block.title}
-                                        </div>
-                                        <div className="mt-1 text-[11px] leading-5 text-slate-500">
-                                          {block.description}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="shrink-0 text-right">
-                                      <div className="text-[13px] font-semibold text-slate-900">
-                                        {block.minutes} min
-                                      </div>
-                                      <div className="text-[10px] text-slate-400">
-                                        {block.estimatedRules} rules
-                                      </div>
+                                    <div>{item.icon}</div>
+                                    <div className="text-[24px] font-semibold leading-none tracking-[-0.04em]">
+                                      {item.value}
                                     </div>
                                   </div>
-
-                                  <div className="mt-3 rounded-[10px] bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-500">
-                                    {block.reason}
+                                  <div className="mt-4 text-[12px] font-semibold text-slate-800">
+                                    {item.label}
                                   </div>
-
-                                  {Array.isArray(block.ruleExplanations) &&
-                                    block.ruleExplanations.length > 0 && (
-                                      <div className="mt-3 border-t border-slate-100 pt-3">
-                                        <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-                                          Why these rules
-                                        </div>
-                                        <div className="mt-2 space-y-2">
-                                          {block.ruleExplanations.slice(0, 3).map((item) => (
-                                            <div
-                                              key={item.ruleId}
-                                              className="grid gap-1 text-[10px] leading-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3"
-                                            >
-                                              <div className="min-w-0">
-                                                <div className="truncate font-semibold text-slate-700">
-                                                  {item.title}
-                                                </div>
-                                                <div className="text-slate-500">
-                                                  {item.statusLabel} · {item.reason}
-                                                </div>
-                                              </div>
-                                              <div className="font-medium text-violet-700 sm:text-right">
-                                                {item.timingLabel}
-                                              </div>
-                                            </div>
-                                          ))}
-                                          {block.ruleExplanations.length > 3 && (
-                                            <div className="text-[10px] text-slate-400">
-                                              +{block.ruleExplanations.length - 3} more selected by the adaptive queue
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="min-w-0 truncate text-[10px] text-slate-400">
-                                      {block.subjectNames.length > 0
-                                        ? block.subjectNames.join(" • ")
-                                        : "Mixed subjects"}
-                                    </div>
-                                    <button
-                                      type="button"
-                                      disabled={
-                                        block.ruleIds.length === 0 ||
-                                        recommendationStartingId !== null
-                                      }
-                                      onClick={() => void startRecommendedBlock(block)}
-                                      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-[10px] px-4 py-2 text-[11px] font-semibold transition disabled:opacity-50 ${
-                                        isPrimary
-                                          ? "bg-violet-600 text-white hover:bg-violet-700"
-                                          : "border border-slate-200 bg-white text-slate-700 hover:border-violet-300"
-                                      }`}
-                                    >
-                                      <Play size={12} />
-                                      {isStarting
-                                        ? "Starting..."
-                                        : block.completedToday
-                                          ? "Practice Again"
-                                          : `Start ${meta.shortLabel}`}
-                                    </button>
+                                  <div className="mt-1 text-[10px] leading-4 text-slate-500">
+                                    {item.detail}
                                   </div>
                                 </div>
-                              )
-                            })}
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="mt-7 border-t border-slate-200 pt-5">
+                            <button
+                              type="button"
+                              aria-expanded={whyPlanOpen}
+                              onClick={() => setWhyPlanOpen((open) => !open)}
+                              className="flex w-full items-center justify-between gap-4 text-left"
+                            >
+                              <div>
+                                <div className="text-[12px] font-semibold text-slate-900">
+                                  Why this plan?
+                                </div>
+                                <div className="mt-1 text-[11px] text-slate-500">
+                                  See how Lexora selected and scheduled today&apos;s rules.
+                                </div>
+                              </div>
+                              <ChevronDown
+                                size={17}
+                                className={`shrink-0 text-slate-400 transition ${whyPlanOpen ? "rotate-180" : ""}`}
+                              />
+                            </button>
+
+                            {whyPlanOpen && (
+                              <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                                <div className="space-y-4 text-[11px] leading-5 text-slate-500">
+                                  <div>
+                                    <span className="font-semibold text-slate-800">Reviews Due:</span>{" "}
+                                    rules whose spaced-review date has arrived.
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-slate-800">Priority Rules:</span>{" "}
+                                    assessed rules with weak recall or repeated misses.
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-slate-800">First Recall:</span>{" "}
+                                    rules studied earlier and now ready for an independent memory check.
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-slate-800">New Rules:</span>{" "}
+                                    controlled new coverage that moves the current cycle forward.
+                                  </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                  {recommendation.blocks.flatMap((block) =>
+                                    (block.ruleExplanations ?? []).slice(0, 2)
+                                  ).slice(0, 4).map((item) => (
+                                    <div key={item.ruleId} className="grid gap-1 border-l-2 border-violet-200 pl-3 text-[10px] leading-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3">
+                                      <div className="min-w-0">
+                                        <div className="truncate font-semibold text-slate-700">
+                                          {item.title}
+                                        </div>
+                                        <div className="text-slate-500">
+                                          {item.statusLabel} · {item.reason}
+                                        </div>
+                                      </div>
+                                      <div className="font-medium text-violet-700 sm:text-right">
+                                        {item.timingLabel}
+                                      </div>
+                                    </div>
+                                  ))}
+                                  {recommendation.blocks.length === 0 && (
+                                    <div className="border-l-2 border-emerald-200 pl-3 text-[11px] leading-5 text-slate-500">
+                                      Today&apos;s required plan is complete. Adding time creates a new optional recommendation from the remaining eligible queue without deleting the completed work.
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
+
+                          <div className="mt-7 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                              <div className="text-[12px] font-semibold text-slate-900">
+                                {recommendationState === "completed"
+                                  ? `${recommendationCompletedMinutes(recommendation)} of ${recommendationRequestedMinutes(recommendation)} minutes completed`
+                                  : `${recommendedPlanRuleCount} rules · About ${recommendationRemainingMinutes(recommendation)} minutes`}
+                              </div>
+                              <div className="mt-1 text-[11px] text-slate-500">
+                                {recommendation.phaseLabel} · Cycle {recommendation.cycleNumber}
+                                {recommendation.daysUntilExam !== null
+                                  ? ` · ${recommendation.daysUntilExam} days to exam`
+                                  : ""}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                              {recommendationState === "completed" ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateRecommendedMinutes(
+                                        Math.min(120, recommendationRequestedMinutes(recommendation) + 10)
+                                      )
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-violet-600 px-5 py-3 text-[12px] font-semibold text-white transition hover:bg-violet-700"
+                                  >
+                                    <Sparkles size={14} />
+                                    Add 10 minutes
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedSessionType("weak_focus")
+                                      setTrainingMode("weak_focus")
+                                      window.setTimeout(() =>
+                                        document.getElementById("manual-session-modes")?.scrollIntoView({
+                                          behavior: "smooth",
+                                          block: "start",
+                                        }), 0
+                                      )
+                                    }}
+                                    className="inline-flex items-center justify-center gap-2 px-2 py-3 text-[12px] font-semibold text-violet-700 transition hover:text-violet-900"
+                                  >
+                                    Start Priority Review
+                                    <ArrowRight size={14} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={!primaryRecommendedBlock || recommendationStartingId !== null}
+                                    onClick={() =>
+                                      primaryRecommendedBlock
+                                        ? void startRecommendedBlock(primaryRecommendedBlock)
+                                        : undefined
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-violet-600 px-5 py-3 text-[12px] font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+                                  >
+                                    <Play size={14} />
+                                    {recommendationStartingId
+                                      ? "Starting…"
+                                      : recommendationState === "in_progress"
+                                        ? "Continue Recommended Session"
+                                        : "Start Recommended Session"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      document.getElementById("manual-session-modes")?.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "start",
+                                      })
+                                    }
+                                    className="inline-flex items-center justify-center px-2 py-3 text-[12px] font-semibold text-slate-600 transition hover:text-violet-700"
+                                  >
+                                    Build a custom session
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="mt-7 text-[12px] text-slate-500">
+                          {recommendationLoading
+                            ? "Analyzing your current cycle and review queue…"
+                            : "Sign in to generate today’s recommendation."}
+                        </div>
+                      )}
+                    </div>
+
+                    <aside className="border-t border-slate-200 bg-slate-50/70 p-6 xl:border-l xl:border-t-0 lg:p-7">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Today at a glance
+                      </div>
+
+                      <div className="mt-6 space-y-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-[12px] font-semibold text-slate-800">Reviews due</div>
+                            <div className="mt-1 text-[10px] text-slate-500">
+                              {recommendation?.totals.overdueRules ?? 0} overdue
+                            </div>
+                          </div>
+                          <div className="text-[22px] font-semibold tracking-[-0.04em] text-slate-950">
+                            {recommendation?.totals.dueRules ?? 0}
+                          </div>
+                        </div>
+                        <div className="h-px bg-slate-200" />
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-[12px] font-semibold text-slate-800">Priority rules</div>
+                            <div className="mt-1 text-[10px] text-slate-500">
+                              {recommendation?.totals.repeatedFailureRules ?? 0} repeated struggles
+                            </div>
+                          </div>
+                          <div className="text-[22px] font-semibold tracking-[-0.04em] text-slate-950">
+                            {recommendation?.totals.weakRules ?? 0}
+                          </div>
+                        </div>
+                        <div className="h-px bg-slate-200" />
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-[12px] font-semibold text-slate-800">Independent recall accuracy</div>
+                            <div className="mt-1 text-[10px] text-slate-500">Current assessed rules</div>
+                          </div>
+                          <div className="text-[22px] font-semibold tracking-[-0.04em] text-slate-950">
+                            {independentRecallAccuracy === null ? "—" : `${independentRecallAccuracy}%`}
+                          </div>
+                        </div>
+                        <div className="h-px bg-slate-200" />
+                        <div>
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="text-[12px] font-semibold text-slate-800">Cycle progress</div>
+                            <div className="text-[12px] font-semibold text-violet-700">
+                              {learningCycleStats.percentage}%
+                            </div>
+                          </div>
+                          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                            <div
+                              className="h-full rounded-full bg-violet-600"
+                              style={{ width: `${learningCycleStats.percentage}%` }}
+                            />
+                          </div>
+                          <div className="mt-2 text-[10px] text-slate-500">
+                            {learningCycleStats.coveredRules.toLocaleString()} of {learningCycleStats.totalRules.toLocaleString()} covered
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-7 border-t border-slate-200 pt-5">
+                        {recommendationState === "completed" ? (
+                          <>
+                            <div className="text-[12px] font-semibold text-slate-900">
+                              Continue with optional practice
+                            </div>
+                            <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                              Extra practice does not erase today’s completion. Lexora will build from the remaining eligible queue.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                document.getElementById("manual-session-modes")?.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "start",
+                                })
+                              }
+                              className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-violet-700 transition hover:text-violet-900"
+                            >
+                              View optional session modes
+                              <ArrowRight size={13} />
+                            </button>
+                          </>
                         ) : (
-                          <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-[12px] text-emerald-700">
-                            {recommendation.todayProgress.planComplete
-                              ? "Today’s recommended plan is complete. You can stop here or use the manual session builder for optional extra practice."
-                              : "Your current cycle has no eligible rules for this plan. Start a new cycle or use Review All for optional practice."}
-                          </div>
+                          <>
+                            <div className="text-[12px] font-semibold text-slate-900">
+                              What happens next
+                            </div>
+                            <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                              After the session, the plan recalculates from your saved recall results. Missed rules return sooner; strong rules move farther apart.
+                            </p>
+                          </>
                         )}
-                      </>
-                    ) : null}
+                      </div>
+                    </aside>
                   </div>
+                </section>
+
+                <div className="mb-4">
+                  <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-950">
+                    Choose another session
+                  </h2>
+                  <p className="mt-1 text-[12px] text-slate-500">
+                    Use manual practice when you want a specific subject, mode, or extra review beyond today’s plan.
+                  </p>
                 </div>
 
                 <div id="manual-session-modes" className="mb-5 scroll-mt-6 grid grid-cols-1 gap-3 xl:grid-cols-4">
@@ -3725,8 +3911,8 @@ return () => clearDirty()
                   <ModeTypeCard
                     active={selectedSessionType === "weak_focus"}
                     tone="weak"
-                    title="Weak Focus"
-                    description="Auto targets your lowest scored rules."
+                    title="Priority Review"
+                    description="Automatically targets due and struggling rules."
                     icon={<Star size={15} />}
                     onClick={() => {
                       setSelectedSessionType("weak_focus")
@@ -4010,7 +4196,7 @@ return () => clearDirty()
                               ? "Start Quiz Session"
                               : selectedSessionType === "timed"
                                 ? "Start Timed Session"
-                                : "Start Weak Focus"}
+                                : "Start Priority Review"}
                         </button>
                       </div>
                     </div>

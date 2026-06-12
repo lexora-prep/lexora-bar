@@ -14,6 +14,12 @@ import type { LearningStatus } from "./types"
 export type RecommendationPhase = "foundation" | "accelerated" | "sprint"
 export type RecommendedBlockMode = "study" | "quiz" | "timed" | "weak_focus"
 
+export type RecommendationRuleCategory =
+  | "due_review"
+  | "priority_rule"
+  | "first_recall"
+  | "new_rule"
+
 export type RecommendedRuleExplanation = {
   ruleId: string
   title: string
@@ -25,6 +31,7 @@ export type RecommendedRuleExplanation = {
   dueAt: string | null
   failureStreak: number
   mastery: number
+  category: RecommendationRuleCategory
 }
 
 export type RecommendedSessionBlock = {
@@ -607,6 +614,7 @@ export async function buildDailyLearningRecommendation(params: {
         dueAt: null,
         failureStreak: 0,
         mastery: rule.mastery,
+        category: "new_rule",
       })),
     })
   }
@@ -693,6 +701,12 @@ export async function buildDailyLearningRecommendation(params: {
         dueAt: rule.review.dueAt?.toISOString() ?? null,
         failureStreak: rule.failureStreak,
         mastery: rule.mastery,
+        category:
+          rule.review.tier === "FIRST_RECALL"
+            ? "first_recall"
+            : rule.failureStreak >= 2 || rule.needsPractice
+              ? "priority_rule"
+              : "due_review",
       })),
     })
   }
