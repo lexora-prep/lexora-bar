@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { getApplicableRuleUniverse } from "@/lib/rules/registry"
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { createUserNotification, logUserActivity } from "@/lib/user-activity"
@@ -457,6 +458,25 @@ async function getCanonicalActiveRuleCount(ruleSet: RuleSet) {
   return buildCanonicalRuleCount(activeRules, "core")
 }
 
+async function getApplicableRuleCountForPlan(params: {
+  jurisdictionCode: string
+  examRegimeCode: ExamRegime
+  examDate: Date
+  ruleSet: RuleSet
+}) {
+  if (params.ruleSet !== "core") {
+    return getCanonicalActiveRuleCount(params.ruleSet)
+  }
+
+  const universe = await getApplicableRuleUniverse({
+    jurisdictionCode: params.jurisdictionCode,
+    examRegimeCode: params.examRegimeCode,
+    examDate: params.examDate,
+  })
+
+  return universe.totals.rules
+}
+
 async function getProfile(userId: string) {
   return prisma.profiles.findUnique({
     where: { id: userId },
@@ -580,7 +600,12 @@ export async function POST(req: Request) {
       )
     }
 
-    const totalRules = await getCanonicalActiveRuleCount(ruleSet)
+    const totalRules = await getApplicableRuleCountForPlan({
+      jurisdictionCode: jurisdiction.code,
+      examRegimeCode: examRegime,
+      examDate,
+      ruleSet,
+    })
     const safeTotalRules = totalRules > 0 ? totalRules : 1
     const dailyRules = Math.max(1, Math.ceil(safeTotalRules / totalDays))
     const dailyMBE = 0

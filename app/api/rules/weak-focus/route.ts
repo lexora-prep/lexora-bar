@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 import { requireAuthenticatedUser } from "@/lib/authenticated-user"
 import {
   LEARNING_PROGRESS_SELECT,
@@ -35,8 +36,10 @@ export async function GET(request: Request) {
     const limit = Math.max(1, Math.min(250, Math.round(requestedLimit || 100)))
     const now = new Date()
     const recentCutoff = new Date(now.getTime() - 180 * 86_400_000)
+    const ruleUniverse = await getApplicableRuleUniverseForUser(auth.userId)
+    const applicableRuleIds = new Set(ruleUniverse.rules.map((rule) => rule.id))
 
-    const stats = await prisma.user_rule_progress.findMany({
+    const allStats = await prisma.user_rule_progress.findMany({
       where: {
         user_id: auth.userId,
         attempts: { gte: 1 },
@@ -65,6 +68,7 @@ export async function GET(request: Request) {
       },
     })
 
+    const stats = allStats.filter((row) => applicableRuleIds.has(row.rule_id))
     const ruleIds = stats.map((row) => row.rule_id)
     const recentAttempts = ruleIds.length
       ? await prisma.user_rule_attempts.findMany({

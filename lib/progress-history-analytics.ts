@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { getStrengthsWeaknessesAnalyticsSettings } from "@/lib/analytics-settings"
-import { calculateMastery, getCanonicalLearningRules, normalizeMode, normalizeTrainingContext } from "@/lib/learning"
+import { calculateMastery, normalizeMode, normalizeTrainingContext } from "@/lib/learning"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 import { LEARNING_PROGRESS_SELECT, resolveLearningProgress } from "@/lib/learning/analytics"
 import type {
   ProgressHistoryAnalyticsData,
@@ -682,6 +683,7 @@ export async function buildProgressHistoryAnalytics(params: {
     studySessions,
     flashcardSessions,
     settings,
+    ruleUniverse,
   ] = await Promise.all([
     prisma.user_rule_attempts.findMany({
       where: { user_id: userId },
@@ -748,6 +750,7 @@ export async function buildProgressHistoryAnalytics(params: {
       },
     }),
     getStrengthsWeaknessesAnalyticsSettings(),
+    getApplicableRuleUniverseForUser(userId),
   ])
 
   const ruleIds = Array.from(new Set(allAttempts.map((attempt) => attempt.rule_id)))
@@ -768,9 +771,9 @@ export async function buildProgressHistoryAnalytics(params: {
     : []
 
   const analyticsSubjectIds = new Set(analyticsSubjects.map((subject) => subject.id))
-  const canonicalRules = await getCanonicalLearningRules()
-  const canonicalRuleIds = new Set(canonicalRules.map((rule) => rule.id))
-  const totalAvailableRules = canonicalRules.filter((rule) =>
+  const applicableRules = ruleUniverse.rules
+  const canonicalRuleIds = new Set(applicableRules.map((rule) => rule.id))
+  const totalAvailableRules = applicableRules.filter((rule) =>
     analyticsSubjectIds.has(rule.subjectId)
   ).length
 
@@ -786,10 +789,17 @@ export async function buildProgressHistoryAnalytics(params: {
     ])
   )
 
-  const selectedAttempts = allAttempts.filter((attempt) =>
+  const applicableAttempts = allAttempts.filter((attempt) =>
+    canonicalRuleIds.has(attempt.rule_id)
+  )
+  const applicableProgressRows = progressRows.filter((row) =>
+    canonicalRuleIds.has(row.rule_id)
+  )
+
+  const selectedAttempts = applicableAttempts.filter((attempt) =>
     inWindow(attempt.created_at, selectedWindow.startDate, selectedWindow.endDate)
   )
-  const previousAttempts = allAttempts.filter((attempt) =>
+  const previousAttempts = applicableAttempts.filter((attempt) =>
     inWindow(attempt.created_at, previousStart, previousEnd)
   )
 
@@ -811,7 +821,7 @@ export async function buildProgressHistoryAnalytics(params: {
     ruleMap,
   })
 
-  const masteredRules = progressRows
+  const masteredRules = applicableProgressRows
     .filter((row) => {
       const learning = resolveLearningProgress(row)
       return learning.isMastered || (
@@ -826,7 +836,7 @@ export async function buildProgressHistoryAnalytics(params: {
     }))
 
   const attemptedRules = new Set(
-    allAttempts
+    applicableAttempts
       .map((attempt) => attempt.rule_id)
       .filter((ruleId) => canonicalRuleIds.has(ruleId))
   ).size
@@ -834,13 +844,13 @@ export async function buildProgressHistoryAnalytics(params: {
     totalAvailableRules > 0
       ? round(clamp((attemptedRules / totalAvailableRules) * 100, 0, 100), 1)
       : null
-  const activeDayStreak = calculateActiveDayStreak(allAttempts, timezoneOffset)
+  const activeDayStreak = calculateActiveDayStreak(applicableAttempts, timezoneOffset)
 
   const readinessTrend = {
-    "7d": buildRollingTrend(allAttempts, 7, timezoneOffset),
-    "14d": buildRollingTrend(allAttempts, 14, timezoneOffset),
-    "30d": buildRollingTrend(allAttempts, 30, timezoneOffset),
-    all: buildRollingTrend(allAttempts, "all", timezoneOffset),
+    "7d": buildRollingTrend(applicableAttempts, 7, timezoneOffset),
+    "14d": buildRollingTrend(applicableAttempts, 14, timezoneOffset),
+    "30d": buildRollingTrend(applicableAttempts, 30, timezoneOffset),
+    all: buildRollingTrend(applicableAttempts, "all", timezoneOffset),
   }
 
   const recentHistory = buildRecentHistory({
@@ -964,7 +974,7 @@ export async function buildProgressHistoryAnalytics(params: {
     },
     overallProgress,
     milestones: buildMilestones({
-      allAttempts,
+      allAttempts: applicableAttempts,
       totalAvailableRules,
       masteredRules,
       currentReadiness,

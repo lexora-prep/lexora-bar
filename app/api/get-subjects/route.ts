@@ -71,8 +71,10 @@ export async function GET(req: Request) {
       }),
     ])
 
+    const applicableRuleIds = new Set(Object.keys(cycleSummary.ruleStateById))
     const weakBySubject = new Map<string, number>()
     for (const row of progressRows) {
+      if (!applicableRuleIds.has(row.rule_id)) continue
       const subjectId = row.rules?.subject_id
       if (!subjectId) continue
       if (!resolveLearningProgress(row).isWeak) continue

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 import { normalizeTrainingContext } from "./evidence"
 import type { TrainingContext } from "./types"
 
@@ -165,6 +166,21 @@ export async function getCanonicalLearningRules(
   }))
 }
 
+export async function getApplicableLearningRulesForUser(
+  userId: string
+): Promise<CanonicalRule[]> {
+  const universe = await getApplicableRuleUniverseForUser(userId)
+
+  return universe.rules.map((rule) => ({
+    id: rule.id,
+    subjectId: rule.subjectId,
+    subjectName: rule.subjectName,
+    topicId: rule.topicId,
+    topicName: rule.topicName,
+    title: rule.title,
+  }))
+}
+
 export async function ensureActiveLearningCycle(
   userId: string,
   client: DbClient = prisma
@@ -294,7 +310,7 @@ export async function getLearningCycleSummary(
 ): Promise<LearningCycleSummary> {
   const cycle = await ensureActiveLearningCycle(userId, client)
   const [rules, rows] = await Promise.all([
-    getCanonicalLearningRules(client),
+    getApplicableLearningRulesForUser(userId),
     client.user_rule_cycle_progress.findMany({
       where: { user_id: userId, cycle_id: cycle.id },
       select: {

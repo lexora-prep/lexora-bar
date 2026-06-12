@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 import { createClient } from "@/utils/supabase/server"
 import { getStrengthsWeaknessesAnalyticsSettings } from "@/lib/analytics-settings"
 import { LEARNING_PROGRESS_SELECT, resolveLearningProgress } from "@/lib/learning/analytics"
@@ -242,7 +243,10 @@ export async function GET(request: Request) {
       highPriorityThreshold,
     } = analyticsSettings
 
-    const attempts = await prisma.user_rule_attempts.findMany({
+    const ruleUniverse = await getApplicableRuleUniverseForUser(user.id)
+    const applicableRuleIds = new Set(ruleUniverse.rules.map((rule) => rule.id))
+
+    const allAttempts = await prisma.user_rule_attempts.findMany({
       where: {
         user_id: user.id,
         created_at: {
@@ -260,6 +264,10 @@ export async function GET(request: Request) {
         created_at: "asc",
       },
     })
+
+    const attempts = allAttempts.filter((attempt) =>
+      applicableRuleIds.has(attempt.rule_id)
+    )
 
     const ruleIds = Array.from(
       new Set(attempts.map((attempt) => attempt.rule_id))

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuthenticatedUser } from "@/lib/authenticated-user"
 import { getLearningCycleSummary } from "@/lib/learning"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 
 function makeRuleKey(rule: {
   subject_id?: string | null
@@ -84,7 +85,10 @@ export async function GET(req: Request) {
     const auth = await requireAuthenticatedUser(req)
     if (!auth.ok) return auth.response
 
-    const cycleSummary = await getLearningCycleSummary(auth.userId)
+    const [cycleSummary, ruleUniverse] = await Promise.all([
+      getLearningCycleSummary(auth.userId),
+      getApplicableRuleUniverseForUser(auth.userId),
+    ])
     const { searchParams } = new URL(req.url)
     const subjectId = searchParams.get("subjectId")
 
@@ -92,11 +96,23 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "subjectId missing" }, { status: 400 })
     }
 
+    const applicableRuleIds = new Set(
+      ruleUniverse.rules
+        .filter((rule) => rule.subjectId === subjectId)
+        .map((rule) => rule.id)
+    )
+
+    if (applicableRuleIds.size === 0) {
+      return NextResponse.json([], {
+        headers: { "Cache-Control": "private, no-store, max-age=0" },
+      })
+    }
+
     const rawRules = await prisma.rules.findMany({
       where: {
         subject_id: subjectId,
         is_active: true,
-        rule_type: null,
+        publication_status: "PUBLISHED",
         prompt_question: {
           not: null,
         },
@@ -137,6 +153,7 @@ export async function GET(req: Request) {
     const canonicalMap = new Map<string, (typeof rawRules)[number]>()
 
     for (const rule of rawRules) {
+      if (!applicableRuleIds.has(rule.id)) continue
       if (!String(rule.prompt_question ?? "").trim()) continue
       if (!String(rule.rule_text ?? "").trim()) continue
 

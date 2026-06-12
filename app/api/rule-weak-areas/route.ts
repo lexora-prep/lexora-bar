@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuthenticatedUser } from "@/lib/authenticated-user"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 import {
   LEARNING_PROGRESS_SELECT,
   learningPriority,
@@ -36,7 +37,10 @@ export async function GET(req: Request) {
     const auth = await requireAuthenticatedUser(req)
     if (!auth.ok) return auth.response
 
-    const progressRows = await prisma.user_rule_progress.findMany({
+    const ruleUniverse = await getApplicableRuleUniverseForUser(auth.userId)
+    const applicableRuleIds = new Set(ruleUniverse.rules.map((rule) => rule.id))
+
+    const allProgressRows = await prisma.user_rule_progress.findMany({
       where: {
         user_id: auth.userId,
         attempts: { gte: 1 },
@@ -65,6 +69,10 @@ export async function GET(req: Request) {
       },
       orderBy: [{ updated_at: "desc" }, { created_at: "desc" }],
     })
+
+    const progressRows = allProgressRows.filter((row) =>
+      applicableRuleIds.has(row.rule_id)
+    )
 
     const weakAreas: WeakRuleRow[] = progressRows
       .map((row) => {

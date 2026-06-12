@@ -1,6 +1,7 @@
 import { requireBLL } from "@/lib/access"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 
 function extractBuzzwords(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -60,6 +61,18 @@ export async function POST(req: Request) {
     } = body
 
     const userId = access.userId
+    const ruleUniverse = await getApplicableRuleUniverseForUser(userId)
+    const applicableRuleIds = new Set(ruleUniverse.rules.map((rule) => rule.id))
+
+    if (applicableRuleIds.size === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "No published rules are available for this jurisdiction and exam date.",
+        },
+        { status: 404 }
+      )
+    }
 
     let subjectNames: string[] = []
     let topicNames: string[] = []
@@ -117,7 +130,7 @@ export async function POST(req: Request) {
             }
           : {}),
         is_active: true,
-        rule_type: null,
+        publication_status: "PUBLISHED",
         prompt_question: {
           not: null,
         },
@@ -131,11 +144,13 @@ export async function POST(req: Request) {
       },
     })
 
+    rules = rules.filter((rule) => applicableRuleIds.has(rule.id))
+
     if (rules.length === 0) {
       rules = await prisma.rules.findMany({
         where: {
           is_active: true,
-          rule_type: null,
+          publication_status: "PUBLISHED",
           prompt_question: {
             not: null,
           },
@@ -148,6 +163,7 @@ export async function POST(req: Request) {
           topics: true,
         },
       })
+      rules = rules.filter((rule) => applicableRuleIds.has(rule.id))
     }
 
     let deck = rules.map((r) => ({

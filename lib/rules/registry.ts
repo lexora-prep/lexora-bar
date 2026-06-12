@@ -373,7 +373,6 @@ export async function getApplicableRuleUniverseForUser(userId: string) {
         examDate: true,
         jurisdictionCode: true,
         examRegime: true,
-        rulePackages: true,
       },
     }),
     prisma.profiles.findUnique({
@@ -398,6 +397,5 @@ export async function getApplicableRuleUniverseForUser(userId: string) {
     jurisdictionCode: plan?.jurisdictionCode ?? profile?.jurisdiction ?? "UBE",
     examRegimeCode: plan?.examRegime ?? null,
     examDate,
-    sourcePackages: plan?.rulePackages ?? ["core"],
   })
 }
