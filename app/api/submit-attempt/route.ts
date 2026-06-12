@@ -301,6 +301,14 @@ export async function POST(req: Request) {
         historyRows.map(buildAttemptEvidence),
         now
       )
+      const recentIndependentScores = historyRows
+        .filter(
+          (row) =>
+            normalizeTrainingContext(row.training_context) !== "study" &&
+            !row.revealed_answer &&
+            !row.self_reported
+        )
+        .map((row) => Number(row.score ?? 0))
       const status = classifyLearningStatus(mastery)
 
       const existingProgress = await tx.user_rule_progress.findUnique({
@@ -334,6 +342,7 @@ export async function POST(req: Request) {
         },
         mastery,
         previousIntervalMinutes,
+        recentIndependentScores,
         now,
       })
 
@@ -441,6 +450,8 @@ export async function POST(req: Request) {
       intervalMinutes: result.schedule.intervalMinutes,
       intervalDays: result.schedule.intervalDays,
       isLapse: result.schedule.isLapse,
+      failureStreak: result.schedule.failureStreak,
+      scheduleReason: result.schedule.reason,
       countsForPerformance:
         trainingContext !== "study" && !effectiveRevealedAnswer && !selfReported,
       engineVersion: LEARNING_ENGINE_VERSION,

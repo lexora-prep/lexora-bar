@@ -41,6 +41,7 @@ export type ScheduleInput = {
   attempt: AttemptEvidence
   mastery: MasteryResult
   previousIntervalMinutes?: number | null
+  recentIndependentScores?: number[]
   now?: Date
 }
 
@@ -49,5 +50,6 @@ export type ScheduleResult = {
   intervalMinutes: number
   intervalDays: number
   isLapse: boolean
+  failureStreak: number
   reason: string
 }

@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/prisma"
 import { getLearningCycleSummary } from "./cycles"
+import { LEARNING_PROGRESS_SELECT, resolveLearningProgress } from "./analytics"
+import {
+  buildAdaptiveReviewDecision,
+  countConsecutiveRecallFailures,
+  type AdaptiveReviewDecision,
+} from "./review-queue"
+import type { LearningStatus } from "./types"
 
 export type RecommendationPhase = "foundation" | "accelerated" | "sprint"
 export type RecommendedBlockMode = "study" | "quiz" | "timed" | "weak_focus"
@@ -37,6 +44,9 @@ export type DailyLearningRecommendation = {
     remainingRules: number
     weakRules: number
     dueRules: number
+    overdueRules: number
+    repeatedFailureRules: number
+    scheduledReviewRules: number
   }
   todayProgress: {
     plannedMinutes: number
@@ -66,6 +76,45 @@ export type RecommendationAllocation = {
   recallMode: Exclude<RecommendedBlockMode, "study">
 }
 
+
+type RuleMetaRow = {
+  id: string
+  title: string
+  priority: string | null
+  subjects: { name: string } | null
+  topics: { name: string } | null
+}
+
+type ProgressDbRow = {
+  rule_id: string
+  attempts: number | null
+  correct_count: number | null
+  incorrect_count: number | null
+  needs_practice: boolean | null
+  mastery_level: number | null
+  rolling_average: unknown
+  mastery_confidence: number | null
+  learning_status: string | null
+  effective_evidence: unknown
+  successful_recall_count: number | null
+  distinct_modes: number | null
+  engine_version: string | null
+  next_review_at: Date | null
+  interval_minutes: number | null
+  last_score: number | null
+}
+
+type CycleDbRow = {
+  rule_id: string
+  last_studied_at: Date | null
+  last_assessed_at: Date | null
+}
+
+type RecentAttemptRow = {
+  rule_id: string
+  score: number
+}
+
 type CandidateRule = {
   id: string
   title: string
@@ -77,9 +126,17 @@ type CandidateRule = {
   passed: boolean
   needsPractice: boolean
   mastery: number
+  confidence: number
+  attempts: number
+  correctCount: number
+  incorrectCount: number
+  lastScore: number | null
+  learningStatus: LearningStatus
+  failureStreak: number
   nextReviewAt: Date | null
   lastStudiedAt: Date | null
   lastAssessedAt: Date | null
+  review: AdaptiveReviewDecision
 }
 
 const MIN_DAILY_MINUTES = 10
@@ -300,71 +357,143 @@ export async function buildDailyLearningRecommendation(params: {
   ])
 
   const canonicalRuleIds = Object.keys(cycleSummary.ruleStateById)
+  const recentAttemptCutoff = new Date(now.getTime() - 180 * 86_400_000)
 
-  const [ruleRows, progressRows, cycleRows] = await Promise.all([
-    canonicalRuleIds.length
-      ? prisma.rules.findMany({
-          where: { id: { in: canonicalRuleIds } },
-          select: {
-            id: true,
-            title: true,
-            priority: true,
-            subjects: { select: { name: true } },
-            topics: { select: { name: true } },
-          },
-        })
-      : Promise.resolve([]),
-    canonicalRuleIds.length
-      ? prisma.user_rule_progress.findMany({
-          where: { user_id: params.userId, rule_id: { in: canonicalRuleIds } },
-          select: {
-            rule_id: true,
-            needs_practice: true,
-            mastery_level: true,
-            next_review_at: true,
-          },
-        })
-      : Promise.resolve([]),
-    canonicalRuleIds.length
-      ? prisma.user_rule_cycle_progress.findMany({
-          where: {
-            user_id: params.userId,
-            cycle_id: cycleSummary.cycle.id,
-            rule_id: { in: canonicalRuleIds },
-          },
-          select: {
-            rule_id: true,
-            last_studied_at: true,
-            last_assessed_at: true,
-          },
-        })
-      : Promise.resolve([]),
-  ])
+  const [ruleRows, progressRows, cycleRows, recentAttemptRows] =
+    await Promise.all([
+      canonicalRuleIds.length
+        ? prisma.rules.findMany({
+            where: { id: { in: canonicalRuleIds } },
+            select: {
+              id: true,
+              title: true,
+              priority: true,
+              subjects: { select: { name: true } },
+              topics: { select: { name: true } },
+            },
+          })
+        : Promise.resolve([]),
+      canonicalRuleIds.length
+        ? prisma.user_rule_progress.findMany({
+            where: {
+              user_id: params.userId,
+              rule_id: { in: canonicalRuleIds },
+            },
+            select: {
+              rule_id: true,
+              next_review_at: true,
+              interval_minutes: true,
+              last_score: true,
+              ...LEARNING_PROGRESS_SELECT,
+            },
+          })
+        : Promise.resolve([]),
+      canonicalRuleIds.length
+        ? prisma.user_rule_cycle_progress.findMany({
+            where: {
+              user_id: params.userId,
+              cycle_id: cycleSummary.cycle.id,
+              rule_id: { in: canonicalRuleIds },
+            },
+            select: {
+              rule_id: true,
+              last_studied_at: true,
+              last_assessed_at: true,
+            },
+          })
+        : Promise.resolve([]),
+      canonicalRuleIds.length
+        ? prisma.user_rule_attempts.findMany({
+            where: {
+              user_id: params.userId,
+              rule_id: { in: canonicalRuleIds },
+              created_at: { gte: recentAttemptCutoff },
+              training_context: { in: ["quiz", "timed", "weak_focus"] },
+              revealed_answer: false,
+              self_reported: false,
+            },
+            orderBy: { created_at: "desc" },
+            take: 5000,
+            select: {
+              rule_id: true,
+              score: true,
+            },
+          })
+        : Promise.resolve([]),
+    ])
 
-  const ruleMeta = new Map(ruleRows.map((row) => [row.id, row]))
-  const progressMap = new Map(progressRows.map((row) => [row.rule_id, row]))
-  const cycleMap = new Map(cycleRows.map((row) => [row.rule_id, row]))
+  const ruleMeta = new Map<string, RuleMetaRow>(
+    (ruleRows as RuleMetaRow[]).map((row) => [row.id, row])
+  )
+  const progressMap = new Map<string, ProgressDbRow>(
+    (progressRows as ProgressDbRow[]).map((row) => [row.rule_id, row])
+  )
+  const cycleMap = new Map<string, CycleDbRow>(
+    (cycleRows as CycleDbRow[]).map((row) => [row.rule_id, row])
+  )
+  const recentScoresByRule = new Map<string, number[]>()
+
+  for (const row of recentAttemptRows as RecentAttemptRow[]) {
+    const scores = recentScoresByRule.get(row.rule_id) ?? []
+    if (scores.length >= 5) continue
+    scores.push(Number(row.score ?? 0))
+    recentScoresByRule.set(row.rule_id, scores)
+  }
 
   const candidates: CandidateRule[] = canonicalRuleIds.map((ruleId) => {
     const state = cycleSummary.ruleStateById[ruleId]
     const meta = ruleMeta.get(ruleId)
-    const progress = progressMap.get(ruleId)
+    const progressRow = progressMap.get(ruleId)
     const cycle = cycleMap.get(ruleId)
+    const progress = resolveLearningProgress(progressRow ?? {})
+    const scores = recentScoresByRule.get(ruleId) ?? []
+    const failureStreak = countConsecutiveRecallFailures(scores)
+    const covered = Boolean(state?.covered)
+    const assessed = Boolean(state?.assessed)
+    const lastStudiedAt = cycle?.last_studied_at ?? null
+    const nextReviewAt = progressRow?.next_review_at ?? null
+    const priority = String(meta?.priority ?? "")
+    const review = buildAdaptiveReviewDecision({
+      covered,
+      assessed,
+      isWeak: progress.isWeak,
+      learningStatus: progress.status,
+      mastery: progress.mastery,
+      confidence: progress.confidence,
+      nextReviewAt,
+      lastStudiedAt,
+      failureStreak,
+      lastScore: progressRow?.last_score ?? null,
+      priorityWeight: priorityWeight(priority),
+      now,
+    })
 
     return {
       id: ruleId,
       title: meta?.title ?? "Rule",
       subjectName: meta?.subjects?.name ?? "Unassigned subject",
       topicName: meta?.topics?.name ?? "General",
-      priority: String(meta?.priority ?? ""),
-      covered: Boolean(state?.covered),
-      assessed: Boolean(state?.assessed),
+      priority,
+      covered,
+      assessed,
       passed: Boolean(state?.passed),
-      needsPractice: Boolean(progress?.needs_practice),
-      mastery: Number(progress?.mastery_level ?? 0),
-      nextReviewAt: progress?.next_review_at ?? null,
-      lastStudiedAt: cycle?.last_studied_at ?? null,
+      needsPractice: progress.isWeak,
+      mastery: progress.mastery,
+      confidence: progress.confidence,
+      attempts: progress.attempts,
+      correctCount: Number(progressRow?.correct_count ?? 0),
+      incorrectCount: Number(progressRow?.incorrect_count ?? 0),
+      lastScore:
+        progressRow?.last_score === null ||
+        progressRow?.last_score === undefined
+          ? null
+          : Number(progressRow.last_score),
+      learningStatus: progress.status,
+      failureStreak,
+      nextReviewAt,
+      lastStudiedAt,
       lastAssessedAt: cycle?.last_assessed_at ?? null,
+      review,
     }
   })
 
@@ -376,27 +505,33 @@ export async function buildDailyLearningRecommendation(params: {
   const uncovered = candidates
     .filter((rule) => !rule.covered)
     .sort((a, b) => {
-      const priorityDifference = priorityWeight(b.priority) - priorityWeight(a.priority)
+      const priorityDifference =
+        priorityWeight(b.priority) - priorityWeight(a.priority)
       if (priorityDifference !== 0) return priorityDifference
-      return stableHash(`${todayKey}:${a.id}`) - stableHash(`${todayKey}:${b.id}`)
+      return (
+        stableHash(`${todayKey}:${a.id}`) -
+        stableHash(`${todayKey}:${b.id}`)
+      )
     })
 
   const recallPool = candidates
     .filter(
       (rule) =>
-        rule.covered && !isToday(rule.lastAssessedAt, todayStart)
+        rule.review.availableNow &&
+        !isToday(rule.lastAssessedAt, todayStart)
     )
     .sort((a, b) => {
-      const aDue = a.nextReviewAt && a.nextReviewAt <= now ? 1 : 0
-      const bDue = b.nextReviewAt && b.nextReviewAt <= now ? 1 : 0
-      if (aDue !== bDue) return bDue - aDue
-      if (a.needsPractice !== b.needsPractice) return Number(b.needsPractice) - Number(a.needsPractice)
-      if (a.assessed !== b.assessed) return Number(a.assessed) - Number(b.assessed)
-      if (a.passed !== b.passed) return Number(a.passed) - Number(b.passed)
+      if (a.review.priorityScore !== b.review.priorityScore) {
+        return b.review.priorityScore - a.review.priorityScore
+      }
       if (a.mastery !== b.mastery) return a.mastery - b.mastery
-      const priorityDifference = priorityWeight(b.priority) - priorityWeight(a.priority)
+      const priorityDifference =
+        priorityWeight(b.priority) - priorityWeight(a.priority)
       if (priorityDifference !== 0) return priorityDifference
-      return stableHash(`${todayKey}:recall:${a.id}`) - stableHash(`${todayKey}:recall:${b.id}`)
+      return (
+        stableHash(`${todayKey}:recall:${a.id}`) -
+        stableHash(`${todayKey}:recall:${b.id}`)
+      )
     })
 
   const studiedRulesToday = candidates.filter((rule) =>
@@ -428,22 +563,61 @@ export async function buildDailyLearningRecommendation(params: {
       id: `study-${todayKey}`,
       mode: "study",
       title: "New rule coverage",
-      description: `${selected.length} new ${selected.length === 1 ? "rule" : "rules"} from the current learning cycle`,
+      description: `${selected.length} new ${
+        selected.length === 1 ? "rule" : "rules"
+      } from the current learning cycle`,
       reason:
         phase === "foundation"
-          ? "Move the cycle forward while the rule remains visible for careful encoding."
-          : "Add only a controlled amount of new material so recall work remains the priority.",
+          ? "Move the cycle forward while the rule remains visible for careful encoding. Each studied rule will later enter independent recall."
+          : "Add only a controlled amount of new material so scheduled recall remains the priority.",
       minutes: allocation.studyMinutes,
       estimatedRules: selected.length,
       ruleIds: selected.map((rule) => rule.id),
-      subjectNames: Array.from(new Set(selected.map((rule) => rule.subjectName))).slice(0, 4),
-      completedToday: selected.every((rule) => isToday(rule.lastStudiedAt, todayStart)),
+      subjectNames: Array.from(
+        new Set(selected.map((rule) => rule.subjectName))
+      ).slice(0, 4),
+      completedToday: selected.every((rule) =>
+        isToday(rule.lastStudiedAt, todayStart)
+      ),
     })
   }
 
   if (allocation.recallCount > 0) {
     const selected = recallPool.slice(0, allocation.recallCount)
-    const mode = allocation.recallMode
+    const repeatedFailures = selected.filter(
+      (rule) => rule.failureStreak >= 2
+    ).length
+    const weakDue = selected.filter(
+      (rule) =>
+        rule.review.tier === "OVERDUE_LAPSE" ||
+        rule.review.tier === "DUE_WEAK"
+    ).length
+    const firstRecalls = selected.filter(
+      (rule) => rule.review.tier === "FIRST_RECALL"
+    ).length
+    const mode =
+      phase === "sprint"
+        ? "timed"
+        : repeatedFailures > 0 || weakDue > 0
+          ? "weak_focus"
+          : allocation.recallMode
+
+    const selectionParts = [
+      repeatedFailures > 0
+        ? `${repeatedFailures} repeated ${
+            repeatedFailures === 1 ? "lapse" : "lapses"
+          }`
+        : null,
+      weakDue > 0
+        ? `${weakDue} weak ${weakDue === 1 ? "rule" : "rules"} due`
+        : null,
+      firstRecalls > 0
+        ? `${firstRecalls} first ${
+            firstRecalls === 1 ? "recall" : "recalls"
+          }`
+        : null,
+    ].filter(Boolean)
+
     blocks.push({
       id: `recall-${todayKey}`,
       mode,
@@ -451,31 +625,58 @@ export async function buildDailyLearningRecommendation(params: {
         mode === "timed"
           ? "Timed recall sprint"
           : mode === "weak_focus"
-            ? "Targeted recall"
-            : "Independent recall",
-      description: `${selected.length} ${selected.length === 1 ? "rule" : "rules"} selected from weak, due, and not-yet-assessed material`,
+            ? "Adaptive weak-focus review"
+            : "Scheduled independent recall",
+      description:
+        selectionParts.length > 0
+          ? `${selected.length} ${
+              selected.length === 1 ? "rule" : "rules"
+            }: ${selectionParts.join(" • ")}`
+          : `${selected.length} scheduled ${
+              selected.length === 1 ? "review" : "reviews"
+            } selected by retention strength`,
       reason:
         mode === "timed"
-          ? "Short retrieval attempts train access speed and expose the highest-value gaps before exam day."
-          : "Independent retrieval creates mastery evidence; opening the answer converts that attempt to study evidence only.",
+          ? "The exam is close, so due and weak rules are retrieved under time pressure. Strong rules remain on longer intervals."
+          : repeatedFailures > 0
+            ? "Rules missed repeatedly return sooner. A successful independent recall will begin extending their intervals again."
+            : "The queue follows each rule’s next-review date. Weak rules return sooner, while strong rules remain spaced farther apart.",
       minutes: allocation.recallMinutes,
       estimatedRules: selected.length,
       ruleIds: selected.map((rule) => rule.id),
-      subjectNames: Array.from(new Set(selected.map((rule) => rule.subjectName))).slice(0, 4),
-      completedToday: selected.every((rule) => isToday(rule.lastAssessedAt, todayStart)),
+      subjectNames: Array.from(
+        new Set(selected.map((rule) => rule.subjectName))
+      ).slice(0, 4),
+      completedToday: selected.every((rule) =>
+        isToday(rule.lastAssessedAt, todayStart)
+      ),
     })
   }
 
   const dueRules = candidates.filter(
-    (rule) => rule.nextReviewAt !== null && rule.nextReviewAt <= now
+    (rule) =>
+      rule.assessed &&
+      (rule.review.urgency === "DUE" ||
+        rule.review.urgency === "OVERDUE")
+  ).length
+  const overdueRules = candidates.filter(
+    (rule) => rule.assessed && rule.review.urgency === "OVERDUE"
+  ).length
+  const repeatedFailureRules = candidates.filter(
+    (rule) => rule.assessed && rule.failureStreak >= 2
+  ).length
+  const scheduledReviewRules = candidates.filter(
+    (rule) =>
+      rule.assessed &&
+      rule.review.urgency === "NOT_DUE" &&
+      rule.nextReviewAt !== null
   ).length
   const remainingRules = candidates.filter((rule) => !rule.covered).length
   const weakRules = candidates.filter(
-    (rule) =>
-      rule.assessed &&
-      (rule.needsPractice || rule.mastery < 60)
+    (rule) => rule.assessed && rule.needsPractice
   ).length
-  const primary = blocks.find((block) => !block.completedToday) ?? blocks[0] ?? null
+  const primary =
+    blocks.find((block) => !block.completedToday) ?? blocks[0] ?? null
   const eligibleWorkComplete = blocks.length === 0
   const planComplete = progress.remainingMinutes <= 0 || eligibleWorkComplete
 
@@ -486,11 +687,15 @@ export async function buildDailyLearningRecommendation(params: {
     recommendedMinutes: DEFAULT_DAILY_MINUTES,
     phase,
     phaseLabel: copy.label,
-    headline: planComplete ? "Today’s learning plan is complete" : copy.headline,
+    headline: planComplete
+      ? "Today’s learning plan is complete"
+      : copy.headline,
     summary: planComplete
       ? eligibleWorkComplete && progress.remainingMinutes > 0
-        ? "You completed all currently eligible rules for today. Optional extra practice is still available from the manual session builder."
-        : "Your planned learning budget is complete. Stop here or use manual practice for optional extra review."
+        ? scheduledReviewRules > 0
+          ? "No additional reviews are due right now. The next rules will return automatically when their spaced-review intervals mature."
+          : "You completed all currently eligible rules for today. Optional extra practice remains available from the manual session builder."
+        : "Your planned learning budget is complete. Stop here or continue with optional manual practice."
       : copy.summary,
     examDate: examDate?.toISOString() ?? null,
     daysUntilExam,
@@ -503,6 +708,9 @@ export async function buildDailyLearningRecommendation(params: {
       remainingRules,
       weakRules,
       dueRules,
+      overdueRules,
+      repeatedFailureRules,
+      scheduledReviewRules,
     },
     todayProgress: {
       plannedMinutes: progress.plannedMinutes,
