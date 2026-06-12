@@ -48,6 +48,26 @@ type Subject = {
   badge_text?: string
   badge_tone?: string
   badge_subtext?: string
+  covered_rules?: number
+  assessed_rules?: number
+  passed_rules?: number
+  remaining_study_rules?: number
+  remaining_quiz_rules?: number
+  cycle_progress_percentage?: number
+  cycle_complete?: boolean
+  cycle_number?: number
+  topics?: Array<{
+    id: string | null
+    name: string
+    total_rules: number
+    covered_rules: number
+    assessed_rules: number
+    passed_rules: number
+    remaining_study_rules: number
+    remaining_quiz_rules: number
+    cycle_progress_percentage: number
+    cycle_complete: boolean
+  }>
 }
 
 type Rule = {
@@ -66,6 +86,11 @@ type Rule = {
   application_example?: string
   common_trap?: string
   priority?: string
+  cycleCovered?: boolean
+  cycleStudied?: boolean
+  cycleAssessed?: boolean
+  cyclePassed?: boolean
+  cycleNumber?: number
 }
 
 type TopicOption = {
@@ -74,6 +99,10 @@ type TopicOption = {
   subjectId: string
   subjectName: string
   count: number
+  coveredCount: number
+  assessedCount: number
+  passedCount: number
+  cycleComplete: boolean
 }
 
 type ResultShape = {
@@ -300,6 +329,16 @@ function normalizeRuleRow(raw: any): Rule {
     application_example: String(raw.application_example ?? "").trim(),
     common_trap: String(raw.common_trap ?? "").trim(),
     priority: String(raw.priority ?? "").trim(),
+    cycleCovered: Boolean(raw.cycleCovered ?? raw.cycle_covered),
+    cycleStudied: Boolean(raw.cycleStudied ?? raw.cycle_studied),
+    cycleAssessed: Boolean(raw.cycleAssessed ?? raw.cycle_assessed),
+    cyclePassed: Boolean(raw.cyclePassed ?? raw.cycle_passed),
+    cycleNumber:
+      typeof raw.cycleNumber === "number"
+        ? raw.cycleNumber
+        : typeof raw.cycle_number === "number"
+          ? raw.cycle_number
+          : undefined,
   }
 }
 
@@ -568,6 +607,7 @@ function RuleTrainingPageContent() {
   const [ruleMastery, setRuleMastery] = useState<Record<string, number>>({})
   const [ruleSchedule, setRuleSchedule] = useState<Record<string, number>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cycleActionLoading, setCycleActionLoading] = useState(false)
 
   const [savedRuleIds, setSavedRuleIds] = useState<string[]>([])
   const [reportedRuleIds, setReportedRuleIds] = useState<string[]>([])
@@ -584,7 +624,7 @@ function RuleTrainingPageContent() {
     subjectIds: [] as string[],
     weakOnly: false,
     order: "sequential" as SessionOrder,
-    ruleFilter: "all" as SessionFilter,
+    ruleFilter: "untrained" as SessionFilter,
     questionStyle: "prompt" as SessionQuestionStyle,
   })
 
@@ -611,6 +651,10 @@ function RuleTrainingPageContent() {
         const existing = grouped.get(topicId)
         if (existing) {
           existing.count += 1
+          if (rule.cycleCovered) existing.coveredCount += 1
+          if (rule.cycleAssessed) existing.assessedCount += 1
+          if (rule.cyclePassed) existing.passedCount += 1
+          existing.cycleComplete = existing.coveredCount >= existing.count
         } else {
           grouped.set(topicId, {
             id: topicId,
@@ -618,6 +662,10 @@ function RuleTrainingPageContent() {
             subjectId: subject.id,
             subjectName: subject.name,
             count: 1,
+            coveredCount: rule.cycleCovered ? 1 : 0,
+            assessedCount: rule.cycleAssessed ? 1 : 0,
+            passedCount: rule.cyclePassed ? 1 : 0,
+            cycleComplete: Boolean(rule.cycleCovered),
           })
         }
       }
@@ -630,6 +678,99 @@ function RuleTrainingPageContent() {
 
     return map
   }, [visibleSubjects, allRules])
+
+  async function refreshSubjectCoverage() {
+    try {
+      const response = await fetch("/api/get-subjects", { cache: "no-store" })
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !Array.isArray(data)) return
+      setSubjects(
+        data.filter(
+          (subject: Subject) => subject.show_in_rule_training !== false
+        )
+      )
+    } catch (error) {
+      console.error("LEARNING COVERAGE REFRESH ERROR:", error)
+    }
+  }
+
+  async function refreshRuleCycleState() {
+    try {
+      const response = await fetch("/api/get-all-rules", { cache: "no-store" })
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !Array.isArray(data)) return
+      const normalized = data
+        .map((row: any) => normalizeRuleRow(row))
+        .filter((row: Rule) => row.id)
+      setAllRules(mergeUniqueRules(normalized))
+    } catch (error) {
+      console.error("RULE CYCLE STATE REFRESH ERROR:", error)
+    }
+  }
+
+  function applyLocalCycleProgress(ruleId: string, score: number, response: any) {
+    const isStudy = trainingMode === "study"
+    const passed =
+      !isStudy && Boolean(response?.countsForPerformance) && score >= 80
+
+    const apply = (rule: Rule) =>
+      rule.id === ruleId
+        ? {
+            ...rule,
+            cycleCovered: true,
+            cycleStudied: rule.cycleStudied || isStudy,
+            cycleAssessed: rule.cycleAssessed || !isStudy,
+            cyclePassed: rule.cyclePassed || passed,
+          }
+        : rule
+
+    setRules((current) => current.map(apply))
+    setAllRules((current) => current.map(apply))
+    void refreshSubjectCoverage()
+  }
+
+  async function handleCycleAction(action: "start_next" | "restart_current") {
+    if (cycleActionLoading) return
+
+    if (
+      action === "restart_current" &&
+      !window.confirm(
+        "Restart the current cycle? Your attempt and mastery history will stay intact, but cycle coverage will begin again."
+      )
+    ) {
+      return
+    }
+
+    try {
+      setCycleActionLoading(true)
+      const response = await fetch("/api/learning-cycle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          reason: action === "restart_current" ? "User restarted from Rule Training" : undefined,
+        }),
+      })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(data?.error || "The learning cycle could not be updated.")
+      }
+
+      setQuizConfig((current) => ({
+        ...current,
+        subjectIds: [],
+        ruleFilter: "untrained",
+        weakOnly: false,
+      }))
+      setSelectedTopicIds([])
+      await Promise.all([refreshSubjectCoverage(), refreshRuleCycleState()])
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "The learning cycle could not be updated.")
+    } finally {
+      setCycleActionLoading(false)
+    }
+  }
 
   useEffect(() => {
     try {
@@ -876,15 +1017,19 @@ return () => clearDirty()
     const totalQuestions = trainingQueue.length > 0 ? trainingQueue.length : rules.length
     const scores = completedRules.map((r) => r.score)
     const finalScore =
-      scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null
+      trainingMode === "study"
+        ? null
+        : scores.length > 0
+          ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+          : null
 
     const bestRule =
-      completedRules.length > 0
+      trainingMode !== "study" && completedRules.length > 0
         ? [...completedRules].sort((a, b) => b.score - a.score)[0]
         : null
 
     const worstRule =
-      completedRules.length > 0
+      trainingMode !== "study" && completedRules.length > 0
         ? [...completedRules].sort((a, b) => a.score - b.score)[0]
         : null
 
@@ -1343,12 +1488,14 @@ return () => clearDirty()
       }
 
       setResult(normalized)
-      setAttempts((prev) => [...prev, score])
 
-      setRuleDifficulty((prev) => ({
-        ...prev,
-        [rule.id]: score,
-      }))
+      if (data.countsForPerformance) {
+        setAttempts((prev) => [...prev, score])
+        setRuleDifficulty((prev) => ({
+          ...prev,
+          [rule.id]: score,
+        }))
+      }
 
       if (typeof data.masteryScore === "number") {
         setRuleMastery((prev) => ({
@@ -1371,13 +1518,15 @@ return () => clearDirty()
         setWeakAreaItems((prev) =>
           prev.filter((item) => String(item?.ruleId || item?.id || "").trim() !== rule.id)
         )
-      } else if (score < 65) {
+      } else if (data.countsForPerformance && score < 65) {
         setWeakRules((prev) => (prev.includes(rule.id) ? prev : [...prev, rule.id]))
       }
 
-      setRules((prev) =>
-        prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
-      )
+      if (data.countsForPerformance) {
+        setRules((prev) =>
+          prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
+        )
+      }
 
       setSessionRuleResults((prev) => {
         const next = prev.filter((item) => item.ruleId !== rule.id)
@@ -1409,6 +1558,8 @@ return () => clearDirty()
         })
         return next
       })
+
+      applyLocalCycleProgress(rule.id, score, data)
 
       window.dispatchEvent(
         new CustomEvent("lexora:learning-progress-updated", {
@@ -1482,12 +1633,14 @@ return () => clearDirty()
       }
 
       setResult(normalized)
-      setAttempts((prev) => [...prev, score])
 
-      setRuleDifficulty((prev) => ({
-        ...prev,
-        [rule.id]: score,
-      }))
+      if (data.countsForPerformance) {
+        setAttempts((prev) => [...prev, score])
+        setRuleDifficulty((prev) => ({
+          ...prev,
+          [rule.id]: score,
+        }))
+      }
 
       if (typeof data.masteryScore === "number") {
         setRuleMastery((prev) => ({
@@ -1510,13 +1663,15 @@ return () => clearDirty()
         setWeakAreaItems((prev) =>
           prev.filter((item) => String(item?.ruleId || item?.id || "").trim() !== rule.id)
         )
-      } else if (score < 65) {
+      } else if (data.countsForPerformance && score < 65) {
         setWeakRules((prev) => (prev.includes(rule.id) ? prev : [...prev, rule.id]))
       }
 
-      setRules((prev) =>
-        prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
-      )
+      if (data.countsForPerformance) {
+        setRules((prev) =>
+          prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
+        )
+      }
 
       setSessionRuleResults((prev) => {
         const next = prev.filter((item) => item.ruleId !== rule.id)
@@ -1548,6 +1703,8 @@ return () => clearDirty()
         })
         return next
       })
+
+      applyLocalCycleProgress(rule.id, score, data)
 
       window.dispatchEvent(
         new CustomEvent("lexora:learning-progress-updated", {
@@ -2078,9 +2235,13 @@ return () => clearDirty()
     }
 
     if (quizConfig.ruleFilter === "untrained") {
-      filtered = filtered.filter(
-        (r) => !ruleDifficulty[r.id] && !ruleMastery[r.id] && !r.avgScore
-      )
+      filtered = filtered.filter((rule) => {
+        if (effectiveMode === "study") {
+          return !rule.cycleCovered
+        }
+
+        return !rule.cycleAssessed
+      })
     }
 
     if (quizConfig.ruleFilter === "mastered") {
@@ -2231,6 +2392,34 @@ return () => clearDirty()
     })
   }, [visibleSubjects, allRules, weakRules])
 
+  const learningCycleStats = useMemo(() => {
+    const totalRules = visibleSubjects.reduce(
+      (sum, subject) => sum + Number(subject.total_rules ?? 0),
+      0
+    )
+    const coveredRules = visibleSubjects.reduce(
+      (sum, subject) =>
+        sum + Number(subject.covered_rules ?? subject.completed_rules ?? 0),
+      0
+    )
+    const assessedRules = visibleSubjects.reduce(
+      (sum, subject) => sum + Number(subject.assessed_rules ?? 0),
+      0
+    )
+    const cycleNumber = visibleSubjects[0]?.cycle_number ?? 1
+    const percentage =
+      totalRules > 0 ? Math.round((coveredRules / totalRules) * 100) : 0
+
+    return {
+      totalRules,
+      coveredRules,
+      assessedRules,
+      cycleNumber,
+      percentage,
+      isComplete: totalRules > 0 && coveredRules >= totalRules,
+    }
+  }, [visibleSubjects])
+
   const weakFocusSubjectCards = useMemo(() => {
     const subjectCounts = new Map<string, number>()
 
@@ -2273,6 +2462,10 @@ return () => clearDirty()
           subjectId: subject.id,
           subjectName: subject.name,
           count: nextCount,
+          coveredCount: 0,
+          assessedCount: 0,
+          passedCount: 0,
+          cycleComplete: false,
         })
       }
 
@@ -2355,7 +2548,6 @@ return () => clearDirty()
       setQuizConfig((prev) => ({
         ...prev,
         subjectIds: subjectCards.map((s) => s.id),
-        ruleFilter: "all",
         weakOnly: false,
       }))
       setSelectedTopicIds([])
@@ -2397,7 +2589,6 @@ return () => clearDirty()
       ...prev,
       subjectIds: [],
       weakOnly: false,
-      ruleFilter: "all",
     }))
     setSelectedTopicIds([])
   }
@@ -2595,6 +2786,57 @@ return () => clearDirty()
                   </p>
                 </div>
 
+                <div className="mb-5 rounded-[16px] border border-blue-100 bg-gradient-to-r from-blue-50/80 via-white to-violet-50/70 p-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-blue-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                          Learning Cycle {learningCycleStats.cycleNumber}
+                        </span>
+                        <span className="text-[12px] font-medium text-slate-600">
+                          {learningCycleStats.coveredRules} of {learningCycleStats.totalRules} rules covered
+                        </span>
+                        <span className="text-[12px] text-slate-400">
+                          {learningCycleStats.assessedRules} independently quizzed
+                        </span>
+                      </div>
+
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white shadow-inner">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-600 transition-all"
+                          style={{ width: `${learningCycleStats.percentage}%` }}
+                        />
+                      </div>
+
+                      <p className="mt-2 text-[12px] leading-5 text-slate-500">
+                        Study sessions mark coverage only. Quiz, timed, and weak-focus sessions create independent recall evidence for mastery.
+                      </p>
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={cycleActionLoading}
+                        onClick={() => void handleCycleAction("restart_current")}
+                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        Restart Cycle
+                      </button>
+
+                      {learningCycleStats.isComplete && (
+                        <button
+                          type="button"
+                          disabled={cycleActionLoading}
+                          onClick={() => void handleCycleAction("start_next")}
+                          className="rounded-xl bg-slate-900 px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                        >
+                          Start Cycle {learningCycleStats.cycleNumber + 1}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="mb-5 grid grid-cols-1 gap-3 xl:grid-cols-4">
                   <ModeTypeCard
                     active={selectedSessionType === "study"}
@@ -2653,6 +2895,7 @@ return () => clearDirty()
                           <SubjectSelectorBlock
                             title="Choose Subjects and Topics"
                             count={previewSubjectNames.length + selectedTopicIds.length}
+                            mode={selectedSessionType}
                             subjectCards={subjectCards}
                             quizConfig={quizConfig}
                             applySubjectPreset={applySubjectPreset}
@@ -2676,6 +2919,20 @@ return () => clearDirty()
 
                           <OptionDivider />
 
+                          <FilterBlock
+                            value={quizConfig.ruleFilter}
+                            mode="study"
+                            onChange={(value) =>
+                              setQuizConfig((prev) => ({
+                                ...prev,
+                                ruleFilter: value,
+                                weakOnly: value === "weak",
+                              }))
+                            }
+                          />
+
+                          <OptionDivider />
+
                           <OrderBlock
                             order={quizConfig.order}
                             options={["sequential", "random"]}
@@ -2694,6 +2951,7 @@ return () => clearDirty()
                           <SubjectSelectorBlock
                             title="Choose Subjects and Topics"
                             count={previewSubjectNames.length + selectedTopicIds.length}
+                            mode={selectedSessionType}
                             subjectCards={subjectCards}
                             quizConfig={quizConfig}
                             applySubjectPreset={applySubjectPreset}
@@ -2730,6 +2988,7 @@ return () => clearDirty()
 
                           <FilterBlock
                             value={quizConfig.ruleFilter}
+                            mode="quiz"
                             onChange={(value) =>
                               setQuizConfig((prev) => ({
                                 ...prev,
@@ -2758,6 +3017,7 @@ return () => clearDirty()
                           <SubjectSelectorBlock
                             title="Choose Subjects and Topics"
                             count={previewSubjectNames.length + selectedTopicIds.length}
+                            mode={selectedSessionType}
                             subjectCards={subjectCards}
                             quizConfig={quizConfig}
                             applySubjectPreset={applySubjectPreset}
@@ -2829,6 +3089,7 @@ return () => clearDirty()
                           <SubjectSelectorBlock
                               title="Choose Weak Subjects and Topics"
                               count={previewSubjectNames.length + selectedTopicIds.length}
+                              mode={selectedSessionType}
                               subjectCards={weakFocusSubjectCards}
                               quizConfig={quizConfig}
                               applySubjectPreset={applySubjectPreset}
@@ -2875,7 +3136,7 @@ return () => clearDirty()
                               subjectIds: [],
                               weakOnly: false,
                               order: "sequential",
-                              ruleFilter: "all",
+                              ruleFilter: "untrained",
                               questionStyle: "prompt",
                             })
                             setSelectedTopicIds([])
@@ -3630,6 +3891,7 @@ function OptionDivider() {
 function SubjectSelectorBlock({
   title,
   count,
+  mode,
   subjectCards,
   quizConfig,
   applySubjectPreset,
@@ -3644,6 +3906,7 @@ function SubjectSelectorBlock({
 }: {
   title: string
   count: number
+  mode: SessionType
   subjectCards: Array<Subject & { total: number; weak: number; group: "MBE" | "MEE" }>
   quizConfig: {
     subjectIds: string[]
@@ -3723,6 +3986,13 @@ function SubjectSelectorBlock({
             selectedTopicIds.includes(t.id)
           ).length
           const expanded = expandedSubjectIds.includes(subject.id)
+          const coveredRules = subject.covered_rules ?? subject.completed_rules ?? 0
+          const assessedRules = subject.assessed_rules ?? 0
+          const remainingRules =
+            mode === "study"
+              ? subject.remaining_study_rules ?? Math.max(0, subject.total - coveredRules)
+              : subject.remaining_quiz_rules ?? Math.max(0, subject.total - assessedRules)
+          const cycleComplete = Boolean(subject.cycle_complete)
 
           const activeTone =
             subject.group === "MBE"
@@ -3755,7 +4025,17 @@ function SubjectSelectorBlock({
 
                   <div className="mt-1 text-[12px] text-slate-400">
                     {subject.total} rules
+                    {cycleComplete
+                      ? " • Cycle complete"
+                      : ` • ${remainingRules} ${mode === "study" ? "new" : "not quizzed"}`}
                     {selectedTopicCount > 0 ? ` • ${selectedTopicCount} topics selected` : ""}
+                  </div>
+
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500"
+                      style={{ width: `${Math.max(0, Math.min(100, subject.cycle_progress_percentage ?? 0))}%` }}
+                    />
                   </div>
 
                   {!!subject.badge_text && (
@@ -3825,11 +4105,23 @@ function SubjectSelectorBlock({
                                 ? subject.group === "MBE"
                                   ? "border-blue-300 bg-blue-100 text-blue-700"
                                   : "border-emerald-300 bg-emerald-100 text-emerald-700"
-                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                                : topic.cycleComplete
+                                  ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:bg-emerald-50"
+                                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                             }`}
                           >
                             <span className="truncate">{topic.name}</span>
-                            <span className="text-[10px] opacity-70">{topic.count}</span>
+                            <span className="text-[10px] opacity-70">
+                              {topic.cycleComplete
+                                ? "Done"
+                                : `${Math.max(
+                                    0,
+                                    topic.count -
+                                      (mode === "study"
+                                        ? topic.coveredCount
+                                        : topic.assessedCount)
+                                  )} left`}
+                            </span>
                             {selected && <span className="text-[11px]">✓</span>}
                           </button>
                         )
@@ -3937,15 +4229,17 @@ function OrderBlock({
 
 function FilterBlock({
   value,
+  mode = "quiz",
   onChange,
 }: {
   value: SessionFilter
+  mode?: "study" | "quiz"
   onChange: (value: SessionFilter) => void
 }) {
   const items: { value: SessionFilter; label: string }[] = [
-    { value: "all", label: "All Rules" },
+    { value: "untrained", label: mode === "study" ? "New This Cycle" : "Not Quizzed This Cycle" },
+    { value: "all", label: "Review All" },
     { value: "weak", label: "Weak Only" },
-    { value: "untrained", label: "Untrained" },
     { value: "mastered", label: "Mastered" },
   ]
 

@@ -23,22 +23,90 @@ function consistency(attempts: Normalized[]) {
 }
 
 export function calculateMastery(input: AttemptEvidence[], now = new Date()): MasteryResult {
-  const attempts = input.map(normalizeAttempt).sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)).slice(0, MAX_ATTEMPTS_FOR_MASTERY)
-  if (!attempts.length) return { mastery: 0, rawPerformance: 0, confidence: 0, weightedScore: 0, recentScore: 0, correctRate: 0, consistency: 0, attemptCount: 0, effectiveEvidence: 0, successfulRecallCount: 0, distinctModes: 0, modeCoverage: 0 }
+  const attempts = input
+    .map(normalizeAttempt)
+    .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0))
+    .slice(0, MAX_ATTEMPTS_FOR_MASTERY)
 
-  const weightedScore = weightedAverage(attempts, now)
-  const recentScore = weightedAverage(attempts.slice(0, 3), now)
-  const successful = attempts.filter(a => a.score >= CORRECT_SCORE_THRESHOLD && a.evidenceWeight >= 0.5)
-  const correctRate = successful.length / attempts.length * 100
-  const consistencyScore = consistency(attempts)
-  const effectiveEvidence = attempts.reduce((sum, a) => sum + a.evidenceWeight, 0)
-  const modes = new Set(attempts.map(a => a.mode))
-  const coveredWeight = [...modes].reduce((sum, mode) => sum + MODE_EVIDENCE_WEIGHTS[mode], 0)
-  const possibleWeight = Object.values(MODE_EVIDENCE_WEIGHTS).reduce((sum, n) => sum + n, 0)
-  const modeCoverage = coveredWeight / possibleWeight * 100
-  const confidence = clamp((clamp(effectiveEvidence / 5, 0, 1) * 0.75 + modeCoverage / 100 * 0.25) * 100, 0, 100)
-  const rawPerformance = weightedScore * 0.55 + recentScore * 0.2 + correctRate * 0.15 + consistencyScore * 0.1
-  const mastery = rawPerformance * (0.55 + confidence / 100 * 0.45)
+  if (!attempts.length) {
+    return {
+      mastery: 0,
+      rawPerformance: 0,
+      confidence: 0,
+      weightedScore: 0,
+      recentScore: 0,
+      correctRate: 0,
+      consistency: 0,
+      attemptCount: 0,
+      effectiveEvidence: 0,
+      successfulRecallCount: 0,
+      distinctModes: 0,
+      modeCoverage: 0,
+      independentRecallCount: 0,
+      studyExposureCount: 0,
+    }
+  }
+
+  const independentRecall = attempts.filter(
+    (attempt) =>
+      attempt.trainingContext !== "study" &&
+      !attempt.revealedAnswer &&
+      !attempt.selfReported
+  )
+  const studyExposureCount = attempts.length - independentRecall.length
+
+  if (independentRecall.length === 0) {
+    return {
+      mastery: 0,
+      rawPerformance: 0,
+      confidence: 0,
+      weightedScore: 0,
+      recentScore: 0,
+      correctRate: 0,
+      consistency: 0,
+      attemptCount: attempts.length,
+      effectiveEvidence: 0,
+      successfulRecallCount: 0,
+      distinctModes: 0,
+      modeCoverage: 0,
+      independentRecallCount: 0,
+      studyExposureCount,
+    }
+  }
+
+  const weightedScore = weightedAverage(independentRecall, now)
+  const recentScore = weightedAverage(independentRecall.slice(0, 3), now)
+  const successful = independentRecall.filter(
+    (attempt) =>
+      attempt.score >= CORRECT_SCORE_THRESHOLD && attempt.evidenceWeight >= 0.5
+  )
+  const correctRate = (successful.length / independentRecall.length) * 100
+  const consistencyScore = consistency(independentRecall)
+  const effectiveEvidence = independentRecall.reduce(
+    (sum, attempt) => sum + attempt.evidenceWeight,
+    0
+  )
+  const modes = new Set(independentRecall.map((attempt) => attempt.mode))
+  const coveredWeight = [...modes].reduce(
+    (sum, mode) => sum + MODE_EVIDENCE_WEIGHTS[mode],
+    0
+  )
+  const possibleWeight = Object.values(MODE_EVIDENCE_WEIGHTS).reduce(
+    (sum, value) => sum + value,
+    0
+  )
+  const modeCoverage = (coveredWeight / possibleWeight) * 100
+  const confidence = clamp(
+    (clamp(effectiveEvidence / 5, 0, 1) * 0.75 + modeCoverage / 100 * 0.25) * 100,
+    0,
+    100
+  )
+  const rawPerformance =
+    weightedScore * 0.55 +
+    recentScore * 0.2 +
+    correctRate * 0.15 +
+    consistencyScore * 0.1
+  const mastery = rawPerformance * (0.55 + (confidence / 100) * 0.45)
 
   return {
     mastery: Math.round(clamp(mastery, 0, 100)),
@@ -53,5 +121,7 @@ export function calculateMastery(input: AttemptEvidence[], now = new Date()): Ma
     successfulRecallCount: successful.length,
     distinctModes: modes.size,
     modeCoverage: Math.round(modeCoverage),
+    independentRecallCount: independentRecall.length,
+    studyExposureCount,
   }
 }

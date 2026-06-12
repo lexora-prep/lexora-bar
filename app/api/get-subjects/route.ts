@@ -1,58 +1,11 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuthenticatedUser } from "@/lib/authenticated-user"
-import { LEARNING_PROGRESS_SELECT, resolveLearningProgress } from "@/lib/learning/analytics"
-
-function makeRuleKey(rule: {
-  subject_id?: string | null
-  topic_id?: string | null
-  subtopic_id?: string | null
-  title?: string | null
-}) {
-  return [
-    String(rule.subject_id ?? "").trim().toLowerCase(),
-    String(rule.topic_id ?? "").trim().toLowerCase(),
-    String(rule.subtopic_id ?? "").trim().toLowerCase(),
-    String(rule.title ?? "").trim().toLowerCase(),
-  ].join("::")
-}
-
-function isBetterRule(
-  candidate: {
-    prompt_question?: string | null
-    rule_text?: string | null
-    updated_at?: Date | null
-    created_at?: Date | null
-  },
-  current?: {
-    prompt_question?: string | null
-    rule_text?: string | null
-    updated_at?: Date | null
-    created_at?: Date | null
-  } | null
-) {
-  if (!current) return true
-
-  const candidateHasPrompt = !!String(candidate.prompt_question ?? "").trim()
-  const currentHasPrompt = !!String(current.prompt_question ?? "").trim()
-
-  if (candidateHasPrompt && !currentHasPrompt) return true
-  if (!candidateHasPrompt && currentHasPrompt) return false
-
-  const candidateHasRuleText = !!String(candidate.rule_text ?? "").trim()
-  const currentHasRuleText = !!String(current.rule_text ?? "").trim()
-
-  if (candidateHasRuleText && !currentHasRuleText) return true
-  if (!candidateHasRuleText && currentHasRuleText) return false
-
-  const candidateUpdated = candidate.updated_at?.getTime() ?? 0
-  const currentUpdated = current.updated_at?.getTime() ?? 0
-  if (candidateUpdated !== currentUpdated) return candidateUpdated > currentUpdated
-
-  const candidateCreated = candidate.created_at?.getTime() ?? 0
-  const currentCreated = current.created_at?.getTime() ?? 0
-  return candidateCreated > currentCreated
-}
+import {
+  LEARNING_PROGRESS_SELECT,
+  resolveLearningProgress,
+} from "@/lib/learning/analytics"
+import { getLearningCycleSummary } from "@/lib/learning"
 
 function buildExamBadge(subject: {
   name: string
@@ -60,19 +13,12 @@ function buildExamBadge(subject: {
 }) {
   const status = String(subject.exam_status ?? "").trim()
 
-  if (subject.name === "Family Law") {
+  if (subject.name === "Family Law" || subject.name === "Trusts and Estates") {
     return {
       badge_text: "No longer tested on MEE starting July 2026",
       badge_tone: "removed",
-      badge_subtext: "Still tested regularly through the MPT through February 2028",
-    }
-  }
-
-  if (subject.name === "Trusts and Estates") {
-    return {
-      badge_text: "No longer tested on MEE starting July 2026",
-      badge_tone: "removed",
-      badge_subtext: "Still tested regularly through the MPT through February 2028",
+      badge_subtext:
+        "Still tested regularly through the MPT through February 2028",
     }
   }
 
@@ -96,78 +42,20 @@ export async function GET(req: Request) {
     const auth = await requireAuthenticatedUser(req)
     if (!auth.ok) return auth.response
 
-    const subjects = await prisma.subjects.findMany({
-      where: {
-        show_in_rule_training: true,
-      },
-      orderBy: {
-        order_index: "asc",
-      },
-      select: {
-        id: true,
-        name: true,
-        exam_status: true,
-        show_in_rule_training: true,
-        show_in_analytics: true,
-      },
-    })
-
-    const rawRules = await prisma.rules.findMany({
-      where: {
-        is_active: true,
-        rule_type: null,
-        prompt_question: {
-          not: null,
+    const [subjects, cycleSummary, progressRows] = await Promise.all([
+      prisma.subjects.findMany({
+        where: { show_in_rule_training: true },
+        orderBy: { order_index: "asc" },
+        select: {
+          id: true,
+          name: true,
+          exam_status: true,
+          show_in_rule_training: true,
+          show_in_analytics: true,
         },
-      },
-      select: {
-        id: true,
-        subject_id: true,
-        topic_id: true,
-        subtopic_id: true,
-        title: true,
-        prompt_question: true,
-        rule_text: true,
-        updated_at: true,
-        created_at: true,
-      },
-    })
-
-    const canonicalByKey = new Map<string, (typeof rawRules)[number]>()
-    const ruleIdToCanonicalKey = new Map<string, string>()
-    const canonicalKeyToSubjectId = new Map<string, string>()
-
-    for (const rule of rawRules) {
-      if (!rule.subject_id) continue
-      if (!String(rule.prompt_question ?? "").trim()) continue
-      if (!String(rule.rule_text ?? "").trim()) continue
-
-      const key = makeRuleKey(rule)
-      ruleIdToCanonicalKey.set(rule.id, key)
-      canonicalKeyToSubjectId.set(key, rule.subject_id)
-
-      const existing = canonicalByKey.get(key)
-      if (isBetterRule(rule, existing)) {
-        canonicalByKey.set(key, rule)
-      }
-    }
-
-    const canonicalKeysBySubject = new Map<string, Set<string>>()
-
-    for (const [key, rule] of canonicalByKey.entries()) {
-      if (!rule.subject_id) continue
-
-      const existing =
-        canonicalKeysBySubject.get(rule.subject_id) ?? new Set<string>()
-      existing.add(key)
-      canonicalKeysBySubject.set(rule.subject_id, existing)
-    }
-
-    const attemptedBySubject = new Map<string, Set<string>>()
-    const weakBySubject = new Map<string, Set<string>>()
-
-    {
-      const progress = await prisma.user_rule_progress.findMany({
+      }),
+      getLearningCycleSummary(auth.userId),
+      prisma.user_rule_progress.findMany({
         where: {
           user_id: auth.userId,
           rules: {
@@ -177,39 +65,32 @@ export async function GET(req: Request) {
         },
         select: {
           rule_id: true,
+          rules: { select: { subject_id: true } },
           ...LEARNING_PROGRESS_SELECT,
         },
-      })
+      }),
+    ])
 
-      for (const row of progress) {
-        const canonicalKey = ruleIdToCanonicalKey.get(row.rule_id)
-        if (!canonicalKey) continue
-
-        const subjectId = canonicalKeyToSubjectId.get(canonicalKey)
-        if (!subjectId) continue
-
-        const learning = resolveLearningProgress(row)
-
-        if (learning.attempts > 0) {
-          const set = attemptedBySubject.get(subjectId) ?? new Set<string>()
-          set.add(canonicalKey)
-          attemptedBySubject.set(subjectId, set)
-        }
-
-        if (learning.isWeak) {
-          const set = weakBySubject.get(subjectId) ?? new Set<string>()
-          set.add(canonicalKey)
-          weakBySubject.set(subjectId, set)
-        }
-      }
+    const weakBySubject = new Map<string, number>()
+    for (const row of progressRows) {
+      const subjectId = row.rules?.subject_id
+      if (!subjectId) continue
+      if (!resolveLearningProgress(row).isWeak) continue
+      weakBySubject.set(subjectId, (weakBySubject.get(subjectId) ?? 0) + 1)
     }
+
+    const cycleSubjectById = new Map(
+      cycleSummary.subjects.map((subject) => [subject.subjectId, subject])
+    )
 
     const result = subjects
       .map((subject) => {
-        const totalRules = canonicalKeysBySubject.get(subject.id)?.size ?? 0
-        const completedRules = attemptedBySubject.get(subject.id)?.size ?? 0
-        const weakRules = weakBySubject.get(subject.id)?.size ?? 0
+        const cycleSubject = cycleSubjectById.get(subject.id)
         const badge = buildExamBadge(subject)
+        const totalRules = cycleSubject?.totalRules ?? 0
+        const coveredRules = cycleSubject?.coveredRules ?? 0
+        const assessedRules = cycleSubject?.assessedRules ?? 0
+        const passedRules = cycleSubject?.passedRules ?? 0
 
         return {
           id: subject.id,
@@ -218,8 +99,29 @@ export async function GET(req: Request) {
           show_in_rule_training: subject.show_in_rule_training ?? true,
           show_in_analytics: subject.show_in_analytics ?? true,
           total_rules: totalRules,
-          completed_rules: completedRules,
-          weak_rules: weakRules,
+          completed_rules: coveredRules,
+          covered_rules: coveredRules,
+          assessed_rules: assessedRules,
+          passed_rules: passedRules,
+          remaining_study_rules: Math.max(0, totalRules - coveredRules),
+          remaining_quiz_rules: Math.max(0, totalRules - assessedRules),
+          cycle_progress_percentage:
+            cycleSubject?.coveragePercentage ?? 0,
+          cycle_complete: cycleSubject?.isComplete ?? false,
+          weak_rules: weakBySubject.get(subject.id) ?? 0,
+          cycle_number: cycleSummary.cycle.number,
+          topics: (cycleSubject?.topics ?? []).map((topic) => ({
+            id: topic.topicId,
+            name: topic.topicName,
+            total_rules: topic.totalRules,
+            covered_rules: topic.coveredRules,
+            assessed_rules: topic.assessedRules,
+            passed_rules: topic.passedRules,
+            remaining_study_rules: topic.remainingStudyRules,
+            remaining_quiz_rules: topic.remainingQuizRules,
+            cycle_progress_percentage: topic.coveragePercentage,
+            cycle_complete: topic.isComplete,
+          })),
           badge_text: badge.badge_text,
           badge_tone: badge.badge_tone,
           badge_subtext: badge.badge_subtext,
@@ -227,7 +129,11 @@ export async function GET(req: Request) {
       })
       .filter((subject) => subject.total_rules > 0)
 
-    return NextResponse.json(result)
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "private, no-store, max-age=0",
+      },
+    })
   } catch (error: any) {
     console.error("GET SUBJECTS ERROR:", error)
 

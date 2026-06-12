@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { requireAuthenticatedUser } from "@/lib/authenticated-user"
+import { getLearningCycleSummary } from "@/lib/learning"
 
 function makeRuleKey(rule: {
   subject_id?: string | null
@@ -77,8 +79,12 @@ function isBetterRule(
   return candidateCreated > currentCreated
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const auth = await requireAuthenticatedUser(req)
+    if (!auth.ok) return auth.response
+
+    const cycleSummary = await getLearningCycleSummary(auth.userId)
     const rawRules = await prisma.rules.findMany({
       where: {
         is_active: true,
@@ -150,6 +156,11 @@ export async function GET() {
         application_example: String(rule.application_example ?? "").trim(),
         common_trap: String(rule.common_trap ?? "").trim(),
         priority: String(rule.priority ?? "").trim(),
+        cycleCovered: Boolean(cycleSummary.ruleStateById[rule.id]?.covered),
+        cycleStudied: Boolean(cycleSummary.ruleStateById[rule.id]?.studied),
+        cycleAssessed: Boolean(cycleSummary.ruleStateById[rule.id]?.assessed),
+        cyclePassed: Boolean(cycleSummary.ruleStateById[rule.id]?.passed),
+        cycleNumber: cycleSummary.cycle.number,
         avgScore: 0,
       }))
       .sort((a, b) => {
@@ -165,7 +176,9 @@ export async function GET() {
         return a.title.localeCompare(b.title)
       })
 
-    return NextResponse.json(normalized)
+    return NextResponse.json(normalized, {
+      headers: { "Cache-Control": "private, no-store, max-age=0" },
+    })
   } catch (error) {
     console.error("GET ALL RULES ERROR:", error)
     return NextResponse.json(

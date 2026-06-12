@@ -1,6 +1,6 @@
 export type LearningMode = "typing" | "fillblank" | "buzzwords" | "ordering" | "flashcard"
 export type TrainingContext = "study" | "quiz" | "timed" | "weak_focus"
-export type LearningStatus = "UNTRAINED" | "CRITICAL" | "NEEDS_WORK" | "IMPROVING" | "STRONG" | "MASTERED"
+export type LearningStatus = "UNTRAINED" | "STUDIED" | "CRITICAL" | "NEEDS_WORK" | "IMPROVING" | "STRONG" | "MASTERED"
 export type ReviewUrgency = "NOT_SCHEDULED" | "NOT_DUE" | "DUE" | "OVERDUE"
 
 export type AttemptEvidence = {
@@ -26,6 +26,8 @@ export type MasteryResult = {
   successfulRecallCount: number
   distinctModes: number
   modeCoverage: number
+  independentRecallCount: number
+  studyExposureCount: number
 }
 
 export type StatusResult = {

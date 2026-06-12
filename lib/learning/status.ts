@@ -2,7 +2,8 @@ import { STATUS_GATES } from "./config"
 import type { MasteryResult, StatusResult } from "./types"
 
 export function classifyLearningStatus(result: MasteryResult): StatusResult {
-  if (result.attemptCount === 0) return { status: "UNTRAINED", isWeak: false, isMastered: false, reason: "No scored evidence exists yet." }
+  if (result.attemptCount === 0) return { status: "UNTRAINED", isWeak: false, isMastered: false, reason: "No learning activity exists yet." }
+  if (result.independentRecallCount === 0) return { status: "STUDIED", isWeak: false, isMastered: false, reason: "The rule has been studied, but no independent quiz recall has been recorded yet." }
 
   const mastered = result.mastery >= STATUS_GATES.mastered.minimumMastery && result.confidence >= STATUS_GATES.mastered.minimumConfidence && result.successfulRecallCount >= STATUS_GATES.mastered.minimumSuccessfulRecalls && result.distinctModes >= STATUS_GATES.mastered.minimumDistinctModes
   if (mastered) return { status: "MASTERED", isWeak: false, isMastered: true, reason: "Repeated successful recall is supported by sufficient confidence and mode diversity." }

@@ -11,6 +11,7 @@ import {
   normalizeMode,
   normalizeTrainingContext,
   scheduleNextReview,
+  recordLearningCycleProgress,
   type AttemptEvidence,
   type TrainingContext,
 } from "@/lib/learning"
@@ -285,6 +286,17 @@ export async function POST(req: Request) {
                 ...progressData,
               },
             })
+
+        await recordLearningCycleProgress({
+          client: tx,
+          userId: authenticatedUserId,
+          ruleId,
+          trainingContext,
+          score,
+          revealedAnswer: true,
+          selfReported: true,
+          now,
+        })
 
         const remaining = await tx.flashcard_session_cards.count({
           where: {

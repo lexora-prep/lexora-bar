@@ -9,6 +9,7 @@ import {
   normalizeMode,
   normalizeTrainingContext,
   scheduleNextReview,
+  recordLearningCycleProgress,
   type AttemptEvidence,
 } from "@/lib/learning"
 import { createClient as createServerClient } from "@/utils/supabase/server"
@@ -186,6 +187,7 @@ export async function POST(req: Request) {
     )
     const revealedAnswer = Boolean(body.revealedAnswer)
     const selfReported = Boolean(body.selfReported)
+    const effectiveRevealedAnswer = revealedAnswer || trainingContext === "study"
 
     if (!ruleId) {
       return NextResponse.json(
@@ -268,7 +270,7 @@ export async function POST(req: Request) {
           training_mode: exerciseMode,
           training_context: trainingContext,
           recall_seconds: recallSeconds,
-          revealed_answer: revealedAnswer,
+          revealed_answer: effectiveRevealedAnswer,
           self_reported: selfReported,
           engine_version: LEARNING_ENGINE_VERSION,
           missed_buzzwords: missedKeywords,
@@ -327,7 +329,7 @@ export async function POST(req: Request) {
           trainingContext,
           recallSeconds,
           createdAt: now,
-          revealedAnswer,
+          revealedAnswer: effectiveRevealedAnswer,
           selfReported,
         },
         mastery,
@@ -335,7 +337,12 @@ export async function POST(req: Request) {
         now,
       })
 
-      const isCorrect = score >= 80
+      const countsForPerformance =
+        trainingContext !== "study" &&
+        !effectiveRevealedAnswer &&
+        !selfReported
+      const isCorrect = countsForPerformance && score >= 80
+      const isIncorrect = countsForPerformance && score < 80
       const legacyIntervalDays = Math.max(
         1,
         Math.ceil(schedule.intervalMinutes / 1440)
@@ -349,10 +356,10 @@ export async function POST(req: Request) {
           },
         },
         update: {
-          attempts: { increment: 1 },
+          attempts: countsForPerformance ? { increment: 1 } : undefined,
           correct_count: isCorrect ? { increment: 1 } : undefined,
-          incorrect_count: !isCorrect ? { increment: 1 } : undefined,
-          last_score: score,
+          incorrect_count: isIncorrect ? { increment: 1 } : undefined,
+          last_score: countsForPerformance ? score : undefined,
           rolling_average: mastery.weightedScore,
           mastery_level: mastery.mastery,
           needs_practice: status.isWeak,
@@ -371,10 +378,10 @@ export async function POST(req: Request) {
         create: {
           user_id: user.id,
           rule_id: ruleId,
-          attempts: 1,
+          attempts: countsForPerformance ? 1 : 0,
           correct_count: isCorrect ? 1 : 0,
-          incorrect_count: isCorrect ? 0 : 1,
-          last_score: score,
+          incorrect_count: isIncorrect ? 1 : 0,
+          last_score: countsForPerformance ? score : null,
           rolling_average: mastery.weightedScore,
           mastery_level: mastery.mastery,
           needs_practice: status.isWeak,
@@ -390,6 +397,17 @@ export async function POST(req: Request) {
           engine_version: LEARNING_ENGINE_VERSION,
           updated_at: now,
         },
+      })
+
+      await recordLearningCycleProgress({
+        client: tx,
+        userId: user.id,
+        ruleId,
+        trainingContext,
+        score,
+        revealedAnswer: effectiveRevealedAnswer,
+        selfReported,
+        now,
       })
 
       return {
@@ -409,6 +427,8 @@ export async function POST(req: Request) {
       effectiveEvidence: result.mastery.effectiveEvidence,
       successfulRecallCount: result.mastery.successfulRecallCount,
       distinctModes: result.mastery.distinctModes,
+      independentRecallCount: result.mastery.independentRecallCount,
+      studyExposureCount: result.mastery.studyExposureCount,
       matched_keywords: matchedKeywords,
       missed_keywords: missedKeywords,
       keywordScore,
@@ -416,10 +436,13 @@ export async function POST(req: Request) {
       missedBuzzwords: missedKeywords,
       exerciseMode,
       trainingContext,
+      revealedAnswer: effectiveRevealedAnswer,
       nextReviewAt: result.schedule.nextReviewAt.toISOString(),
       intervalMinutes: result.schedule.intervalMinutes,
       intervalDays: result.schedule.intervalDays,
       isLapse: result.schedule.isLapse,
+      countsForPerformance:
+        trainingContext !== "study" && !effectiveRevealedAnswer && !selfReported,
       engineVersion: LEARNING_ENGINE_VERSION,
     })
   } catch (error) {

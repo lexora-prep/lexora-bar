@@ -29,6 +29,7 @@ export type ResolvedLearningProgress = {
 
 const VALID_STATUSES = new Set<LearningStatus>([
   "UNTRAINED",
+  "STUDIED",
   "CRITICAL",
   "NEEDS_WORK",
   "IMPROVING",
@@ -152,7 +153,7 @@ export function resolveLearningProgress(
 export function calculateLearningReadiness(rows: LearningProgressRow[]) {
   const trained = rows
     .map(resolveLearningProgress)
-    .filter((row) => row.attempts > 0 && row.status !== "UNTRAINED")
+    .filter((row) => row.attempts > 0 && row.status !== "UNTRAINED" && row.status !== "STUDIED")
 
   if (trained.length === 0) return 0
 
