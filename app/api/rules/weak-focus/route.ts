@@ -9,6 +9,9 @@ import {
 import {
   buildAdaptiveReviewDecision,
   countConsecutiveRecallFailures,
+  formatReviewTiming,
+  getLearningStatusLabel,
+  getReviewTierLabel,
   shouldEnterWeakFocus,
 } from "@/lib/learning/review-queue"
 
@@ -150,6 +153,10 @@ export async function GET(request: Request) {
           reviewAvailableNow: review.availableNow,
           nextReviewAt: row.next_review_at?.toISOString() ?? null,
           priorityReason: review.reason,
+          recommendationReason: review.reason,
+          reviewTimingLabel: formatReviewTiming(review.dueAt, now),
+          reviewTierLabel: getReviewTierLabel(review.tier),
+          learningStatusLabel: getLearningStatusLabel(progress.status),
         }
       })
       .filter((row) => row.needsPractice)

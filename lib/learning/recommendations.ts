@@ -4,12 +4,28 @@ import { LEARNING_PROGRESS_SELECT, resolveLearningProgress } from "./analytics"
 import {
   buildAdaptiveReviewDecision,
   countConsecutiveRecallFailures,
+  formatReviewTiming,
+  getLearningStatusLabel,
+  getReviewTierLabel,
   type AdaptiveReviewDecision,
 } from "./review-queue"
 import type { LearningStatus } from "./types"
 
 export type RecommendationPhase = "foundation" | "accelerated" | "sprint"
 export type RecommendedBlockMode = "study" | "quiz" | "timed" | "weak_focus"
+
+export type RecommendedRuleExplanation = {
+  ruleId: string
+  title: string
+  subjectName: string
+  topicName: string
+  statusLabel: string
+  reason: string
+  timingLabel: string
+  dueAt: string | null
+  failureStreak: number
+  mastery: number
+}
 
 export type RecommendedSessionBlock = {
   id: string
@@ -22,6 +38,7 @@ export type RecommendedSessionBlock = {
   ruleIds: string[]
   subjectNames: string[]
   completedToday: boolean
+  ruleExplanations: RecommendedRuleExplanation[]
 }
 
 export type DailyLearningRecommendation = {
@@ -579,6 +596,18 @@ export async function buildDailyLearningRecommendation(params: {
       completedToday: selected.every((rule) =>
         isToday(rule.lastStudiedAt, todayStart)
       ),
+      ruleExplanations: selected.map((rule) => ({
+        ruleId: rule.id,
+        title: rule.title,
+        subjectName: rule.subjectName,
+        topicName: rule.topicName,
+        statusLabel: "New this cycle",
+        reason: "This rule has not been covered in the current learning cycle yet.",
+        timingLabel: "First recall scheduled after study",
+        dueAt: null,
+        failureStreak: 0,
+        mastery: rule.mastery,
+      })),
     })
   }
 
@@ -650,6 +679,21 @@ export async function buildDailyLearningRecommendation(params: {
       completedToday: selected.every((rule) =>
         isToday(rule.lastAssessedAt, todayStart)
       ),
+      ruleExplanations: selected.map((rule) => ({
+        ruleId: rule.id,
+        title: rule.title,
+        subjectName: rule.subjectName,
+        topicName: rule.topicName,
+        statusLabel:
+          rule.review.tier === "FIRST_RECALL"
+            ? getReviewTierLabel(rule.review.tier)
+            : getLearningStatusLabel(rule.learningStatus),
+        reason: rule.review.reason,
+        timingLabel: formatReviewTiming(rule.review.dueAt, now),
+        dueAt: rule.review.dueAt?.toISOString() ?? null,
+        failureStreak: rule.failureStreak,
+        mastery: rule.mastery,
+      })),
     })
   }
 

@@ -207,6 +207,102 @@ export function buildAdaptiveReviewDecision(
   }
 }
 
+
+export function getLearningStatusLabel(status: LearningStatus) {
+  switch (status) {
+    case "UNTRAINED":
+      return "New"
+    case "STUDIED":
+      return "First recall pending"
+    case "CRITICAL":
+      return "Critical"
+    case "NEEDS_WORK":
+      return "Needs work"
+    case "IMPROVING":
+      return "Improving"
+    case "STRONG":
+      return "Strong"
+    case "MASTERED":
+      return "Mastered"
+    default:
+      return "Learning"
+  }
+}
+
+export function getReviewTierLabel(tier: AdaptiveReviewTier) {
+  switch (tier) {
+    case "OVERDUE_LAPSE":
+      return "Repeated lapse"
+    case "DUE_WEAK":
+      return "Weak and due"
+    case "DUE_REVIEW":
+      return "Scheduled review"
+    case "FIRST_RECALL":
+      return "First independent recall"
+    default:
+      return "Scheduled later"
+  }
+}
+
+function plural(value: number, singular: string, pluralValue = `${singular}s`) {
+  return `${value} ${value === 1 ? singular : pluralValue}`
+}
+
+export function formatReviewTiming(
+  dueAt: Date | string | null | undefined,
+  now: Date = new Date()
+) {
+  if (!dueAt) return "No review scheduled"
+
+  const due = dueAt instanceof Date ? dueAt : new Date(dueAt)
+  if (!Number.isFinite(due.getTime())) return "Review schedule unavailable"
+
+  const differenceMinutes = Math.round((due.getTime() - now.getTime()) / 60000)
+
+  if (differenceMinutes <= -1440) {
+    return `Overdue by ${plural(Math.max(1, Math.floor(Math.abs(differenceMinutes) / 1440)), "day")}`
+  }
+  if (differenceMinutes < -60) {
+    return `Overdue by ${plural(Math.max(1, Math.floor(Math.abs(differenceMinutes) / 60)), "hour")}`
+  }
+  if (differenceMinutes <= 0) return "Due now"
+  if (differenceMinutes < 60) return `Returns in ${plural(Math.max(1, differenceMinutes), "minute")}`
+  if (differenceMinutes < 1440) {
+    return `Returns in ${plural(Math.max(1, Math.round(differenceMinutes / 60)), "hour")}`
+  }
+
+  return `Returns in ${plural(Math.max(1, Math.round(differenceMinutes / 1440)), "day")}`
+}
+
+export function buildPostAttemptExplanation(params: {
+  trainingContext: string
+  countsForPerformance: boolean
+  score: number
+  isLapse: boolean
+  failureStreak: number
+  learningStatus: LearningStatus
+}) {
+  if (params.trainingContext === "study") {
+    return "This study exposure counted toward cycle coverage, not recall accuracy. The rule will return for an independent recall check."
+  }
+  if (!params.countsForPerformance) {
+    return "This attempt did not count as independent recall because the answer was visible or the result was self-reported."
+  }
+  if (params.failureStreak >= 2) {
+    return `This rule has ${params.failureStreak} consecutive recall misses, so it will return sooner in Weak Focus.`
+  }
+  if (params.isLapse) {
+    return "This recall attempt showed a gap, so the next review interval was shortened."
+  }
+  if (params.learningStatus === "STRONG" || params.learningStatus === "MASTERED") {
+    return "Successful recall strengthened this rule, so its next review can be spaced farther apart."
+  }
+  if (params.score >= 80) {
+    return "Successful independent recall improved this rule and extended its next review interval."
+  }
+  return "This result updated the rule’s mastery, confidence, and next review date."
+}
+
 export function shouldEnterWeakFocus(params: {
   assessed: boolean
   isWeak: boolean

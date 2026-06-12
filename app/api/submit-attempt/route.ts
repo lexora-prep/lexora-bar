@@ -10,6 +10,9 @@ import {
   normalizeTrainingContext,
   scheduleNextReview,
   recordLearningCycleProgress,
+  buildPostAttemptExplanation,
+  formatReviewTiming,
+  getLearningStatusLabel,
   type AttemptEvidence,
 } from "@/lib/learning"
 import { createClient as createServerClient } from "@/utils/supabase/server"
@@ -452,6 +455,17 @@ export async function POST(req: Request) {
       isLapse: result.schedule.isLapse,
       failureStreak: result.schedule.failureStreak,
       scheduleReason: result.schedule.reason,
+      reviewTimingLabel: formatReviewTiming(result.schedule.nextReviewAt, now),
+      learningStatusLabel: getLearningStatusLabel(result.status.status),
+      outcomeExplanation: buildPostAttemptExplanation({
+        trainingContext,
+        countsForPerformance:
+          trainingContext !== "study" && !effectiveRevealedAnswer && !selfReported,
+        score,
+        isLapse: result.schedule.isLapse,
+        failureStreak: result.schedule.failureStreak,
+        learningStatus: result.status.status,
+      }),
       countsForPerformance:
         trainingContext !== "study" && !effectiveRevealedAnswer && !selfReported,
       engineVersion: LEARNING_ENGINE_VERSION,

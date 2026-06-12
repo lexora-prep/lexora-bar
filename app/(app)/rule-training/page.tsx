@@ -145,6 +145,12 @@ type SessionRuleResult = {
   learningStatus?: string
   masteryConfidence?: number
   nextReviewAt?: string
+  reviewTimingLabel?: string
+  scheduleReason?: string
+  outcomeExplanation?: string
+  failureStreak?: number
+  intervalMinutes?: number
+  isLapse?: boolean
   matchedKeywords: string[]
   missedKeywords: string[]
   keywordScore: number
@@ -185,6 +191,19 @@ type SessionHistoryItem = {
   plannedMinutes?: number
 }
 
+type RecommendedRuleExplanation = {
+  ruleId: string
+  title: string
+  subjectName: string
+  topicName: string
+  statusLabel: string
+  reason: string
+  timingLabel: string
+  dueAt: string | null
+  failureStreak: number
+  mastery: number
+}
+
 type RecommendedSessionBlock = {
   id: string
   mode: SessionType
@@ -196,6 +215,7 @@ type RecommendedSessionBlock = {
   ruleIds: string[]
   subjectNames: string[]
   completedToday: boolean
+  ruleExplanations?: RecommendedRuleExplanation[]
 }
 
 type DailyLearningRecommendation = {
@@ -1765,6 +1785,30 @@ return () => clearDirty()
             typeof data.nextReviewAt === "string"
               ? data.nextReviewAt
               : undefined,
+          reviewTimingLabel:
+            typeof data.reviewTimingLabel === "string"
+              ? data.reviewTimingLabel
+              : undefined,
+          scheduleReason:
+            typeof data.scheduleReason === "string"
+              ? data.scheduleReason
+              : undefined,
+          outcomeExplanation:
+            typeof data.outcomeExplanation === "string"
+              ? data.outcomeExplanation
+              : undefined,
+          failureStreak:
+            typeof data.failureStreak === "number"
+              ? data.failureStreak
+              : undefined,
+          intervalMinutes:
+            typeof data.intervalMinutes === "number"
+              ? data.intervalMinutes
+              : undefined,
+          isLapse:
+            typeof data.isLapse === "boolean"
+              ? data.isLapse
+              : undefined,
           matchedKeywords: Array.isArray(matched_keywords) ? matched_keywords : [],
           missedKeywords: Array.isArray(missed_keywords) ? missed_keywords : [],
           keywordScore,
@@ -1909,6 +1953,30 @@ return () => clearDirty()
           nextReviewAt:
             typeof data.nextReviewAt === "string"
               ? data.nextReviewAt
+              : undefined,
+          reviewTimingLabel:
+            typeof data.reviewTimingLabel === "string"
+              ? data.reviewTimingLabel
+              : undefined,
+          scheduleReason:
+            typeof data.scheduleReason === "string"
+              ? data.scheduleReason
+              : undefined,
+          outcomeExplanation:
+            typeof data.outcomeExplanation === "string"
+              ? data.outcomeExplanation
+              : undefined,
+          failureStreak:
+            typeof data.failureStreak === "number"
+              ? data.failureStreak
+              : undefined,
+          intervalMinutes:
+            typeof data.intervalMinutes === "number"
+              ? data.intervalMinutes
+              : undefined,
+          isLapse:
+            typeof data.isLapse === "boolean"
+              ? data.isLapse
               : undefined,
           matchedKeywords: Array.isArray(matched_keywords) ? matched_keywords : [],
           missedKeywords: Array.isArray(missed_keywords) ? missed_keywords : [],
@@ -3542,6 +3610,40 @@ return () => clearDirty()
                                   <div className="mt-3 rounded-[10px] bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-500">
                                     {block.reason}
                                   </div>
+
+                                  {Array.isArray(block.ruleExplanations) &&
+                                    block.ruleExplanations.length > 0 && (
+                                      <div className="mt-3 border-t border-slate-100 pt-3">
+                                        <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+                                          Why these rules
+                                        </div>
+                                        <div className="mt-2 space-y-2">
+                                          {block.ruleExplanations.slice(0, 3).map((item) => (
+                                            <div
+                                              key={item.ruleId}
+                                              className="grid gap-1 text-[10px] leading-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3"
+                                            >
+                                              <div className="min-w-0">
+                                                <div className="truncate font-semibold text-slate-700">
+                                                  {item.title}
+                                                </div>
+                                                <div className="text-slate-500">
+                                                  {item.statusLabel} · {item.reason}
+                                                </div>
+                                              </div>
+                                              <div className="font-medium text-violet-700 sm:text-right">
+                                                {item.timingLabel}
+                                              </div>
+                                            </div>
+                                          ))}
+                                          {block.ruleExplanations.length > 3 && (
+                                            <div className="text-[10px] text-slate-400">
+                                              +{block.ruleExplanations.length - 3} more selected by the adaptive queue
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
 
                                   <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="min-w-0 truncate text-[10px] text-slate-400">
@@ -5464,6 +5566,17 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
                     {learningSummary && (
                       <div className="mt-1 truncate text-[11px] text-blue-700">
                         {learningSummary}
+                      </div>
+                    )}
+                    {rule.outcomeExplanation && (
+                      <div className="mt-1 text-[11px] leading-4 text-slate-600">
+                        {rule.outcomeExplanation}
+                      </div>
+                    )}
+                    {(rule.reviewTimingLabel || rule.scheduleReason) && (
+                      <div className="mt-1 text-[10px] leading-4 text-violet-700">
+                        {rule.reviewTimingLabel || "Review scheduled"}
+                        {rule.scheduleReason ? ` · ${rule.scheduleReason}` : ""}
                       </div>
                     )}
                   </div>
