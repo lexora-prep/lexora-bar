@@ -66,7 +66,7 @@ export function ChartTooltip({
       </div>
 
       <div className="mt-1 text-xs font-normal text-violet-700">
-        BLL Accuracy: {payload[0]?.value ?? 0}%
+        Independent recall accuracy: {payload[0]?.value ?? 0}%
       </div>
     </div>
   )

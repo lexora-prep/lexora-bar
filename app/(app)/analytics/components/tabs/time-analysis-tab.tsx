@@ -34,6 +34,7 @@ import {
   Target,
   TimerReset,
 } from "lucide-react"
+import { AnalyticsHelp, AnalyticsInterpretation } from "../shared/analytics-interpretation"
 
 type TimeAnalysisTabProps = {
   appliedRange: string
@@ -281,6 +282,20 @@ export default function TimeAnalysisTab({
 
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <AnalyticsInterpretation
+        title="How to use time analysis"
+        measures="This page compares recorded study duration with independently scored performance. More time is not treated as better unless the recorded accuracy and session quality support that conclusion."
+        result={
+          data.summary.sessionCount === 0
+            ? "No completed session duration is available for the selected range."
+            : `You recorded ${formatDuration(data.summary.totalSeconds)} across ${data.summary.sessionCount} sessions. ${data.summary.focusScore === null ? "There are not enough scored sessions to calculate a focus score." : `The current focus score is ${data.summary.focusScore} out of 100.`}`
+        }
+        nextStep={
+          bestSessionBucket?.accuracy !== null && bestSessionBucket
+            ? `Use ${bestSessionBucket.label.toLowerCase()} sessions as a starting point, then confirm the pattern with additional scored sessions before treating it as a stable recommendation.`
+            : "Record several scored sessions with reliable duration data before adjusting your daily study length."
+        }
+      />
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
@@ -1035,14 +1050,7 @@ function CompactCard({
           {title}
         </h3>
 
-        {info ? (
-          <span
-            title={info}
-            className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-slate-300 text-[8px] font-normal text-slate-400"
-          >
-            i
-          </span>
-        ) : null}
+        {info ? <AnalyticsHelp text={info} /> : null}
       </div>
 
       {children}

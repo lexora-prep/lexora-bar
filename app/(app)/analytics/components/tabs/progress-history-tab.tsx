@@ -39,6 +39,7 @@ import type {
 } from "../../types"
 import { EmptyCompact } from "../shared/feedback-states"
 import { LoadingState } from "../shared/loading-state"
+import { AnalyticsHelp, AnalyticsInterpretation } from "../shared/analytics-interpretation"
 
 type ProgressHistoryTabProps = {
   data: ProgressHistoryAnalyticsData | null
@@ -160,6 +161,19 @@ export default function ProgressHistoryTab({
 
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <AnalyticsInterpretation
+        title="How to use progress history"
+        measures="This page shows how recorded readiness and subject performance changed over time. A movement is meaningful only when the period contains enough scored attempts."
+        result={
+          data.summary.currentReadiness === null
+            ? "No readiness score is available for the selected range."
+            : `Current recorded readiness is ${data.summary.currentReadiness}%. ${data.summary.change === null ? "A prior-period comparison is not available." : data.summary.change >= 0 ? `Readiness increased by ${Math.abs(data.summary.change)} points.` : `Readiness decreased by ${Math.abs(data.summary.change)} points.`}`
+        }
+        nextStep={
+          data.improvement.recommendedAction ||
+          "Review the periods with the largest decline, then compare the related subject and rule-level records before changing your study plan."
+        }
+      />
       <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <HistoryCard
           number="1."
@@ -671,7 +685,10 @@ function HistoryCard({
               {title}
             </h3>
           </div>
-          <p className="mt-1 text-[8px] font-normal text-slate-500">{subtitle}</p>
+          <p className="mt-1 text-[8px] font-normal leading-4 text-slate-500">{subtitle}</p>
+          <div className="mt-1.5">
+            <AnalyticsHelp text={subtitle} />
+          </div>
         </div>
         {action}
       </div>

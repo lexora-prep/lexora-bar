@@ -20,6 +20,7 @@ import type {
   WeakRuleAnalytics,
 } from "../../types"
 import { GlassCard } from "../shared/glass-card"
+import { AnalyticsInterpretation } from "../shared/analytics-interpretation"
 import { LoadingState } from "../shared/loading-state"
 import { EmptyCompact } from "../shared/feedback-states"
 
@@ -74,6 +75,20 @@ export default function StrengthsWeaknessesTab({
 
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <AnalyticsInterpretation
+        title="How to use strengths and weaknesses"
+        measures="Strengths and weaknesses are based on independently scored attempts, current mastery, and minimum evidence thresholds. Study-only exposure is not treated as proof of strength or weakness."
+        result={
+          !hasAnyAnalysis
+            ? "No independently scored attempts are available for this analysis."
+            : `${data.summary.strongSubjectCount} confirmed ${data.summary.strongSubjectCount === 1 ? "strength" : "strengths"}, ${data.summary.weakSubjectCount} weak ${data.summary.weakSubjectCount === 1 ? "subject" : "subjects"}, and ${data.summary.highPriorityRuleCount} high-priority ${data.summary.highPriorityRuleCount === 1 ? "rule" : "rules"} are recorded for this range.`
+        }
+        nextStep={
+          data.nextBestAction
+            ? `Start with ${data.nextBestAction.subjectName} — ${data.nextBestAction.title}. Complete an independent recall attempt before reviewing the answer.`
+            : "Complete more independently scored attempts before selecting a targeted weakness session."
+        }
+      />
       <section className="rounded-2xl border border-[#e4e7ef] bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.035)]">
         <div>
           <h2 className="text-[15px] font-normal tracking-[-0.015em] text-[#11163c]">

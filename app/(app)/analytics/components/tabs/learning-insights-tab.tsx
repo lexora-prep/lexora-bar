@@ -37,6 +37,7 @@ import {
   ChartTooltip,
   MiniSparkline,
 } from "../shared/chart-components"
+import { AnalyticsHelp, AnalyticsInterpretation } from "../shared/analytics-interpretation"
 
 type ChartPoint = {
   date: string
@@ -92,6 +93,20 @@ export default function LearningInsightsTab({
 
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <AnalyticsInterpretation
+        title="How to use learning insights"
+        measures="This page interprets measured recall patterns, recent score movement, consistency, and available study-session signals. It does not claim a learning preference when the supporting data is missing."
+        result={
+          hasLearningData
+            ? `Your current independent recall accuracy is ${currentScore}%, based on ${safeNumber(dashboard.ruleAttempts).toLocaleString()} recorded attempts. ${activeDays} active ${activeDays === 1 ? "day is" : "days are"} represented in the recent trend.`
+            : "There is not enough scored rule activity to identify a reliable learning pattern yet."
+        }
+        nextStep={
+          primaryWeakArea
+            ? `Use a focused recall session for ${primaryWeakArea.subject}${primaryWeakArea.topic ? ` — ${primaryWeakArea.topic}` : ""}, then compare the next scored attempt with the current result.`
+            : "Complete several short, independently scored sessions before changing your study routine."
+        }
+      />
       <section className="overflow-hidden rounded-2xl border border-[#ded8f5] bg-gradient-to-br from-[#fbf9ff] via-white to-[#f8f5ff] p-4 shadow-[0_8px_24px_rgba(52,35,110,0.045)]">
         <div className="grid grid-cols-1 items-center gap-3 lg:grid-cols-[1.42fr_0.58fr]">
           <div>
@@ -821,14 +836,7 @@ function CompactCard({
               {title}
             </h3>
 
-            {info ? (
-              <span
-                title={info}
-                className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-slate-300 text-[8px] font-normal text-slate-400"
-              >
-                i
-              </span>
-            ) : null}
+            {info ? <AnalyticsHelp text={info} /> : null}
 
             {badge ? (
               <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[8px] font-normal text-violet-700">

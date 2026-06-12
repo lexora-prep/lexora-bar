@@ -35,6 +35,7 @@ import type {
 } from "../../types"
 import { safeNumber } from "../../lib/analytics-calculations"
 import { GlassCard } from "../shared/glass-card"
+import { AnalyticsInterpretation } from "../shared/analytics-interpretation"
 import {
   EmptyCompact,
   PremiumInline,
@@ -90,6 +91,20 @@ export default function OverviewTab({
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <AnalyticsInterpretation
+        title="How to use this overview"
+        measures="This page separates activity volume, independent recall accuracy, consistency, and current subject risk. A higher attempt count does not automatically mean stronger performance."
+        result={
+          safeNumber(dashboard.ruleAttempts) === 0
+            ? "No scored rule activity is available for the selected range."
+            : `Your current independent recall accuracy is ${currentScore}%. ${delta >= 0 ? `It increased by ${Math.abs(delta)} points` : `It decreased by ${Math.abs(delta)} points`} compared with the previous active day. ${weakAreas.length > 0 ? `${weakAreas.length} assessed weak ${weakAreas.length === 1 ? "area requires" : "areas require"} attention.` : "No assessed weak area is currently confirmed."}`
+        }
+        nextStep={
+          primaryWeakArea
+            ? `Prioritize ${primaryWeakArea.subject}${primaryWeakArea.topic ? ` — ${primaryWeakArea.topic}` : ""} in your next independent recall session.`
+            : "Continue completing independently scored rule attempts so Lexora can identify a reliable priority."
+        }
+      />
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr]">
         <div className="relative overflow-hidden rounded-2xl border border-[#d9d0ff] bg-gradient-to-br from-[#f1eaff] via-white to-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
           <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-violet-200/35 blur-2xl" />

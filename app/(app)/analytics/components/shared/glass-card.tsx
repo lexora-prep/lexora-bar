@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { AnalyticsHelp } from "./analytics-interpretation"
 
 type GlassCardProps = {
   title: string
@@ -28,14 +29,7 @@ export function GlassCard({
               {title}
             </h2>
 
-            {info ? (
-              <span
-                title={info}
-                className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-normal text-slate-400"
-              >
-                i
-              </span>
-            ) : null}
+            {info ? <AnalyticsHelp text={info} /> : null}
           </div>
 
           {subtitle ? (

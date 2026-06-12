@@ -34,6 +34,7 @@ import type {
 } from "../../types"
 
 import { safeNumber } from "../../lib/analytics-calculations"
+import { AnalyticsHelp, AnalyticsInterpretation, FullTextLabel } from "../shared/analytics-interpretation"
 
 type RuleAnalyticsTabProps = {
   dashboard?: DashboardData
@@ -205,6 +206,20 @@ export default function RuleAnalyticsTab({
 
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <AnalyticsInterpretation
+        title="How to use rule analytics"
+        measures="This page separates library coverage from independently scored recall performance. Rules attempted shows activity; recall accuracy shows performance; unattempted rules show remaining coverage."
+        result={
+          totalAttempts === 0
+            ? "No independently scored rule attempts are available for the selected range."
+            : `You recorded ${totalAttempts.toLocaleString()} attempts at ${currentScore}% independent recall accuracy. ${weakestRules.length > 0 ? `${weakestRules.length} highest-cost recall ${weakestRules.length === 1 ? "gap is" : "gaps are"} displayed below.` : "No confirmed weak rule is currently available."}`
+        }
+        nextStep={
+          primaryWeakArea && recommendationRule
+            ? `Start with ${primaryWeakArea.subject} — ${recommendationRule}. Complete the recall attempt before opening the answer.`
+            : "Continue independently scored recall until a reliable rule-level priority can be identified."
+        }
+      />
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <KpiCard
           icon={<FileText size={18} />}
@@ -384,13 +399,13 @@ export default function RuleAnalyticsTab({
         </CompactCard>
 
         <CompactCard
-          title="Most Expensive Mistakes"
-          info="This list uses real lowest-accuracy weak-area records."
+          title="Highest-Cost Recall Gaps"
+          info="These are assessed rules creating the greatest current recall cost because of low accuracy, repeated misses, or both. The list does not include untouched rules."
         >
           {weakestRules.length > 0 ? (
             <div className="space-y-2">
               <div className="grid grid-cols-[1fr_68px_56px] gap-2 px-2 text-[8px] font-normal text-slate-400">
-                <span>Rule</span>
+                <span>Rule and context</span>
 
                 <span className="text-center">
                   Accuracy
@@ -408,14 +423,14 @@ export default function RuleAnalyticsTab({
                     area.id ||
                     `${area.subject}-${area.title}`
                   }
-                  className="grid min-h-8 grid-cols-[1fr_68px_56px] items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[9px] font-normal"
+                  className="grid min-h-10 grid-cols-[minmax(0,1fr)_68px_56px] items-start gap-2 border-b border-slate-100 px-2.5 py-2.5 text-[9px] font-normal last:border-b-0"
                 >
-                  <div className="min-w-0 truncate text-[#30395a]">
-                    {area.subject} —{" "}
-                    {area.rule ||
-                      area.title ||
-                      "Untitled rule"}
-                  </div>
+                  <FullTextLabel
+                    primary={area.rule || area.title || "Untitled rule"}
+                    secondary={[area.subject, area.topic, area.subtopic]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  />
 
                   <div className="text-center text-rose-600">
                     {typeof area.accuracy ===
@@ -437,7 +452,7 @@ export default function RuleAnalyticsTab({
           <InsightNote
             icon={<AlertTriangle size={14} />}
             tone="red"
-            text="These real low-accuracy rules should receive targeted review first."
+            text="Review the first rule before moving down the list. A rule remains high priority only when recorded evidence shows low independent recall or repeated misses."
           />
         </CompactCard>
 
@@ -952,14 +967,7 @@ function CompactCard({
           {title}
         </h3>
 
-        {info ? (
-          <span
-            title={info}
-            className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-slate-300 text-[8px] font-normal text-slate-400"
-          >
-            i
-          </span>
-        ) : null}
+        {info ? <AnalyticsHelp text={info} /> : null}
       </div>
 
       {children}
@@ -1010,7 +1018,7 @@ function RecommendationMetric({
         {label}
       </div>
 
-      <div className="mt-1 max-w-[120px] truncate text-[9px] font-normal text-[#30395a]">
+      <div className="mt-1 max-w-[150px] break-words text-[9px] font-normal leading-4 text-[#30395a]">
         {value}
       </div>
     </div>
