@@ -6,6 +6,7 @@ import {
   calculateLearningReadiness,
   resolveLearningProgress,
 } from "@/lib/learning/analytics"
+import { getCanonicalLearningRules } from "@/lib/learning/cycles"
 
 function toPercent(correct: number, total: number) {
   if (!total) return 0
@@ -24,17 +25,13 @@ export async function GET(req: Request) {
     const auth = await requireAuthenticatedUser(req)
     if (!auth.ok) return auth.response
 
-    const [subjects, rulesCountBySubject, userRuleProgress, mbeQuestionCountBySubject, userMbeAttempts] =
+    const [subjects, canonicalRules, userRuleProgress, mbeQuestionCountBySubject, userMbeAttempts] =
       await Promise.all([
         prisma.subjects.findMany({
           select: { id: true, name: true, order_index: true },
           orderBy: { order_index: "asc" },
         }),
-        prisma.rules.groupBy({
-          by: ["subject_id"],
-          where: { is_active: true },
-          _count: { _all: true },
-        }),
+        getCanonicalLearningRules(),
         prisma.user_rule_progress.findMany({
           where: { user_id: auth.userId },
           select: {
@@ -57,10 +54,13 @@ export async function GET(req: Request) {
         }),
       ])
 
+    const canonicalRuleIds = new Set(canonicalRules.map((rule) => rule.id))
     const rulesTotalMap = new Map<string, number>()
-    for (const row of rulesCountBySubject) {
-      const subjectId = toSubjectKey(row.subject_id)
-      if (subjectId) rulesTotalMap.set(subjectId, row._count._all)
+    for (const rule of canonicalRules) {
+      rulesTotalMap.set(
+        rule.subjectId,
+        (rulesTotalMap.get(rule.subjectId) ?? 0) + 1
+      )
     }
 
     const mbeQuestionTotalMap = new Map<string, number>()
@@ -71,6 +71,7 @@ export async function GET(req: Request) {
 
     const bllRowsBySubject = new Map<string, typeof userRuleProgress>()
     for (const row of userRuleProgress) {
+      if (!canonicalRuleIds.has(row.rule_id)) continue
       const subjectId = toSubjectKey(row.rules?.subject_id)
       if (!subjectId) continue
       const list = bllRowsBySubject.get(subjectId) ?? []

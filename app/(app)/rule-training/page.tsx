@@ -771,6 +771,7 @@ function RuleTrainingPageContent() {
 
   const restoredSessionRef = useRef(false)
   const directWeakAreasStartedRef = useRef(false)
+  const configuredSessionStartingRef = useRef(false)
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [authReady, setAuthReady] = useState(false)
@@ -2747,82 +2748,93 @@ return () => clearDirty()
   }
 
   async function startConfiguredSession(nextMode?: SessionType) {
+    if (configuredSessionStartingRef.current || sessionStarted) return
+
+    configuredSessionStartingRef.current = true
     const effectiveMode = nextMode ?? trainingMode
 
     try {
-      sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
-    } catch (error) {
-      console.error("ACTIVE SESSION RESET ERROR:", error)
-    }
+      try {
+        sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
+      } catch (error) {
+        console.error("ACTIVE SESSION RESET ERROR:", error)
+      }
 
-    let finalRules = await resolveRulesForSession(effectiveMode)
+      let finalRules = await resolveRulesForSession(effectiveMode)
 
-    if (finalRules.length === 0) {
-      alert("No rules found for this selection.")
-      return
-    }
+      if (finalRules.length === 0) {
+        alert(
+          effectiveMode === "study"
+            ? "No new rules are available for this selection in the current cycle. Choose Review All, another subject, or a different session type."
+            : "No eligible rules are available for this selection right now. Choose another subject, change the rule filter, or try again after a review becomes due."
+        )
+        return
+      }
 
-    if (quizConfig.order === "random") {
-      finalRules = shuffleArray(finalRules)
-    } else if (quizConfig.order === "weakest") {
-      finalRules = finalRules.sort((a, b) => {
-        const aScore = ruleDifficulty[a.id] ?? a.avgScore ?? 0
-        const bScore = ruleDifficulty[b.id] ?? b.avgScore ?? 0
-        return aScore - bScore
-      })
-    }
+      if (quizConfig.order === "random") {
+        finalRules = shuffleArray(finalRules)
+      } else if (quizConfig.order === "weakest") {
+        finalRules = finalRules.sort((a, b) => {
+          const aScore = ruleDifficulty[a.id] ?? a.avgScore ?? 0
+          const bScore = ruleDifficulty[b.id] ?? b.avgScore ?? 0
+          return aScore - bScore
+        })
+      }
 
-    if (quizConfig.size > 0) {
-      finalRules = finalRules.slice(0, quizConfig.size)
-    }
+      if (quizConfig.size > 0) {
+        finalRules = finalRules.slice(0, quizConfig.size)
+      }
 
-    if (finalRules.length === 0) {
-      alert("No rules found for this selection.")
-      return
-    }
+      if (finalRules.length === 0) {
+        alert("No eligible rules remain after applying the selected session size and filters.")
+        return
+      }
 
-    const nextQueue = buildTrainingQueue(
-      finalRules,
-      quizConfig.size,
-      weakRules,
-      quizConfig.order
-    )
+      const nextQueue = buildTrainingQueue(
+        finalRules,
+        quizConfig.size,
+        weakRules,
+        quizConfig.order
+      )
 
-    if (nextQueue.length === 0) {
-      alert("No rules found for this selection.")
-      return
-    }
+      if (nextQueue.length === 0) {
+        alert("No eligible rules remain in the session queue.")
+        return
+      }
 
-    setTrainingMode(effectiveMode)
-    setSelectedSessionType(effectiveMode)
-    setRules(finalRules)
-    setTrainingQueue(nextQueue)
-    setSelectedRuleIndex(nextQueue[0] ?? null)
-    setSelectedSubjectId(finalRules[nextQueue[0] ?? 0]?.subject_id ?? null)
-    setMode("typing")
-    setResult(null)
-    setAnswer("")
-    setSessionRuleResults([])
-    setSavedRuleIds([])
-    setReportedRuleIds([])
-    setSessionPaused(false)
-    setActiveRecommendationContext(null)
-    setSessionStarted(true)
-    setAnswerStartTime(Date.now())
-    setStudySessionId(`${Date.now()}`)
+      setTrainingMode(effectiveMode)
+      setSelectedSessionType(effectiveMode)
+      setRules(finalRules)
+      setTrainingQueue(nextQueue)
+      setSelectedRuleIndex(nextQueue[0] ?? null)
+      setSelectedSubjectId(finalRules[nextQueue[0] ?? 0]?.subject_id ?? null)
+      setMode("typing")
+      setResult(null)
+      setAnswer("")
+      setSessionRuleResults([])
+      setSavedRuleIds([])
+      setReportedRuleIds([])
+      setSessionPaused(false)
+      setActiveRecommendationContext(null)
+      setSessionStarted(true)
+      setAnswerStartTime(Date.now())
+      setStudySessionId(`${Date.now()}`)
 
-    if (effectiveMode === "timed") {
-      setRemainingSeconds(quizConfig.timePerQuestion)
-      setTimerStarted(false)
-    } else {
-      setRemainingSeconds(null)
-      setTimerStarted(false)
-    }
+      if (effectiveMode === "timed") {
+        setRemainingSeconds(quizConfig.timePerQuestion)
+        setTimerStarted(false)
+      } else {
+        setRemainingSeconds(null)
+        setTimerStarted(false)
+      }
 
-    try {
-      sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
-    } catch (error) {
-      console.error("CLEAR STALE LIVE SESSION ERROR:", error)
+      try {
+        sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
+      } catch (error) {
+        console.error("CLEAR STALE LIVE SESSION ERROR:", error)
+      }
+    } finally {
+      configuredSessionStartingRef.current = false
     }
   }
 

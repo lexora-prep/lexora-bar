@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { getStrengthsWeaknessesAnalyticsSettings } from "@/lib/analytics-settings"
-import { calculateMastery, normalizeMode, normalizeTrainingContext } from "@/lib/learning"
+import { calculateMastery, getCanonicalLearningRules, normalizeMode, normalizeTrainingContext } from "@/lib/learning"
 import { LEARNING_PROGRESS_SELECT, resolveLearningProgress } from "@/lib/learning/analytics"
 import type {
   ProgressHistoryAnalyticsData,
@@ -767,15 +767,12 @@ export async function buildProgressHistoryAnalytics(params: {
       })
     : []
 
-  const analyticsSubjectIds = analyticsSubjects.map((subject) => subject.id)
-  const totalAvailableRules = analyticsSubjectIds.length
-    ? await prisma.rules.count({
-        where: {
-          is_active: true,
-          subject_id: { in: analyticsSubjectIds },
-        },
-      })
-    : 0
+  const analyticsSubjectIds = new Set(analyticsSubjects.map((subject) => subject.id))
+  const canonicalRules = await getCanonicalLearningRules()
+  const canonicalRuleIds = new Set(canonicalRules.map((rule) => rule.id))
+  const totalAvailableRules = canonicalRules.filter((rule) =>
+    analyticsSubjectIds.has(rule.subjectId)
+  ).length
 
   const ruleMap = new Map<string, RuleMeta>(
     rules.map((rule) => [
@@ -828,7 +825,11 @@ export async function buildProgressHistoryAnalytics(params: {
       updatedAt: row.updated_at,
     }))
 
-  const attemptedRules = new Set(allAttempts.map((attempt) => attempt.rule_id)).size
+  const attemptedRules = new Set(
+    allAttempts
+      .map((attempt) => attempt.rule_id)
+      .filter((ruleId) => canonicalRuleIds.has(ruleId))
+  ).size
   const completionPercentage =
     totalAvailableRules > 0
       ? round(clamp((attemptedRules / totalAvailableRules) * 100, 0, 100), 1)

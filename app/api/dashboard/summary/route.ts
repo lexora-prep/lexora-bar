@@ -9,6 +9,7 @@ import {
   LEARNING_PROGRESS_SELECT,
   resolveLearningProgress,
 } from "@/lib/learning/analytics"
+import { getCanonicalLearningRules } from "@/lib/learning/cycles"
 
 type DayStatus = "fire" | "ice" | "empty"
 
@@ -741,7 +742,7 @@ async function getStateComparisonMetrics(
 }
 
 async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
-  const [subjectsList, rulesBySubject, ruleProgress, mbeBySubject, mbeAttempts] =
+  const [subjectsList, canonicalRulesResult, ruleProgress, mbeBySubject, mbeAttempts] =
     await Promise.allSettled([
       prisma.subjects.findMany({
         select: {
@@ -750,15 +751,7 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
         },
       }),
 
-      prisma.rules.groupBy({
-        by: ["subject_id"],
-        where: {
-          is_active: true,
-        },
-        _count: {
-          id: true,
-        },
-      }),
+      getCanonicalLearningRules(),
 
       prisma.user_rule_progress.findMany({
         where: {
@@ -812,8 +805,9 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
 
   const safeSubjectsList =
     subjectsList.status === "fulfilled" ? subjectsList.value : []
-  const safeRulesBySubject =
-    rulesBySubject.status === "fulfilled" ? rulesBySubject.value : []
+  const safeCanonicalRules =
+    canonicalRulesResult.status === "fulfilled" ? canonicalRulesResult.value : []
+  const canonicalRuleIds = new Set(safeCanonicalRules.map((rule) => rule.id))
   const safeRuleProgress =
     ruleProgress.status === "fulfilled" ? ruleProgress.value : []
   const safeMbeBySubject =
@@ -829,13 +823,13 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
 
   const bllTotalBySubjectName = new Map<string, number>()
 
-  for (const row of safeRulesBySubject) {
+  for (const rule of safeCanonicalRules) {
     const subjectName =
-      row.subject_id && subjectNameById.has(row.subject_id)
-        ? subjectNameById.get(row.subject_id) || "Unknown"
-        : "Unknown"
-
-    bllTotalBySubjectName.set(subjectName, Number(row._count?.id ?? 0))
+      subjectNameById.get(rule.subjectId) || rule.subjectName || "Unknown"
+    bllTotalBySubjectName.set(
+      subjectName,
+      (bllTotalBySubjectName.get(subjectName) ?? 0) + 1
+    )
   }
 
   const bllMap = new Map<
@@ -851,6 +845,7 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
   >()
 
   for (const row of safeRuleProgress) {
+    if (!canonicalRuleIds.has(row.rule_id)) continue
     const subjectName = row.rules?.subjects?.name || "Unknown"
     const current =
       bllMap.get(subjectName) ||
@@ -977,7 +972,7 @@ async function getSubjectSummaries(userId: string): Promise<SubjectSummaries> {
     mbeSubjects,
     diagnostics: {
       subjectsOk: subjectsList.status === "fulfilled",
-      rulesBySubjectOk: rulesBySubject.status === "fulfilled",
+      rulesBySubjectOk: canonicalRulesResult.status === "fulfilled",
       ruleProgressOk: ruleProgress.status === "fulfilled",
       mbeBySubjectOk: mbeBySubject.status === "fulfilled",
       mbeAttemptsOk: mbeAttempts.status === "fulfilled",
