@@ -16,6 +16,7 @@ import {
   BrainCircuit,
   Layers3,
   Calendar,
+  CircleCheck,
   ChevronDown,
   ChevronUp,
   ArrowLeft,
@@ -26,6 +27,11 @@ import {
   Pause,
   Square,
   FolderClock,
+  Sparkles,
+  RefreshCw,
+  Lock,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { useUnsavedChanges } from "@/app/_providers/UnsavedChangesProvider"
@@ -146,6 +152,14 @@ type SessionRuleResult = {
   timeSpentSec: number
 }
 
+type RecommendationSessionContext = {
+  blockId: string
+  blockTitle: string
+  blockMinutes: number
+  phaseLabel: string
+  plannedMinutes: number
+}
+
 type SessionHistoryItem = {
   id: string
   mode: SessionType
@@ -165,6 +179,63 @@ type SessionHistoryItem = {
   bestRule?: SessionRuleResult | null
   worstRule?: SessionRuleResult | null
   rules: SessionRuleResult[]
+  source?: "recommended" | "manual"
+  recommendationBlockId?: string
+  recommendationBlockTitle?: string
+  plannedMinutes?: number
+}
+
+type RecommendedSessionBlock = {
+  id: string
+  mode: SessionType
+  title: string
+  description: string
+  reason: string
+  minutes: number
+  estimatedRules: number
+  ruleIds: string[]
+  subjectNames: string[]
+  completedToday: boolean
+}
+
+type DailyLearningRecommendation = {
+  generatedAt: string
+  dateKey: string
+  requestedMinutes: number
+  recommendedMinutes: number
+  phase: "foundation" | "accelerated" | "sprint"
+  phaseLabel: string
+  headline: string
+  summary: string
+  examDate: string | null
+  daysUntilExam: number | null
+  cycleNumber: number
+  primaryBlockId: string | null
+  progress?: {
+    requestedMinutes?: number
+    completedMinutes?: number
+    remainingMinutes?: number
+    completionPercentage?: number
+    planComplete?: boolean
+  }
+  totals: {
+    availableRules: number
+    coveredRules: number
+    assessedRules: number
+    remainingRules: number
+    weakRules: number
+    dueRules: number
+  }
+  todayProgress: {
+    plannedMinutes: number
+    completedMinutes: number
+    remainingMinutes: number
+    studiedRules: number
+    assessedRules: number
+    planComplete: boolean
+    eligibleWorkComplete: boolean
+  }
+  blocks: RecommendedSessionBlock[]
 }
 
 type SessionDraft = {
@@ -204,6 +275,7 @@ type SessionDraft = {
   reportedRuleIds: string[]
   remainingSeconds: number | null
   timerStarted: boolean
+  recommendationContext?: RecommendationSessionContext | null
 }
 
 const STORAGE_ACTIVE_SESSION = "lexora_rule_training_active_session_v6"
@@ -458,6 +530,48 @@ function getSessionTypeMeta(sessionType: SessionType | null) {
   }
 }
 
+
+function recommendationRequestedMinutes(recommendation: DailyLearningRecommendation) {
+  const value = Number(
+    recommendation.progress?.requestedMinutes ?? recommendation.requestedMinutes ?? 0
+  )
+  return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
+}
+
+function recommendationCompletedMinutes(recommendation: DailyLearningRecommendation) {
+  const value = Number(recommendation.progress?.completedMinutes ?? 0)
+  return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
+}
+
+function recommendationRemainingMinutes(recommendation: DailyLearningRecommendation) {
+  const requested = recommendationRequestedMinutes(recommendation)
+  const completed = recommendationCompletedMinutes(recommendation)
+  const explicit = Number(recommendation.progress?.remainingMinutes)
+
+  if (Number.isFinite(explicit)) return Math.max(0, Math.round(explicit))
+  return Math.max(0, requested - completed)
+}
+
+function recommendationIsComplete(recommendation: DailyLearningRecommendation) {
+  if (recommendation.progress?.planComplete === true) return true
+
+  const requested = recommendationRequestedMinutes(recommendation)
+  const completed = recommendationCompletedMinutes(recommendation)
+
+  return requested > 0 && completed >= requested && recommendation.blocks.length === 0
+}
+
+function recommendationRemainingRules(recommendation: DailyLearningRecommendation) {
+  const explicit = Number(recommendation.totals.remainingRules)
+  if (Number.isFinite(explicit)) return Math.max(0, Math.round(explicit))
+
+  return Math.max(
+    0,
+    Number(recommendation.totals.availableRules || 0) -
+      Number(recommendation.totals.coveredRules || 0)
+  )
+}
+
 function getHistoryModeLabel(mode: SessionType) {
   if (mode === "weak_focus") return "Weak"
   if (mode === "quiz") return "Quiz"
@@ -608,6 +722,18 @@ function RuleTrainingPageContent() {
   const [ruleSchedule, setRuleSchedule] = useState<Record<string, number>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [cycleActionLoading, setCycleActionLoading] = useState(false)
+  const [recommendedMinutes, setRecommendedMinutes] = useState(30)
+  const [recommendation, setRecommendation] =
+    useState<DailyLearningRecommendation | null>(null)
+  const [recommendationLoading, setRecommendationLoading] = useState(false)
+  const [recommendationStartingId, setRecommendationStartingId] =
+    useState<string | null>(null)
+  const [recommendationError, setRecommendationError] = useState<string | null>(null)
+  const [recommendationLocked, setRecommendationLocked] = useState(false)
+  const [activeRecommendationContext, setActiveRecommendationContext] =
+    useState<RecommendationSessionContext | null>(null)
+  const [latestCompletedSession, setLatestCompletedSession] =
+    useState<SessionHistoryItem | null>(null)
 
   const [savedRuleIds, setSavedRuleIds] = useState<string[]>([])
   const [reportedRuleIds, setReportedRuleIds] = useState<string[]>([])
@@ -707,6 +833,81 @@ function RuleTrainingPageContent() {
       console.error("RULE CYCLE STATE REFRESH ERROR:", error)
     }
   }
+
+  async function loadRecommendedSession(minutes: number = recommendedMinutes) {
+    if (!currentUserId) return
+
+    const safeMinutes = Math.max(10, Math.min(120, Math.round(minutes || 30)))
+
+    try {
+      setRecommendationLoading(true)
+      setRecommendationError(null)
+      setRecommendationLocked(false)
+
+      const response = await fetch(
+        `/api/recommended-session?minutes=${safeMinutes}&refresh=${Date.now()}`,
+        { cache: "no-store" }
+      )
+      const data = await response.json().catch(() => null)
+
+      if (response.status === 402) {
+        setRecommendation(null)
+        setRecommendationLocked(true)
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error(data?.message || data?.error || "Your recommended session could not be generated.")
+      }
+
+      setRecommendation(data as DailyLearningRecommendation)
+    } catch (error) {
+      setRecommendationError(
+        error instanceof Error
+          ? error.message
+          : "Your recommended session could not be generated."
+      )
+    } finally {
+      setRecommendationLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!currentUserId) return
+
+    let minutes = 30
+    try {
+      const stored = Number(localStorage.getItem("lexora_daily_session_minutes_v1"))
+      if (Number.isFinite(stored) && stored >= 10 && stored <= 120) {
+        minutes = Math.round(stored)
+      }
+    } catch (error) {
+      console.error("RECOMMENDED MINUTES RESTORE ERROR:", error)
+    }
+
+    setRecommendedMinutes(minutes)
+    void loadRecommendedSession(minutes)
+  }, [currentUserId])
+
+  useEffect(() => {
+    if (!currentUserId) return
+
+    const refreshRecommendation = () => {
+      void loadRecommendedSession(recommendedMinutes)
+    }
+
+    window.addEventListener(
+      "lexora:learning-progress-updated",
+      refreshRecommendation
+    )
+
+    return () => {
+      window.removeEventListener(
+        "lexora:learning-progress-updated",
+        refreshRecommendation
+      )
+    }
+  }, [currentUserId, recommendedMinutes])
 
   function applyLocalCycleProgress(ruleId: string, score: number, response: any) {
     const isStudy = trainingMode === "study"
@@ -855,6 +1056,7 @@ function RuleTrainingPageContent() {
       reportedRuleIds,
       remainingSeconds,
       timerStarted,
+      recommendationContext: activeRecommendationContext,
     }
   }
 
@@ -889,6 +1091,7 @@ function RuleTrainingPageContent() {
     setReportedRuleIds([])
     setRemainingSeconds(null)
     setTimerStarted(false)
+    setActiveRecommendationContext(null)
     try {
       sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
     } catch (error) {
@@ -945,6 +1148,7 @@ return () => clearDirty()
     reportedRuleIds,
     remainingSeconds,
     timerStarted,
+    activeRecommendationContext,
   ])
 
   useEffect(() => {
@@ -993,6 +1197,7 @@ return () => clearDirty()
       typeof draft.remainingSeconds === "number" ? draft.remainingSeconds : null
     )
     setTimerStarted(!!draft.timerStarted)
+    setActiveRecommendationContext(draft.recommendationContext ?? null)
     setResult(null)
     setAnswerStartTime(Date.now())
   }
@@ -1076,13 +1281,23 @@ return () => clearDirty()
       bestRule,
       worstRule,
       rules: completedRules,
+      source: activeRecommendationContext ? "recommended" : "manual",
+      recommendationBlockId: activeRecommendationContext?.blockId,
+      recommendationBlockTitle: activeRecommendationContext?.blockTitle,
+      plannedMinutes: activeRecommendationContext?.blockMinutes,
     }
 
     saveHistory(historyItem)
+    setLatestCompletedSession(historyItem)
     clearDirty()
     abandonCurrentSessionState()
     setActiveTab("results")
     setHistoryOpenId(historyItem.id)
+
+    void (async () => {
+      await Promise.all([refreshSubjectCoverage(), refreshRuleCycleState()])
+      await loadRecommendedSession(recommendedMinutes)
+    })()
   }
 
   function buildTrainingQueue(
@@ -2050,6 +2265,7 @@ return () => clearDirty()
     setAttempts([])
     setSessionRuleResults([])
     setDirectWeakCompletedRuleIds([])
+    setActiveRecommendationContext(null)
     setSessionStarted(true)
     setActiveTab("active")
     setAnswerStartTime(Date.now())
@@ -2260,6 +2476,126 @@ return () => clearDirty()
     return mergeUniqueRules(filtered)
   }
 
+  function updateRecommendedMinutes(value: number) {
+    const safeMinutes = Math.max(10, Math.min(120, Math.round(value || 30)))
+    setRecommendedMinutes(safeMinutes)
+
+    try {
+      localStorage.setItem("lexora_daily_session_minutes_v1", String(safeMinutes))
+    } catch (error) {
+      console.error("RECOMMENDED MINUTES SAVE ERROR:", error)
+    }
+
+    void loadRecommendedSession(safeMinutes)
+  }
+
+  async function returnToUpdatedPlan() {
+    setActiveTab("setup")
+    await Promise.all([refreshSubjectCoverage(), refreshRuleCycleState()])
+    await loadRecommendedSession(recommendedMinutes)
+  }
+
+  async function startRecommendedBlock(block: RecommendedSessionBlock) {
+    if (recommendationStartingId) return
+
+    try {
+      setRecommendationStartingId(block.id)
+
+      let availableRules = allRules
+      const availableIds = new Set(availableRules.map((rule) => rule.id))
+      const missingRule = block.ruleIds.some((ruleId) => !availableIds.has(ruleId))
+
+      if (missingRule || availableRules.length === 0) {
+        const response = await fetch("/api/get-all-rules", { cache: "no-store" })
+        const data = await response.json().catch(() => null)
+
+        if (!response.ok || !Array.isArray(data)) {
+          throw new Error("The recommended rules could not be loaded.")
+        }
+
+        availableRules = mergeUniqueRules(
+          data
+            .map((row: any) => normalizeRuleRow(row))
+            .filter((row: Rule) => row.id)
+        )
+        setAllRules(availableRules)
+      }
+
+      const ruleById = new Map(availableRules.map((rule) => [rule.id, rule]))
+      const finalRules = block.ruleIds
+        .map((ruleId) => ruleById.get(ruleId))
+        .filter((rule): rule is Rule => Boolean(rule))
+
+      if (finalRules.length === 0) {
+        throw new Error("No eligible rules remain in this recommended block.")
+      }
+
+      try {
+        sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
+      } catch (error) {
+        console.error("ACTIVE SESSION RESET ERROR:", error)
+      }
+
+      const effectiveMode = block.mode
+      const nextQueue = finalRules.map((_, index) => index)
+      const subjectIds = Array.from(
+        new Set(finalRules.map((rule) => rule.subject_id).filter(Boolean))
+      ) as string[]
+
+      setQuizConfig((current) => ({
+        ...current,
+        size: finalRules.length,
+        customSize: String(finalRules.length),
+        timed: effectiveMode === "timed",
+        subjectIds,
+        weakOnly: effectiveMode === "weak_focus",
+        order: effectiveMode === "weak_focus" ? "weakest" : "sequential",
+        ruleFilter: "all",
+      }))
+      setSelectedTopicIds([])
+      setTrainingMode(effectiveMode)
+      setSelectedSessionType(effectiveMode)
+      setRules(finalRules)
+      setTrainingQueue(nextQueue)
+      setSelectedRuleIndex(0)
+      setSelectedSubjectId(finalRules[0]?.subject_id ?? null)
+      setMode("typing")
+      setResult(null)
+      setAnswer("")
+      setSessionRuleResults([])
+      setSavedRuleIds([])
+      setReportedRuleIds([])
+      setSessionPaused(false)
+      setActiveRecommendationContext({
+        blockId: block.id,
+        blockTitle: block.title,
+        blockMinutes: block.minutes,
+        phaseLabel: recommendation?.phaseLabel ?? "Recommended Session",
+        plannedMinutes: recommendation?.todayProgress.plannedMinutes ?? recommendedMinutes,
+      })
+      setSessionStarted(true)
+      setActiveTab("active")
+      setAnswerStartTime(Date.now())
+      setStudySessionId(`${Date.now()}`)
+
+      if (effectiveMode === "timed") {
+        setRemainingSeconds(quizConfig.timePerQuestion)
+        setTimerStarted(false)
+      } else {
+        setRemainingSeconds(null)
+        setTimerStarted(false)
+      }
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "The recommended session could not be started."
+      )
+    } finally {
+      setRecommendationStartingId(null)
+    }
+  }
+
   async function startConfiguredSession(nextMode?: SessionType) {
     const effectiveMode = nextMode ?? trainingMode
 
@@ -2320,6 +2656,7 @@ return () => clearDirty()
     setSavedRuleIds([])
     setReportedRuleIds([])
     setSessionPaused(false)
+    setActiveRecommendationContext(null)
     setSessionStarted(true)
     setAnswerStartTime(Date.now())
     setStudySessionId(`${Date.now()}`)
@@ -2786,40 +3123,36 @@ return () => clearDirty()
                   </p>
                 </div>
 
-                <div className="mb-5 rounded-[16px] border border-blue-100 bg-gradient-to-r from-blue-50/80 via-white to-violet-50/70 p-4">
+                <div className="mb-5 border-y border-slate-200 py-4">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-blue-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+                    <div className="flex min-w-0 flex-1 items-center gap-4">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                        <RefreshCw size={16} />
+                      </div>
+
+                      <div className="flex min-w-0 flex-wrap items-center gap-y-2 text-[12px]">
+                        <span className="font-semibold text-blue-700">
                           Learning Cycle {learningCycleStats.cycleNumber}
                         </span>
-                        <span className="text-[12px] font-medium text-slate-600">
+                        <span className="mx-4 hidden h-5 w-px bg-slate-200 sm:block" />
+                        <span className="font-medium text-slate-700">
                           {learningCycleStats.coveredRules} of {learningCycleStats.totalRules} rules covered
                         </span>
-                        <span className="text-[12px] text-slate-400">
+                        <span className="mx-4 hidden h-5 w-px bg-slate-200 sm:block" />
+                        <span className="text-slate-500">
                           {learningCycleStats.assessedRules} independently quizzed
                         </span>
                       </div>
-
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white shadow-inner">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-600 transition-all"
-                          style={{ width: `${learningCycleStats.percentage}%` }}
-                        />
-                      </div>
-
-                      <p className="mt-2 text-[12px] leading-5 text-slate-500">
-                        Study sessions mark coverage only. Quiz, timed, and weak-focus sessions create independent recall evidence for mastery.
-                      </p>
                     </div>
 
-                    <div className="flex shrink-0 flex-wrap gap-2">
+                    <div className="flex shrink-0 items-center gap-5">
                       <button
                         type="button"
                         disabled={cycleActionLoading}
                         onClick={() => void handleCycleAction("restart_current")}
-                        className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 text-[12px] font-semibold text-slate-600 transition hover:text-blue-700 disabled:opacity-50"
                       >
+                        <RefreshCw size={15} />
                         Restart Cycle
                       </button>
 
@@ -2828,16 +3161,432 @@ return () => clearDirty()
                           type="button"
                           disabled={cycleActionLoading}
                           onClick={() => void handleCycleAction("start_next")}
-                          className="rounded-xl bg-slate-900 px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                          className="inline-flex items-center gap-2 text-[12px] font-semibold text-violet-700 transition hover:text-violet-800 disabled:opacity-50"
                         >
                           Start Cycle {learningCycleStats.cycleNumber + 1}
+                          <ArrowRight size={14} />
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="mb-5 grid grid-cols-1 gap-3 xl:grid-cols-4">
+                {recommendation && recommendationIsComplete(recommendation) && (
+                  <section className="mb-5 border-b border-slate-200 pb-7 pt-3">
+                    <div className="flex flex-col gap-7 xl:flex-row xl:items-start xl:justify-between">
+                      <div className="flex min-w-0 items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white shadow-[0_10px_28px_rgba(124,58,237,0.22)]">
+                          <Sparkles size={21} />
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-700">
+                            Today&apos;s Recommended Session
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-3">
+                            <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950">
+                              You completed today&apos;s plan.
+                            </h2>
+                            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                              <CircleCheck size={21} />
+                            </span>
+                          </div>
+                          <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-500">
+                            You completed today&apos;s {recommendationRequestedMinutes(recommendation)}-minute learning plan.
+                            <br />
+                            You can stop now or continue with optional practice.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 flex-wrap items-end gap-x-6 gap-y-3 text-[12px]">
+                        <span className="pb-2 font-medium text-slate-500">Daily budget</span>
+                        {[20, 30, 45, 60].map((minutes) => (
+                          <button
+                            key={minutes}
+                            type="button"
+                            onClick={() => updateRecommendedMinutes(minutes)}
+                            className={`border-b-2 px-1 pb-2 font-semibold transition ${
+                              recommendedMinutes === minutes
+                                ? "border-violet-600 text-slate-950"
+                                : "border-transparent text-slate-500 hover:text-slate-900"
+                            }`}
+                          >
+                            {minutes}m
+                          </button>
+                        ))}
+                        <label className={`flex items-center border-b-2 pb-2 transition ${
+                          ![20, 30, 45, 60].includes(recommendedMinutes)
+                            ? "border-violet-600"
+                            : "border-transparent"
+                        }`}>
+                          <span className="mr-1 font-semibold text-slate-700">Custom:</span>
+                          <input
+                            aria-label="Custom study minutes"
+                            type="number"
+                            min={10}
+                            max={120}
+                            value={recommendedMinutes}
+                            onChange={(event) =>
+                              setRecommendedMinutes(
+                                Math.max(10, Math.min(120, Number(event.target.value || 30)))
+                              )
+                            }
+                            onBlur={() => updateRecommendedMinutes(recommendedMinutes)}
+                            className="w-9 bg-transparent text-center font-semibold text-slate-950 outline-none"
+                          />
+                          <span className="font-semibold text-slate-700">min</span>
+                        </label>
+                        <button
+                          type="button"
+                          aria-label="Refresh recommended session"
+                          disabled={recommendationLoading}
+                          onClick={() => void loadRecommendedSession(recommendedMinutes)}
+                          className="mb-1 text-slate-500 transition hover:text-violet-700 disabled:opacity-50"
+                        >
+                          <RefreshCw
+                            size={17}
+                            className={recommendationLoading ? "animate-spin" : ""}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="ml-0 mt-7 max-w-4xl sm:ml-16">
+                      <div className="flex items-center justify-between gap-4 text-[12px] font-semibold text-slate-900">
+                        <span>
+                          {recommendationCompletedMinutes(recommendation)} of {recommendationRequestedMinutes(recommendation)} minutes completed
+                        </span>
+                        <span className="text-violet-700">
+                          {recommendationRemainingMinutes(recommendation) === 0
+                            ? "Plan complete"
+                            : `${recommendationRemainingMinutes(recommendation)} min remaining`}
+                        </span>
+                      </div>
+                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              recommendationRequestedMinutes(recommendation) > 0
+                                ? (recommendationCompletedMinutes(recommendation) /
+                                    recommendationRequestedMinutes(recommendation)) *
+                                  100
+                                : 0
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-8 grid grid-cols-1 gap-y-6 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1.55fr_auto] xl:items-center">
+                      {recommendation.daysUntilExam !== null && (
+                        <div className="flex items-center gap-4 xl:border-r xl:border-slate-200 xl:pr-8">
+                          <Calendar size={22} className="text-violet-600" />
+                          <div>
+                            <div className="text-[25px] font-semibold leading-none text-slate-950">
+                              {recommendation.daysUntilExam}
+                            </div>
+                            <div className="mt-2 text-[11px] text-slate-500">days to exam</div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4 xl:border-r xl:border-slate-200 xl:px-8">
+                        <CircleCheck size={22} className="text-emerald-600" />
+                        <div>
+                          <div className="text-[25px] font-semibold leading-none text-slate-950">
+                            {recommendation.totals.dueRules}
+                          </div>
+                          <div className="mt-2 text-[11px] text-slate-500">reviews due</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 xl:px-8">
+                        <BookOpen size={23} className="text-blue-600" />
+                        <div>
+                          <div className="text-[25px] font-semibold leading-none text-slate-950">
+                            {recommendationRemainingRules(recommendation).toLocaleString()}
+                          </div>
+                          <div className="mt-2 text-[11px] text-slate-500">
+                            rules remaining in Cycle {recommendation.cycleNumber}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document
+                            .getElementById("manual-session-modes")
+                            ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                        }
+                        className="inline-flex items-center gap-3 text-left text-[13px] font-semibold text-violet-700 transition hover:text-violet-900 xl:justify-self-end"
+                      >
+                        Continue with optional practice
+                        <ArrowRight size={17} />
+                      </button>
+                    </div>
+                  </section>
+                )}
+
+                <div className={`${recommendation && recommendationIsComplete(recommendation) ? "hidden" : "mb-5"} overflow-hidden rounded-[18px] border border-violet-200 bg-[linear-gradient(135deg,#F8FAFF_0%,#FFFFFF_48%,#FAF5FF_100%)] shadow-[0_18px_45px_rgba(79,70,229,0.08)]`}>
+                  <div className="border-b border-violet-100 px-5 py-4">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-violet-600 text-white shadow-[0_8px_20px_rgba(124,58,237,0.25)]">
+                          <Sparkles size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-[16px] font-semibold text-slate-900">
+                              Today&apos;s Recommended Session
+                            </h2>
+                            {recommendation && (
+                              <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-violet-700">
+                                {recommendation.phaseLabel}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[12px] leading-5 text-slate-500">
+                            Lexora selects the next rules from your current cycle, weak areas, due reviews, and exam timeline. You can still build a manual session below.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        <span className="mr-1 text-[11px] font-medium text-slate-500">
+                          Daily budget
+                        </span>
+                        {[20, 30, 45, 60].map((minutes) => (
+                          <button
+                            key={minutes}
+                            type="button"
+                            onClick={() => updateRecommendedMinutes(minutes)}
+                            className={`h-9 rounded-[10px] border px-3 text-[12px] font-semibold transition ${
+                              recommendedMinutes === minutes
+                                ? "border-violet-600 bg-violet-600 text-white"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-violet-300"
+                            }`}
+                          >
+                            {minutes}m
+                          </button>
+                        ))}
+                        <div className="flex h-9 items-center rounded-[10px] border border-slate-200 bg-white px-2">
+                          <input
+                            aria-label="Custom study minutes"
+                            type="number"
+                            min={10}
+                            max={120}
+                            value={recommendedMinutes}
+                            onChange={(event) =>
+                              setRecommendedMinutes(
+                                Math.max(10, Math.min(120, Number(event.target.value || 30)))
+                              )
+                            }
+                            onBlur={() => updateRecommendedMinutes(recommendedMinutes)}
+                            className="w-11 bg-transparent text-center text-[12px] font-semibold text-slate-700 outline-none"
+                          />
+                          <span className="text-[10px] text-slate-400">min</span>
+                        </div>
+                        <button
+                          type="button"
+                          aria-label="Refresh recommended session"
+                          title="Recalculate the remaining plan using your latest completed work"
+                          disabled={recommendationLoading}
+                          onClick={() => void loadRecommendedSession(recommendedMinutes)}
+                          className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-500 transition hover:border-violet-300 hover:text-violet-600 disabled:opacity-50"
+                        >
+                          <RefreshCw
+                            size={14}
+                            className={recommendationLoading ? "animate-spin" : ""}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-5 py-4">
+                    {recommendationLocked ? (
+                      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-100 text-slate-500">
+                            <Lock size={15} />
+                          </div>
+                          <div>
+                            <div className="text-[13px] font-semibold text-slate-900">
+                              Daily recommendations are included with BLL Monthly and Premium.
+                            </div>
+                            <div className="mt-1 text-[11px] leading-5 text-slate-500">
+                              Free users can continue creating manual sessions with the available sample rules.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : recommendationLoading && !recommendation ? (
+                      <div className="flex min-h-[126px] items-center justify-center rounded-[14px] border border-dashed border-violet-200 bg-white/70 text-[12px] text-slate-500">
+                        Generating today&apos;s adaptive session...
+                      </div>
+                    ) : recommendationError ? (
+                      <div className="rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">
+                        {recommendationError}
+                      </div>
+                    ) : recommendation ? (
+                      <>
+                        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                          <div>
+                            <div className="text-[15px] font-semibold text-slate-900">
+                              {recommendation.headline}
+                            </div>
+                            <p className="mt-1 max-w-4xl text-[12px] leading-5 text-slate-500">
+                              {recommendation.summary}
+                            </p>
+                            <div className="mt-3 max-w-xl">
+                              <div className="mb-1.5 flex items-center justify-between text-[10px] font-medium text-slate-500">
+                                <span>Today: {recommendation.todayProgress.completedMinutes} of {recommendation.todayProgress.plannedMinutes} min completed</span>
+                                <span>
+                                  {recommendation.todayProgress.planComplete
+                                    ? "Plan complete"
+                                    : `${recommendation.todayProgress.remainingMinutes} min remaining`}
+                                </span>
+                              </div>
+                              <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                                <div
+                                  className="h-full rounded-full bg-[linear-gradient(90deg,#7C3AED,#2563EB)] transition-all"
+                                  style={{
+                                    width: `${Math.min(
+                                      100,
+                                      Math.round(
+                                        (recommendation.todayProgress.completedMinutes /
+                                          Math.max(1, recommendation.todayProgress.plannedMinutes)) *
+                                          100
+                                      )
+                                    )}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-[10px] font-medium text-slate-500">
+                            {recommendation.daysUntilExam !== null && (
+                              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                                {recommendation.daysUntilExam} days to exam
+                              </span>
+                            )}
+                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                              {recommendation.totals.dueRules} due
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                              {recommendation.totals.weakRules} weak
+                            </span>
+                          </div>
+                        </div>
+
+                        {recommendation.blocks.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                            {recommendation.blocks.map((block, index) => {
+                              const meta = getSessionTypeMeta(block.mode)
+                              const isPrimary = recommendation.primaryBlockId === block.id
+                              const isStarting = recommendationStartingId === block.id
+
+                              return (
+                                <div
+                                  key={block.id}
+                                  className={`rounded-[14px] border bg-white p-4 ${
+                                    isPrimary
+                                      ? "border-violet-300 shadow-[0_10px_24px_rgba(124,58,237,0.08)]"
+                                      : "border-slate-200"
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex min-w-0 items-start gap-3">
+                                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${
+                                        block.mode === "study"
+                                          ? "bg-blue-50 text-blue-600"
+                                          : block.mode === "timed"
+                                            ? "bg-amber-50 text-amber-600"
+                                            : "bg-violet-50 text-violet-600"
+                                      }`}>
+                                        {meta.icon}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                                            Block {index + 1}
+                                          </span>
+                                          {block.completedToday && (
+                                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
+                                              Completed today
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                                          {block.title}
+                                        </div>
+                                        <div className="mt-1 text-[11px] leading-5 text-slate-500">
+                                          {block.description}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="shrink-0 text-right">
+                                      <div className="text-[13px] font-semibold text-slate-900">
+                                        {block.minutes} min
+                                      </div>
+                                      <div className="text-[10px] text-slate-400">
+                                        {block.estimatedRules} rules
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-3 rounded-[10px] bg-slate-50 px-3 py-2 text-[10px] leading-4 text-slate-500">
+                                    {block.reason}
+                                  </div>
+
+                                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="min-w-0 truncate text-[10px] text-slate-400">
+                                      {block.subjectNames.length > 0
+                                        ? block.subjectNames.join(" • ")
+                                        : "Mixed subjects"}
+                                    </div>
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        block.ruleIds.length === 0 ||
+                                        recommendationStartingId !== null
+                                      }
+                                      onClick={() => void startRecommendedBlock(block)}
+                                      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-[10px] px-4 py-2 text-[11px] font-semibold transition disabled:opacity-50 ${
+                                        isPrimary
+                                          ? "bg-violet-600 text-white hover:bg-violet-700"
+                                          : "border border-slate-200 bg-white text-slate-700 hover:border-violet-300"
+                                      }`}
+                                    >
+                                      <Play size={12} />
+                                      {isStarting
+                                        ? "Starting..."
+                                        : block.completedToday
+                                          ? "Practice Again"
+                                          : `Start ${meta.shortLabel}`}
+                                    </button>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-[12px] text-emerald-700">
+                            {recommendation.todayProgress.planComplete
+                              ? "Today’s recommended plan is complete. You can stop here or use the manual session builder for optional extra practice."
+                              : "Your current cycle has no eligible rules for this plan. Start a new cycle or use Review All for optional practice."}
+                          </div>
+                        )}
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div id="manual-session-modes" className="mb-5 scroll-mt-6 grid grid-cols-1 gap-3 xl:grid-cols-4">
                   <ModeTypeCard
                     active={selectedSessionType === "study"}
                     tone="study"
@@ -3393,6 +4142,98 @@ return () => clearDirty()
 
             {activeTab === "results" && (
               <div className="mx-auto max-w-[1080px]">
+                {latestCompletedSession && (
+                  <div className="mb-6 overflow-hidden rounded-[20px] border border-emerald-200 bg-white shadow-[0_14px_38px_rgba(15,23,42,0.06)]">
+                    <div className="border-b border-emerald-100 bg-[linear-gradient(135deg,#ECFDF5,#F5F3FF)] px-6 py-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-emerald-100 text-emerald-700">
+                            <CheckCircle2 size={22} />
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                              Session complete
+                            </div>
+                            <h2 className="mt-1 text-[18px] font-semibold text-slate-900">
+                              {latestCompletedSession.recommendationBlockTitle || `${getSessionTypeMeta(latestCompletedSession.mode).shortLabel} finished`}
+                            </h2>
+                            <p className="mt-1 text-[12px] text-slate-500">
+                              Your work was saved. Coverage, mastery evidence, weak areas, and today&apos;s recommendation are now being recalculated.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="rounded-[12px] border border-white/80 bg-white/80 px-3 py-2 text-center">
+                            <div className="text-[15px] font-semibold text-slate-900">{latestCompletedSession.completedCount}</div>
+                            <div className="text-[9px] uppercase tracking-[0.08em] text-slate-400">Rules</div>
+                          </div>
+                          <div className="rounded-[12px] border border-white/80 bg-white/80 px-3 py-2 text-center">
+                            <div className="text-[15px] font-semibold text-slate-900">
+                              {latestCompletedSession.finalScore === null ? "Study" : `${latestCompletedSession.finalScore}%`}
+                            </div>
+                            <div className="text-[9px] uppercase tracking-[0.08em] text-slate-400">Result</div>
+                          </div>
+                          <div className="rounded-[12px] border border-white/80 bg-white/80 px-3 py-2 text-center">
+                            <div className="text-[15px] font-semibold text-slate-900">{formatTimeShort(latestCompletedSession.totalTimeSec)}</div>
+                            <div className="text-[9px] uppercase tracking-[0.08em] text-slate-400">Time</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">What happens next</div>
+                        <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                          {recommendationLoading
+                            ? "Updating your next recommendation…"
+                            : recommendation?.todayProgress.planComplete
+                              ? "Today’s recommended plan is complete."
+                              : recommendation?.blocks.find((block) => block.id === recommendation.primaryBlockId)?.title
+                                ? `Next: ${recommendation.blocks.find((block) => block.id === recommendation.primaryBlockId)?.title}`
+                                : "Return to setup to choose your next session."}
+                        </div>
+                        <div className="mt-1 text-[11px] leading-5 text-slate-500">
+                          {recommendation?.todayProgress.planComplete
+                            ? "Stop for today without pressure, or continue with optional manual practice."
+                            : recommendation
+                              ? `${recommendation.todayProgress.remainingMinutes} minutes remain in the daily budget you selected.`
+                              : "The plan will use your newest coverage and recall results."}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void returnToUpdatedPlan()}
+                          className="inline-flex items-center justify-center gap-2 rounded-[11px] border border-slate-200 bg-white px-4 py-2.5 text-[12px] font-semibold text-slate-700 transition hover:border-violet-300"
+                        >
+                          View updated plan
+                          <RefreshCw size={13} />
+                        </button>
+                        {recommendation &&
+                          !recommendation.todayProgress.planComplete &&
+                          recommendation.blocks.find((block) => block.id === recommendation.primaryBlockId) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextBlock = recommendation.blocks.find(
+                                  (block) => block.id === recommendation.primaryBlockId
+                                )
+                                if (nextBlock) void startRecommendedBlock(nextBlock)
+                              }}
+                              className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-violet-600 px-4 py-2.5 text-[12px] font-semibold text-white transition hover:bg-violet-700"
+                            >
+                              Start next block
+                              <ArrowRight size={13} />
+                            </button>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-2 text-[11px] font-medium text-slate-400">
                   All past training sessions
                 </div>
