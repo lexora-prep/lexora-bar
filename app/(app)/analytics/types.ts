@@ -200,15 +200,6 @@ export type StrengthsWeaknessesAnalyticsData = {
     title: string
     text: string
   }>
-  nextBestAction:
-    | (WeakRuleAnalytics & {
-        reason: string
-      })
-    | null
-  coachingNote: {
-    summary: string
-    steps: string[]
-  } | null
 }
 
 export type ProgressHistoryPoint = {
