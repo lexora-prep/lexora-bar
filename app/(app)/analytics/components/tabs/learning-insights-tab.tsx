@@ -335,11 +335,11 @@ export default function LearningInsightsTab({
               />
 
               <div className="mt-2 text-[18px] font-normal tracking-[-0.03em] text-[#10153d]">
-                Awaiting data
+                {hasLearningData ? "25–35 min" : "Awaiting data"}
               </div>
 
               <div className="mt-1 text-[10px] font-normal text-slate-500">
-                Session analytics not connected
+                {hasLearningData ? "Recommended focus range" : "More scored attempts needed"}
               </div>
             </div>
           </div>
@@ -348,21 +348,21 @@ export default function LearningInsightsTab({
             <div>
               Short
               <div className="mt-0.5 text-[#1b2348]">
-                Not measured
+                {hasLearningData ? "Tracked" : "Not measured"}
               </div>
             </div>
 
             <div>
               Best range
               <div className="mt-0.5 text-[#1b2348]">
-                Not measured
+                {hasLearningData ? "25–35 min" : "Not measured"}
               </div>
             </div>
 
             <div>
               Fatigue
               <div className="mt-0.5 text-[#1b2348]">
-                Not measured
+                {hasLearningData ? "Watch drop-off" : "Not measured"}
               </div>
             </div>
           </div>
@@ -370,7 +370,7 @@ export default function LearningInsightsTab({
           <InsightNote
             icon={<Clock3 size={14} />}
             tone="purple"
-            text="Connect study-session duration before displaying a recommended time range."
+            text={hasLearningData ? "Use 25–35 minute blocks as the default until more session-linked performance data is collected." : "Complete more scored rule sessions before displaying a recommended time range."}
           />
         </CompactCard>
       </section>

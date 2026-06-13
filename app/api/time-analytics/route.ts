@@ -313,6 +313,91 @@ function getSessionAccuracy(session: SessionRow) {
   )
 }
 
+function getAttemptScore(attempt: RuleAttemptRow) {
+  const score = Number(attempt.score ?? 0)
+
+  if (!Number.isFinite(score)) return 0
+
+  return clamp(score, 0, 100)
+}
+
+function getAttemptCorrectness(attempt: RuleAttemptRow) {
+  return getAttemptScore(attempt) >= 60 ? 1 : 0
+}
+
+function attachRuleAttemptsToSessions(
+  sessions: SessionRow[],
+  attempts: RuleAttemptRow[]
+) {
+  if (sessions.length === 0 || attempts.length === 0) {
+    return sessions
+  }
+
+  const sortedSessions = [...sessions].sort(
+    (a, b) => a.startedAt.getTime() - b.startedAt.getTime()
+  )
+
+  const buckets = new Map<
+    string,
+    {
+      attempts: number
+      correct: number
+    }
+  >()
+
+  for (const attempt of attempts) {
+    if (!attempt.created_at) continue
+
+    const attemptTime = attempt.created_at.getTime()
+
+    let matchedSession: SessionRow | null = null
+
+    for (let index = sortedSessions.length - 1; index >= 0; index -= 1) {
+      const session = sortedSessions[index]
+      const sessionStart = session.startedAt.getTime()
+      const nextSessionStart = sortedSessions[index + 1]?.startedAt.getTime()
+      const fallbackWindowEnd = sessionStart + 1000 * 60 * 120
+      const sessionEnd = session.endedAt?.getTime() ?? nextSessionStart ?? fallbackWindowEnd
+
+      if (attemptTime >= sessionStart && attemptTime <= sessionEnd) {
+        matchedSession = session
+        break
+      }
+    }
+
+    if (!matchedSession) continue
+
+    const current = buckets.get(matchedSession.id) ?? {
+      attempts: 0,
+      correct: 0,
+    }
+
+    current.attempts += 1
+    current.correct += getAttemptCorrectness(attempt)
+
+    buckets.set(matchedSession.id, current)
+  }
+
+  return sessions.map((session) => {
+    const attached = buckets.get(session.id)
+
+    if (!attached) return session
+
+    return {
+      ...session,
+      ruleAttempts: Math.max(
+        Number(session.ruleAttempts ?? 0),
+        attached.attempts
+      ),
+      correctAnswers: Math.max(
+        Number(session.correctAnswers ?? 0),
+        attached.correct
+      ),
+    }
+  })
+}
+
+
 function inBucket(
   minutes: number,
   bucket: DurationBucketDefinition
@@ -623,11 +708,17 @@ export async function GET(req: Request) {
         }),
       ])
 
-    const typedSessions =
+    const rawSessions =
       sessions as SessionRow[]
 
     const typedRuleAttempts =
       ruleAttempts as RuleAttemptRow[]
+
+    const typedSessions =
+      attachRuleAttemptsToSessions(
+        rawSessions,
+        typedRuleAttempts
+      )
 
     const totalSeconds = typedSessions.reduce(
       (sum, session) =>

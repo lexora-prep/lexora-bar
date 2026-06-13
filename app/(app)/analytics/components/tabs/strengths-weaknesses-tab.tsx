@@ -161,7 +161,7 @@ export default function StrengthsWeaknessesTab({
                     <span className="text-right">Score</span>
                   </div>
 
-                  <div className="divide-y divide-slate-100">
+                  <div className="max-h-[420px] divide-y divide-slate-100 overflow-y-auto pr-2">
                     {data.strengths.slice(0, 6).map((subject) => (
                       <SubjectRow
                         key={subject.subjectId || subject.name}
