@@ -6,6 +6,7 @@ import {
   calculateLearningReadiness,
   countWeakLearningRows,
 } from "@/lib/learning/analytics"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 
 type DayStatus = "fire" | "ice" | "empty"
 
@@ -91,6 +92,28 @@ function percent(correct: number, total: number) {
   return Math.round((correct / total) * 100)
 }
 
+function getEffectiveDashboardBLLGoal(studyPlan: any, totalRules: number) {
+  const fallbackTotalRules =
+    Number.isFinite(totalRules) && totalRules > 0 ? totalRules : 0
+
+  const fallbackDailyRules = Number(studyPlan?.dailyRules ?? 0)
+  const totalDays = Number(studyPlan?.totalDays ?? 0)
+
+  if (Number.isFinite(totalDays) && totalDays > 0 && fallbackTotalRules > 0) {
+    const calculatedGoal = Math.ceil(fallbackTotalRules / totalDays)
+
+    if (Number.isFinite(calculatedGoal) && calculatedGoal > 0) {
+      return calculatedGoal
+    }
+  }
+
+  if (Number.isFinite(fallbackDailyRules) && fallbackDailyRules > 0) {
+    return Math.ceil(fallbackDailyRules)
+  }
+
+  return 0
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await requireAuthenticatedUser(request)
@@ -116,7 +139,20 @@ export async function GET(request: Request) {
     const jurisdiction =
       requestedState?.trim() || profile?.jurisdiction?.trim() || null
 
-    const goalMBE = 60
+    const [studyPlan, ruleUniverse] = await Promise.all([
+      prisma.studyPlan.findUnique({
+        where: { userId },
+        select: {
+          dailyRules: true,
+          totalDays: true,
+        },
+      }),
+      getApplicableRuleUniverseForUser(userId),
+    ])
+
+    const totalRules = ruleUniverse.rules.length
+    const goalMBE = 0
+    const goalBLL = getEffectiveDashboardBLLGoal(studyPlan, totalRules)
 
     const [
       todayMBE,
@@ -380,8 +416,6 @@ export async function GET(request: Request) {
       ((weeklyStudySessionAgg._sum.durationSeconds ?? 0) / 3600).toFixed(1)
     )
 
-    const goalBLL = 20
-
     return NextResponse.json(
       {
         todayMBE,
@@ -425,8 +459,8 @@ export async function GET(request: Request) {
       {
         todayMBE: 0,
         todayBLL: 0,
-        goalMBE: 60,
-        goalBLL: 20,
+        goalMBE: 0,
+        goalBLL: 0,
         overallMBE: 0,
         overallBLL: 0,
         totalMBEQuestions: 0,
