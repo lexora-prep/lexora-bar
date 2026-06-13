@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react"
+import type { RecommendedFocusSession } from "@/lib/analytics/recommendation-engine"
 import { useRouter } from "next/navigation"
 import type {
   ChartPoint,
@@ -116,6 +117,7 @@ export default function OverviewTab({
 
   const displayName = getDisplayName(dashboard)
   const [weakFocusRule, setWeakFocusRule] = useState<WeakFocusRule | null>(null)
+  const [focusSession, setFocusSession] = useState<RecommendedFocusSession | null>(null)
   const [weakFocusCount, setWeakFocusCount] = useState<number | null>(null)
   const [weakFocusLoading, setWeakFocusLoading] = useState(true)
 
@@ -133,6 +135,7 @@ export default function OverviewTab({
 
         if (!response.ok) {
           setWeakFocusRule(null)
+          setFocusSession(null)
           setWeakFocusCount(null)
           return
         }
@@ -149,10 +152,12 @@ export default function OverviewTab({
                 : null
 
         setWeakFocusRule(rule)
+        setFocusSession(payload?.focusSession ?? null)
         setWeakFocusCount(count)
       } catch (error) {
         if ((error as Error).name !== "AbortError") {
           setWeakFocusRule(null)
+          setFocusSession(null)
           setWeakFocusCount(null)
         }
       } finally {
@@ -172,11 +177,12 @@ export default function OverviewTab({
   const hasTrendData = chartData.some((point) => point.score > 0)
   const topWeakSubjects = getTopWeakSubjects(weakestSubject, weakAreas)
   const focusRule = weakFocusRule
-  const focusTitle = getFocusTitle(focusRule)
-  const focusDetail = getFocusDetail(focusRule)
-  const focusRoute = buildFocusRoute(focusRule)
-  const focusTimingLabel = focusRule?.reviewTimingLabel || null
-  const focusQueueCount = weakFocusCount ?? 0
+  const focusTitle = focusSession?.title ?? getFocusTitle(focusRule)
+  const focusDetail = focusSession?.detail ?? getFocusDetail(focusRule)
+  const focusRoute = focusSession?.route ?? buildFocusRoute(focusRule)
+  const focusTimingLabel =
+    focusSession?.reviewTimingLabel || focusRule?.reviewTimingLabel || null
+  const focusQueueCount = focusSession?.queueSize ?? weakFocusCount ?? 0
   const subjectRisks = buildRiskItems(riskBuckets, strongSubjects, weakestSubject)
   const bestRangeLabel = getBestSessionRangeLabel(dashboard)
   const summary = buildSummary({
@@ -476,7 +482,8 @@ export default function OverviewTab({
                   <span className="font-normal text-[#10153d]">
                     Why this works:
                   </span>{" "}
-                  {focusRule.recommendationReason ||
+                  {focusSession?.reason ||
+                    focusRule.recommendationReason ||
                     focusRule.priorityReason ||
                     `This rule is ranked first in the same weak-focus queue used by Rule Training. Current queue size: ${focusQueueCount}.`}
                 </div>

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 import { requireAuthenticatedUser } from "@/lib/authenticated-user"
+import { buildRecommendedFocusSession } from "@/lib/analytics/recommendation-engine"
 import {
   LEARNING_PROGRESS_SELECT,
   learningPriority,
@@ -172,10 +173,16 @@ export async function GET(request: Request) {
       )
       .slice(0, limit)
 
+    const focusSession = buildRecommendedFocusSession(
+      weakAreas[0] ?? null,
+      weakAreas.length
+    )
+
     return NextResponse.json(
       {
         weakAreas,
         rules: weakAreas,
+        focusSession,
         count: weakAreas.length,
         dueCount: weakAreas.filter((row) => row.reviewAvailableNow).length,
         repeatedFailureCount: weakAreas.filter(
@@ -190,6 +197,7 @@ export async function GET(request: Request) {
       {
         weakAreas: [],
         rules: [],
+        focusSession: null,
         count: 0,
         dueCount: 0,
         repeatedFailureCount: 0,
