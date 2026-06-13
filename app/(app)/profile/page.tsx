@@ -406,16 +406,16 @@ export default function ProfilePage() {
                   ? "Manage your personal information. Exam details are locked to protect your study plan."
                   : null}
                 {activeTab === "security"
-                  ? "Manage your login password and current session."
+                  ? "Update your password and manage the current session."
                   : null}
                 {activeTab === "subscription"
-                  ? "View your plan, access, billing controls, and included premium features."
+                  ? "View billing details, plan access, and included premium features."
                   : null}
                 {activeTab === "support"
-                  ? "Support tickets are handled in the existing support center."
+                  ? "Open the support center for billing, account, or technical help."
                   : null}
                 {activeTab === "danger"
-                  ? "Permanent account actions require confirmation and support verification."
+                  ? "Request deletion only after confirming the action."
                   : null}
               </p>
             </div>
