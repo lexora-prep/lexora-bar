@@ -71,12 +71,24 @@ export async function GET(req: Request) {
     const { user } = auth
     const profile = await getOrCreateProfile(user)
 
+    const studyPlan = await prisma.studyPlan.findFirst({
+      where: { userId: profile.id },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        jurisdictionName: true,
+        jurisdictionCode: true,
+        examRegime: true,
+      },
+    })
+
     return NextResponse.json({
       id: profile.id,
       email: profile.email,
       full_name: profile.full_name,
       law_school: profile.law_school,
-      jurisdiction: profile.jurisdiction,
+      jurisdiction: studyPlan?.jurisdictionName || profile.jurisdiction,
+      jurisdiction_code: studyPlan?.jurisdictionCode || null,
+      exam_regime: studyPlan?.examRegime || null,
       exam_month: profile.exam_month,
       exam_year: profile.exam_year,
 
@@ -147,9 +159,8 @@ export async function PATCH(req: Request) {
       updateData.law_school = normalizeNullableString(body.lawSchool)
     }
 
-    if ("jurisdiction" in body) {
-      updateData.jurisdiction = normalizeNullableString(body.jurisdiction)
-    }
+    // Jurisdiction is controlled by the Study Plan / Study Calendar only.
+    // Do not update it from Profile, because changing it here would desync the study schedule.
 
     if ("examMonth" in body) {
       updateData.exam_month = normalizeNullableNumber(body.examMonth, 1, 12)
