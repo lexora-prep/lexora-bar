@@ -217,12 +217,9 @@ export default function LearningInsightsTab({
             label="REVIEW PRIORITY"
             title={weakestLabel}
             text={
-              primaryWeakArea
-                ? primaryWeakArea.rule ||
-                  primaryWeakArea.title ||
-                  primaryWeakArea.topic ||
-                  "This weak area needs focused review."
-                : "No confirmed weak rule exists yet."
+              focusSession?.ruleTitle ||
+              focusSession?.topic ||
+              "No confirmed weak rule exists yet."
             }
             tone="red"
             data={chartData}
