@@ -187,17 +187,24 @@ export default function ProfilePage() {
     setPasswordError("")
     setPasswordMessage("")
 
-    if (newPassword.length < 8) {
+    const cleanPassword = newPassword.trim()
+    const cleanConfirmPassword = confirmNewPassword.trim()
+
+    if (cleanPassword.length < 8) {
       setPasswordError("Password must be at least 8 characters.")
       return
     }
 
-    if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
+    if (
+      !/[A-Za-z]/.test(cleanPassword) ||
+      !/\d/.test(cleanPassword) ||
+      !/[^A-Za-z0-9]/.test(cleanPassword)
+    ) {
       setPasswordError("Password must include a letter, a number, and a special character.")
       return
     }
 
-    if (newPassword !== confirmNewPassword) {
+    if (cleanPassword !== cleanConfirmPassword) {
       setPasswordError("Passwords do not match.")
       return
     }
@@ -205,21 +212,38 @@ export default function ProfilePage() {
     try {
       setPasswordSaving(true)
 
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        console.error("PASSWORD SESSION ERROR:", sessionError)
+        setPasswordError(sessionError.message || "Unable to verify your login session.")
+        return
+      }
+
+      if (!session) {
+        setPasswordError("Your login session expired. Please log out, log back in, and try again.")
+        return
+      }
+
       const { error } = await supabase.auth.updateUser({
-        password: newPassword,
+        password: cleanPassword,
       })
 
       if (error) {
+        console.error("PASSWORD UPDATE SUPABASE ERROR:", error)
         setPasswordError(error.message || "Unable to update password.")
         return
       }
 
       setNewPassword("")
       setConfirmNewPassword("")
-      setPasswordMessage("Password updated successfully.")
+      setPasswordMessage("Password updated successfully. Use the new password the next time you log in.")
     } catch (err) {
       console.error("PASSWORD UPDATE ERROR:", err)
-      setPasswordError("Unable to update password.")
+      setPasswordError("Unable to update password. Please try again or use Forgot Password from the login page.")
     } finally {
       setPasswordSaving(false)
     }
