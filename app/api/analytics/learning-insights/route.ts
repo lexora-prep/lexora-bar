@@ -138,15 +138,32 @@ export async function GET(request: Request) {
       toNumber(session.ruleAttempts) > 0
     )
 
-    const effectiveStudySeconds = scoredSessions.reduce(
+    const scoredRecallAttempts = scoredAttempts.filter((attempt: any) =>
+      toNumber(attempt.recall_seconds) > 0
+    )
+
+    const sessionStudySeconds = scoredSessions.reduce(
       (sum: number, session: any) => sum + toNumber(session.durationSeconds),
       0
     )
 
+    const recallStudySeconds = scoredRecallAttempts.reduce(
+      (sum: number, attempt: any) => sum + toNumber(attempt.recall_seconds),
+      0
+    )
+
+    const effectiveStudySeconds =
+      sessionStudySeconds > 0 ? sessionStudySeconds : recallStudySeconds
+
     const activeDaySet = new Set(
-      scoredSessions.map((session: any) =>
-        new Date(session.startedAt).toISOString().slice(0, 10)
-      )
+      [
+        ...scoredSessions.map((session: any) =>
+          new Date(session.startedAt).toISOString().slice(0, 10)
+        ),
+        ...scoredAttempts.map((attempt: any) =>
+          new Date(attempt.created_at).toISOString().slice(0, 10)
+        ),
+      ]
     )
 
     const sessionBuckets = [
@@ -156,30 +173,52 @@ export async function GET(request: Request) {
       { key: "36to50", label: "36–50 min", min: 36, max: 50 },
       { key: "over50", label: "Over 50 min", min: 51, max: 100000 },
     ].map((bucket) => {
-      const matching = scoredSessions.filter((session: any) => {
+      const matchingSessions = scoredSessions.filter((session: any) => {
         const minutes = toNumber(session.durationSeconds) / 60
         return minutes >= bucket.min && minutes <= bucket.max
       })
 
-      const attemptsInBucket = matching.reduce(
+      const attemptsInSessionBucket = matchingSessions.reduce(
         (sum: number, session: any) => sum + toNumber(session.ruleAttempts),
         0
       )
 
-      const correctInBucket = matching.reduce(
+      const correctInSessionBucket = matchingSessions.reduce(
         (sum: number, session: any) => sum + toNumber(session.correctAnswers),
         0
       )
 
+      if (attemptsInSessionBucket > 0) {
+        return {
+          key: bucket.key,
+          label: bucket.label,
+          sessions: matchingSessions.length,
+          attempts: attemptsInSessionBucket,
+          accuracy: round((correctInSessionBucket / attemptsInSessionBucket) * 100),
+          source: "session",
+        }
+      }
+
+      const matchingRecallAttempts = scoredRecallAttempts.filter((attempt: any) => {
+        const minutes = toNumber(attempt.recall_seconds) / 60
+        return minutes >= bucket.min && minutes <= bucket.max
+      })
+
       return {
         key: bucket.key,
         label: bucket.label,
-        sessions: matching.length,
-        attempts: attemptsInBucket,
+        sessions: matchingRecallAttempts.length,
+        attempts: matchingRecallAttempts.length,
         accuracy:
-          attemptsInBucket > 0
-            ? round((correctInBucket / attemptsInBucket) * 100)
+          matchingRecallAttempts.length > 0
+            ? round(
+                matchingRecallAttempts.reduce(
+                  (sum: number, attempt: any) => sum + toNumber(attempt.score),
+                  0
+                ) / matchingRecallAttempts.length
+              )
             : null,
+        source: "attempt",
       }
     })
 
@@ -221,7 +260,8 @@ export async function GET(request: Request) {
       focusScoreFormula: "Average scored recall weighted with active-day consistency.",
       sessionBuckets,
       hasEnoughBehaviorData: totalAttempts > 0,
-      hasEnoughSessionData: scoredSessions.length > 0,
+      hasEnoughSessionData: scoredSessions.length > 0 || scoredRecallAttempts.length > 0,
+      timingSource: sessionStudySeconds > 0 ? "session" : recallStudySeconds > 0 ? "recall_seconds" : "none",
     })
   } catch (error) {
     console.error("LEARNING INSIGHTS METRICS ERROR:", error)

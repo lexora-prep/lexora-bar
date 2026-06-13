@@ -8,6 +8,7 @@ import {
   Clock3,
   HelpCircle,
   Keyboard,
+  Lightbulb,
   PenLine,
   RotateCcw,
   Sparkles,
@@ -51,6 +52,7 @@ type LearningMetrics = {
   focusScoreFormula: string
   hasEnoughBehaviorData: boolean
   hasEnoughSessionData: boolean
+  timingSource?: "session" | "recall_seconds" | "none"
 }
 
 type LearningInsightsTabProps = {
@@ -125,6 +127,7 @@ export default function LearningInsightsTab({
   const [metricsLoading, setMetricsLoading] = useState(true)
   const [focusSession, setFocusSession] = useState<RecommendedFocusSession | null>(null)
   const [focusLoading, setFocusLoading] = useState(true)
+  const [activeModeKey, setActiveModeKey] = useState<string | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -207,6 +210,10 @@ export default function LearningInsightsTab({
 
   const modeMix = metrics?.modeMix ?? []
   const totalModeAttempts = modeMix.reduce((sum, item) => sum + item.count, 0)
+  const activeMode =
+    modeMix.find((item) => item.key === activeModeKey) ||
+    modeMix.find((item) => item.count > 0) ||
+    null
   const donutGradient = useMemo(() => buildConicGradient(modeMix), [modeMix])
 
   const bestSessionLength =
@@ -344,33 +351,34 @@ export default function LearningInsightsTab({
           ) : totalModeAttempts > 0 ? (
             <div>
               <div className="grid grid-cols-[150px_1fr] items-center gap-4">
-                <div className="relative mx-auto h-32 w-32">
-                  <div
-                    className="h-32 w-32 rounded-full"
-                    style={{ background: donutGradient }}
-                  />
-                  <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white shadow-inner">
-                    <div className="text-[20px] font-semibold tracking-[-0.04em] text-[#10153d]">
-                      {totalModeAttempts}
-                    </div>
-                    <div className="text-[9px] font-normal text-slate-500">
-                      Attempts
-                    </div>
-                  </div>
-                </div>
+                <InteractiveModeDonut
+                  modeMix={modeMix}
+                  totalModeAttempts={totalModeAttempts}
+                  activeModeKey={activeModeKey}
+                  onHover={setActiveModeKey}
+                  gradient={donutGradient}
+                />
 
                 <div className="space-y-2.5">
                   {modeMix.map((item) => (
-                    <ModeLine key={item.key} item={item} />
+                    <ModeLine
+                      key={item.key}
+                      item={item}
+                      active={item.key === activeModeKey}
+                      onHover={setActiveModeKey}
+                    />
                   ))}
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl bg-violet-50 px-3 py-2.5 text-[10px] font-normal leading-4 text-[#46306f]">
-                <span className="font-semibold text-violet-700">What this means: </span>
-                {topModeLabel !== "More data needed"
-                  ? `${topModeLabel} is currently your most recorded training method. Use ordering or buzzwords when you keep missing structure or key terms.`
-                  : "Training method mix will appear after scored attempts are recorded."}
+              <div className="mt-4 flex items-start gap-2 rounded-xl bg-violet-50 px-3 py-2.5 text-[10px] font-normal leading-4 text-[#46306f]">
+                <Lightbulb size={15} className="mt-0.5 shrink-0 text-violet-700" />
+                <div>
+                  <span className="font-semibold text-violet-700">What this means: </span>
+                  {activeMode
+                    ? `${activeMode.label} represents ${activeMode.percentage}% of your recorded training activity in this range.`
+                    : "Training method mix will appear after scored attempts are recorded."}
+                </div>
               </div>
             </div>
           ) : (
@@ -435,8 +443,8 @@ export default function LearningInsightsTab({
           <HelpCircle size={13} className="text-slate-400" />
         </div>
 
-        <div className="grid grid-cols-1 items-center gap-3 lg:grid-cols-[1fr_auto]">
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 items-center gap-3 xl:grid-cols-[1fr_300px]">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <TakeawayStep
               icon={<Clock3 size={17} />}
               title="Short Blocks"
@@ -572,16 +580,96 @@ function PatternStep({
   )
 }
 
-function ModeLine({ item }: { item: ModeMetric }) {
+function InteractiveModeDonut({
+  modeMix,
+  totalModeAttempts,
+  activeModeKey,
+  onHover,
+  gradient,
+}: {
+  modeMix: ModeMetric[]
+  totalModeAttempts: number
+  activeModeKey: string | null
+  onHover: (key: string | null) => void
+  gradient: string
+}) {
+  const activeMode =
+    modeMix.find((item) => item.key === activeModeKey) ||
+    modeMix.find((item) => item.count > 0) ||
+    null
+
   return (
-    <div className="grid grid-cols-[10px_1fr_auto] items-center gap-2.5 text-[10px]">
+    <div className="relative mx-auto h-32 w-32">
+      <div
+        className="h-32 w-32 rounded-full transition duration-300 hover:scale-[1.04]"
+        style={{ background: gradient }}
+        onMouseLeave={() => onHover(null)}
+      />
+      <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white shadow-inner">
+        <div className="text-[20px] font-semibold tracking-[-0.04em] text-[#10153d]">
+          {totalModeAttempts}
+        </div>
+        <div className="text-[9px] font-normal text-slate-500">
+          Attempts
+        </div>
+      </div>
+
+      {modeMix.map((item, index) => (
+        <button
+          key={item.key}
+          type="button"
+          aria-label={item.label}
+          onMouseEnter={() => onHover(item.key)}
+          onFocus={() => onHover(item.key)}
+          className={`absolute h-8 w-8 rounded-full transition duration-200 ${
+            activeModeKey === item.key ? "scale-125 bg-white/70 shadow-lg" : "bg-transparent"
+          }`}
+          style={{
+            left: `${50 + Math.cos((index / Math.max(modeMix.length, 1)) * Math.PI * 2 - Math.PI / 2) * 48}%`,
+            top: `${50 + Math.sin((index / Math.max(modeMix.length, 1)) * Math.PI * 2 - Math.PI / 2) * 48}%`,
+            transform: "translate(-50%, -50%)",
+          }}
+        />
+      ))}
+
+      {activeMode ? (
+        <div className="absolute left-1/2 top-full z-10 mt-2 w-40 -translate-x-1/2 rounded-xl border border-violet-100 bg-white px-3 py-2 text-center text-[9px] shadow-xl">
+          <div className="font-semibold text-[#10153d]">{activeMode.label}</div>
+          <div className="mt-0.5 text-slate-500">
+            {activeMode.count} attempts · {activeMode.percentage}%
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function ModeLine({
+  item,
+  active,
+  onHover,
+}: {
+  item: ModeMetric
+  active: boolean
+  onHover: (key: string | null) => void
+}) {
+  return (
+    <button
+      type="button"
+      onMouseEnter={() => onHover(item.key)}
+      onMouseLeave={() => onHover(null)}
+      onFocus={() => onHover(item.key)}
+      className={`grid w-full grid-cols-[10px_1fr_auto] items-center gap-2.5 rounded-lg px-1.5 py-1 text-left text-[10px] transition ${
+        active ? "bg-violet-50 scale-[1.01]" : "hover:bg-slate-50"
+      }`}
+    >
       <span
-        className="h-2.5 w-2.5 rounded-full"
+        className={`h-2.5 w-2.5 rounded-full transition ${active ? "scale-125" : ""}`}
         style={{ backgroundColor: MODE_COLORS[item.key] ?? MODE_COLORS.other }}
       />
       <span className="text-[#30395a]">{item.label}</span>
       <span className="font-semibold text-[#10153d]">{item.percentage}%</span>
-    </div>
+    </button>
   )
 }
 
