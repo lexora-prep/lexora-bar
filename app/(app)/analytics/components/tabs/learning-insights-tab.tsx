@@ -215,6 +215,10 @@ export default function LearningInsightsTab({
     modeMix.find((item) => item.key === activeModeKey) ||
     modeMix.find((item) => item.count > 0) ||
     null
+
+  const activeModeMeaning = activeMode
+    ? `${activeMode.label} represents ${activeMode.percentage}% of your recorded training activity in this range, based on ${activeMode.count} real attempts.`
+    : "Training method mix will appear after scored attempts are recorded."
   const donutGradient = useMemo(() => buildConicGradient(modeMix), [modeMix])
 
   const bestSessionLength =
@@ -393,9 +397,7 @@ export default function LearningInsightsTab({
                 <Lightbulb size={15} className="mt-0.5 shrink-0 text-violet-700" />
                 <div>
                   <span className="font-semibold text-violet-700">What this means: </span>
-                  {activeMode
-                    ? `${activeMode.label} represents ${activeMode.percentage}% of your recorded training activity in this range.`
-                    : "Training method mix will appear after scored attempts are recorded."}
+                  {activeModeMeaning}
                 </div>
               </div>
             </div>
@@ -495,56 +497,14 @@ export default function LearningInsightsTab({
             <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-violet-700">
               <span className="relative flex h-7 w-7 items-center justify-center rounded-xl bg-white text-violet-700 shadow-sm">
                 <Sparkles size={14} />
-                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400" />
               </span>
               Your Goal
             </div>
 
-            <p className="typewriter-goal relative pr-1">
+            <p className="relative min-h-[42px] pr-1">
               {typedGoalText}
             </p>
-
-            <style jsx>{`
-              .typewriter-goal {
-                min-height: 42px;
-                overflow: hidden;
-                display: -webkit-box;
-                -webkit-line-clamp: 3;
-                -webkit-box-orient: vertical;
-              }
-
-              .typewriter-goal::after {
-                content: "";
-                display: inline-block;
-                width: 6px;
-                height: 12px;
-                margin-left: 3px;
-                transform: translateY(2px);
-                border-radius: 999px;
-                background: #7c3aed;
-                animation: goalCursor 900ms steps(1) infinite;
-              }
-
-              @keyframes goalFadeIn {
-                from {
-                  opacity: 0;
-                  transform: translateY(4px);
-                }
-                to {
-                  opacity: 1;
-                  transform: translateY(0);
-                }
-              }
-
-              @keyframes goalCursor {
-                0%, 45% {
-                  opacity: 1;
-                }
-                46%, 100% {
-                  opacity: 0;
-                }
-              }
-            `}</style>
           </div>
         </div>
       </section>
@@ -628,8 +588,7 @@ function PatternStep({
 }) {
   return (
     <div className="grid grid-cols-[28px_34px_1fr] items-start gap-2.5">
-      <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-violet-700 shadow-[0_6px_16px_rgba(109,40,217,0.12)] ring-1 ring-violet-100">
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-violet-500" />
+      <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-violet-100 bg-violet-50 text-[10px] font-semibold text-violet-700">
         {number}
       </div>
       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
@@ -682,6 +641,10 @@ function InteractiveModeDonut({
     modeMix.find((item) => item.key === activeModeKey) ||
     modeMix.find((item) => item.count > 0) ||
     null
+
+  const activeModeMeaning = activeMode
+    ? `${activeMode.label} represents ${activeMode.percentage}% of your recorded training activity in this range, based on ${activeMode.count} real attempts.`
+    : "Training method mix will appear after scored attempts are recorded."
 
   let cursor = 0
   const visibleModes = modeMix.filter((item) => item.percentage > 0)
@@ -742,14 +705,7 @@ function InteractiveModeDonut({
         </div>
       </div>
 
-      <div className="absolute left-1/2 top-full mt-2 min-h-[28px] w-48 -translate-x-1/2 text-center text-[9px]">
-        {activeModeKey && activeMode ? (
-          <div className="text-[#46306f]">
-            <span className="font-semibold text-[#10153d]">{activeMode.label}</span>
-            <span className="text-slate-500"> · {activeMode.count} real attempts · {activeMode.percentage}%</span>
-          </div>
-        ) : null}
-      </div>
+
     </div>
   )
 }
