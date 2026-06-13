@@ -507,8 +507,8 @@ function JurisdictionDrawer({
                                 <div className="min-w-0">
                                   <p className="truncate text-[12px] font-semibold text-slate-800">{subject.name}</p>
                                   <p className="mt-0.5 text-[10px] text-slate-400">
-                                    {subject.globalRuleCount} core
-                                    {subject.jurisdictionRuleCount ? ` · ${subject.jurisdictionRuleCount} jurisdiction-specific` : ""}
+                                    {subject.ruleCount.toLocaleString()} applicable rules
+                                    {subject.jurisdictionRuleCount ? ` · ${subject.jurisdictionRuleCount.toLocaleString()} jurisdiction-specific` : ""}
                                   </p>
                                 </div>
                                 <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-slate-700 ring-1 ring-slate-200">
