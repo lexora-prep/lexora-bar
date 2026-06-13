@@ -153,7 +153,7 @@ export default function LearningInsightsTab({
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex h-7 items-center gap-1.5 rounded-md border border-violet-100 bg-violet-50 px-2.5 text-[11px] font-normal text-violet-700">
                 <Sparkles size={13} />
-                Lexora AI
+                Learning Signal
               </span>
 
               <h2 className="text-[17px] font-normal tracking-[-0.025em] text-[#10153d]">
@@ -693,11 +693,11 @@ export default function LearningInsightsTab({
           <div className="min-w-[210px] flex-1">
             <div className="flex items-center gap-2">
               <h3 className="text-[13px] font-normal text-[#11163c]">
-                AI Recommendation
+                Current Learning Recommendation
               </h3>
 
               <span className="rounded-md bg-violet-100 px-2 py-0.5 text-[9px] font-normal text-violet-700">
-                Lexora AI
+                Learning Signal
               </span>
             </div>
 
@@ -706,7 +706,7 @@ export default function LearningInsightsTab({
                 ? `Begin with ${primaryWeakArea.subject}: ${
                     primaryWeakArea.rule ||
                     primaryWeakArea.title ||
-                    "your highest-priority weak rule"
+                    "the current shared weak-focus rule"
                   }. Review it, test active recall, and repeat until recall becomes stable.`
                 : "Complete more rule training to generate a reliable personalized recommendation."}
             </p>
