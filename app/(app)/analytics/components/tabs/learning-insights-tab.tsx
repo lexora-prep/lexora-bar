@@ -128,6 +128,7 @@ export default function LearningInsightsTab({
   const [focusSession, setFocusSession] = useState<RecommendedFocusSession | null>(null)
   const [focusLoading, setFocusLoading] = useState(true)
   const [activeModeKey, setActiveModeKey] = useState<string | null>(null)
+  const [typedGoalText, setTypedGoalText] = useState("")
 
   useEffect(() => {
     const controller = new AbortController()
@@ -235,6 +236,24 @@ export default function LearningInsightsTab({
   const goalText = focusSession
     ? `Use the live weak-focus queue for ${focusSession.subject}. Repeat weak rules until recall becomes stable.`
     : "Keep recording scored recall attempts so Lexora can identify a reliable weak-focus path."
+
+  useEffect(() => {
+    setTypedGoalText("")
+
+    if (!goalText) return
+
+    let index = 0
+    const timer = window.setInterval(() => {
+      index += 1
+      setTypedGoalText(goalText.slice(0, index))
+
+      if (index >= goalText.length) {
+        window.clearInterval(timer)
+      }
+    }, 22)
+
+    return () => window.clearInterval(timer)
+  }, [goalText])
 
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -482,16 +501,16 @@ export default function LearningInsightsTab({
             </div>
 
             <p className="typewriter-goal relative pr-1">
-              {goalText}
+              {typedGoalText}
             </p>
 
             <style jsx>{`
               .typewriter-goal {
+                min-height: 42px;
                 overflow: hidden;
                 display: -webkit-box;
                 -webkit-line-clamp: 3;
                 -webkit-box-orient: vertical;
-                animation: goalFadeIn 420ms ease-out both;
               }
 
               .typewriter-goal::after {
@@ -723,14 +742,14 @@ function InteractiveModeDonut({
         </div>
       </div>
 
-      {activeMode ? (
-        <div className="absolute left-1/2 top-full z-10 mt-2 w-44 -translate-x-1/2 rounded-xl border border-violet-100 bg-white px-3 py-2 text-center text-[9px] shadow-xl">
-          <div className="font-semibold text-[#10153d]">{activeMode.label}</div>
-          <div className="mt-0.5 text-slate-500">
-            {activeMode.count} real attempts · {activeMode.percentage}%
+      <div className="absolute left-1/2 top-full mt-2 min-h-[28px] w-48 -translate-x-1/2 text-center text-[9px]">
+        {activeModeKey && activeMode ? (
+          <div className="text-[#46306f]">
+            <span className="font-semibold text-[#10153d]">{activeMode.label}</span>
+            <span className="text-slate-500"> · {activeMode.count} real attempts · {activeMode.percentage}%</span>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   )
 }
