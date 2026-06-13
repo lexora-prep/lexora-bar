@@ -232,6 +232,10 @@ export default function LearningInsightsTab({
       ? `You learn best with ${metrics.bestSessionLengthLabel.toLowerCase()}, ${metrics.topMode.label.toLowerCase()} sessions.`
       : "More scored activity is needed before Lexora can identify your strongest learning pattern."
 
+  const goalText = focusSession
+    ? `Use the live weak-focus queue for ${focusSession.subject}. Repeat weak rules until recall becomes stable.`
+    : "Keep recording scored recall attempts so Lexora can identify a reliable weak-focus path."
+
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <AnalyticsInterpretation
@@ -467,14 +471,61 @@ export default function LearningInsightsTab({
             />
           </div>
 
-          <div className="rounded-2xl bg-violet-50 px-4 py-3 text-[10px] font-normal leading-4 text-[#46306f] lg:w-64">
+          <div className="relative overflow-hidden rounded-2xl bg-violet-50 px-4 py-3 text-[10px] font-normal leading-4 text-[#46306f] lg:w-64">
+            <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-violet-200/40 blur-2xl" />
             <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-violet-700">
-              <Sparkles size={14} />
+              <span className="relative flex h-7 w-7 items-center justify-center rounded-xl bg-white text-violet-700 shadow-sm">
+                <Sparkles size={14} />
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              </span>
               Your Goal
             </div>
-            {focusSession
-              ? `Use the live weak-focus queue for ${focusSession.subject}. Repeat weak rules until recall becomes stable.`
-              : "Keep recording scored recall attempts so Lexora can identify a reliable weak-focus path."}
+
+            <p className="typewriter-goal relative pr-1">
+              {goalText}
+            </p>
+
+            <style jsx>{`
+              .typewriter-goal {
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                animation: goalFadeIn 420ms ease-out both;
+              }
+
+              .typewriter-goal::after {
+                content: "";
+                display: inline-block;
+                width: 6px;
+                height: 12px;
+                margin-left: 3px;
+                transform: translateY(2px);
+                border-radius: 999px;
+                background: #7c3aed;
+                animation: goalCursor 900ms steps(1) infinite;
+              }
+
+              @keyframes goalFadeIn {
+                from {
+                  opacity: 0;
+                  transform: translateY(4px);
+                }
+                to {
+                  opacity: 1;
+                  transform: translateY(0);
+                }
+              }
+
+              @keyframes goalCursor {
+                0%, 45% {
+                  opacity: 1;
+                }
+                46%, 100% {
+                  opacity: 0;
+                }
+              }
+            `}</style>
           </div>
         </div>
       </section>
