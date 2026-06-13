@@ -1673,7 +1673,7 @@ function buildPremiumReferencePdf(
           h(Text, { style: premiumStyles.panelTitle }, "NEXT STEPS"),
           h(Text, { style: premiumStyles.quote }, "Small, consistent actions every day lead to exceptional results."),
           h(Text, { style: premiumStyles.nextStep }, weakestSubject
-            ? `Begin with ${weakestSubject.name}. Complete one focused scored recall session on the lowest-performing rule, then reassess the subject after at least three new scored attempts.`
+            ? `${weakestSubject.name} is the lowest measured subject in this report. Open Rule Training and use the current weak-focus queue for the live recommended rule.`
             : "Continue balanced practice across measured subjects and reassess after additional scored activity is recorded."),
           h(View, { style: { marginTop: 8, borderTopWidth: 0.5, borderTopColor: REPORT_COLORS.border, paddingTop: 6 } },
             h(Text, { style: { color: REPORT_COLORS.violet, fontFamily: "Helvetica-Bold", fontSize: 7 } }, "LEXORA COACHING NOTE"),
@@ -2053,7 +2053,7 @@ function buildExactReferencePdfV2(
           h(Text, { style: exactReportStyles.panelTitle }, "RULE ANALYTICS"),
           h(Text, { style: exactReportStyles.panelSubtitle }, "Share of scored attempts by subject"),
           exactDistribution(supplement.subjects),
-          h(Text, { style: { color: "#53627d", marginTop: 4, lineHeight: 1.25 } }, weakestMeasured ? `Focus first on ${weakestMeasured.name}, currently the lowest measured subject at ${weakestMeasured.accuracy}%.` : "More recorded subject activity is required before a priority can be identified.")
+          h(Text, { style: { color: "#53627d", marginTop: 4, lineHeight: 1.25 } }, weakestMeasured ? `${weakestMeasured.name} is currently the lowest measured subject at ${weakestMeasured.accuracy}%. Use the live weak-focus queue in Rule Training for the current rule recommendation.` : "More recorded subject activity is required before a priority can be identified.")
         )
       ),
 
@@ -2118,7 +2118,7 @@ function buildExactReferencePdfV2(
         h(View, { style: [exactReportStyles.panel, exactReportStyles.bottomPanel] },
           h(Text, { style: exactReportStyles.panelTitle }, "NEXT STEPS"),
           h(Text, { style: exactReportStyles.quote }, "Small, consistent actions every day lead to exceptional results."),
-          h(Text, { style: exactReportStyles.nextStep }, nextRule ? `Begin with ${nextRule.title} in ${nextRule.subjectName}. Complete one focused scored recall session, then reassess after at least three new scored attempts.` : weakestMeasured ? `Begin with ${weakestMeasured.name}. Complete one focused scored recall session, then reassess after at least three new scored attempts.` : "Continue balanced scored practice across measured subjects and reassess after additional activity is recorded."),
+          h(Text, { style: exactReportStyles.nextStep }, nextRule ? `${nextRule.title} in ${nextRule.subjectName} appears in this report's weak-rule records. Use the live weak-focus queue in Rule Training for the current recommended session.` : weakestMeasured ? `${weakestMeasured.name} is the lowest measured subject in this report. Use the live weak-focus queue in Rule Training for the current recommended session.` : "Continue balanced scored practice across measured subjects and reassess after additional activity is recorded."),
           h(View, { style: { flexDirection: "row", marginTop: 10, alignItems: "flex-end" } },
             h(View, { style: { width: "63%" } }, h(Text, { style: { color: "#53627d", fontSize: 5.2, lineHeight: 1.3 } }, "Keep learning. Keep reviewing. Use active recall, not passive reading."), h(Text, { style: { marginTop: 10, fontSize: 8, color: "#11163c", fontFamily: "Helvetica-Oblique" } }, "Lexora Team")),
             h(View, { style: { width: "37%", alignItems: "center" } }, logo ? h(Image, { src: logo, style: { width: 40, height: 40, objectFit: "contain" } }) : null, h(Text, { style: { fontSize: 5.2, color: "#11163c", textAlign: "center", marginTop: 2 } }, "Stay disciplined.\nTrust the process.") )
