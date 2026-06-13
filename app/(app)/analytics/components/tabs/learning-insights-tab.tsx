@@ -1,48 +1,56 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
-import {
-  AlertTriangle,
-  ArrowRight,
   Brain,
   CalendarDays,
   CheckCircle2,
   Clock3,
-  Lightbulb,
-  Lock,
+  HelpCircle,
+  Keyboard,
+  PenLine,
   RotateCcw,
   Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react"
-import { useRouter } from "next/navigation"
-import type { RecommendedFocusSession } from "@/lib/analytics/recommendation-engine"
+
 import type {
   DashboardData,
   SubjectDiagnostic,
   WeakArea,
 } from "../../types"
 import { safeNumber } from "../../lib/analytics-calculations"
-import {
-  ChartTooltip,
-  MiniSparkline,
-} from "../shared/chart-components"
-import { AnalyticsHelp, AnalyticsInterpretation } from "../shared/analytics-interpretation"
+import { AnalyticsInterpretation } from "../shared/analytics-interpretation"
+import type { RecommendedFocusSession } from "@/lib/analytics/recommendation-engine"
 
 type ChartPoint = {
   date: string
   score: number
+}
+
+type ModeMetric = {
+  key: string
+  label: string
+  count: number
+  percentage: number
+}
+
+type LearningMetrics = {
+  rangeDays: number
+  totalAttempts: number
+  totalScoredAttempts: number
+  modeMix: ModeMetric[]
+  topMode: ModeMetric | null
+  bestSessionLengthLabel: string | null
+  bestSessionAccuracy: number | null
+  effectiveStudySeconds: number
+  effectiveStudyLabel: string | null
+  activeDays: number
+  focusScore: number | null
+  focusScoreFormula: string
+  hasEnoughBehaviorData: boolean
+  hasEnoughSessionData: boolean
 }
 
 type LearningInsightsTabProps = {
@@ -57,6 +65,51 @@ type LearningInsightsTabProps = {
   consistencyScore: number
 }
 
+const MODE_COLORS: Record<string, string> = {
+  typing: "#7c3aed",
+  ordering: "#3b82f6",
+  buzzwords: "#34d399",
+  flashcards: "#facc15",
+  other: "#cbd5e1",
+}
+
+function formatScore(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? `${Math.round(value)} / 100`
+    : "More data needed"
+}
+
+function formatPercent(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? `${Math.round(value)}%`
+    : "—"
+}
+
+function buildConicGradient(modeMix: ModeMetric[]) {
+  let cursor = 0
+  const parts: string[] = []
+
+  for (const item of modeMix) {
+    if (item.percentage <= 0) continue
+
+    const start = cursor
+    const end = cursor + item.percentage
+    cursor = end
+
+    parts.push(`${MODE_COLORS[item.key] ?? MODE_COLORS.other} ${start}% ${end}%`)
+  }
+
+  if (parts.length === 0) {
+    return "conic-gradient(#e2e8f0 0% 100%)"
+  }
+
+  if (cursor < 100) {
+    parts.push(`#e2e8f0 ${cursor}% 100%`)
+  }
+
+  return `conic-gradient(${parts.join(", ")})`
+}
+
 export default function LearningInsightsTab({
   dashboard,
   chartData,
@@ -68,12 +121,39 @@ export default function LearningInsightsTab({
   weakAreas,
   consistencyScore,
 }: LearningInsightsTabProps) {
-  const router = useRouter()
+  const [metrics, setMetrics] = useState<LearningMetrics | null>(null)
+  const [metricsLoading, setMetricsLoading] = useState(true)
   const [focusSession, setFocusSession] = useState<RecommendedFocusSession | null>(null)
   const [focusLoading, setFocusLoading] = useState(true)
 
   useEffect(() => {
     const controller = new AbortController()
+
+    async function loadMetrics() {
+      try {
+        setMetricsLoading(true)
+
+        const response = await fetch("/api/analytics/learning-insights?range=30", {
+          cache: "no-store",
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          setMetrics(null)
+          return
+        }
+
+        setMetrics(await response.json())
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setMetrics(null)
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setMetricsLoading(false)
+        }
+      }
+    }
 
     async function loadFocusSession() {
       try {
@@ -102,15 +182,13 @@ export default function LearningInsightsTab({
       }
     }
 
+    loadMetrics()
     loadFocusSession()
 
     return () => controller.abort()
   }, [])
 
-  const hasTrendData = chartData.some(
-    (point) => point.score > 0
-  )
-
+  const hasTrendData = chartData.some((point) => point.score > 0)
   const hasLearningData =
     canUseBLLAnalytics &&
     safeNumber(dashboard.ruleAttempts) > 0
@@ -127,11 +205,31 @@ export default function LearningInsightsTab({
     weakestSubject?.name ||
     "More data needed"
 
+  const modeMix = metrics?.modeMix ?? []
+  const totalModeAttempts = modeMix.reduce((sum, item) => sum + item.count, 0)
+  const donutGradient = useMemo(() => buildConicGradient(modeMix), [modeMix])
+
+  const bestSessionLength =
+    metrics?.bestSessionLengthLabel || "More data needed"
+
+  const effectiveStudy =
+    metrics?.effectiveStudyLabel || "More data needed"
+
+  const topModeLabel =
+    metrics?.topMode && metrics.topMode.count > 0
+      ? metrics.topMode.label
+      : "More data needed"
+
+  const heroSentence =
+    metrics?.bestSessionLengthLabel && metrics?.topMode?.count
+      ? `You learn best with ${metrics.bestSessionLengthLabel.toLowerCase()}, ${metrics.topMode.label.toLowerCase()} sessions.`
+      : "More scored activity is needed before Lexora can identify your strongest learning pattern."
+
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <AnalyticsInterpretation
         title="How to use learning insights"
-        measures="This page interprets measured recall patterns, recent score movement, consistency, and available study-session signals. It does not claim a learning preference when the supporting data is missing."
+        measures="This page uses scored rule attempts, training modes, study-session duration, and the live weak-focus queue. It does not claim a learning pattern when supporting data is missing."
         result={
           hasLearningData
             ? `Your current independent recall accuracy is ${currentScore}%, based on ${safeNumber(dashboard.ruleAttempts).toLocaleString()} recorded attempts. ${activeDays} active ${activeDays === 1 ? "day is" : "days are"} represented in the recent trend.`
@@ -145,926 +243,417 @@ export default function LearningInsightsTab({
               : "Complete several independently scored sessions before changing your study routine."
         }
       />
-      <section className="overflow-hidden rounded-2xl border border-[#ded8f5] bg-gradient-to-br from-[#fbf9ff] via-white to-[#f8f5ff] p-4 shadow-[0_8px_24px_rgba(52,35,110,0.045)]">
-        <div className="grid grid-cols-1 items-center gap-3 lg:grid-cols-[1.42fr_0.58fr]">
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex h-7 items-center gap-1.5 rounded-md border border-violet-100 bg-violet-50 px-2.5 text-[11px] font-normal text-violet-700">
-                <Sparkles size={13} />
-                Learning Signal
-              </span>
 
-              <h2 className="text-[17px] font-normal tracking-[-0.025em] text-[#10153d]">
+      <section className="overflow-hidden rounded-2xl border border-[#ded8f5] bg-gradient-to-br from-[#fbf9ff] via-white to-[#f8f5ff] p-5 shadow-[0_10px_28px_rgba(52,35,110,0.05)]">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_1.4fr]">
+          <div className="flex items-center gap-5">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.6rem] bg-gradient-to-br from-violet-500 to-violet-800 text-white shadow-[0_16px_36px_rgba(109,40,217,0.25)]">
+              <Brain size={38} />
+            </div>
+
+            <div>
+              <h2 className="text-[18px] font-semibold tracking-[-0.025em] text-[#10153d]">
                 How You Learn Best
               </h2>
+
+              <p className="mt-3 text-[15px] font-normal leading-6 text-[#11163c]">
+                {heroSentence}
+              </p>
+
+              <p className="mt-2 max-w-xl text-[11px] font-normal leading-5 text-[#56617c]">
+                {metrics?.bestSessionAccuracy !== null && metrics?.bestSessionAccuracy !== undefined
+                  ? `Your strongest measured session range is based on ${formatPercent(metrics.bestSessionAccuracy)} recorded accuracy in that duration bucket.`
+                  : "Session-length conclusions will appear after scored study sessions with duration data are recorded."}
+              </p>
             </div>
-
-            <p className="mt-3 max-w-2xl text-[18px] font-normal leading-[1.4] tracking-[-0.025em] text-[#11163c] md:text-[20px]">
-              Short, focused study sessions with{" "}
-              <span className="text-violet-700">
-                active rule recall
-              </span>{" "}
-              help you retain rules better.
-            </p>
-
-            <p className="mt-3 max-w-2xl text-[12px] font-normal leading-5 text-[#586580]">
-              {hasLearningData
-                ? `Your current learning profile is based on ${safeNumber(
-                    dashboard.ruleAttempts
-                  ).toLocaleString()} rule attempts, subject accuracy, weak-area records, and recent score movement.`
-                : "Complete more rule-training sessions so Lexora can identify reliable learning patterns."}
-            </p>
           </div>
 
-          <BrainVisual />
-        </div>
+          <div className="grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <HeroMetric
+              icon={<Clock3 size={20} />}
+              title="Best Session Length"
+              value={bestSessionLength}
+              caption={
+                metrics?.bestSessionAccuracy !== null && metrics?.bestSessionAccuracy !== undefined
+                  ? `${formatPercent(metrics.bestSessionAccuracy)} measured accuracy`
+                  : "Needs scored session data"
+              }
+              tone="violet"
+            />
 
-        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <InsightCard
-            icon={<Brain size={19} />}
-            label="TOP INSIGHT"
-            title="Active Rule Recall"
-            text={
-              hasLearningData
-                ? "Rule attempts and weak-area review currently provide your strongest measurable learning signal."
-                : "Complete rule attempts to activate this insight."
-            }
-            tone="green"
-            data={chartData}
-          />
+            <HeroMetric
+              icon={<Target size={20} />}
+              title="Focus Score"
+              value={formatScore(metrics?.focusScore)}
+              caption={metrics?.focusScore ? "Calculated from scored recall and active-day consistency" : "Needs more scored activity"}
+              tone="blue"
+            />
 
-          <InsightCard
-            icon={<Clock3 size={19} />}
-            label="RECENT SIGNAL"
-            title="Score Movement"
-            text={
-              hasTrendData
-                ? delta >= 0
-                  ? `Your recent BLL accuracy improved by ${Math.abs(
-                      delta
-                    )} points.`
-                  : `Your recent BLL accuracy decreased by ${Math.abs(
-                      delta
-                    )} points.`
-                : "No recent score movement is available for this range."
-            }
-            tone="purple"
-            data={chartData}
-          />
-
-          <InsightCard
-            icon={<RotateCcw size={19} />}
-            label="REVIEW PRIORITY"
-            title={weakestLabel}
-            text={
-              focusSession?.ruleTitle ||
-              focusSession?.topic ||
-              "No confirmed weak rule exists yet."
-            }
-            tone="red"
-            data={chartData}
-          />
+            <HeroMetric
+              icon={<CheckCircle2 size={20} />}
+              title="Effective Study Time"
+              value={effectiveStudy}
+              caption="Time with scored recall"
+              tone="green"
+            />
+          </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1fr_0.95fr]">
-        <CompactCard
-          title="Retention Over Time"
-          subtitle="Real BLL accuracy from the selected range"
-          info="A true retention comparison requires review-event tracking. Only real recorded BLL accuracy is displayed."
+      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[0.95fr_1.05fr_1.1fr]">
+        <LearningCard
+          title="Best Study Pattern"
+          subtitle="Follow this cycle when the weak-focus queue is available."
         >
-          {hasTrendData ? (
-            <div className="h-[175px]">
-              <ResponsiveContainer
-                width="100%"
-                height="100%"
-              >
-                <LineChart
-                  data={chartData}
-                  margin={{
-                    top: 8,
-                    right: 8,
-                    left: -20,
-                    bottom: 0,
-                  }}
-                >
-                  <CartesianGrid
-                    stroke="#eef1f6"
-                    vertical={false}
-                  />
+          <div className="space-y-5">
+            <PatternStep
+              number="1"
+              icon={<Brain size={18} />}
+              title="Review weak rule"
+              text={
+                focusSession
+                  ? focusSession.ruleTitle
+                  : "A weak-focus rule will appear after enough scored data is recorded."
+              }
+            />
+            <PatternStep
+              number="2"
+              icon={<Keyboard size={18} />}
+              title="Type from memory"
+              text="Reproduce the rule in your own words before checking the answer."
+            />
+            <PatternStep
+              number="3"
+              icon={<CheckCircle2 size={18} />}
+              title="Retest once"
+              text="Check your answer and repeat the rule if recall is still unstable."
+            />
 
-                  <XAxis
-                    dataKey="date"
-                    tick={{
-                      fontSize: 9,
-                      fontWeight: 400,
-                    }}
-                    tickLine={false}
-                    axisLine={false}
-                    minTickGap={18}
-                  />
+            <div className="rounded-xl bg-emerald-50 px-4 py-3 text-[11px] font-normal leading-5 text-emerald-800">
+              Immediate recall plus retest is used as a study pattern. The actual target rule comes from your live weak-focus queue.
+            </div>
+          </div>
+        </LearningCard>
 
-                  <YAxis
-                    domain={[0, 100]}
-                    tick={{
-                      fontSize: 9,
-                      fontWeight: 400,
-                    }}
-                    tickLine={false}
-                    axisLine={false}
+        <LearningCard
+          title="Learning Behavior Mix"
+          subtitle="Your scored attempts by training method."
+        >
+          {metricsLoading ? (
+            <EmptyLearningState text="Loading real training-mode data..." />
+          ) : totalModeAttempts > 0 ? (
+            <div>
+              <div className="grid grid-cols-1 items-center gap-5 sm:grid-cols-[190px_1fr]">
+                <div className="relative mx-auto h-40 w-40">
+                  <div
+                    className="h-40 w-40 rounded-full"
+                    style={{ background: donutGradient }}
                   />
+                  <div className="absolute inset-8 flex flex-col items-center justify-center rounded-full bg-white shadow-inner">
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-[#10153d]">
+                      {totalModeAttempts}
+                    </div>
+                    <div className="text-[11px] font-normal text-slate-500">
+                      Attempts
+                    </div>
+                  </div>
+                </div>
 
-                  <Tooltip content={<ChartTooltip />} />
+                <div className="space-y-3">
+                  {modeMix.map((item) => (
+                    <ModeLine key={item.key} item={item} />
+                  ))}
+                </div>
+              </div>
 
-                  <Line
-                    name="BLL Accuracy"
-                    type="monotone"
-                    dataKey="score"
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    dot={{
-                      r: 2.5,
-                      fill: "#ffffff",
-                      strokeWidth: 1.5,
-                    }}
-                    activeDot={{
-                      r: 4,
-                    }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="mt-5 rounded-xl bg-violet-50 px-4 py-3 text-[11px] font-normal leading-5 text-[#46306f]">
+                <span className="font-semibold text-violet-700">What this means: </span>
+                {topModeLabel !== "More data needed"
+                  ? `${topModeLabel} is currently your most recorded training method. Use ordering or buzzwords when you keep missing structure or key terms.`
+                  : "Training method mix will appear after scored attempts are recorded."}
+              </div>
             </div>
           ) : (
-            <CompactEmpty text="No real BLL trend exists for the selected range." />
+            <EmptyLearningState text="Training method mix will appear after scored attempts are recorded." />
           )}
+        </LearningCard>
 
-          <InsightNote
-            icon={<Lightbulb size={14} />}
-            tone="blue"
-            text="Retention comparisons will become available after review-event tracking is connected."
-          />
-        </CompactCard>
-
-        <CompactCard
-          title="Best Study Pattern"
-          subtitle="Current recommended workflow"
-          info="This is a practical recommendation based on current weak areas and subject accuracy, not a measured causal ranking."
+        <LearningCard
+          title="Personalized Learning Recommendation"
+          subtitle="Connected to the current weak-focus queue."
         >
-          <div className="space-y-2">
-            <PatternRow
-              rank="1"
-              text="Review weak rule → Active recall → Retest"
-              badge={
-                weakAreas.length > 0
-                  ? "Best current move"
-                  : "Needs data"
+          <div className="space-y-5">
+            <RecommendationLine
+              icon={<Target size={18} />}
+              tone="violet"
+              title={
+                focusSession
+                  ? focusSession.title
+                  : "No weak-focus rule available yet"
               }
-              active
-            />
-
-            <PatternRow
-              rank="2"
-              text="Rule bank → Focused rule training"
-              badge={strongestLabel}
-            />
-
-            <PatternRow
-              rank="3"
-              text="Weak areas → Targeted recall"
-              badge={weakestLabel}
-            />
-
-            <PatternRow
-              rank="4"
-              text="Flashcards → Rule review"
-              badge="Available"
-            />
-
-            <PatternRow
-              rank="5"
-              text="Study plan → Daily review"
-              badge="Available"
-            />
-          </div>
-
-          <InsightNote
-            icon={<Brain size={14} />}
-            tone="green"
-            text="Start with your weakest confirmed rule, then test recall immediately."
-          />
-        </CompactCard>
-
-        <CompactCard
-          title="Optimal Session Length"
-          info="A reliable session-length recommendation requires real study-session duration and performance data."
-        >
-          <div className="relative mx-auto mt-1 flex h-[160px] max-w-[260px] items-end justify-center overflow-hidden">
-            <div className="absolute top-5 h-[145px] w-[230px] rounded-t-[230px] border-[16px] border-b-0 border-slate-100" />
-
-            <div className="absolute top-5 h-[145px] w-[230px] rounded-t-[230px] border-[16px] border-b-0 border-violet-200 opacity-60 [clip-path:polygon(0_0,55%_0,50%_100%,0_100%)]" />
-
-            <div className="relative mb-6 text-center">
-              <Lock
-                size={18}
-                className="mx-auto text-violet-600"
-              />
-
-              <div className="mt-2 text-[18px] font-normal tracking-[-0.03em] text-[#10153d]">
-                {hasLearningData ? "25–35 min" : "Awaiting data"}
-              </div>
-
-              <div className="mt-1 text-[10px] font-normal text-slate-500">
-                {hasLearningData ? "Recommended focus range" : "More scored attempts needed"}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-center text-[9px] font-normal text-slate-500">
-            <div>
-              Short
-              <div className="mt-0.5 text-[#1b2348]">
-                {hasLearningData ? "Tracked" : "Not measured"}
-              </div>
-            </div>
-
-            <div>
-              Best range
-              <div className="mt-0.5 text-[#1b2348]">
-                {hasLearningData ? "25–35 min" : "Not measured"}
-              </div>
-            </div>
-
-            <div>
-              Fatigue
-              <div className="mt-0.5 text-[#1b2348]">
-                {hasLearningData ? "Watch drop-off" : "Not measured"}
-              </div>
-            </div>
-          </div>
-
-          <InsightNote
-            icon={<Clock3 size={14} />}
-            tone="purple"
-            text={hasLearningData ? "Use 25–35 minute blocks as the default until more session-linked performance data is collected." : "Complete more scored rule sessions before displaying a recommended time range."}
-          />
-        </CompactCard>
-      </section>
-
-      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_0.85fr]">
-        <CompactCard
-          title="Time of Day Performance"
-          badge="Premium"
-          info="This heatmap requires timestamped session results grouped by day and hour."
-        >
-          <div className="relative">
-            <div className="mb-2 flex justify-end gap-1">
-              {["Morning", "Afternoon", "Evening"].map(
-                (label, index) => (
-                  <span
-                    key={label}
-                    className={`rounded-md px-2 py-1 text-[9px] font-normal ${
-                      index === 0
-                        ? "bg-blue-500 text-white"
-                        : "border border-slate-200 bg-white text-slate-500"
-                    }`}
-                  >
-                    {label}
-                  </span>
-                )
-              )}
-            </div>
-
-            <div className="grid grid-cols-[34px_repeat(7,minmax(0,1fr))] gap-1">
-              <div />
-
-              {[
-                "Mon",
-                "Tue",
-                "Wed",
-                "Thu",
-                "Fri",
-                "Sat",
-                "Sun",
-              ].map((day) => (
-                <div
-                  key={day}
-                  className="pb-1 text-center text-[9px] font-normal text-slate-500"
-                >
-                  {day}
-                </div>
-              ))}
-
-              {[
-                "6 AM",
-                "9 AM",
-                "12 PM",
-                "3 PM",
-                "6 PM",
-                "9 PM",
-              ].flatMap((time) => [
-                <div
-                  key={`${time}-label`}
-                  className="flex items-center text-[9px] font-normal text-slate-500"
-                >
-                  {time}
-                </div>,
-
-                ...Array.from({
-                  length: 7,
-                }).map((_, index) => (
-                  <div
-                    key={`${time}-${index}`}
-                    className="h-7 rounded-[3px] border border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100/70"
-                  />
-                )),
-              ])}
-            </div>
-
-            <div className="absolute inset-x-10 bottom-8 top-8 flex items-center justify-center rounded-xl bg-white/72 backdrop-blur-[1px]">
-              <div className="text-center">
-                <Lock
-                  size={17}
-                  className="mx-auto text-blue-600"
-                />
-
-                <div className="mt-2 text-[11px] font-normal text-[#182044]">
-                  Hourly analytics not connected
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <InsightNote
-            icon={<Clock3 size={14} />}
-            tone="blue"
-            text="Lexora will identify your strongest study hours after timestamped performance tracking is available."
-          />
-        </CompactCard>
-
-        <CompactCard
-          title="What Improves Your Score the Most"
-          subtitle="Current available BLL signals"
-          info="These bars describe current available signals. They are not causal improvement estimates."
-        >
-          <div className="space-y-3">
-            <ImpactRow
-              label="Strongest subject accuracy"
-              value={strongestSubject?.accuracy || 0}
               text={
-                strongestSubject
-                  ? `${strongestSubject.accuracy}%`
-                  : "No data"
+                focusSession
+                  ? focusSession.detail
+                  : "Complete more scored recall attempts to unlock a live weak-focus recommendation."
               }
             />
 
-            <ImpactRow
-              label="Current BLL accuracy"
-              value={currentScore}
-              text={`${currentScore}%`}
+            <RecommendationLine
+              icon={<CalendarDays size={18} />}
+              tone="green"
+              title="Repeat weak rules until stable."
+              text={
+                focusSession?.reviewTimingLabel ||
+                "Review timing will appear after enough review data is recorded."
+              }
             />
 
-            <ImpactRow
-              label="Recent score movement"
-              value={Math.min(
-                100,
-                Math.abs(delta) * 10
-              )}
-              text={`${delta >= 0 ? "+" : "-"}${Math.abs(
-                delta
-              )} pts`}
+            <RecommendationLine
+              icon={<TrendingUp size={18} />}
+              tone="amber"
+              title="Retest after review."
+              text={
+                metrics?.focusScore
+                  ? "Focus score is calculated from scored recall and active-day consistency."
+                  : "Retest guidance becomes stronger after more scored activity is recorded."
+              }
             />
 
-            <ImpactRow
-              label="Consistency"
-              value={Math.round(
-                consistencyScore * 20
-              )}
-              text={`${consistencyScore}/5`}
-            />
-
-            <ImpactRow
-              label="Weak-area pressure"
-              value={Math.min(
-                100,
-                weakAreas.length * 12
-              )}
-              text={`${weakAreas.length} rule${
-                weakAreas.length === 1 ? "" : "s"
-              }`}
-              danger
-            />
+            <div className="rounded-xl bg-violet-50 px-4 py-3 text-[11px] font-normal leading-5 text-[#46306f]">
+              <span className="font-semibold text-violet-700">Focus on quality, not total time. </span>
+              Effective scored recall is what moves this page’s signals.
+            </div>
           </div>
-
-          <InsightNote
-            icon={<TrendingUp size={14} />}
-            tone="green"
-            text="Active recall and consistent review are the clearest actionable signals currently available."
-          />
-        </CompactCard>
+        </LearningCard>
       </section>
 
-      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[0.72fr_1.28fr]">
-        <CompactCard
-          title="Consistency Insights"
-          info="Consistency uses recent active BLL trend days."
-        >
-          <div className="flex flex-col items-center gap-5 sm:flex-row">
-            <div
-              className="flex h-[118px] w-[118px] shrink-0 items-center justify-center rounded-full p-[10px]"
-              style={{
-                background: `conic-gradient(#6d28d9 ${
-                  Math.min(
-                    100,
-                    consistencyScore * 20
-                  )
-                }%, #ede9fe 0)`,
-              }}
-            >
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
-                <div className="text-center">
-                  <div className="text-[29px] font-normal tracking-[-0.04em] text-[#11163c]">
-                    {consistencyScore}
-                  </div>
+      <section className="rounded-2xl border border-[#ded8f5] bg-white p-5 shadow-[0_10px_28px_rgba(52,35,110,0.04)]">
+        <div className="mb-5 flex items-center gap-2">
+          <h3 className="text-[15px] font-semibold tracking-[-0.015em] text-[#10153d]">
+            Key Takeaway
+          </h3>
+          <HelpCircle size={13} className="text-slate-400" />
+        </div>
 
-                  <div className="text-[10px] font-normal text-slate-500">
-                    / 5
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full space-y-3">
-              <MetricLine
-                icon={<CalendarDays size={15} />}
-                label="Active days in recent range"
-                value={`${activeDays} / 7`}
-              />
-
-              <MetricLine
-                icon={<Target size={15} />}
-                label="Current BLL score"
-                value={`${currentScore}%`}
-              />
-
-              <MetricLine
-                icon={<TrendingUp size={15} />}
-                label="Recent direction"
-                value={
-                  delta > 0
-                    ? "Improving"
-                    : delta < 0
-                      ? "Declining"
-                      : "Stable"
-                }
-              />
-            </div>
+        <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-[1fr_auto]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <TakeawayStep
+              icon={<Clock3 size={20} />}
+              title="Short Blocks"
+              value={bestSessionLength}
+              caption="Measured range"
+            />
+            <TakeawayStep
+              icon={<PenLine size={20} />}
+              title="Active Recall"
+              value={topModeLabel}
+              caption="Primary method"
+            />
+            <TakeawayStep
+              icon={<RotateCcw size={20} />}
+              title="Repeat & Retest"
+              value={focusSession?.reviewTimingLabel || "Pending"}
+              caption="Review signal"
+            />
+            <TakeawayStep
+              icon={<TrendingUp size={20} />}
+              title="Improve"
+              value={hasTrendData ? `${delta >= 0 ? "+" : ""}${delta} points` : "More data needed"}
+              caption="Recent movement"
+            />
           </div>
 
-          <InsightNote
-            icon={<CheckCircle2 size={14} />}
-            tone="green"
-            text="Consistency becomes more reliable when activity is spread across several days."
-          />
-        </CompactCard>
-
-        <CompactCard
-          title="Learning Behavior Mix"
-          badge="Premium"
-          subtitle="Behavior-level tracking"
-          info="This requires separate tracking for active recall, reading, application, explanation, and passive review."
-        >
-          <div className="grid min-h-[170px] grid-cols-1 items-center gap-5 md:grid-cols-[0.78fr_1.22fr]">
-            <div className="relative mx-auto flex h-[132px] w-[132px] items-center justify-center rounded-full bg-[conic-gradient(#ddd6fe_0_25%,#dbeafe_25%_50%,#d1fae5_50%_70%,#fef3c7_70%_86%,#e5e7eb_86%_100%)] opacity-65">
-              <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-white">
-                <Lock
-                  size={18}
-                  className="text-violet-600"
-                />
-              </div>
+          <div className="rounded-2xl bg-violet-50 px-5 py-4 text-[11px] font-normal leading-5 text-[#46306f] lg:w-72">
+            <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-violet-700">
+              <Sparkles size={16} />
+              Your Goal
             </div>
-
-            <div className="space-y-2">
-              {[
-                ["Rule recall", "Tracking unavailable", "bg-violet-500"],
-                ["Reading and understanding", "Tracking unavailable", "bg-blue-500"],
-                ["Active application", "Tracking unavailable", "bg-emerald-500"],
-                ["Written explanation", "Tracking unavailable", "bg-amber-400"],
-                ["Passive review", "Tracking unavailable", "bg-slate-400"],
-              ].map(([label, value, color]) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-2 text-[10px] font-normal"
-                >
-                  <span
-                    className={`h-2 w-2 rounded-full ${color}`}
-                  />
-
-                  <span className="min-w-0 flex-1 text-[#303b5d]">
-                    {label}
-                  </span>
-
-                  <span className="text-slate-400">
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {focusSession
+              ? `Use the live weak-focus queue for ${focusSession.subject}. Repeat weak rules until recall becomes stable.`
+              : "Keep recording scored recall attempts so Lexora can identify a reliable weak-focus path."}
           </div>
-
-          <InsightNote
-            icon={<Brain size={14} />}
-            tone="purple"
-            text="Behavior mix will appear after each learning mode records separate activity."
-          />
-        </CompactCard>
-      </section>
-
-      <section className="rounded-2xl border border-[#ded8f5] bg-gradient-to-r from-white via-[#fbf9ff] to-[#f7f2ff] p-3 shadow-[0_8px_22px_rgba(52,35,110,0.045)]">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-violet-800 text-white shadow-[0_10px_24px_rgba(109,40,217,0.25)]">
-            <Sparkles size={20} />
-          </div>
-
-          <div className="min-w-[210px] flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-[13px] font-normal text-[#11163c]">
-                Current Learning Recommendation
-              </h3>
-
-              <span className="rounded-md bg-violet-100 px-2 py-0.5 text-[9px] font-normal text-violet-700">
-                Learning Signal
-              </span>
-            </div>
-
-            <p className="mt-1 max-w-2xl text-[11px] font-normal leading-4 text-[#56617c]">
-              {focusSession
-                ? `${focusSession.title}: ${focusSession.detail}. ${focusSession.reason}`
-                : focusLoading
-                  ? "Loading the current weak-focus recommendation..."
-                  : "Complete more scored rule training to generate a reliable personalized recommendation."}
-            </p>
-          </div>
-
-          <RecommendationChip
-            icon={<Brain size={13} />}
-            title="Start with"
-            value={
-              focusSession?.subject ||
-              "Weak areas"
-            }
-          />
-
-          <RecommendationChip
-            icon={<Clock3 size={13} />}
-            title="Session"
-            value={focusSession?.reviewTimingLabel || "Pending"}
-          />
-
-          <RecommendationChip
-            icon={<RotateCcw size={13} />}
-            title="Then"
-            value="Retest recall"
-          />
-
-          <button
-            type="button"
-            onClick={() =>
-              router.push("/rule-training")
-            }
-            className="flex h-10 items-center gap-2 rounded-xl bg-violet-700 px-4 text-[11px] font-normal text-white shadow-sm transition hover:bg-violet-800"
-          >
-            Start Recommended Session
-            <ArrowRight size={14} />
-          </button>
         </div>
       </section>
     </div>
   )
 }
 
-function BrainVisual() {
-  return (
-    <div className="relative hidden min-h-[150px] items-center justify-center lg:flex">
-      <div className="absolute h-36 w-36 rounded-full bg-violet-400/20 blur-3xl" />
-      <div className="absolute h-32 w-52 -rotate-12 rounded-[100%] border border-violet-200" />
-      <div className="absolute h-28 w-52 rotate-12 rounded-[100%] border border-violet-100" />
-
-      <Sparkles
-        size={14}
-        className="absolute left-[18%] top-[27%] text-violet-400"
-      />
-
-      <Sparkles
-        size={11}
-        className="absolute right-[17%] top-[22%] text-violet-300"
-      />
-
-      <Sparkles
-        size={9}
-        className="absolute right-[23%] bottom-[24%] text-violet-400"
-      />
-
-      <div className="relative flex h-[112px] w-[112px] items-center justify-center rounded-[40%] bg-gradient-to-br from-violet-200 via-violet-500 to-violet-800 shadow-[0_20px_45px_rgba(109,40,217,0.3)]">
-        <Brain
-          size={68}
-          strokeWidth={1.35}
-          className="text-white drop-shadow-lg"
-        />
-      </div>
-    </div>
-  )
-}
-
-function InsightCard({
+function HeroMetric({
   icon,
-  label,
   title,
-  text,
+  value,
+  caption,
   tone,
-  data,
 }: {
-  icon: ReactNode
-  label: string
+  icon: React.ReactNode
   title: string
-  text: string
-  tone: "green" | "purple" | "red"
-  data: ChartPoint[]
+  value: string
+  caption: string
+  tone: "violet" | "blue" | "green"
 }) {
-  const iconClass =
-    tone === "green"
-      ? "bg-emerald-50 text-emerald-600"
-      : tone === "red"
-        ? "bg-rose-50 text-rose-600"
-        : "bg-violet-50 text-violet-700"
-
-  const labelClass =
+  const toneClass =
     tone === "green"
       ? "text-emerald-600"
-      : tone === "red"
-        ? "text-rose-600"
+      : tone === "blue"
+        ? "text-blue-600"
         : "text-violet-700"
 
-  const stroke =
-    tone === "green"
-      ? "#10b981"
-      : tone === "red"
-        ? "#ef4444"
-        : "#7c3aed"
-
   return (
-    <div className="rounded-xl border border-[#e5e7ef] bg-white p-3.5 shadow-[0_5px_16px_rgba(15,23,42,0.035)]">
-      <div className="flex items-start gap-3">
-        <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconClass}`}
-        >
-          {icon}
-        </div>
-
-        <div className="min-w-0">
-          <div
-            className={`text-[8px] font-normal tracking-[0.04em] ${labelClass}`}
-          >
-            {label}
-          </div>
-
-          <div className="mt-1.5 truncate text-[13px] font-normal text-[#11163c]">
-            {title}
-          </div>
-
-          <p className="mt-1 text-[10px] font-normal leading-4 text-[#5c6882]">
-            {text}
-          </p>
-        </div>
+    <div className="px-4 py-2">
+      <div className={toneClass}>{icon}</div>
+      <div className="mt-4 text-[11px] font-normal text-[#11163c]">
+        {title}
       </div>
-
-      <div className="mt-3 h-8">
-        <MiniSparkline
-          data={data}
-          stroke={stroke}
-        />
+      <div className="mt-2 text-[20px] font-semibold tracking-[-0.03em] text-[#10153d]">
+        {value}
+      </div>
+      <div className="mt-1 text-[9px] font-normal text-slate-500">
+        {caption}
       </div>
     </div>
   )
 }
 
-function CompactCard({
+function LearningCard({
   title,
   subtitle,
-  badge,
-  info,
   children,
 }: {
   title: string
-  subtitle?: string
-  badge?: string
-  info?: string
-  children: ReactNode
+  subtitle: string
+  children: React.ReactNode
 }) {
   return (
-    <section className="rounded-2xl border border-[#e4e7ef] bg-white p-3.5 shadow-[0_6px_18px_rgba(15,23,42,0.035)]">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-[13px] font-normal tracking-[-0.015em] text-[#11163c]">
-              {title}
-            </h3>
-
-            {info ? <AnalyticsHelp text={info} /> : null}
-
-            {badge ? (
-              <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[8px] font-normal text-violet-700">
-                {badge}
-              </span>
-            ) : null}
-          </div>
-
-          {subtitle ? (
-            <p className="mt-1 text-[9px] font-normal text-slate-500">
-              {subtitle}
-            </p>
-          ) : null}
+    <div className="rounded-2xl border border-[#e4e7ef] bg-white p-5 shadow-[0_8px_22px_rgba(15,23,42,0.035)]">
+      <div className="mb-5">
+        <div className="flex items-center gap-2">
+          <h3 className="text-[15px] font-semibold tracking-[-0.015em] text-[#10153d]">
+            {title}
+          </h3>
+          <HelpCircle size={13} className="text-slate-400" />
         </div>
+        <p className="mt-2 text-[11px] font-normal text-slate-500">
+          {subtitle}
+        </p>
       </div>
-
       {children}
-    </section>
-  )
-}
-
-function PatternRow({
-  rank,
-  text,
-  badge,
-  active = false,
-}: {
-  rank: string
-  text: string
-  badge: string
-  active?: boolean
-}) {
-  return (
-    <div
-      className={`flex min-h-9 items-center gap-2.5 rounded-lg px-2.5 py-2 text-[10px] font-normal ${
-        active
-          ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
-          : "bg-slate-50 text-[#2e385a]"
-      }`}
-    >
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[9px] text-[#4a5673]">
-        {rank}
-      </span>
-
-      <span className="min-w-0 flex-1">
-        {text}
-      </span>
-
-      <span className="max-w-[110px] truncate rounded-md bg-white px-1.5 py-0.5 text-[8px] text-slate-500">
-        {badge}
-      </span>
     </div>
   )
 }
 
-function ImpactRow({
-  label,
-  value,
-  text,
-  danger = false,
-}: {
-  label: string
-  value: number
-  text: string
-  danger?: boolean
-}) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px] font-normal">
-        <span className="text-[#313b5c]">
-          {label}
-        </span>
-
-        <span
-          className={
-            danger
-              ? "text-rose-600"
-              : "text-[#11163c]"
-          }
-        >
-          {text}
-        </span>
-      </div>
-
-      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className={`h-full rounded-full ${
-            danger
-              ? "bg-rose-400"
-              : "bg-emerald-500"
-          }`}
-          style={{
-            width: `${Math.max(
-              0,
-              Math.min(100, value)
-            )}%`,
-          }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function MetricLine({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode
-  label: string
-  value: string
-}) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-700">
-        {icon}
-      </div>
-
-      <div className="min-w-0">
-        <div className="text-[9px] font-normal text-slate-500">
-          {label}
-        </div>
-
-        <div className="mt-0.5 text-[12px] font-normal text-[#11163c]">
-          {value}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function RecommendationChip({
+function PatternStep({
+  number,
   icon,
   title,
-  value,
+  text,
 }: {
-  icon: ReactNode
+  number: string
+  icon: React.ReactNode
   title: string
-  value: string
+  text: string
 }) {
   return (
-    <div className="hidden min-w-[105px] items-center gap-2 rounded-lg border border-violet-100 bg-white px-2.5 py-2 xl:flex">
-      <div className="text-violet-700">
+    <div className="grid grid-cols-[34px_42px_1fr] items-start gap-3">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-[13px] font-semibold text-violet-700">
+        {number}
+      </div>
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
         {icon}
       </div>
-
       <div>
-        <div className="text-[8px] font-normal text-slate-400">
+        <div className="text-[13px] font-semibold text-[#10153d]">
           {title}
         </div>
-
-        <div className="mt-0.5 max-w-[90px] truncate text-[9px] font-normal text-[#30395a]">
-          {value}
+        <div className="mt-1 text-[11px] font-normal leading-5 text-slate-500">
+          {text}
         </div>
       </div>
     </div>
   )
 }
 
-function InsightNote({
+function ModeLine({ item }: { item: ModeMetric }) {
+  return (
+    <div className="grid grid-cols-[12px_1fr_auto] items-center gap-3 text-[11px]">
+      <span
+        className="h-3 w-3 rounded-full"
+        style={{ backgroundColor: MODE_COLORS[item.key] ?? MODE_COLORS.other }}
+      />
+      <span className="text-[#30395a]">{item.label}</span>
+      <span className="font-semibold text-[#10153d]">{item.percentage}%</span>
+    </div>
+  )
+}
+
+function RecommendationLine({
   icon,
-  text,
   tone,
+  title,
+  text,
 }: {
-  icon: ReactNode
+  icon: React.ReactNode
+  tone: "violet" | "green" | "amber"
+  title: string
   text: string
-  tone: "blue" | "green" | "purple"
 }) {
-  const className =
-    tone === "blue"
-      ? "bg-blue-50 text-blue-700"
-      : tone === "green"
-        ? "bg-emerald-50 text-emerald-700"
+  const toneClass =
+    tone === "green"
+      ? "bg-emerald-50 text-emerald-600"
+      : tone === "amber"
+        ? "bg-amber-50 text-amber-600"
         : "bg-violet-50 text-violet-700"
 
   return (
-    <div
-      className={`mt-3 flex items-start gap-2 rounded-lg px-3 py-2 text-[9px] font-normal leading-4 ${className}`}
-    >
-      <span className="mt-0.5 shrink-0">
+    <div className="flex items-start gap-4">
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${toneClass}`}>
         {icon}
-      </span>
-
-      <span>{text}</span>
+      </div>
+      <div>
+        <div className="text-[13px] font-semibold text-[#10153d]">
+          {title}
+        </div>
+        <div className="mt-1 text-[11px] font-normal leading-5 text-[#56617c]">
+          {text}
+        </div>
+      </div>
     </div>
   )
 }
 
-function CompactEmpty({
-  text,
+function TakeawayStep({
+  icon,
+  title,
+  value,
+  caption,
 }: {
-  text: string
+  icon: React.ReactNode
+  title: string
+  value: string
+  caption: string
 }) {
   return (
-    <div className="flex min-h-[175px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 text-center text-[10px] font-normal leading-4 text-slate-500">
+    <div className="flex items-center gap-4">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-700">
+        {icon}
+      </div>
+      <div>
+        <div className="text-[12px] font-semibold text-[#10153d]">
+          {title}
+        </div>
+        <div className="mt-1 text-[11px] font-normal text-[#30395a]">
+          {value}
+        </div>
+        <div className="mt-0.5 text-[9px] font-normal text-slate-500">
+          {caption}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EmptyLearningState({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-[11px] font-normal text-slate-500">
       {text}
     </div>
   )
