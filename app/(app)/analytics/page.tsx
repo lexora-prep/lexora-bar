@@ -202,7 +202,6 @@ export default function AnalyticsPage() {
     currentFallback: analyticsDashboard.bllScore,
     previousFallback: analyticsDashboard.prevBLL,
   })
-  const primaryWeakArea = weakAreas[0]
 
   function renderActiveTab() {
     if (activeTab === "overview") {
@@ -219,7 +218,6 @@ export default function AnalyticsPage() {
           strongestSubject={strongestSubject}
           weakestSubject={weakestSubject}
           weakAreas={weakAreas}
-          primaryWeakArea={primaryWeakArea}
           riskBuckets={riskBuckets}
           consistencyScore={consistencyScore}
           rangeLabelText={rangeLabel(appliedRange)}
@@ -238,7 +236,6 @@ export default function AnalyticsPage() {
           strongestSubject={strongestSubject}
           weakestSubject={weakestSubject}
           weakAreas={weakAreas}
-          primaryWeakArea={primaryWeakArea}
           consistencyScore={consistencyScore}
         />
       )
@@ -267,7 +264,6 @@ export default function AnalyticsPage() {
           weakAreas={weakAreas}
           strongestSubject={strongestSubject}
           weakestSubject={weakestSubject}
-          primaryWeakArea={primaryWeakArea}
         />
       )
     }

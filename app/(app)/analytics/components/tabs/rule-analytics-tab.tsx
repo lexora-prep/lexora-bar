@@ -46,7 +46,6 @@ type RuleAnalyticsTabProps = {
   weakAreas?: WeakArea[]
   strongestSubject?: SubjectDiagnostic
   weakestSubject?: SubjectDiagnostic
-  primaryWeakArea?: WeakArea
 }
 
 type Tone = "violet" | "green" | "red" | "amber"
@@ -70,7 +69,6 @@ export default function RuleAnalyticsTab({
   weakAreas = [],
   strongestSubject,
   weakestSubject,
-  primaryWeakArea,
 }: RuleAnalyticsTabProps) {
   const router = useRouter()
 

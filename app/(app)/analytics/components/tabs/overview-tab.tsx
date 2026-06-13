@@ -41,7 +41,6 @@ type OverviewTabProps = {
   strongestSubject?: SubjectDiagnostic
   weakestSubject?: SubjectDiagnostic
   weakAreas: WeakArea[]
-  primaryWeakArea?: WeakArea
   riskBuckets: RiskBuckets
   consistencyScore: number
   rangeLabelText: string
@@ -84,7 +83,6 @@ export default function OverviewTab({
   strongestSubject,
   weakestSubject,
   weakAreas,
-  primaryWeakArea,
   riskBuckets,
   consistencyScore,
 }: OverviewTabProps) {

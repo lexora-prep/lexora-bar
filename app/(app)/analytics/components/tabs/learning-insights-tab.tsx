@@ -54,7 +54,6 @@ type LearningInsightsTabProps = {
   strongestSubject?: SubjectDiagnostic
   weakestSubject?: SubjectDiagnostic
   weakAreas: WeakArea[]
-  primaryWeakArea?: WeakArea
   consistencyScore: number
 }
 
@@ -67,7 +66,6 @@ export default function LearningInsightsTab({
   strongestSubject,
   weakestSubject,
   weakAreas,
-  primaryWeakArea,
   consistencyScore,
 }: LearningInsightsTabProps) {
   const router = useRouter()
