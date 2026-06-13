@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   ArrowRight,
   BarChart3,
@@ -13,6 +13,7 @@ import {
   Trophy,
   Wrench,
 } from "lucide-react"
+import type { RecommendedFocusSession } from "@/lib/analytics/recommendation-engine"
 
 import type {
   StrengthSubjectAnalytics,
@@ -36,6 +37,43 @@ export default function StrengthsWeaknessesTab({
   error,
 }: StrengthsWeaknessesTabProps) {
   const router = useRouter()
+  const [focusSession, setFocusSession] = useState<RecommendedFocusSession | null>(null)
+  const [focusLoading, setFocusLoading] = useState(true)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadFocusSession() {
+      try {
+        setFocusLoading(true)
+
+        const response = await fetch("/api/rules/weak-focus?limit=1", {
+          cache: "no-store",
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          setFocusSession(null)
+          return
+        }
+
+        const payload = await response.json()
+        setFocusSession(payload?.focusSession ?? null)
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setFocusSession(null)
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setFocusLoading(false)
+        }
+      }
+    }
+
+    loadFocusSession()
+
+    return () => controller.abort()
+  }, [])
 
   if (loading) {
     return <LoadingState compact text="Loading strengths and weaknesses..." />
@@ -84,9 +122,11 @@ export default function StrengthsWeaknessesTab({
             : `${data.summary.strongSubjectCount} confirmed ${data.summary.strongSubjectCount === 1 ? "strength" : "strengths"}, ${data.summary.weakSubjectCount} weak ${data.summary.weakSubjectCount === 1 ? "subject" : "subjects"}, and ${data.summary.highPriorityRuleCount} high-priority ${data.summary.highPriorityRuleCount === 1 ? "rule" : "rules"} are recorded for this range.`
         }
         nextStep={
-          data.nextBestAction
-            ? `Start with ${data.nextBestAction.subjectName} — ${data.nextBestAction.title}. Complete an independent recall attempt before reviewing the answer.`
-            : "Complete more independently scored attempts before selecting a targeted weakness session."
+          focusSession
+            ? `${focusSession.title}: ${focusSession.detail}.`
+            : focusLoading
+              ? "Loading the current weak-focus recommendation..."
+              : "Complete more independently scored attempts before selecting a targeted weakness session."
         }
       />
       <section className="rounded-2xl border border-[#e4e7ef] bg-white px-4 py-4 shadow-[0_6px_18px_rgba(15,23,42,0.035)]">
