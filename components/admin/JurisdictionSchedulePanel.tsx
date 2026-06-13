@@ -634,7 +634,7 @@ export default function JurisdictionSchedulePanel() {
         error?: string
         jurisdictionsCreated?: number
         jurisdictionsUpdated?: number
-        mappingsUpserted?: number
+        mappingsConfirmed?: number
       } | null = null
 
       try {
@@ -657,7 +657,7 @@ export default function JurisdictionSchedulePanel() {
         } created, ${
           payload.jurisdictionsUpdated ?? 0
         } updated, ${
-          payload.mappingsUpserted ?? 0
+          payload.mappingsConfirmed ?? 0
         } schedule mappings confirmed.`
       )
 

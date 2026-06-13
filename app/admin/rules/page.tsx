@@ -951,7 +951,7 @@ export default function AdminRulesPage() {
 
       setMessage({
         type: "success",
-        text: `Jurisdiction schedule synchronized. ${data.jurisdictionsCreated} created, ${data.jurisdictionsUpdated} updated, and ${data.mappingsUpserted} dated exam mappings confirmed.`,
+        text: `Jurisdiction schedule synchronized. ${data.jurisdictionsCreated} created, ${data.jurisdictionsUpdated} updated, and ${data.mappingsConfirmed ?? 0} dated exam mappings confirmed.`,
       })
 
       await loadMetadata()
