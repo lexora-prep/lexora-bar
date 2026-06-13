@@ -776,37 +776,6 @@ export async function GET(request: Request) {
       })
     }
 
-    const nextBestAction = weaknesses[0]
-      ? {
-          ...weaknesses[0],
-          reason:
-            weaknesses[0].trend === "improving"
-              ? `${weaknesses[0].title} is improving: the latest score was ${weaknesses[0].latestScore}%, current ${weaknesses[0].usesLearningEngine ? "mastery" : "recorded average"} is ${weaknesses[0].accuracy}%, and the historical average changed by ${formatSignedChange(weaknesses[0].accuracyChange)}.`
-              : `${weaknesses[0].title} ranks first because its current ${weaknesses[0].usesLearningEngine ? "mastery" : "recorded average"} is ${weaknesses[0].accuracy}% and it contributes ${weaknesses[0].missSharePercentage}% of the recorded performance gap.`,
-        }
-      : null
-
-    const coachingNote = nextBestAction
-      ? {
-          summary:
-            nextBestAction.trend === "improving"
-              ? `${nextBestAction.title} is improving. The latest score was ${nextBestAction.latestScore}%, the historical average is now ${nextBestAction.historicalAccuracy}%, and current ${nextBestAction.usesLearningEngine ? "mastery" : "recorded average"} is ${nextBestAction.accuracy}%.`
-              : `Begin with ${nextBestAction.title}. It currently has the highest calculated weakness priority in the selected date range.`,
-          steps: [
-            nextBestAction.missedBuzzwords.length > 0
-              ? `Review the missed elements: ${nextBestAction.missedBuzzwords
-                  .slice(0, 3)
-                  .map((item) => item.text)
-                  .join(", ")}.`
-              : "Review the rule elements and exceptions before the next attempt.",
-            nextBestAction.trend === "improving"
-              ? `Complete one more scored recall session for ${nextBestAction.title} to confirm the improvement.`
-              : `Complete a scored weak-focus session for ${nextBestAction.title}.`,
-            `Current trend: ${nextBestAction.trend}. Latest score: ${nextBestAction.latestScore}%.`,
-          ],
-        }
-      : null
-
     return NextResponse.json({
       range: {
         key: range,
@@ -841,8 +810,6 @@ export async function GET(request: Request) {
       weaknessImpact,
       priorityFocus,
       whyTopicsMatter: whyTopicsMatter.slice(0, 3),
-      nextBestAction,
-      coachingNote,
     })
   } catch (error) {
     console.error("STRENGTHS WEAKNESSES ANALYTICS ERROR:", error)
