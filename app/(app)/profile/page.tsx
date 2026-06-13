@@ -392,6 +392,7 @@ export default function ProfilePage() {
         </aside>
 
         <main className="min-w-0">
+          {activeTab !== "subscription" ? (
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">
@@ -411,9 +412,7 @@ export default function ProfilePage() {
                 {activeTab === "subscription"
                   ? "View billing details, plan access, and included premium features."
                   : null}
-                {activeTab === "support"
-                  ? "Open the support center for billing, account, or technical help."
-                  : null}
+                {activeTab === "support" ? null : null}
                 {activeTab === "danger"
                   ? "Request deletion only after confirming the action."
                   : null}
@@ -425,12 +424,11 @@ export default function ProfilePage() {
               Account {accountStatus.toLowerCase()}
             </div>
           </div>
+          ) : null}
 
           {activeTab === "profile" ? (
             <section className="max-w-[860px]">
-              <SectionHeader icon={<User />} title="Profile information" subtitle="Only name and law school are editable." />
-
-              <div className="mt-6 grid gap-x-8 gap-y-6 md:grid-cols-2">
+              <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
                 <Field label="Full name">
                   <input
                     type="text"
@@ -491,9 +489,11 @@ export default function ProfilePage() {
 
           {activeTab === "security" ? (
             <section className="max-w-[760px]">
-              <SectionHeader icon={<LockKeyhole />} title="Password management" subtitle="Password changes are handled by Supabase Auth." />
+              <div className="mb-6 border-l-2 border-violet-300 bg-violet-50/60 px-4 py-3 text-sm leading-6 text-violet-700">
+                Password changes are handled securely through Supabase authentication. Lexora Prep never stores or displays your password.
+              </div>
 
-              <div className="mt-6 grid gap-x-8 gap-y-6 md:grid-cols-2">
+              <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
                 <Field label="Login email">
                   <LockedText value={email || "Not set"} icon={<Mail size={15} />} />
                 </Field>
@@ -561,9 +561,7 @@ export default function ProfilePage() {
 
           {activeTab === "subscription" ? (
             <section className="max-w-[820px]">
-              <SectionHeader icon={<Crown />} title="Subscription" subtitle="Your plan, billing controls, and included access." />
-
-              <div className="mt-6 overflow-hidden rounded-[26px] border border-violet-100 bg-white shadow-[0_24px_70px_rgba(109,74,255,0.10)]">
+              <div className="overflow-hidden rounded-[26px] border border-violet-100 bg-white shadow-[0_24px_70px_rgba(109,74,255,0.10)]">
                 <div className="border-b border-violet-100 bg-gradient-to-br from-violet-50 via-white to-indigo-50 px-6 py-5">
                   <div className="flex items-start justify-between gap-6">
                     <div className="flex items-center gap-3">
@@ -670,11 +668,9 @@ export default function ProfilePage() {
 
           {activeTab === "support" ? (
             <section className="max-w-[760px]">
-              <SectionHeader icon={<Headphones />} title="Support center" subtitle="Use the existing support ticket system." />
-
-              <div className="mt-6 border-y border-slate-200 py-5">
+              <div className="border-y border-slate-200 py-5">
                 <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                  Billing issues, account issues, technical problems, content corrections, and subscription questions are handled through the existing support ticket page.
+                  Open the support center to create tickets, reply to support, or review previous account and billing requests.
                 </p>
               </div>
 
@@ -689,9 +685,7 @@ export default function ProfilePage() {
 
           {activeTab === "danger" ? (
             <section className="max-w-[760px]">
-              <SectionHeader danger icon={<AlertTriangle />} title="Danger zone" subtitle="Request permanent account deletion." />
-
-              <div className="mt-6 border-l-2 border-red-300 bg-red-50/70 px-4 py-3 text-sm leading-6 text-red-700">
+              <div className="border-l-2 border-red-300 bg-red-50/70 px-4 py-3 text-sm leading-6 text-red-700">
                 Type DELETE to request account deletion. For safety, the system uses an email confirmation step before deletion is scheduled.
               </div>
 
