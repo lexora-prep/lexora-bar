@@ -244,23 +244,23 @@ export default function LearningInsightsTab({
         }
       />
 
-      <section className="overflow-hidden rounded-2xl border border-[#ded8f5] bg-gradient-to-br from-[#fbf9ff] via-white to-[#f8f5ff] p-5 shadow-[0_10px_28px_rgba(52,35,110,0.05)]">
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_1.4fr]">
-          <div className="flex items-center gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.6rem] bg-gradient-to-br from-violet-500 to-violet-800 text-white shadow-[0_16px_36px_rgba(109,40,217,0.25)]">
-              <Brain size={38} />
+      <section className="overflow-hidden rounded-2xl border border-[#ded8f5] bg-gradient-to-br from-[#fbf9ff] via-white to-[#f8f5ff] px-4 py-3 shadow-[0_8px_22px_rgba(52,35,110,0.045)]">
+        <div className="grid grid-cols-1 items-center gap-3 lg:grid-cols-[1.05fr_1.45fr]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-violet-800 text-white shadow-[0_12px_26px_rgba(109,40,217,0.2)]">
+              <Brain size={27} />
             </div>
 
             <div>
-              <h2 className="text-[18px] font-semibold tracking-[-0.025em] text-[#10153d]">
+              <h2 className="text-[15px] font-semibold tracking-[-0.02em] text-[#10153d]">
                 How You Learn Best
               </h2>
 
-              <p className="mt-3 text-[15px] font-normal leading-6 text-[#11163c]">
+              <p className="mt-2 text-[12px] font-normal leading-5 text-[#11163c]">
                 {heroSentence}
               </p>
 
-              <p className="mt-2 max-w-xl text-[11px] font-normal leading-5 text-[#56617c]">
+              <p className="mt-1 max-w-xl text-[10px] font-normal leading-4 text-[#56617c]">
                 {metrics?.bestSessionAccuracy !== null && metrics?.bestSessionAccuracy !== undefined
                   ? `Your strongest measured session range is based on ${formatPercent(metrics.bestSessionAccuracy)} recorded accuracy in that duration bucket.`
                   : "Session-length conclusions will appear after scored study sessions with duration data are recorded."}
@@ -268,9 +268,9 @@ export default function LearningInsightsTab({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="grid grid-cols-3 divide-x divide-slate-200">
             <HeroMetric
-              icon={<Clock3 size={20} />}
+              icon={<Clock3 size={17} />}
               title="Best Session Length"
               value={bestSessionLength}
               caption={
@@ -282,7 +282,7 @@ export default function LearningInsightsTab({
             />
 
             <HeroMetric
-              icon={<Target size={20} />}
+              icon={<Target size={17} />}
               title="Focus Score"
               value={formatScore(metrics?.focusScore)}
               caption={metrics?.focusScore ? "Calculated from scored recall and active-day consistency" : "Needs more scored activity"}
@@ -290,7 +290,7 @@ export default function LearningInsightsTab({
             />
 
             <HeroMetric
-              icon={<CheckCircle2 size={20} />}
+              icon={<CheckCircle2 size={17} />}
               title="Effective Study Time"
               value={effectiveStudy}
               caption="Time with scored recall"
@@ -300,15 +300,15 @@ export default function LearningInsightsTab({
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[0.95fr_1.05fr_1.1fr]">
+      <section className="grid grid-cols-1 gap-3 lg:grid-cols-[0.9fr_1.05fr_1.05fr]">
         <LearningCard
           title="Best Study Pattern"
           subtitle="Follow this cycle when the weak-focus queue is available."
         >
-          <div className="space-y-5">
+          <div className="space-y-4">
             <PatternStep
               number="1"
-              icon={<Brain size={18} />}
+              icon={<Brain size={15} />}
               title="Review weak rule"
               text={
                 focusSession
@@ -318,18 +318,18 @@ export default function LearningInsightsTab({
             />
             <PatternStep
               number="2"
-              icon={<Keyboard size={18} />}
+              icon={<Keyboard size={15} />}
               title="Type from memory"
               text="Reproduce the rule in your own words before checking the answer."
             />
             <PatternStep
               number="3"
-              icon={<CheckCircle2 size={18} />}
+              icon={<CheckCircle2 size={15} />}
               title="Retest once"
               text="Check your answer and repeat the rule if recall is still unstable."
             />
 
-            <div className="rounded-xl bg-emerald-50 px-4 py-3 text-[11px] font-normal leading-5 text-emerald-800">
+            <div className="rounded-xl bg-emerald-50 px-3 py-2 text-[10px] font-normal leading-4 text-emerald-800">
               Immediate recall plus retest is used as a study pattern. The actual target rule comes from your live weak-focus queue.
             </div>
           </div>
@@ -343,30 +343,30 @@ export default function LearningInsightsTab({
             <EmptyLearningState text="Loading real training-mode data..." />
           ) : totalModeAttempts > 0 ? (
             <div>
-              <div className="grid grid-cols-1 items-center gap-5 sm:grid-cols-[190px_1fr]">
-                <div className="relative mx-auto h-40 w-40">
+              <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+                <div className="relative mx-auto h-32 w-32">
                   <div
-                    className="h-40 w-40 rounded-full"
+                    className="h-32 w-32 rounded-full"
                     style={{ background: donutGradient }}
                   />
-                  <div className="absolute inset-8 flex flex-col items-center justify-center rounded-full bg-white shadow-inner">
-                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-[#10153d]">
+                  <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white shadow-inner">
+                    <div className="text-[20px] font-semibold tracking-[-0.04em] text-[#10153d]">
                       {totalModeAttempts}
                     </div>
-                    <div className="text-[11px] font-normal text-slate-500">
+                    <div className="text-[9px] font-normal text-slate-500">
                       Attempts
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {modeMix.map((item) => (
                     <ModeLine key={item.key} item={item} />
                   ))}
                 </div>
               </div>
 
-              <div className="mt-5 rounded-xl bg-violet-50 px-4 py-3 text-[11px] font-normal leading-5 text-[#46306f]">
+              <div className="mt-4 rounded-xl bg-violet-50 px-3 py-2.5 text-[10px] font-normal leading-4 text-[#46306f]">
                 <span className="font-semibold text-violet-700">What this means: </span>
                 {topModeLabel !== "More data needed"
                   ? `${topModeLabel} is currently your most recorded training method. Use ordering or buzzwords when you keep missing structure or key terms.`
@@ -382,7 +382,7 @@ export default function LearningInsightsTab({
           title="Personalized Learning Recommendation"
           subtitle="Connected to the current weak-focus queue."
         >
-          <div className="space-y-5">
+          <div className="space-y-4">
             <RecommendationLine
               icon={<Target size={18} />}
               tone="violet"
@@ -399,7 +399,7 @@ export default function LearningInsightsTab({
             />
 
             <RecommendationLine
-              icon={<CalendarDays size={18} />}
+              icon={<CalendarDays size={15} />}
               tone="green"
               title="Repeat weak rules until stable."
               text={
@@ -409,7 +409,7 @@ export default function LearningInsightsTab({
             />
 
             <RecommendationLine
-              icon={<TrendingUp size={18} />}
+              icon={<TrendingUp size={15} />}
               tone="amber"
               title="Retest after review."
               text={
@@ -419,7 +419,7 @@ export default function LearningInsightsTab({
               }
             />
 
-            <div className="rounded-xl bg-violet-50 px-4 py-3 text-[11px] font-normal leading-5 text-[#46306f]">
+            <div className="rounded-xl bg-violet-50 px-3 py-2.5 text-[10px] font-normal leading-4 text-[#46306f]">
               <span className="font-semibold text-violet-700">Focus on quality, not total time. </span>
               Effective scored recall is what moves this page’s signals.
             </div>
@@ -427,45 +427,45 @@ export default function LearningInsightsTab({
         </LearningCard>
       </section>
 
-      <section className="rounded-2xl border border-[#ded8f5] bg-white p-5 shadow-[0_10px_28px_rgba(52,35,110,0.04)]">
-        <div className="mb-5 flex items-center gap-2">
-          <h3 className="text-[15px] font-semibold tracking-[-0.015em] text-[#10153d]">
+      <section className="rounded-2xl border border-[#ded8f5] bg-white p-4 shadow-[0_8px_22px_rgba(52,35,110,0.035)]">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-[#10153d]">
             Key Takeaway
           </h3>
           <HelpCircle size={13} className="text-slate-400" />
         </div>
 
-        <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-[1fr_auto]">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 items-center gap-3 lg:grid-cols-[1fr_auto]">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <TakeawayStep
-              icon={<Clock3 size={20} />}
+              icon={<Clock3 size={17} />}
               title="Short Blocks"
               value={bestSessionLength}
               caption="Measured range"
             />
             <TakeawayStep
-              icon={<PenLine size={20} />}
+              icon={<PenLine size={16} />}
               title="Active Recall"
               value={topModeLabel}
               caption="Primary method"
             />
             <TakeawayStep
-              icon={<RotateCcw size={20} />}
+              icon={<RotateCcw size={16} />}
               title="Repeat & Retest"
               value={focusSession?.reviewTimingLabel || "Pending"}
               caption="Review signal"
             />
             <TakeawayStep
-              icon={<TrendingUp size={20} />}
+              icon={<TrendingUp size={16} />}
               title="Improve"
               value={hasTrendData ? `${delta >= 0 ? "+" : ""}${delta} points` : "More data needed"}
               caption="Recent movement"
             />
           </div>
 
-          <div className="rounded-2xl bg-violet-50 px-5 py-4 text-[11px] font-normal leading-5 text-[#46306f] lg:w-72">
+          <div className="rounded-2xl bg-violet-50 px-4 py-3 text-[10px] font-normal leading-4 text-[#46306f] lg:w-64">
             <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-violet-700">
-              <Sparkles size={16} />
+              <Sparkles size={14} />
               Your Goal
             </div>
             {focusSession
@@ -524,15 +524,15 @@ function LearningCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-2xl border border-[#e4e7ef] bg-white p-5 shadow-[0_8px_22px_rgba(15,23,42,0.035)]">
-      <div className="mb-5">
+    <div className="rounded-2xl border border-[#e4e7ef] bg-white p-4 shadow-[0_7px_18px_rgba(15,23,42,0.032)]">
+      <div className="mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-[15px] font-semibold tracking-[-0.015em] text-[#10153d]">
+          <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-[#10153d]">
             {title}
           </h3>
           <HelpCircle size={13} className="text-slate-400" />
         </div>
-        <p className="mt-2 text-[11px] font-normal text-slate-500">
+        <p className="mt-1 text-[10px] font-normal text-slate-500">
           {subtitle}
         </p>
       </div>
@@ -553,18 +553,18 @@ function PatternStep({
   text: string
 }) {
   return (
-    <div className="grid grid-cols-[34px_42px_1fr] items-start gap-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-[13px] font-semibold text-violet-700">
+    <div className="grid grid-cols-[28px_34px_1fr] items-start gap-2.5">
+      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 text-[11px] font-semibold text-violet-700">
         {number}
       </div>
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
+      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
         {icon}
       </div>
       <div>
-        <div className="text-[13px] font-semibold text-[#10153d]">
+        <div className="text-[11px] font-semibold text-[#10153d]">
           {title}
         </div>
-        <div className="mt-1 text-[11px] font-normal leading-5 text-slate-500">
+        <div className="mt-0.5 text-[10px] font-normal leading-4 text-slate-500">
           {text}
         </div>
       </div>
@@ -574,9 +574,9 @@ function PatternStep({
 
 function ModeLine({ item }: { item: ModeMetric }) {
   return (
-    <div className="grid grid-cols-[12px_1fr_auto] items-center gap-3 text-[11px]">
+    <div className="grid grid-cols-[10px_1fr_auto] items-center gap-2.5 text-[10px]">
       <span
-        className="h-3 w-3 rounded-full"
+        className="h-2.5 w-2.5 rounded-full"
         style={{ backgroundColor: MODE_COLORS[item.key] ?? MODE_COLORS.other }}
       />
       <span className="text-[#30395a]">{item.label}</span>
@@ -609,10 +609,10 @@ function RecommendationLine({
         {icon}
       </div>
       <div>
-        <div className="text-[13px] font-semibold text-[#10153d]">
+        <div className="text-[11px] font-semibold text-[#10153d]">
           {title}
         </div>
-        <div className="mt-1 text-[11px] font-normal leading-5 text-[#56617c]">
+        <div className="mt-0.5 text-[10px] font-normal leading-4 text-[#56617c]">
           {text}
         </div>
       </div>
@@ -633,7 +633,7 @@ function TakeawayStep({
 }) {
   return (
     <div className="flex items-center gap-4">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-700">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-700">
         {icon}
       </div>
       <div>
