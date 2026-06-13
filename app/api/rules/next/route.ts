@@ -1,124 +1,45 @@
-import { prisma } from "@/lib/prisma"
-import { enforceRateLimit } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
+import { enforceRateLimit } from "@/lib/rate-limit"
+import {
+  getApplicableRuleUniverse,
+  getApplicableRuleUniverseForUser,
+  type ApplicableRegistryRule,
+} from "@/lib/rules/registry"
+import { prisma } from "@/lib/prisma"
 
-function makeRuleKey(rule: {
-  subject_id?: string | null
-  topic_id?: string | null
-  subtopic_id?: string | null
-  title?: string | null
-}) {
-  return [
-    String(rule.subject_id ?? "").trim().toLowerCase(),
-    String(rule.topic_id ?? "").trim().toLowerCase(),
-    String(rule.subtopic_id ?? "").trim().toLowerCase(),
-    String(rule.title ?? "").trim().toLowerCase(),
-  ].join("::")
-}
-
-function isBetterRule(
-  candidate: {
-    prompt_question?: string | null
-    updated_at?: Date | null
-    created_at?: Date | null
-  },
-  current?: {
-    prompt_question?: string | null
-    updated_at?: Date | null
-    created_at?: Date | null
-  } | null
-) {
-  if (!current) return true
-
-  const candidateHasPrompt = !!String(candidate.prompt_question ?? "").trim()
-  const currentHasPrompt = !!String(current.prompt_question ?? "").trim()
-
-  if (candidateHasPrompt && !currentHasPrompt) return true
-  if (!candidateHasPrompt && currentHasPrompt) return false
-
-  const candidateUpdated = candidate.updated_at?.getTime() ?? 0
-  const currentUpdated = current.updated_at?.getTime() ?? 0
-  if (candidateUpdated !== currentUpdated) return candidateUpdated > currentUpdated
-
-  const candidateCreated = candidate.created_at?.getTime() ?? 0
-  const currentCreated = current.created_at?.getTime() ?? 0
-  return candidateCreated > currentCreated
-}
-
-async function getCanonicalRuleByIdentity(input: {
-  subject_id?: string | null
-  topic_id?: string | null
-  subtopic_id?: string | null
-  title?: string | null
-}) {
-  if (!input.subject_id || !input.title) return null
-
-  const candidates = await prisma.rules.findMany({
-    where: {
-      is_active: true,
-      subject_id: input.subject_id,
-      topic_id: input.topic_id ?? null,
-      subtopic_id: input.subtopic_id ?? null,
-      title: input.title,
-      NOT: {
-        prompt_question: null,
-      },
+function toRuleResponse(rule: ApplicableRegistryRule) {
+  return {
+    id: rule.id,
+    external_key: rule.externalKey,
+    title: rule.title,
+    rule_text: rule.ruleText,
+    prompt_question: rule.promptQuestion,
+    subject_id: rule.subjectId,
+    topic_id: rule.topicId,
+    subtopic_id: rule.subtopicId,
+    source_type: rule.sourceType,
+    publication_status: rule.publicationStatus,
+    source_package: rule.sourcePackage,
+    priority_weight: rule.priorityWeight,
+    jurisdiction_code: rule.jurisdictionCode,
+    exam_regime_code: rule.examRegimeCode,
+    subjects: {
+      id: rule.subjectId,
+      name: rule.subjectName,
     },
-    include: {
-      topics: true,
-      subtopics: true,
-      subjects: true,
-    },
-    orderBy: [{ updated_at: "desc" }, { created_at: "desc" }],
-  })
-
-  const usable = candidates.filter((rule) => !!String(rule.prompt_question ?? "").trim())
-  if (usable.length === 0) return null
-
-  let best = usable[0]
-  for (const candidate of usable) {
-    if (isBetterRule(candidate, best)) {
-      best = candidate
-    }
+    topics: rule.topicId
+      ? {
+          id: rule.topicId,
+          name: rule.topicName,
+        }
+      : null,
+    subtopics: rule.subtopicId
+      ? {
+          id: rule.subtopicId,
+          name: rule.subtopicName,
+        }
+      : null,
   }
-
-  return best
-}
-
-async function getCanonicalRandomRule() {
-  const rawRules = await prisma.rules.findMany({
-    where: {
-      is_active: true,
-      NOT: {
-        prompt_question: null,
-      },
-    },
-    include: {
-      topics: true,
-      subtopics: true,
-      subjects: true,
-    },
-    orderBy: [{ updated_at: "desc" }, { created_at: "desc" }],
-  })
-
-  const canonicalMap = new Map<string, (typeof rawRules)[number]>()
-
-  for (const rule of rawRules) {
-    if (!String(rule.prompt_question ?? "").trim()) continue
-
-    const key = makeRuleKey(rule)
-    const existing = canonicalMap.get(key)
-
-    if (isBetterRule(rule, existing)) {
-      canonicalMap.set(key, rule)
-    }
-  }
-
-  const canonicalRules = Array.from(canonicalMap.values())
-  if (canonicalRules.length === 0) return null
-
-  const randomIndex = Math.floor(Math.random() * canonicalRules.length)
-  return canonicalRules[randomIndex]
 }
 
 export async function GET(req: Request) {
@@ -139,72 +60,89 @@ export async function GET(req: Request) {
       return rateLimitResponse
     }
 
-    let rule: any = null
+    const ruleUniverse = userId
+      ? await getApplicableRuleUniverseForUser(userId)
+      : await getApplicableRuleUniverse({ jurisdictionCode: "UBE" })
+
+    const applicableRules = ruleUniverse.rules.filter((rule) =>
+      String(rule.promptQuestion ?? "").trim()
+    )
+
+    if (applicableRules.length === 0) {
+      return NextResponse.json(
+        {
+          error: "No published rules are available for this jurisdiction and exam date.",
+          ruleUniverse: {
+            jurisdiction: ruleUniverse.jurisdiction,
+            examRegime: ruleUniverse.examRegime,
+            effectiveDate: ruleUniverse.effectiveDate,
+            totalRules: ruleUniverse.totals.rules,
+            source: ruleUniverse.source,
+          },
+        },
+        { status: 404 }
+      )
+    }
+
+    const applicableRuleIds = new Set(applicableRules.map((rule) => rule.id))
+    const ruleById = new Map(applicableRules.map((rule) => [rule.id, rule]))
+
+    let selectedRule: ApplicableRegistryRule | null = null
 
     if (mode === "weak" && userId) {
       const weakProgress = await prisma.user_rule_progress.findFirst({
         where: {
           user_id: userId,
+          rule_id: {
+            in: Array.from(applicableRuleIds),
+          },
           attempts: { gt: 3 },
           correct_count: { lt: 2 },
         },
         orderBy: [{ updated_at: "desc" }],
-        include: {
-          rules: {
-            include: {
-              topics: true,
-              subtopics: true,
-              subjects: true,
-            },
-          },
+        select: {
+          rule_id: true,
         },
       })
 
-      if (weakProgress?.rules) {
-        rule =
-          (await getCanonicalRuleByIdentity({
-            subject_id: weakProgress.rules.subject_id,
-            topic_id: weakProgress.rules.topic_id,
-            subtopic_id: weakProgress.rules.subtopic_id,
-            title: weakProgress.rules.title,
-          })) ?? null
-      }
-    } else if (mode === "review" && userId) {
+      selectedRule = weakProgress?.rule_id
+        ? ruleById.get(weakProgress.rule_id) ?? null
+        : null
+    }
+
+    if (!selectedRule && mode === "review" && userId) {
       const reviewProgress = await prisma.user_rule_progress.findFirst({
         where: {
           user_id: userId,
+          rule_id: {
+            in: Array.from(applicableRuleIds),
+          },
           next_review_at: {
             lte: new Date(),
           },
         },
         orderBy: [{ next_review_at: "asc" }],
-        include: {
-          rules: {
-            include: {
-              topics: true,
-              subtopics: true,
-              subjects: true,
-            },
-          },
+        select: {
+          rule_id: true,
         },
       })
 
-      if (reviewProgress?.rules) {
-        rule =
-          (await getCanonicalRuleByIdentity({
-            subject_id: reviewProgress.rules.subject_id,
-            topic_id: reviewProgress.rules.topic_id,
-            subtopic_id: reviewProgress.rules.subtopic_id,
-            title: reviewProgress.rules.title,
-          })) ?? null
-      }
-    } else {
-      rule = await getCanonicalRandomRule()
+      selectedRule = reviewProgress?.rule_id
+        ? ruleById.get(reviewProgress.rule_id) ?? null
+        : null
     }
 
-    return NextResponse.json(rule)
+    if (!selectedRule) {
+      const randomIndex = Math.floor(Math.random() * applicableRules.length)
+      selectedRule = applicableRules[randomIndex]
+    }
+
+    return NextResponse.json(toRuleResponse(selectedRule))
   } catch (error) {
     console.error("RULES NEXT ERROR:", error)
-    return NextResponse.json({ error: "Failed to load next rule" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to load next rule" },
+      { status: 500 }
+    )
   }
 }
