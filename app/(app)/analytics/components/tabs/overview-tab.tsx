@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
   AlertTriangle,
   ArrowRight,
@@ -77,6 +77,31 @@ export default function OverviewTab({
   consistencyScore,
 }: OverviewTabProps) {
   const router = useRouter()
+  const [greeting, setGreeting] = useState("Hello")
+
+  useEffect(() => {
+    const updateGreeting = () => {
+      const hour = new Date().getHours()
+
+      if (hour < 5) {
+        setGreeting("Good night")
+      } else if (hour < 12) {
+        setGreeting("Good morning")
+      } else if (hour < 17) {
+        setGreeting("Good afternoon")
+      } else if (hour < 22) {
+        setGreeting("Good evening")
+      } else {
+        setGreeting("Good night")
+      }
+    }
+
+    updateGreeting()
+
+    const timer = window.setInterval(updateGreeting, 60_000)
+
+    return () => window.clearInterval(timer)
+  }, [])
 
   const displayName = getDisplayName(dashboard)
   const readinessScore = getReadinessScore(dashboard, currentScore)
@@ -103,7 +128,7 @@ export default function OverviewTab({
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
           <div>
             <h2 className="text-[17px] font-normal tracking-[-0.03em] text-[#080d2f]">
-              Good evening{displayName ? `, ${displayName}` : ""} 👋
+              {greeting}{displayName ? `, ${displayName}` : ""} 👋
             </h2>
 
             <p className="mt-2 max-w-3xl text-[12px] leading-5 text-[#465571]">
@@ -141,7 +166,7 @@ export default function OverviewTab({
               </button>
 
               <div className="mt-1 text-center text-[10px] text-slate-500">
-                Estimated time: {bestRangeLabel || "25–30 min"}
+                {bestRangeLabel ? `Estimated time: ${bestRangeLabel}` : "Estimated time appears after enough timed sessions"}
               </div>
             </div>
           </div>
@@ -266,11 +291,11 @@ export default function OverviewTab({
 
               <DriverRow
                 icon={<BookOpen size={16} />}
-                title={strongestSubject?.name || "Strong subjects"}
+                title={strongestSubject?.name || "Strength signal pending"}
                 text={
                   strongestSubject
                     ? `${safeNumber(strongestSubject.accuracy)}% accuracy`
-                    : "Appears after more scored activity."
+                    : "Requires more scored activity."
                 }
                 value={strongestSubject ? `${safeNumber(strongestSubject.accuracy)}%` : "—"}
                 tone={strongestSubject ? "green" : "neutral"}
@@ -374,7 +399,9 @@ export default function OverviewTab({
                   <span className="font-normal text-[#10153d]">
                     Why this works:
                   </span>{" "}
-                  This focus comes from your current weak-rule and subject-risk signals.
+                  {primaryWeakArea || weakestSubject
+                    ? "This focus is based on your current weak-rule and subject-risk signals."
+                    : "Lexora will explain this once enough scored recall data exists."}
                 </div>
               </div>
             </div>
@@ -775,27 +802,27 @@ function getFocusTitle(
     return `Review ${weakestSubject.name} weak rules`
   }
 
-  return "Complete scored recall"
+  return "More scored data needed"
 }
 
 function getFocusDetail(primaryWeakArea?: WeakArea) {
   const rule = getPrimaryWeakRuleLabel(primaryWeakArea)
 
-  if (primaryWeakArea && rule !== "Priority weak rule") {
+  if (primaryWeakArea && rule !== "No confirmed priority rule yet") {
     return rule
   }
 
-  return "Start a focused recall session with your highest-priority weak rules."
+  return "Complete more scored recall attempts so Lexora can identify a reliable focus."
 }
 
 function getPrimaryWeakRuleLabel(primaryWeakArea?: WeakArea) {
-  if (!primaryWeakArea) return "Priority weak rule"
+  if (!primaryWeakArea) return "No confirmed priority rule yet"
 
   return (
     (primaryWeakArea as any).rule ||
     (primaryWeakArea as any).title ||
     primaryWeakArea.topic ||
-    "Priority weak rule"
+    "No confirmed priority rule yet"
   )
 }
 
@@ -874,8 +901,10 @@ function buildSummary({
       ? "You’re performing well overall."
       : "Your recall is still building.",
     overallText: accuracyStrong
-      ? "Strong recall accuracy is helping your readiness. The main opportunity is reducing weak-rule pressure."
-      : "Your score needs more stable recall attempts before Lexora can confirm strong performance.",
+      ? hasWeakPressure
+        ? "Your recall accuracy is currently strong, while weak-rule pressure remains the main measurable issue."
+        : "Your recall accuracy is currently strong, and no confirmed weak-rule pressure is shown in this range."
+      : "Lexora needs more stable scored recall attempts before confirming a strong performance pattern.",
     movementTitle:
       delta >= 0
         ? "Your accuracy is improving."
@@ -894,8 +923,8 @@ function buildSummary({
     coachingInsight: bestRangeLabel
       ? `Keep focused recall blocks around ${bestRangeLabel}.`
       : consistencyScore >= 4
-        ? "Keep your study sessions consistent and prioritize scored recall over passive review."
-        : "Build consistency with short scored recall sessions across several days.",
+        ? "Your consistency score is currently strong; keep using scored recall so the signal remains reliable."
+        : "Your consistency score is still developing; complete scored recall across more active days.",
   }
 }
 
