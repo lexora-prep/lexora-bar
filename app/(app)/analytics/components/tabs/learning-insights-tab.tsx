@@ -702,13 +702,11 @@ export default function LearningInsightsTab({
             </div>
 
             <p className="mt-1 max-w-2xl text-[11px] font-normal leading-4 text-[#56617c]">
-              {primaryWeakArea
-                ? `Begin with ${primaryWeakArea.subject}: ${
-                    primaryWeakArea.rule ||
-                    primaryWeakArea.title ||
-                    "the current shared weak-focus rule"
-                  }. Review it, test active recall, and repeat until recall becomes stable.`
-                : "Complete more rule training to generate a reliable personalized recommendation."}
+              {focusSession
+                ? `${focusSession.title}: ${focusSession.detail}. ${focusSession.reason}`
+                : focusLoading
+                  ? "Loading the current weak-focus recommendation..."
+                  : "Complete more scored rule training to generate a reliable personalized recommendation."}
             </p>
           </div>
 
