@@ -225,9 +225,16 @@ export default function OverviewTab({
             />
           </div>
 
-          <div className="mt-3 flex items-start gap-2 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-50 via-white to-violet-50 px-3 py-2.5 text-[12px] leading-5 text-violet-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
-            <Clock3 size={14} className="mt-0.5 shrink-0 text-violet-600" />
-            <span>{summary.coachingInsight}</span>
+          <div className="relative mt-3 overflow-hidden rounded-2xl border border-violet-100/80 bg-white/70 px-3 py-2.5 text-[12px] leading-5 text-violet-800 shadow-[0_10px_28px_rgba(124,58,237,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur">
+            <div className="pointer-events-none absolute -left-10 -top-12 h-24 w-24 rounded-full bg-violet-100/70 blur-2xl" />
+            <div className="pointer-events-none absolute -right-12 bottom-0 h-20 w-20 rounded-full bg-fuchsia-100/60 blur-2xl" />
+
+            <div className="relative flex items-start gap-2">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-violet-600 shadow-sm ring-1 ring-violet-100">
+                <Clock3 size={13} />
+              </span>
+              <span>{summary.coachingInsight}</span>
+            </div>
           </div>
         </PremiumCard>
 
@@ -317,18 +324,29 @@ export default function OverviewTab({
         >
           {primaryWeakArea || weakestSubject ? (
             <div className="space-y-3">
-              <div className="rounded-2xl border border-violet-100 bg-violet-50/75 p-3">
-                <div className="text-[11px] text-violet-700">
-                  Focus
-                </div>
+              <div className="relative overflow-hidden rounded-2xl border border-violet-100/80 bg-white/75 p-3 shadow-[0_10px_26px_rgba(124,58,237,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur">
+                <div className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full bg-violet-100/80 blur-2xl" />
+                <div className="pointer-events-none absolute right-0 top-0 h-16 w-20 rounded-full bg-fuchsia-100/50 blur-2xl" />
 
-                <div className="mt-1 text-[14px] font-normal text-[#10153d]">
-                  {focusTitle}
-                </div>
+                <div className="relative flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white text-violet-700 shadow-sm ring-1 ring-violet-100">
+                    <Target size={17} />
+                  </span>
 
-                <p className="mt-1 text-[11px] leading-4 text-slate-500">
-                  {focusDetail}
-                </p>
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-violet-700">
+                      Focus
+                    </div>
+
+                    <div className="mt-1 truncate text-[14px] font-normal text-[#10153d]">
+                      {focusTitle}
+                    </div>
+
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-500">
+                      {focusDetail}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <StepRow
@@ -349,11 +367,15 @@ export default function OverviewTab({
                 text="Check whether recall improves."
               />
 
-              <div className="rounded-xl bg-slate-50 p-3 text-[11px] leading-5 text-slate-600">
-                <span className="font-normal text-[#10153d]">
-                  Why this works:
-                </span>{" "}
-                This focus comes from your current weak-rule and subject-risk signals.
+              <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white/75 p-3 text-[11px] leading-5 text-slate-600 shadow-[0_8px_22px_rgba(15,23,42,0.035),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur">
+                <div className="pointer-events-none absolute -right-8 -top-8 h-16 w-16 rounded-full bg-violet-100/70 blur-xl" />
+
+                <div className="relative">
+                  <span className="font-normal text-[#10153d]">
+                    Why this works:
+                  </span>{" "}
+                  This focus comes from your current weak-rule and subject-risk signals.
+                </div>
               </div>
             </div>
           ) : (
@@ -608,18 +630,22 @@ function StepRow({
   text: string
 }) {
   return (
-    <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-2.5">
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-700 text-[11px] text-white">
-        {step}
-      </div>
+    <div className="relative overflow-hidden rounded-2xl border border-slate-100/90 bg-white/70 p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.035),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(124,58,237,0.07)]">
+      <div className="pointer-events-none absolute -left-8 -top-8 h-16 w-16 rounded-full bg-violet-50 blur-xl" />
 
-      <div>
-        <div className="text-[12px] font-normal text-[#11183d]">
-          {title}
+      <div className="relative flex items-start gap-2.5">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-violet-800 text-[11px] text-white shadow-[0_8px_18px_rgba(124,58,237,0.22)]">
+          {step}
         </div>
 
-        <div className="mt-0.5 text-[10px] leading-4 text-slate-500">
-          {text}
+        <div>
+          <div className="text-[12px] font-normal text-[#11183d]">
+            {title}
+          </div>
+
+          <div className="mt-0.5 text-[10px] leading-4 text-slate-500">
+            {text}
+          </div>
         </div>
       </div>
     </div>
