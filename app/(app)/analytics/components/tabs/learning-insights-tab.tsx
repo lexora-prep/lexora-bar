@@ -336,8 +336,9 @@ export default function LearningInsightsTab({
               text="Check your answer and repeat the rule if recall is still unstable."
             />
 
-            <div className="rounded-xl bg-emerald-50 px-3 py-2 text-[10px] font-normal leading-4 text-emerald-800">
-              Immediate recall plus retest is used as a study pattern. The actual target rule comes from your live weak-focus queue.
+            <div className="flex items-start gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-[10px] font-normal leading-4 text-emerald-800">
+              <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
+              <span>Immediate recall plus retest is used as a study pattern. The actual target rule comes from your live weak-focus queue.</span>
             </div>
           </div>
         </LearningCard>
@@ -356,17 +357,11 @@ export default function LearningInsightsTab({
                   totalModeAttempts={totalModeAttempts}
                   activeModeKey={activeModeKey}
                   onHover={setActiveModeKey}
-                  gradient={donutGradient}
                 />
 
                 <div className="space-y-2.5">
                   {modeMix.map((item) => (
-                    <ModeLine
-                      key={item.key}
-                      item={item}
-                      active={item.key === activeModeKey}
-                      onHover={setActiveModeKey}
-                    />
+                    <ModeLine key={item.key} item={item} />
                   ))}
                 </div>
               </div>
@@ -427,9 +422,10 @@ export default function LearningInsightsTab({
               }
             />
 
-            <div className="rounded-xl bg-violet-50 px-3 py-2.5 text-[10px] font-normal leading-4 text-[#46306f]">
-              <span className="font-semibold text-violet-700">Focus on quality, not total time. </span>
-              Effective scored recall is what moves this page’s signals.
+            <div className="flex items-start gap-2 rounded-xl bg-violet-50 px-3 py-2.5 text-[10px] font-normal leading-4 text-[#46306f]">
+              <Sparkles size={14} className="mt-0.5 shrink-0 text-violet-700" />
+              <span><span className="font-semibold text-violet-700">Focus on quality, not total time. </span>
+              Effective scored recall is what moves this page’s signals.</span>
             </div>
           </div>
         </LearningCard>
@@ -562,7 +558,8 @@ function PatternStep({
 }) {
   return (
     <div className="grid grid-cols-[28px_34px_1fr] items-start gap-2.5">
-      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 text-[11px] font-semibold text-violet-700">
+      <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-violet-700 shadow-[0_6px_16px_rgba(109,40,217,0.12)] ring-1 ring-violet-100">
+        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-violet-500" />
         {number}
       </div>
       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
@@ -580,32 +577,93 @@ function PatternStep({
   )
 }
 
+function polarToCartesian(cx: number, cy: number, radius: number, angleInDegrees: number) {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180
+
+  return {
+    x: cx + radius * Math.cos(angleInRadians),
+    y: cy + radius * Math.sin(angleInRadians),
+  }
+}
+
+function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number) {
+  const start = polarToCartesian(cx, cy, radius, endAngle)
+  const end = polarToCartesian(cx, cy, radius, startAngle)
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1"
+
+  return [
+    "M", start.x, start.y,
+    "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+  ].join(" ")
+}
+
 function InteractiveModeDonut({
   modeMix,
   totalModeAttempts,
   activeModeKey,
   onHover,
-  gradient,
 }: {
   modeMix: ModeMetric[]
   totalModeAttempts: number
   activeModeKey: string | null
   onHover: (key: string | null) => void
-  gradient: string
 }) {
   const activeMode =
     modeMix.find((item) => item.key === activeModeKey) ||
     modeMix.find((item) => item.count > 0) ||
     null
 
+  let cursor = 0
+  const visibleModes = modeMix.filter((item) => item.percentage > 0)
+
   return (
     <div className="relative mx-auto h-32 w-32">
-      <div
-        className="h-32 w-32 rounded-full transition duration-300 hover:scale-[1.04]"
-        style={{ background: gradient }}
+      <svg
+        viewBox="0 0 140 140"
+        className="h-32 w-32 overflow-visible"
         onMouseLeave={() => onHover(null)}
-      />
-      <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white shadow-inner">
+      >
+        <circle
+          cx="70"
+          cy="70"
+          r="44"
+          fill="none"
+          stroke="#e2e8f0"
+          strokeWidth="24"
+        />
+
+        {visibleModes.map((item) => {
+          const startAngle = cursor * 3.6
+          const endAngle = (cursor + item.percentage) * 3.6
+          cursor += item.percentage
+
+          const active = activeModeKey === item.key
+          const midAngle = (startAngle + endAngle) / 2
+          const offset = active ? 5 : 0
+          const dx = Math.cos(((midAngle - 90) * Math.PI) / 180) * offset
+          const dy = Math.sin(((midAngle - 90) * Math.PI) / 180) * offset
+
+          return (
+            <path
+              key={item.key}
+              d={describeArc(70, 70, 44, startAngle, endAngle)}
+              fill="none"
+              stroke={MODE_COLORS[item.key] ?? MODE_COLORS.other}
+              strokeWidth={active ? 28 : 24}
+              strokeLinecap="butt"
+              transform={`translate(${dx} ${dy})`}
+              className="cursor-pointer transition-all duration-200"
+              onMouseEnter={() => onHover(item.key)}
+              onFocus={() => onHover(item.key)}
+              tabIndex={0}
+            />
+          )
+        })}
+
+        <circle cx="70" cy="70" r="30" fill="white" />
+      </svg>
+
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <div className="text-[20px] font-semibold tracking-[-0.04em] text-[#10153d]">
           {totalModeAttempts}
         </div>
@@ -614,29 +672,11 @@ function InteractiveModeDonut({
         </div>
       </div>
 
-      {modeMix.map((item, index) => (
-        <button
-          key={item.key}
-          type="button"
-          aria-label={item.label}
-          onMouseEnter={() => onHover(item.key)}
-          onFocus={() => onHover(item.key)}
-          className={`absolute h-8 w-8 rounded-full transition duration-200 ${
-            activeModeKey === item.key ? "scale-125 bg-white/70 shadow-lg" : "bg-transparent"
-          }`}
-          style={{
-            left: `${50 + Math.cos((index / Math.max(modeMix.length, 1)) * Math.PI * 2 - Math.PI / 2) * 48}%`,
-            top: `${50 + Math.sin((index / Math.max(modeMix.length, 1)) * Math.PI * 2 - Math.PI / 2) * 48}%`,
-            transform: "translate(-50%, -50%)",
-          }}
-        />
-      ))}
-
       {activeMode ? (
-        <div className="absolute left-1/2 top-full z-10 mt-2 w-40 -translate-x-1/2 rounded-xl border border-violet-100 bg-white px-3 py-2 text-center text-[9px] shadow-xl">
+        <div className="absolute left-1/2 top-full z-10 mt-2 w-44 -translate-x-1/2 rounded-xl border border-violet-100 bg-white px-3 py-2 text-center text-[9px] shadow-xl">
           <div className="font-semibold text-[#10153d]">{activeMode.label}</div>
           <div className="mt-0.5 text-slate-500">
-            {activeMode.count} attempts · {activeMode.percentage}%
+            {activeMode.count} real attempts · {activeMode.percentage}%
           </div>
         </div>
       ) : null}
@@ -644,32 +684,16 @@ function InteractiveModeDonut({
   )
 }
 
-function ModeLine({
-  item,
-  active,
-  onHover,
-}: {
-  item: ModeMetric
-  active: boolean
-  onHover: (key: string | null) => void
-}) {
+function ModeLine({ item }: { item: ModeMetric }) {
   return (
-    <button
-      type="button"
-      onMouseEnter={() => onHover(item.key)}
-      onMouseLeave={() => onHover(null)}
-      onFocus={() => onHover(item.key)}
-      className={`grid w-full grid-cols-[10px_1fr_auto] items-center gap-2.5 rounded-lg px-1.5 py-1 text-left text-[10px] transition ${
-        active ? "bg-violet-50 scale-[1.01]" : "hover:bg-slate-50"
-      }`}
-    >
+    <div className="grid w-full grid-cols-[10px_1fr_auto] items-center gap-2.5 px-1.5 py-1 text-left text-[10px]">
       <span
-        className={`h-2.5 w-2.5 rounded-full transition ${active ? "scale-125" : ""}`}
+        className="h-2.5 w-2.5 rounded-full"
         style={{ backgroundColor: MODE_COLORS[item.key] ?? MODE_COLORS.other }}
       />
       <span className="text-[#30395a]">{item.label}</span>
       <span className="font-semibold text-[#10153d]">{item.percentage}%</span>
-    </button>
+    </div>
   )
 }
 
