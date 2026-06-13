@@ -322,9 +322,30 @@ export default function RegisterPage() {
         return
       }
 
+      const postRegistrationPath =
+        selectedPlanId === "free"
+          ? "/dashboard"
+          : `/checkout?plan=${encodeURIComponent(selectedPlanId)}&registered=1`
+
+      const emailRedirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/confirm?next=${encodeURIComponent(postRegistrationPath)}`
+          : undefined
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
+        options: {
+          emailRedirectTo,
+          data: {
+            full_name: fullName.trim(),
+            law_school: lawSchool.trim(),
+            jurisdiction: jurisdiction.trim(),
+            exam_month: monthNumber,
+            exam_year: yearNumber,
+            selected_plan: selectedPlanId,
+          },
+        },
       })
 
       if (signUpError) {
@@ -407,13 +428,14 @@ export default function RegisterPage() {
         console.warn("Welcome email request failed.")
       })
 
-      if (selectedPlanId === "free") {
-        router.push("/dashboard")
-        router.refresh()
+      if (!data.session) {
+        setError(
+          "Account created. Please check your email to confirm your account, then continue."
+        )
         return
       }
 
-      router.push(`/checkout?plan=${selectedPlanId}&registered=1`)
+      router.push(postRegistrationPath)
       router.refresh()
     } catch (err) {
       console.error("REGISTER ERROR:", err)
