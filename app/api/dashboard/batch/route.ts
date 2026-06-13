@@ -7,6 +7,7 @@ import {
   LEARNING_PROGRESS_SELECT,
   resolveLearningProgress,
 } from "@/lib/learning/analytics"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 
 type DayStatus = "fire" | "ice" | "none"
 type RuleSet = "emergency" | "priority" | "golden" | "core" | "full"
@@ -818,18 +819,7 @@ export async function GET(request: Request) {
         },
       }),
 
-      prisma.rules.findMany({
-        where: {
-          is_active: true,
-        },
-        select: {
-          subject_id: true,
-          topic_id: true,
-          subtopic_id: true,
-          title: true,
-          rule_type: true,
-        },
-      }),
+      getApplicableRuleUniverseForUser(user.id),
 
       prisma.user_rule_progress.findMany({
         where: {
@@ -964,7 +954,15 @@ export async function GET(request: Request) {
 
     const studyPlan = valueOrFallback(results[0], null)
     const subjects = valueOrFallback(results[1], [])
-    const activeRules = valueOrFallback(results[2], [])
+    const ruleUniverse = valueOrFallback(results[2], null)
+    const activeRules =
+      ruleUniverse?.rules.map((rule) => ({
+        subject_id: rule.subjectId,
+        topic_id: rule.topicId,
+        subtopic_id: rule.subtopicId,
+        title: rule.title,
+        rule_type: null,
+      })) ?? []
     const userRuleProgress = valueOrFallback(results[3], [])
     const activeMbeQuestionCounts = valueOrFallback(results[4], [])
     const userMbeAttempts = valueOrFallback(results[5], [])
