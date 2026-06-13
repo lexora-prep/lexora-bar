@@ -240,24 +240,6 @@ export default function LearningInsightsTab({
     ? `Use the live weak-focus queue for ${focusSession.subject}. Repeat weak rules until recall becomes stable.`
     : "Keep recording scored recall attempts so Lexora can identify a reliable weak-focus path."
 
-  useEffect(() => {
-    setTypedGoalText("")
-
-    if (!goalText) return
-
-    let index = 0
-    const timer = window.setInterval(() => {
-      index += 1
-      setTypedGoalText(goalText.slice(0, index))
-
-      if (index >= goalText.length) {
-        window.clearInterval(timer)
-      }
-    }, 22)
-
-    return () => window.clearInterval(timer)
-  }, [goalText])
-
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <AnalyticsInterpretation
