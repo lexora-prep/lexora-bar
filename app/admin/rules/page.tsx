@@ -441,9 +441,13 @@ function MetricTooltip({
 }
 
 const STAT_EXPLANATIONS: Record<string, string> = {
-  "Stored records":
+  "Applicable rules":
     "Unique published rules connected to the active curriculum. Historical and unassigned database rows are excluded.",
-  Published:
+  "Stored inventory":
+    "Every physical rule row stored in the database. This is admin inventory and must not be used as the student denominator.",
+  "Unassigned legacy":
+    "Published stored rows that are not connected to the active curriculum. These are admin-only legacy records.",
+  "Published curriculum":
     "Applicable curriculum rules currently published and available to eligible users.",
   Drafts:
     "Rule records saved for review but not yet published to any curriculum.",
