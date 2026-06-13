@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   Area,
   AreaChart,
@@ -27,6 +27,7 @@ import {
   TrendingUp,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import type { RecommendedFocusSession } from "@/lib/analytics/recommendation-engine"
 import type {
   DashboardData,
   SubjectDiagnostic,
@@ -70,6 +71,43 @@ export default function LearningInsightsTab({
   consistencyScore,
 }: LearningInsightsTabProps) {
   const router = useRouter()
+  const [focusSession, setFocusSession] = useState<RecommendedFocusSession | null>(null)
+  const [focusLoading, setFocusLoading] = useState(true)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadFocusSession() {
+      try {
+        setFocusLoading(true)
+
+        const response = await fetch("/api/rules/weak-focus?limit=1", {
+          cache: "no-store",
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          setFocusSession(null)
+          return
+        }
+
+        const payload = await response.json()
+        setFocusSession(payload?.focusSession ?? null)
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setFocusSession(null)
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setFocusLoading(false)
+        }
+      }
+    }
+
+    loadFocusSession()
+
+    return () => controller.abort()
+  }, [])
 
   const hasTrendData = chartData.some(
     (point) => point.score > 0
@@ -87,7 +125,7 @@ export default function LearningInsightsTab({
     strongestSubject?.name || "More data needed"
 
   const weakestLabel =
-    primaryWeakArea?.subject ||
+    focusSession?.subject ||
     weakestSubject?.name ||
     "More data needed"
 
@@ -102,9 +140,11 @@ export default function LearningInsightsTab({
             : "There is not enough scored rule activity to identify a reliable learning pattern yet."
         }
         nextStep={
-          primaryWeakArea
-            ? `Use a focused recall session for ${primaryWeakArea.subject}${primaryWeakArea.topic ? ` — ${primaryWeakArea.topic}` : ""}, then compare the next scored attempt with the current result.`
-            : "Complete several short, independently scored sessions before changing your study routine."
+          focusSession
+            ? `${focusSession.title}: ${focusSession.detail}.`
+            : focusLoading
+              ? "Loading the current weak-focus recommendation..."
+              : "Complete several independently scored sessions before changing your study routine."
         }
       />
       <section className="overflow-hidden rounded-2xl border border-[#ded8f5] bg-gradient-to-br from-[#fbf9ff] via-white to-[#f8f5ff] p-4 shadow-[0_8px_24px_rgba(52,35,110,0.045)]">
@@ -676,7 +716,7 @@ export default function LearningInsightsTab({
             icon={<Brain size={13} />}
             title="Start with"
             value={
-              primaryWeakArea?.subject ||
+              focusSession?.subject ||
               "Weak areas"
             }
           />
@@ -684,7 +724,7 @@ export default function LearningInsightsTab({
           <RecommendationChip
             icon={<Clock3 size={13} />}
             title="Session"
-            value="Focused review"
+            value={focusSession?.reviewTimingLabel || "Pending"}
           />
 
           <RecommendationChip
