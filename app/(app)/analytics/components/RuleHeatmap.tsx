@@ -4,12 +4,22 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 
+type RuleHeatmapSubject = {
+  subject: string
+  mastery: number
+  critical: number
+  needsWork: number
+  improving: number
+  mastered: number
+}
+
 export default function RuleHeatmap() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [weakAreas, setWeakAreas] = useState<any[]>([])
+  const [weakAreas, setWeakAreas] =
+    useState<RuleHeatmapSubject[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

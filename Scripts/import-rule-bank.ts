@@ -93,12 +93,12 @@ const SUBJECT_STATUS_MAP: Record<string, SubjectStatus> = {
     show_in_analytics: true,
   },
   "Family Law": {
-    exam_status: "mpt_only",
+    exam_status: "core",
     show_in_rule_training: true,
     show_in_analytics: true,
   },
   "Trusts and Estates": {
-    exam_status: "mpt_only",
+    exam_status: "core",
     show_in_rule_training: true,
     show_in_analytics: true,
   },

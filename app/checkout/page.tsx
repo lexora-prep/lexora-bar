@@ -455,6 +455,13 @@ function CheckoutContent() {
               <p className="mt-3 text-xs font-semibold leading-5 text-white/55">
                 Taxes/VAT are calculated separately at checkout based on your location.
               </p>
+
+              <div className="mt-4 rounded-2xl border border-white/15 bg-white/10 p-3 text-[11px] font-semibold leading-5 text-white/75">
+                Your subscription renews automatically every month until canceled.
+                You can cancel anytime from your Subscription page. If you do not
+                cancel before the next billing date, Paddle will automatically
+                charge your saved payment method for the next billing cycle.
+              </div>
             </div>
 
             <div className="mt-6 grid gap-3">

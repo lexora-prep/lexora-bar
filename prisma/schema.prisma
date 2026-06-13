@@ -44,33 +44,45 @@ model user_legal_acceptances {
 }
 
 model rules {
-  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  topic_id                String?                   @db.Uuid
-  subtopic_id             String?                   @db.Uuid
-  title                   String
-  rule_text               String
-  explanation             String?
-  buzzwords               Json?
-  cloze_template          String?
-  is_active               Boolean                   @default(true)
-  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
-  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
-  subject_uuid            String?                   @db.Uuid
-  subject_id              String?                   @db.Uuid
-  rule_type               String?
-  prompt_question         String?
-  application_example     String?
-  common_trap             String?
-  priority                String?
-  common_traps            Json?
-  exam_tip                String?
-  how_to_apply            Json?
-  flashcard_session_cards flashcard_session_cards[]
-  subjects                subjects?                 @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rules_subject")
-  subtopics               subtopics?                @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  topics                  topics?                   @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  user_rule_progress      user_rule_progress[]
-  user_rules              user_rules[]
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topic_id                 String?                    @db.Uuid
+  subtopic_id              String?                    @db.Uuid
+  title                    String
+  rule_text                String
+  explanation              String?
+  buzzwords                Json?
+  cloze_template           String?
+  is_active                Boolean                    @default(true)
+  created_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  subject_uuid             String?                    @db.Uuid
+  subject_id               String?                    @db.Uuid
+  rule_type                String?
+  prompt_question          String?
+  application_example      String?
+  common_trap              String?
+  priority                 String?
+  common_traps             Json?
+  exam_tip                 String?
+  how_to_apply             Json?
+  external_key             String?                    @unique(map: "rules_external_key_unique")
+  source_type              String                     @default("LEXORA_CORE") @db.VarChar(30)
+  publication_status       String                     @default("PUBLISHED") @db.VarChar(20)
+  current_version          Int                        @default(1)
+  published_at             DateTime?                  @db.Timestamptz(6)
+  archived_at              DateTime?                  @db.Timestamptz(6)
+  created_by               String?                    @db.Uuid
+  updated_by               String?                    @db.Uuid
+  flashcard_session_cards  flashcard_session_cards[]
+  registry_versions        rule_versions[]
+  registry_applicability   rule_applicability[]
+  registry_import_rows     rule_import_rows[]
+  subjects                 subjects?                  @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rules_subject")
+  subtopics                subtopics?                 @relation(fields: [subtopic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  topics                   topics?                    @relation(fields: [topic_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_rule_progress       user_rule_progress[]
+  user_rule_cycle_progress user_rule_cycle_progress[]
+  user_rules               user_rules[]
 
   @@index([subtopic_id])
   @@index([topic_id])
@@ -80,19 +92,20 @@ model rules {
 }
 
 model subjects {
-  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                  String
-  order_index           Int                @default(0)
-  created_at            DateTime           @default(now()) @db.Timestamptz(6)
-  exam_status           String             @default("core")
-  show_in_rule_training Boolean            @default(true)
-  show_in_analytics     Boolean            @default(true)
-  mbe_questions         MBEQuestion[]
-  state_subject_stats   StateSubjectStat[]
-  topic_progress        TopicProgress[]
-  user_subject_stats    UserSubjectStat[]
-  rules                 rules[]
-  topics                topics[]
+  id                     String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String
+  order_index            Int                   @default(0)
+  created_at             DateTime              @default(now()) @db.Timestamptz(6)
+  exam_status            String                @default("core")
+  show_in_rule_training  Boolean               @default(true)
+  show_in_analytics      Boolean               @default(true)
+  mbe_questions          MBEQuestion[]
+  state_subject_stats    StateSubjectStat[]
+  topic_progress         TopicProgress[]
+  user_subject_stats     UserSubjectStat[]
+  rules                  rules[]
+  topics                 topics[]
+  curriculum_memberships curriculum_subjects[]
 
   @@schema("public")
 }
@@ -151,32 +164,46 @@ model user_rule_attempts {
   missed_buzzwords Json?
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
   training_mode    String?   @db.VarChar(50)
+  training_context String?   @db.VarChar(50)
+  recall_seconds   Int?
+  revealed_answer  Boolean   @default(false)
+  self_reported    Boolean   @default(false)
+  engine_version   String?   @db.VarChar(20)
 
   @@index([user_id])
   @@index([user_id, created_at])
   @@index([user_id, training_mode])
   @@index([user_id, created_at(sort: Desc)], map: "idx_user_rule_attempts_user_created")
+  @@index([user_id, training_context], map: "idx_user_rule_attempts_user_context")
+  @@index([user_id, rule_id, created_at(sort: Desc)], map: "idx_user_rule_attempts_user_rule_created")
   @@schema("public")
 }
 
 model user_rule_progress {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id          String    @db.Uuid
-  rule_id          String    @db.Uuid
-  attempts         Int       @default(0)
-  correct_count    Int       @default(0)
-  incorrect_count  Int       @default(0)
-  saved_for_review Boolean   @default(false)
-  needs_practice   Boolean   @default(false)
-  mastery_level    Int       @default(0)
-  last_reviewed    DateTime? @db.Timestamptz(6)
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
-  last_score       Int?
-  rolling_average  Decimal?  @db.Decimal
-  next_review_at   DateTime? @db.Timestamptz(6)
-  interval_days    Int?      @default(1)
-  rules            rules     @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                 String    @db.Uuid
+  rule_id                 String    @db.Uuid
+  attempts                Int       @default(0)
+  correct_count           Int       @default(0)
+  incorrect_count         Int       @default(0)
+  saved_for_review        Boolean   @default(false)
+  needs_practice          Boolean   @default(false)
+  mastery_level           Int       @default(0)
+  last_reviewed           DateTime? @db.Timestamptz(6)
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime  @default(now()) @db.Timestamptz(6)
+  last_score              Int?
+  rolling_average         Decimal?  @db.Decimal
+  next_review_at          DateTime? @db.Timestamptz(6)
+  interval_days           Int?      @default(1)
+  interval_minutes        Int?      @default(1440)
+  mastery_confidence      Int       @default(0)
+  learning_status         String    @default("UNTRAINED") @db.VarChar(30)
+  effective_evidence      Decimal   @default(0) @db.Decimal(8, 2)
+  successful_recall_count Int       @default(0)
+  distinct_modes          Int       @default(0)
+  engine_version          String?   @db.VarChar(20)
+  rules                   rules     @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, rule_id], map: "user_rule_progress_user_rule_unique")
   @@index([rule_id])
@@ -184,6 +211,51 @@ model user_rule_progress {
   @@index([user_id, next_review_at])
   @@index([user_id, needs_practice], map: "idx_user_rule_progress_user_needs_practice")
   @@index([user_id, next_review_at], map: "idx_user_rule_progress_user_next_review")
+  @@index([user_id, learning_status], map: "idx_user_rule_progress_user_status")
+  @@schema("public")
+}
+
+model learning_cycles {
+  id            String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String                     @db.Uuid
+  cycle_number  Int
+  status        String                     @default("ACTIVE") @db.VarChar(20)
+  started_at    DateTime                   @default(now()) @db.Timestamptz(6)
+  completed_at  DateTime?                  @db.Timestamptz(6)
+  archived_at   DateTime?                  @db.Timestamptz(6)
+  reset_reason  String?
+  created_at    DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime                   @default(now()) @db.Timestamptz(6)
+  rule_progress user_rule_cycle_progress[]
+
+  @@unique([user_id, cycle_number], map: "learning_cycles_user_cycle_unique")
+  @@index([user_id, status], map: "idx_learning_cycles_user_status")
+  @@schema("public")
+}
+
+model user_rule_cycle_progress {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String          @db.Uuid
+  cycle_id              String          @db.Uuid
+  rule_id               String          @db.Uuid
+  study_exposures       Int             @default(0)
+  assessed_attempts     Int             @default(0)
+  passed_assessments    Int             @default(0)
+  best_assessment_score Int?
+  first_studied_at      DateTime?       @db.Timestamptz(6)
+  last_studied_at       DateTime?       @db.Timestamptz(6)
+  first_assessed_at     DateTime?       @db.Timestamptz(6)
+  last_assessed_at      DateTime?       @db.Timestamptz(6)
+  covered_at            DateTime?       @db.Timestamptz(6)
+  created_at            DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime        @default(now()) @db.Timestamptz(6)
+  cycle                 learning_cycles @relation(fields: [cycle_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rules                 rules           @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([cycle_id, rule_id], map: "user_rule_cycle_progress_cycle_rule_unique")
+  @@index([user_id, cycle_id], map: "idx_user_rule_cycle_progress_user_cycle")
+  @@index([user_id, rule_id], map: "idx_user_rule_cycle_progress_user_rule")
+  @@index([cycle_id, covered_at], map: "idx_user_rule_cycle_progress_cycle_covered")
   @@schema("public")
 }
 
@@ -241,6 +313,7 @@ model flashcard_session_cards {
   custom_rule_id String?            @db.Uuid
   position       Int
   result         String?
+  attempt_id     String?            @unique @db.Uuid
   time_spent     Int?
   created_at     DateTime           @default(now()) @db.Timestamptz(6)
   rules          rules?             @relation(fields: [rule_id], references: [id])
@@ -1185,6 +1258,191 @@ model user_notifications {
   @@index([type])
   @@index([user_id, created_at(sort: Desc)])
   @@index([user_id, is_read, created_at(sort: Desc)], map: "user_notifications_user_id_unread_idx")
+  @@schema("public")
+}
+
+model jurisdictions {
+  id                   String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                 String                      @unique
+  name                 String
+  jurisdiction_type    String                      @default("STATE") @db.VarChar(30)
+  is_active            Boolean                     @default(true)
+  created_at           DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                    @default(now()) @db.Timestamptz(6)
+  exam_regime_mappings jurisdiction_exam_regimes[]
+  curriculum_subjects  curriculum_subjects[]
+  rule_applicability   rule_applicability[]
+
+  @@index([is_active])
+  @@schema("public")
+}
+
+model exam_regimes {
+  id                    String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                  String                      @unique
+  name                  String
+  description           String?
+  effective_from        DateTime?                   @db.Date
+  effective_until       DateTime?                   @db.Date
+  is_active             Boolean                     @default(true)
+  created_at            DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                    @default(now()) @db.Timestamptz(6)
+  jurisdiction_mappings jurisdiction_exam_regimes[]
+  curriculum_subjects   curriculum_subjects[]
+  rule_applicability    rule_applicability[]
+
+  @@index([is_active])
+  @@schema("public")
+}
+
+model jurisdiction_exam_regimes {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mapping_key     String        @unique
+  jurisdiction_id String        @db.Uuid
+  exam_regime_id  String        @db.Uuid
+  effective_from  DateTime      @db.Date
+  effective_until DateTime?     @db.Date
+  priority        Int           @default(0)
+  is_active       Boolean       @default(true)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  jurisdiction    jurisdictions @relation(fields: [jurisdiction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  exam_regime     exam_regimes  @relation(fields: [exam_regime_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([jurisdiction_id, effective_from])
+  @@index([exam_regime_id])
+  @@index([is_active])
+  @@schema("public")
+}
+
+model curriculum_subjects {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  registry_key       String               @unique
+  jurisdiction_id    String?              @db.Uuid
+  exam_regime_id     String               @db.Uuid
+  subject_id         String               @db.Uuid
+  display_name       String?
+  weight             Int                  @default(1)
+  is_required        Boolean              @default(true)
+  is_active          Boolean              @default(true)
+  effective_from     DateTime?            @db.Date
+  effective_until    DateTime?            @db.Date
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  jurisdiction       jurisdictions?       @relation(fields: [jurisdiction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  exam_regime        exam_regimes         @relation(fields: [exam_regime_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subject            subjects             @relation(fields: [subject_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rule_applicability rule_applicability[]
+
+  @@index([jurisdiction_id])
+  @@index([exam_regime_id, is_active])
+  @@index([subject_id])
+  @@schema("public")
+}
+
+model rule_versions {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rule_id             String    @db.Uuid
+  version_number      Int
+  title               String
+  rule_text           String
+  explanation         String?
+  buzzwords           Json?
+  cloze_template      String?
+  prompt_question     String?
+  application_example String?
+  common_trap         String?
+  common_traps        Json?
+  exam_tip            String?
+  how_to_apply        Json?
+  priority            String?
+  publication_status  String    @default("DRAFT") @db.VarChar(20)
+  change_note         String?
+  effective_from      DateTime? @db.Date
+  effective_until     DateTime? @db.Date
+  created_by          String?   @db.Uuid
+  approved_by         String?   @db.Uuid
+  published_at        DateTime? @db.Timestamptz(6)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  rule                rules     @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([rule_id, version_number], map: "rule_versions_rule_version_unique")
+  @@index([publication_status])
+  @@index([effective_from, effective_until])
+  @@schema("public")
+}
+
+model rule_applicability {
+  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  applicability_key     String               @unique
+  rule_id               String               @db.Uuid
+  jurisdiction_id       String?              @db.Uuid
+  exam_regime_id        String               @db.Uuid
+  curriculum_subject_id String?              @db.Uuid
+  source_package        String               @default("core") @db.VarChar(50)
+  is_tested             Boolean              @default(true)
+  priority_weight       Int                  @default(1)
+  effective_from        DateTime?            @db.Date
+  effective_until       DateTime?            @db.Date
+  is_active             Boolean              @default(true)
+  created_at            DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime             @default(now()) @db.Timestamptz(6)
+  rule                  rules                @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  jurisdiction          jurisdictions?       @relation(fields: [jurisdiction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  exam_regime           exam_regimes         @relation(fields: [exam_regime_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  curriculum_subject    curriculum_subjects? @relation(fields: [curriculum_subject_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([rule_id])
+  @@index([jurisdiction_id, exam_regime_id])
+  @@index([exam_regime_id, is_active, is_tested])
+  @@index([effective_from, effective_until])
+  @@schema("public")
+}
+
+model rule_import_batches {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  file_name     String
+  file_format   String             @db.VarChar(20)
+  status        String             @default("UPLOADED") @db.VarChar(20)
+  total_rows    Int                @default(0)
+  valid_rows    Int                @default(0)
+  invalid_rows  Int                @default(0)
+  created_rows  Int                @default(0)
+  updated_rows  Int                @default(0)
+  skipped_rows  Int                @default(0)
+  uploaded_by   String?            @db.Uuid
+  published_by  String?            @db.Uuid
+  error_summary Json?
+  created_at    DateTime           @default(now()) @db.Timestamptz(6)
+  validated_at  DateTime?          @db.Timestamptz(6)
+  published_at  DateTime?          @db.Timestamptz(6)
+  rows          rule_import_rows[]
+
+  @@index([status, created_at(sort: Desc)])
+  @@index([uploaded_by])
+  @@schema("public")
+}
+
+model rule_import_rows {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  batch_id          String              @db.Uuid
+  row_number        Int
+  external_key      String?
+  action            String              @default("CREATE") @db.VarChar(20)
+  validation_status String              @default("PENDING") @db.VarChar(20)
+  raw_data          Json
+  normalized_data   Json?
+  errors            Json?
+  resolved_rule_id  String?             @db.Uuid
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime            @default(now()) @db.Timestamptz(6)
+  batch             rule_import_batches @relation(fields: [batch_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  resolved_rule     rules?              @relation(fields: [resolved_rule_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@unique([batch_id, row_number], map: "rule_import_rows_batch_row_unique")
+  @@index([validation_status])
+  @@index([external_key])
+  @@index([resolved_rule_id])
   @@schema("public")
 }
 

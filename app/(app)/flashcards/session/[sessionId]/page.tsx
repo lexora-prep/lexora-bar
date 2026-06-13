@@ -180,6 +180,7 @@ export default function FlashcardSessionPage({
   const [timed, setTimed] = useState(false)
   const [timePerCard, setTimePerCard] = useState<number | null>(null)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
+  const [answerStartedAt, setAnswerStartedAt] = useState(() => Date.now())
 
   useEffect(() => {
     async function loadUser() {
@@ -241,6 +242,7 @@ export default function FlashcardSessionPage({
       }))
 
       setCards(mapped)
+      setAnswerStartedAt(Date.now())
       setSessionMode(session.mode ?? "study")
       setDeckType(session.deckType ?? "custom")
       setTimed(!!session.timed)
@@ -348,7 +350,7 @@ export default function FlashcardSessionPage({
     const previous = answersByCardId[card.id]
 
     try {
-      await fetch("/api/flashcards/answer", {
+      const response = await fetch("/api/flashcards/answer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -358,8 +360,19 @@ export default function FlashcardSessionPage({
           userId,
           ruleId: card.id,
           result,
+          recallSeconds: Math.max(
+            0,
+            Math.round((Date.now() - answerStartedAt) / 1000)
+          ),
+          revealedAnswer: true,
+          selfReported: true,
         }),
       })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error ?? "Failed to save answer.")
+      }
 
       setAnswersByCardId((prev) => ({
         ...prev,
@@ -383,6 +396,7 @@ export default function FlashcardSessionPage({
     if (index === 0) return
     setIndex((i) => i - 1)
     setShowAnswer(false)
+    setAnswerStartedAt(Date.now())
     setTimeLeft(timed ? timePerCard : null)
   }
 
@@ -390,6 +404,7 @@ export default function FlashcardSessionPage({
     if (!canGoNext) return
     setIndex((i) => i + 1)
     setShowAnswer(false)
+    setAnswerStartedAt(Date.now())
     setTimeLeft(timed ? timePerCard : null)
   }
 
@@ -717,7 +732,7 @@ export default function FlashcardSessionPage({
             <SideRow label="Mode" value={sessionMode === "study" ? "Study" : "Quiz"} />
             <SideRow label="Total cards" value={String(cards.length)} />
             <SideRow label="Due today" value={String(cards.length)} valueClassName="text-amber-600" />
-            <SideRow label="Mastered" value={String(correct)} valueClassName="text-emerald-700" />
+            <SideRow label="Knew this session" value={String(correct)} valueClassName="text-emerald-700" />
             <SideRow
               label="Algorithm"
               value={deckType === "smart_prep" ? "Adaptive" : "Standard"}

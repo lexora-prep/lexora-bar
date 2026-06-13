@@ -503,6 +503,9 @@ export function PlanAccessCard({ planKey }: { planKey: PlanAccessKey }) {
 
 export function ManageBillingCard({
   isPaid,
+  canUpgradeToPremium = false,
+  upgradeLoading = false,
+  onUpgradeToPremium,
   onManage,
   onUpdatePayment,
   onInvoices,
@@ -511,6 +514,9 @@ export function ManageBillingCard({
   onChoosePremium,
 }: {
   isPaid: boolean
+  canUpgradeToPremium?: boolean
+  upgradeLoading?: boolean
+  onUpgradeToPremium?: () => void
   onManage: () => void
   onUpdatePayment: () => void
   onInvoices: () => void
@@ -547,6 +553,15 @@ export function ManageBillingCard({
         </>
       ) : (
         <>
+          {canUpgradeToPremium && onUpgradeToPremium ? (
+            <BillingActionRow
+              icon={<Sparkles className="h-4 w-4" />}
+              title={upgradeLoading ? "Upgrading..." : "Upgrade to Premium"}
+              subtitle="Keep the same subscription and let Paddle calculate the prorated upgrade"
+              onClick={upgradeLoading ? () => {} : onUpgradeToPremium}
+            />
+          ) : null}
+
           <BillingActionRow
             icon={<CreditCard className="h-4 w-4" />}
             title="Manage subscription"

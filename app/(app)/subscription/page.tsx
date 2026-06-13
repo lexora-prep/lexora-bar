@@ -191,6 +191,10 @@ export default function SubscriptionPage() {
 
   const [invoiceHistoryOpen, setInvoiceHistoryOpen] = useState(false)
 
+  const [upgradeLoading, setUpgradeLoading] = useState(false)
+  const [upgradeError, setUpgradeError] = useState("")
+  const [upgradeMessage, setUpgradeMessage] = useState("")
+
   const [supportOpen, setSupportOpen] = useState(false)
   const [supportLoading, setSupportLoading] = useState(false)
   const [supportError, setSupportError] = useState("")
@@ -203,6 +207,10 @@ export default function SubscriptionPage() {
   const plan = plans[planKey]
   const billingStatus = String(profile?.billing_status || "free").toLowerCase()
   const isPaid = planKey !== "free" || billingStatus === "active"
+  const canUpgradeToPremium =
+    isPaid &&
+    planKey === "bll-monthly" &&
+    (billingStatus === "active" || billingStatus === "paid")
   const currency = profile?.billing_currency || "USD"
 
   const nextRenewal = formatDate(profile?.billing_period_ends_at)
@@ -349,6 +357,52 @@ export default function SubscriptionPage() {
     setSupportMessage("")
     setSupportError("")
     setSupportOpen(true)
+  }
+
+  async function upgradeToPremium() {
+    setUpgradeError("")
+    setUpgradeMessage("")
+
+    if (!canUpgradeToPremium) {
+      setUpgradeError("This account is not eligible for an in-cycle Premium upgrade.")
+      return
+    }
+
+    const confirmed = window.confirm(
+      "Upgrade to Premium now? Paddle will keep your existing subscription and calculate any prorated charge for the current billing period. Your subscription will continue renewing automatically until you cancel it from this page."
+    )
+
+    if (!confirmed) return
+
+    try {
+      setUpgradeLoading(true)
+
+      const res = await fetch("/api/paddle/subscription-upgrade", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "apply" }),
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || !data?.ok) {
+        setUpgradeError(data?.error || "Unable to upgrade subscription.")
+        return
+      }
+
+      setUpgradeMessage(
+        "Premium upgrade started. Your access will update after Paddle confirms the subscription change."
+      )
+
+      await loadSubscription(false)
+    } catch (err) {
+      console.error("UPGRADE TO PREMIUM ERROR:", err)
+      setUpgradeError("Unable to upgrade subscription.")
+    } finally {
+      setUpgradeLoading(false)
+    }
   }
 
   async function openBillingPortal(action: BillingPortalAction) {
@@ -541,8 +595,23 @@ export default function SubscriptionPage() {
 
             <PlanAccessCard planKey={planKey} />
 
+            {upgradeError ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+                {upgradeError}
+              </div>
+            ) : null}
+
+            {upgradeMessage ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
+                {upgradeMessage}
+              </div>
+            ) : null}
+
             <ManageBillingCard
               isPaid={isPaid}
+              canUpgradeToPremium={canUpgradeToPremium}
+              upgradeLoading={upgradeLoading}
+              onUpgradeToPremium={upgradeToPremium}
               onManage={() => openBillingPortal("manage_subscription")}
               onUpdatePayment={() => openBillingPortal("update_payment_method")}
               onInvoices={() => openBillingPortal("invoices")}

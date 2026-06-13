@@ -193,7 +193,6 @@ function Section({
         })}
       </div>
 
-      <AdminRealtimeBridge />
     </div>
   )
 }
@@ -233,6 +232,7 @@ export default function AdminShell({
   const supabase = createClient()
 
   const [collapsed, setCollapsed] = useState(false)
+  const [adminUtilitiesReady, setAdminUtilitiesReady] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [topProfileOpen, setTopProfileOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -256,6 +256,9 @@ export default function AdminShell({
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
+
+  // Notifications are loaded on demand so heavy admin notification queries
+  // do not compete with page-specific admin data during first paint.
 
   const nav = useMemo(() => {
     const p = currentUser.permissions
@@ -683,7 +686,18 @@ export default function AdminShell({
               Search anything...
             </button>
 
-            <AdminNotificationsBell />
+            {adminUtilitiesReady ? (
+              <AdminNotificationsBell />
+            ) : (
+              <button
+                type="button"
+                aria-label="Open notifications"
+                onClick={() => setAdminUtilitiesReady(true)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+              >
+                <Bell size={16} />
+              </button>
+            )}
 
             <div ref={topProfileRef} className="relative">
               <button

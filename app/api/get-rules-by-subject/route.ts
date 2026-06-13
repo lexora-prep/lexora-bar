@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { requireAuthenticatedUser } from "@/lib/authenticated-user"
+import { getLearningCycleSummary } from "@/lib/learning"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 
 function makeRuleKey(rule: {
   subject_id?: string | null
@@ -79,6 +82,13 @@ function isBetterRule(
 
 export async function GET(req: Request) {
   try {
+    const auth = await requireAuthenticatedUser(req)
+    if (!auth.ok) return auth.response
+
+    const [cycleSummary, ruleUniverse] = await Promise.all([
+      getLearningCycleSummary(auth.userId),
+      getApplicableRuleUniverseForUser(auth.userId),
+    ])
     const { searchParams } = new URL(req.url)
     const subjectId = searchParams.get("subjectId")
 
@@ -86,11 +96,23 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "subjectId missing" }, { status: 400 })
     }
 
+    const applicableRuleIds = new Set(
+      ruleUniverse.rules
+        .filter((rule) => rule.subjectId === subjectId)
+        .map((rule) => rule.id)
+    )
+
+    if (applicableRuleIds.size === 0) {
+      return NextResponse.json([], {
+        headers: { "Cache-Control": "private, no-store, max-age=0" },
+      })
+    }
+
     const rawRules = await prisma.rules.findMany({
       where: {
         subject_id: subjectId,
         is_active: true,
-        rule_type: null,
+        publication_status: "PUBLISHED",
         prompt_question: {
           not: null,
         },
@@ -131,6 +153,7 @@ export async function GET(req: Request) {
     const canonicalMap = new Map<string, (typeof rawRules)[number]>()
 
     for (const rule of rawRules) {
+      if (!applicableRuleIds.has(rule.id)) continue
       if (!String(rule.prompt_question ?? "").trim()) continue
       if (!String(rule.rule_text ?? "").trim()) continue
 
@@ -158,6 +181,11 @@ export async function GET(req: Request) {
         application_example: String(rule.application_example ?? "").trim(),
         common_trap: String(rule.common_trap ?? "").trim(),
         priority: String(rule.priority ?? "").trim(),
+        cycleCovered: Boolean(cycleSummary.ruleStateById[rule.id]?.covered),
+        cycleStudied: Boolean(cycleSummary.ruleStateById[rule.id]?.studied),
+        cycleAssessed: Boolean(cycleSummary.ruleStateById[rule.id]?.assessed),
+        cyclePassed: Boolean(cycleSummary.ruleStateById[rule.id]?.passed),
+        cycleNumber: cycleSummary.cycle.number,
       }))
       .sort((a, b) => {
         const topicCompare = a.topic.localeCompare(b.topic)
@@ -169,7 +197,9 @@ export async function GET(req: Request) {
         return a.title.localeCompare(b.title)
       })
 
-    return NextResponse.json(normalized)
+    return NextResponse.json(normalized, {
+      headers: { "Cache-Control": "private, no-store, max-age=0" },
+    })
   } catch (err) {
     console.error("GET RULES BY SUBJECT ERROR:", err)
 

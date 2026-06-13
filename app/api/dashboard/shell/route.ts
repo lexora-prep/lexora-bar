@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
+import {
+  countWeakLearningRows,
+  LEARNING_PROGRESS_SELECT,
+} from "@/lib/learning/analytics"
 
 type DayStatus = "fire" | "ice" | "empty"
 
@@ -177,10 +181,15 @@ export async function GET() {
           },
         }),
 
-        prisma.user_rule_progress.count({
+        prisma.user_rule_progress.findMany({
           where: {
             user_id: user.id,
-            needs_practice: true,
+            attempts: {
+              gte: 1,
+            },
+          },
+          select: {
+            ...LEARNING_PROGRESS_SELECT,
           },
         }),
       ])
@@ -215,7 +224,7 @@ export async function GET() {
         studyStreak: streak.studyStreak,
         streakDays: streak.streakDays,
         mbeAccess: !!profile?.mbe_access,
-        weakAreasCount,
+        weakAreasCount: countWeakLearningRows(weakAreasCount),
         daysLeft,
         hasStudyPlan: !!studyPlan?.examDate,
       },

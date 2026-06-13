@@ -7,7 +7,9 @@ export async function GET(request: NextRequest) {
 
   const token_hash = searchParams.get("token_hash")
   const type = searchParams.get("type") as EmailOtpType | null
-  const next = searchParams.get("next") ?? "/reset-password"
+  const next =
+    searchParams.get("next") ??
+    (type === "recovery" ? "/reset-password" : "/dashboard")
 
   if (!token_hash || !type) {
     return NextResponse.redirect(`${origin}/forgot-password?error=missing_token`)

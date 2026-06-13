@@ -9,6 +9,8 @@ type SubmitPayload = {
   missedKeywords: string[]
   keywordScore: number
   similarity: number
+  revealedAnswer?: boolean
+  selfReported?: boolean
 }
 
 type Props = {
@@ -63,6 +65,8 @@ export default function FlashcardMode({
       missedKeywords: result === "knew" ? [] : keywords,
       keywordScore: score,
       similarity: score,
+      revealedAnswer: true,
+      selfReported: true,
     })
 
     setReviewResult(result)

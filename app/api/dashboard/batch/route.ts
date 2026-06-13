@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/utils/supabase/server"
+import {
+  calculateLearningReadiness,
+  countWeakLearningRows,
+  LEARNING_PROGRESS_SELECT,
+  resolveLearningProgress,
+} from "@/lib/learning/analytics"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 
 type DayStatus = "fire" | "ice" | "none"
 type RuleSet = "emergency" | "priority" | "golden" | "core" | "full"
@@ -500,14 +507,12 @@ function buildSubjectAnalyticsFromRows({
         masterySum: 0,
       }
 
-    const attempts = Number(row.attempts ?? 0)
-    const correct = Number(row.correct_count ?? 0)
-    const mastery = Number(row.mastery_level ?? percent(correct, attempts))
+    const progress = resolveLearningProgress(row)
 
-    current.completed += attempts > 0 ? 1 : 0
-    current.attempts += attempts
-    current.correct += correct
-    current.masterySum += mastery
+    current.completed += progress.attempts > 0 ? 1 : 0
+    current.attempts += progress.attempts
+    current.correct += Number(row.correct_count ?? 0)
+    current.masterySum += progress.mastery
 
     bllAgg.set(subjectId, current)
   }
@@ -645,15 +650,7 @@ function buildDashboardMetricsFromRows({
     return shouldIncludeRuleForSet(progressRule, ruleSet)
   })
 
-  const bllCorrect = filteredUserRuleProgress.reduce(
-    (sum, row) => sum + Number(row.correct_count ?? 0),
-    0
-  )
-
-  const bllAttempts = filteredUserRuleProgress.reduce(
-    (sum, row) => sum + Number(row.attempts ?? 0),
-    0
-  )
+  const userBLL = calculateLearningReadiness(filteredUserRuleProgress)
 
   const mbeTotal = userMbeAttempts.length
   const mbeCorrect = userMbeAttempts.filter((row) => row.is_correct).length
@@ -686,35 +683,19 @@ function buildDashboardMetricsFromRows({
 
   const stateUsers = comparisonActivityUsers.size
 
-  const stateRuleCorrect = filteredComparisonRuleProgress.reduce(
-    (sum, row) => sum + Number(row.correct_count ?? 0),
-    0
-  )
-
-  const stateRuleAttempts = filteredComparisonRuleProgress.reduce(
-    (sum, row) => sum + Number(row.attempts ?? 0),
-    0
-  )
+  const stateBLLAvg = calculateLearningReadiness(filteredComparisonRuleProgress)
 
   const stateMbeCorrect = comparisonMbeAttempts.filter((row) => row.is_correct).length
   const stateMbeAttempts = comparisonMbeAttempts.length
 
-  const bllByComparisonUser = new Map<string, { correct: number; total: number }>()
+  const bllByComparisonUser = new Map<string, any[]>()
 
   for (const row of filteredComparisonRuleProgress) {
     const rowUserId = String(row.user_id ?? "")
     if (!rowUserId) continue
 
-    const current =
-      bllByComparisonUser.get(rowUserId) ??
-      {
-        correct: 0,
-        total: 0,
-      }
-
-    current.correct += Number(row.correct_count ?? 0)
-    current.total += Number(row.attempts ?? 0)
-
+    const current = bllByComparisonUser.get(rowUserId) ?? []
+    current.push(row)
     bllByComparisonUser.set(rowUserId, current)
   }
 
@@ -737,21 +718,17 @@ function buildDashboardMetricsFromRows({
     mbeByComparisonUser.set(rowUserId, current)
   }
 
-  const topBLL = Array.from(bllByComparisonUser.values()).reduce((top, score) => {
-    if (!score.total) return top
-    return Math.max(top, percent(score.correct, score.total))
-  }, 0)
+  const topBLL = Array.from(bllByComparisonUser.values()).reduce(
+    (top, rows) => Math.max(top, calculateLearningReadiness(rows)),
+    0
+  )
 
   const topMBE = Array.from(mbeByComparisonUser.values()).reduce((top, score) => {
     if (!score.total) return top
     return Math.max(top, percent(score.correct, score.total))
   }, 0)
 
-  const weakAreasCount = filteredUserRuleProgress.filter((row) => {
-    if (row.needs_practice) return true
-    if (!row.attempts || row.attempts < 3) return false
-    return percent(row.correct_count ?? 0, row.attempts ?? 0) < 70
-  }).length
+  const weakAreasCount = countWeakLearningRows(filteredUserRuleProgress)
 
   const activityDates = [
     ...ruleAttemptDates
@@ -770,9 +747,9 @@ function buildDashboardMetricsFromRows({
     goalBLL,
     goalMBE: 0,
     totalRules,
-    userBLL: percent(bllCorrect, bllAttempts),
+    userBLL,
     userMBE: percent(mbeCorrect, mbeTotal),
-    stateBLLAvg: stateRuleAttempts > 0 ? percent(stateRuleCorrect, stateRuleAttempts) : null,
+    stateBLLAvg: filteredComparisonRuleProgress.length > 0 ? stateBLLAvg : null,
     stateMBEAvg: stateMbeAttempts > 0 ? percent(stateMbeCorrect, stateMbeAttempts) : null,
     topBLL: topBLL > 0 ? topBLL : null,
     topMBE: topMBE > 0 ? topMBE : null,
@@ -842,28 +819,14 @@ export async function GET(request: Request) {
         },
       }),
 
-      prisma.rules.findMany({
-        where: {
-          is_active: true,
-        },
-        select: {
-          subject_id: true,
-          topic_id: true,
-          subtopic_id: true,
-          title: true,
-          rule_type: true,
-        },
-      }),
+      getApplicableRuleUniverseForUser(user.id),
 
       prisma.user_rule_progress.findMany({
         where: {
           user_id: user.id,
         },
         select: {
-          attempts: true,
-          correct_count: true,
-          mastery_level: true,
-          needs_practice: true,
+          ...LEARNING_PROGRESS_SELECT,
           rules: {
             select: {
               subject_id: true,
@@ -991,7 +954,15 @@ export async function GET(request: Request) {
 
     const studyPlan = valueOrFallback(results[0], null)
     const subjects = valueOrFallback(results[1], [])
-    const activeRules = valueOrFallback(results[2], [])
+    const ruleUniverse = valueOrFallback(results[2], null)
+    const activeRules =
+      ruleUniverse?.rules.map((rule) => ({
+        subject_id: rule.subjectId,
+        topic_id: rule.topicId,
+        subtopic_id: rule.subtopicId,
+        title: rule.title,
+        rule_type: null,
+      })) ?? []
     const userRuleProgress = valueOrFallback(results[3], [])
     const activeMbeQuestionCounts = valueOrFallback(results[4], [])
     const userMbeAttempts = valueOrFallback(results[5], [])
@@ -1052,8 +1023,7 @@ export async function GET(request: Request) {
               },
               select: {
                 user_id: true,
-                correct_count: true,
-                attempts: true,
+                ...LEARNING_PROGRESS_SELECT,
                 rules: {
                   select: {
                     subject_id: true,

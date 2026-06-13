@@ -16,6 +16,7 @@ import {
   BrainCircuit,
   Layers3,
   Calendar,
+  CircleCheck,
   ChevronDown,
   ChevronUp,
   ArrowLeft,
@@ -26,6 +27,11 @@ import {
   Pause,
   Square,
   FolderClock,
+  Sparkles,
+  RefreshCw,
+  Lock,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { useUnsavedChanges } from "@/app/_providers/UnsavedChangesProvider"
@@ -48,6 +54,26 @@ type Subject = {
   badge_text?: string
   badge_tone?: string
   badge_subtext?: string
+  covered_rules?: number
+  assessed_rules?: number
+  passed_rules?: number
+  remaining_study_rules?: number
+  remaining_quiz_rules?: number
+  cycle_progress_percentage?: number
+  cycle_complete?: boolean
+  cycle_number?: number
+  topics?: Array<{
+    id: string | null
+    name: string
+    total_rules: number
+    covered_rules: number
+    assessed_rules: number
+    passed_rules: number
+    remaining_study_rules: number
+    remaining_quiz_rules: number
+    cycle_progress_percentage: number
+    cycle_complete: boolean
+  }>
 }
 
 type Rule = {
@@ -66,6 +92,11 @@ type Rule = {
   application_example?: string
   common_trap?: string
   priority?: string
+  cycleCovered?: boolean
+  cycleStudied?: boolean
+  cycleAssessed?: boolean
+  cyclePassed?: boolean
+  cycleNumber?: number
 }
 
 type TopicOption = {
@@ -74,6 +105,10 @@ type TopicOption = {
   subjectId: string
   subjectName: string
   count: number
+  coveredCount: number
+  assessedCount: number
+  passedCount: number
+  cycleComplete: boolean
 }
 
 type ResultShape = {
@@ -91,6 +126,8 @@ type ModeAttemptPayload = {
   missedKeywords: string[]
   keywordScore: number
   similarity: number
+  revealedAnswer?: boolean
+  selfReported?: boolean
 }
 
 type SessionQuestionStyle = "prompt" | "recite" | "mixed"
@@ -104,11 +141,29 @@ type SessionRuleResult = {
   ruleId: string
   title: string
   score: number
+  masteryScore?: number
+  learningStatus?: string
+  masteryConfidence?: number
+  nextReviewAt?: string
+  reviewTimingLabel?: string
+  scheduleReason?: string
+  outcomeExplanation?: string
+  failureStreak?: number
+  intervalMinutes?: number
+  isLapse?: boolean
   matchedKeywords: string[]
   missedKeywords: string[]
   keywordScore: number
   similarity: number
   timeSpentSec: number
+}
+
+type RecommendationSessionContext = {
+  blockId: string
+  blockTitle: string
+  blockMinutes: number
+  phaseLabel: string
+  plannedMinutes: number
 }
 
 type SessionHistoryItem = {
@@ -130,6 +185,87 @@ type SessionHistoryItem = {
   bestRule?: SessionRuleResult | null
   worstRule?: SessionRuleResult | null
   rules: SessionRuleResult[]
+  source?: "recommended" | "manual"
+  recommendationBlockId?: string
+  recommendationBlockTitle?: string
+  plannedMinutes?: number
+}
+
+type RecommendationRuleCategory =
+  | "due_review"
+  | "priority_rule"
+  | "first_recall"
+  | "new_rule"
+
+type RecommendedRuleExplanation = {
+  ruleId: string
+  title: string
+  subjectName: string
+  topicName: string
+  statusLabel: string
+  reason: string
+  timingLabel: string
+  dueAt: string | null
+  failureStreak: number
+  mastery: number
+  category?: RecommendationRuleCategory
+}
+
+type RecommendedSessionBlock = {
+  id: string
+  mode: SessionType
+  title: string
+  description: string
+  reason: string
+  minutes: number
+  estimatedRules: number
+  ruleIds: string[]
+  subjectNames: string[]
+  completedToday: boolean
+  ruleExplanations?: RecommendedRuleExplanation[]
+}
+
+type DailyLearningRecommendation = {
+  generatedAt: string
+  dateKey: string
+  requestedMinutes: number
+  recommendedMinutes: number
+  phase: "foundation" | "accelerated" | "sprint"
+  phaseLabel: string
+  headline: string
+  summary: string
+  examDate: string | null
+  daysUntilExam: number | null
+  cycleNumber: number
+  primaryBlockId: string | null
+  progress?: {
+    requestedMinutes?: number
+    completedMinutes?: number
+    remainingMinutes?: number
+    completionPercentage?: number
+    planComplete?: boolean
+  }
+  totals: {
+    availableRules: number
+    coveredRules: number
+    assessedRules: number
+    remainingRules: number
+    weakRules: number
+    dueRules: number
+    overdueRules: number
+    repeatedFailureRules: number
+    scheduledReviewRules: number
+  }
+  todayProgress: {
+    plannedMinutes: number
+    completedMinutes: number
+    remainingMinutes: number
+    studiedRules: number
+    assessedRules: number
+    planComplete: boolean
+    eligibleWorkComplete: boolean
+  }
+  blocks: RecommendedSessionBlock[]
 }
 
 type SessionDraft = {
@@ -169,6 +305,7 @@ type SessionDraft = {
   reportedRuleIds: string[]
   remainingSeconds: number | null
   timerStarted: boolean
+  recommendationContext?: RecommendationSessionContext | null
 }
 
 const STORAGE_ACTIVE_SESSION = "lexora_rule_training_active_session_v6"
@@ -294,6 +431,16 @@ function normalizeRuleRow(raw: any): Rule {
     application_example: String(raw.application_example ?? "").trim(),
     common_trap: String(raw.common_trap ?? "").trim(),
     priority: String(raw.priority ?? "").trim(),
+    cycleCovered: Boolean(raw.cycleCovered ?? raw.cycle_covered),
+    cycleStudied: Boolean(raw.cycleStudied ?? raw.cycle_studied),
+    cycleAssessed: Boolean(raw.cycleAssessed ?? raw.cycle_assessed),
+    cyclePassed: Boolean(raw.cyclePassed ?? raw.cycle_passed),
+    cycleNumber:
+      typeof raw.cycleNumber === "number"
+        ? raw.cycleNumber
+        : typeof raw.cycle_number === "number"
+          ? raw.cycle_number
+          : undefined,
   }
 }
 
@@ -400,8 +547,8 @@ function getSessionTypeMeta(sessionType: SessionType | null) {
       }
     case "weak_focus":
       return {
-        label: "Weak Focus",
-        shortLabel: "Weak Focus",
+        label: "Priority Review",
+        shortLabel: "Priority Review",
         icon: <Target size={15} />,
       }
     default:
@@ -411,6 +558,118 @@ function getSessionTypeMeta(sessionType: SessionType | null) {
         icon: <Layers3 size={15} />,
       }
   }
+}
+
+
+function recommendationRequestedMinutes(recommendation: DailyLearningRecommendation) {
+  const value = Number(
+    recommendation.progress?.requestedMinutes ?? recommendation.requestedMinutes ?? 0
+  )
+  return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
+}
+
+function recommendationCompletedMinutes(recommendation: DailyLearningRecommendation) {
+  const value = Number(
+    recommendation.progress?.completedMinutes ??
+      recommendation.todayProgress?.completedMinutes ??
+      0
+  )
+  return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
+}
+
+function recommendationRemainingMinutes(recommendation: DailyLearningRecommendation) {
+  const requested = recommendationRequestedMinutes(recommendation)
+  const completed = recommendationCompletedMinutes(recommendation)
+  const explicit = Number(
+    recommendation.progress?.remainingMinutes ??
+      recommendation.todayProgress?.remainingMinutes
+  )
+
+  if (Number.isFinite(explicit)) return Math.max(0, Math.round(explicit))
+  return Math.max(0, requested - completed)
+}
+
+function recommendationIsComplete(recommendation: DailyLearningRecommendation) {
+  if (
+    recommendation.progress?.planComplete === true ||
+    recommendation.todayProgress?.planComplete === true
+  ) return true
+
+  const requested = recommendationRequestedMinutes(recommendation)
+  const completed = recommendationCompletedMinutes(recommendation)
+
+  return requested > 0 && completed >= requested && recommendation.blocks.length === 0
+}
+
+function recommendationRemainingRules(recommendation: DailyLearningRecommendation) {
+  const explicit = Number(recommendation.totals.remainingRules)
+  if (Number.isFinite(explicit)) return Math.max(0, Math.round(explicit))
+
+  return Math.max(
+    0,
+    Number(recommendation.totals.availableRules || 0) -
+      Number(recommendation.totals.coveredRules || 0)
+  )
+}
+
+function recommendationPlanState(recommendation: DailyLearningRecommendation) {
+  if (recommendationIsComplete(recommendation)) return "completed" as const
+  if (recommendationCompletedMinutes(recommendation) > 0) return "in_progress" as const
+  return "ready" as const
+}
+
+function inferRecommendationCategory(
+  explanation: RecommendedRuleExplanation
+): RecommendationRuleCategory {
+  if (explanation.category) return explanation.category
+
+  const combined = `${explanation.statusLabel} ${explanation.reason}`.toLowerCase()
+  if (combined.includes("first") && combined.includes("recall")) return "first_recall"
+  if (combined.includes("new this cycle") || combined.includes("not been covered")) {
+    return "new_rule"
+  }
+  if (
+    combined.includes("weak") ||
+    combined.includes("lapse") ||
+    combined.includes("missed repeatedly") ||
+    explanation.failureStreak >= 2
+  ) {
+    return "priority_rule"
+  }
+  return "due_review"
+}
+
+function recommendationCategoryCounts(recommendation: DailyLearningRecommendation) {
+  const seen = new Set<string>()
+  const counts = {
+    dueReview: 0,
+    priorityRule: 0,
+    firstRecall: 0,
+    newRule: 0,
+  }
+
+  for (const block of recommendation.blocks) {
+    for (const explanation of block.ruleExplanations ?? []) {
+      if (seen.has(explanation.ruleId)) continue
+      seen.add(explanation.ruleId)
+
+      const category = inferRecommendationCategory(explanation)
+      if (category === "priority_rule") counts.priorityRule += 1
+      else if (category === "first_recall") counts.firstRecall += 1
+      else if (category === "new_rule") counts.newRule += 1
+      else counts.dueReview += 1
+    }
+  }
+
+  return counts
+}
+
+function recommendationRuleCount(recommendation: DailyLearningRecommendation) {
+  const ids = new Set<string>()
+  for (const block of recommendation.blocks) {
+    for (const ruleId of block.ruleIds) ids.add(ruleId)
+  }
+  return ids.size
 }
 
 function getHistoryModeLabel(mode: SessionType) {
@@ -450,6 +709,17 @@ function formatTimeShort(seconds: number) {
   const secs = seconds % 60
   if (mins <= 0) return `${secs}s`
   return `${mins}m ${secs}s`
+}
+
+function formatLearningStatus(value?: string) {
+  const normalized = String(value ?? "").trim().toUpperCase()
+  if (!normalized) return "Not available"
+
+  return normalized
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
 }
 
 function getSetupProgressPercent(input: {
@@ -501,6 +771,7 @@ function RuleTrainingPageContent() {
 
   const restoredSessionRef = useRef(false)
   const directWeakAreasStartedRef = useRef(false)
+  const configuredSessionStartingRef = useRef(false)
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [authReady, setAuthReady] = useState(false)
@@ -551,6 +822,21 @@ function RuleTrainingPageContent() {
   const [ruleMastery, setRuleMastery] = useState<Record<string, number>>({})
   const [ruleSchedule, setRuleSchedule] = useState<Record<string, number>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [cycleActionLoading, setCycleActionLoading] = useState(false)
+  const [recommendedMinutes, setRecommendedMinutes] = useState(30)
+  const [recommendation, setRecommendation] =
+    useState<DailyLearningRecommendation | null>(null)
+  const [recommendationLoading, setRecommendationLoading] = useState(false)
+  const [recommendationStartingId, setRecommendationStartingId] =
+    useState<string | null>(null)
+  const [recommendationError, setRecommendationError] = useState<string | null>(null)
+  const [recommendationLocked, setRecommendationLocked] = useState(false)
+  const [activeRecommendationContext, setActiveRecommendationContext] =
+    useState<RecommendationSessionContext | null>(null)
+  const [latestCompletedSession, setLatestCompletedSession] =
+    useState<SessionHistoryItem | null>(null)
+  const [whyPlanOpen, setWhyPlanOpen] = useState(false)
+  const [cycleSettingsOpen, setCycleSettingsOpen] = useState(false)
 
   const [savedRuleIds, setSavedRuleIds] = useState<string[]>([])
   const [reportedRuleIds, setReportedRuleIds] = useState<string[]>([])
@@ -567,7 +853,7 @@ function RuleTrainingPageContent() {
     subjectIds: [] as string[],
     weakOnly: false,
     order: "sequential" as SessionOrder,
-    ruleFilter: "all" as SessionFilter,
+    ruleFilter: "untrained" as SessionFilter,
     questionStyle: "prompt" as SessionQuestionStyle,
   })
 
@@ -594,6 +880,10 @@ function RuleTrainingPageContent() {
         const existing = grouped.get(topicId)
         if (existing) {
           existing.count += 1
+          if (rule.cycleCovered) existing.coveredCount += 1
+          if (rule.cycleAssessed) existing.assessedCount += 1
+          if (rule.cyclePassed) existing.passedCount += 1
+          existing.cycleComplete = existing.coveredCount >= existing.count
         } else {
           grouped.set(topicId, {
             id: topicId,
@@ -601,6 +891,10 @@ function RuleTrainingPageContent() {
             subjectId: subject.id,
             subjectName: subject.name,
             count: 1,
+            coveredCount: rule.cycleCovered ? 1 : 0,
+            assessedCount: rule.cycleAssessed ? 1 : 0,
+            passedCount: rule.cyclePassed ? 1 : 0,
+            cycleComplete: Boolean(rule.cycleCovered),
           })
         }
       }
@@ -613,6 +907,174 @@ function RuleTrainingPageContent() {
 
     return map
   }, [visibleSubjects, allRules])
+
+  async function refreshSubjectCoverage() {
+    try {
+      const response = await fetch("/api/get-subjects", { cache: "no-store" })
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !Array.isArray(data)) return
+      setSubjects(
+        data.filter(
+          (subject: Subject) => subject.show_in_rule_training !== false
+        )
+      )
+    } catch (error) {
+      console.error("LEARNING COVERAGE REFRESH ERROR:", error)
+    }
+  }
+
+  async function refreshRuleCycleState() {
+    try {
+      const response = await fetch("/api/get-all-rules", { cache: "no-store" })
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !Array.isArray(data)) return
+      const normalized = data
+        .map((row: any) => normalizeRuleRow(row))
+        .filter((row: Rule) => row.id)
+      setAllRules(mergeUniqueRules(normalized))
+    } catch (error) {
+      console.error("RULE CYCLE STATE REFRESH ERROR:", error)
+    }
+  }
+
+  async function loadRecommendedSession(minutes: number = recommendedMinutes) {
+    if (!currentUserId) return
+
+    const safeMinutes = Math.max(10, Math.min(120, Math.round(minutes || 30)))
+
+    try {
+      setRecommendationLoading(true)
+      setRecommendationError(null)
+      setRecommendationLocked(false)
+
+      const response = await fetch(
+        `/api/recommended-session?minutes=${safeMinutes}&refresh=${Date.now()}`,
+        { cache: "no-store" }
+      )
+      const data = await response.json().catch(() => null)
+
+      if (response.status === 402) {
+        setRecommendation(null)
+        setRecommendationLocked(true)
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error(data?.message || data?.error || "Your recommended session could not be generated.")
+      }
+
+      setRecommendation(data as DailyLearningRecommendation)
+    } catch (error) {
+      setRecommendationError(
+        error instanceof Error
+          ? error.message
+          : "Your recommended session could not be generated."
+      )
+    } finally {
+      setRecommendationLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!currentUserId) return
+
+    let minutes = 30
+    try {
+      const stored = Number(localStorage.getItem("lexora_daily_session_minutes_v1"))
+      if (Number.isFinite(stored) && stored >= 10 && stored <= 120) {
+        minutes = Math.round(stored)
+      }
+    } catch (error) {
+      console.error("RECOMMENDED MINUTES RESTORE ERROR:", error)
+    }
+
+    setRecommendedMinutes(minutes)
+    void loadRecommendedSession(minutes)
+  }, [currentUserId])
+
+  useEffect(() => {
+    if (!currentUserId) return
+
+    const refreshRecommendation = () => {
+      void loadRecommendedSession(recommendedMinutes)
+    }
+
+    window.addEventListener(
+      "lexora:learning-progress-updated",
+      refreshRecommendation
+    )
+
+    return () => {
+      window.removeEventListener(
+        "lexora:learning-progress-updated",
+        refreshRecommendation
+      )
+    }
+  }, [currentUserId, recommendedMinutes])
+
+  function applyLocalCycleProgress(ruleId: string, score: number, response: any) {
+    const isStudy = trainingMode === "study"
+    const passed =
+      !isStudy && Boolean(response?.countsForPerformance) && score >= 80
+
+    const apply = (rule: Rule) =>
+      rule.id === ruleId
+        ? {
+            ...rule,
+            cycleCovered: true,
+            cycleStudied: rule.cycleStudied || isStudy,
+            cycleAssessed: rule.cycleAssessed || !isStudy,
+            cyclePassed: rule.cyclePassed || passed,
+          }
+        : rule
+
+    setRules((current) => current.map(apply))
+    setAllRules((current) => current.map(apply))
+    void refreshSubjectCoverage()
+  }
+
+  async function handleCycleAction(action: "start_next" | "restart_current") {
+    if (cycleActionLoading) return
+
+    if (
+      action === "restart_current" &&
+      !window.confirm(
+        "Restart the current cycle? Your attempt and mastery history will stay intact, but cycle coverage will begin again."
+      )
+    ) {
+      return
+    }
+
+    try {
+      setCycleActionLoading(true)
+      const response = await fetch("/api/learning-cycle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          reason: action === "restart_current" ? "User restarted from Rule Training" : undefined,
+        }),
+      })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(data?.error || "The learning cycle could not be updated.")
+      }
+
+      setQuizConfig((current) => ({
+        ...current,
+        subjectIds: [],
+        ruleFilter: "untrained",
+        weakOnly: false,
+      }))
+      setSelectedTopicIds([])
+      await Promise.all([refreshSubjectCoverage(), refreshRuleCycleState()])
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "The learning cycle could not be updated.")
+    } finally {
+      setCycleActionLoading(false)
+    }
+  }
 
   useEffect(() => {
     try {
@@ -697,6 +1159,7 @@ function RuleTrainingPageContent() {
       reportedRuleIds,
       remainingSeconds,
       timerStarted,
+      recommendationContext: activeRecommendationContext,
     }
   }
 
@@ -731,6 +1194,7 @@ function RuleTrainingPageContent() {
     setReportedRuleIds([])
     setRemainingSeconds(null)
     setTimerStarted(false)
+    setActiveRecommendationContext(null)
     try {
       sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
     } catch (error) {
@@ -787,6 +1251,7 @@ return () => clearDirty()
     reportedRuleIds,
     remainingSeconds,
     timerStarted,
+    activeRecommendationContext,
   ])
 
   useEffect(() => {
@@ -835,6 +1300,7 @@ return () => clearDirty()
       typeof draft.remainingSeconds === "number" ? draft.remainingSeconds : null
     )
     setTimerStarted(!!draft.timerStarted)
+    setActiveRecommendationContext(draft.recommendationContext ?? null)
     setResult(null)
     setAnswerStartTime(Date.now())
   }
@@ -859,15 +1325,19 @@ return () => clearDirty()
     const totalQuestions = trainingQueue.length > 0 ? trainingQueue.length : rules.length
     const scores = completedRules.map((r) => r.score)
     const finalScore =
-      scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null
+      trainingMode === "study"
+        ? null
+        : scores.length > 0
+          ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+          : null
 
     const bestRule =
-      completedRules.length > 0
+      trainingMode !== "study" && completedRules.length > 0
         ? [...completedRules].sort((a, b) => b.score - a.score)[0]
         : null
 
     const worstRule =
-      completedRules.length > 0
+      trainingMode !== "study" && completedRules.length > 0
         ? [...completedRules].sort((a, b) => a.score - b.score)[0]
         : null
 
@@ -914,13 +1384,23 @@ return () => clearDirty()
       bestRule,
       worstRule,
       rules: completedRules,
+      source: activeRecommendationContext ? "recommended" : "manual",
+      recommendationBlockId: activeRecommendationContext?.blockId,
+      recommendationBlockTitle: activeRecommendationContext?.blockTitle,
+      plannedMinutes: activeRecommendationContext?.blockMinutes,
     }
 
     saveHistory(historyItem)
+    setLatestCompletedSession(historyItem)
     clearDirty()
     abandonCurrentSessionState()
     setActiveTab("results")
     setHistoryOpenId(historyItem.id)
+
+    void (async () => {
+      await Promise.all([refreshSubjectCoverage(), refreshRuleCycleState()])
+      await loadRecommendedSession(recommendedMinutes)
+    })()
   }
 
   function buildTrainingQueue(
@@ -1079,6 +1559,10 @@ return () => clearDirty()
       })
 
       const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data?.error || "The study session could not be started.")
+      }
       if (data.sessionId) {
         setStudySessionId(data.sessionId)
       }
@@ -1287,10 +1771,17 @@ return () => clearDirty()
           missedKeywordsOverride: payload.missedKeywords,
           keywordScoreOverride: payload.keywordScore,
           similarityOverride: payload.similarity,
+          recallSeconds,
+          revealedAnswer: Boolean(payload.revealedAnswer),
+          selfReported: Boolean(payload.selfReported),
         }),
       })
 
       const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data?.error || "The attempt could not be saved.")
+      }
 
       const matched_keywords = data.matched_keywords ?? payload.matchedKeywords ?? []
       const missed_keywords = data.missed_keywords ?? payload.missedKeywords ?? []
@@ -1315,37 +1806,26 @@ return () => clearDirty()
       }
 
       setResult(normalized)
-      setAttempts((prev) => [...prev, score])
 
-      setRuleDifficulty((prev) => ({
-        ...prev,
-        [rule.id]: score,
-      }))
+      if (data.countsForPerformance) {
+        setAttempts((prev) => [...prev, score])
+        setRuleDifficulty((prev) => ({
+          ...prev,
+          [rule.id]: score,
+        }))
+      }
 
-      setRuleMastery((prev) => {
-        const previous = prev[rule.id] ?? 0
-        let change = 0
+      if (typeof data.masteryScore === "number") {
+        setRuleMastery((prev) => ({
+          ...prev,
+          [rule.id]: Math.max(0, Math.min(100, Math.round(data.masteryScore))),
+        }))
+      }
 
-        if (score >= 90) change = 10
-        else if (score >= 80) change = 6
-        else if (score >= 70) change = 3
-        else if (score >= 60) change = 0
-        else change = -8
-
-        const updated = Math.max(0, Math.min(100, previous + change))
-        return { ...prev, [rule.id]: updated }
-      })
-
-      const now = Date.now()
-      let delay = 0
-      if (score < 50) delay = 0
-      else if (score < 70 || recallSeconds > 40) delay = 1
-      else if (score < 85 || recallSeconds > 25) delay = 3
-      else if (score < 95 || recallSeconds > 15) delay = 7
-      else delay = 21
-
-      const nextReview = now + delay * 24 * 60 * 60 * 1000
-      setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+      const nextReview = Date.parse(String(data.nextReviewAt ?? ""))
+      if (Number.isFinite(nextReview)) {
+        setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+      }
 
       if (score >= 70 && drillFromWeakAreasFromUrl) {
         setDirectWeakCompletedRuleIds((prev) =>
@@ -1356,13 +1836,15 @@ return () => clearDirty()
         setWeakAreaItems((prev) =>
           prev.filter((item) => String(item?.ruleId || item?.id || "").trim() !== rule.id)
         )
-      } else if (score < 65) {
+      } else if (data.countsForPerformance && score < 65) {
         setWeakRules((prev) => (prev.includes(rule.id) ? prev : [...prev, rule.id]))
       }
 
-      setRules((prev) =>
-        prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
-      )
+      if (data.countsForPerformance) {
+        setRules((prev) =>
+          prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
+        )
+      }
 
       setSessionRuleResults((prev) => {
         const next = prev.filter((item) => item.ruleId !== rule.id)
@@ -1370,6 +1852,46 @@ return () => clearDirty()
           ruleId: rule.id,
           title: rule.title,
           score,
+          masteryScore:
+            typeof data.masteryScore === "number"
+              ? Math.max(0, Math.min(100, Math.round(data.masteryScore)))
+              : undefined,
+          learningStatus:
+            typeof data.learningStatus === "string"
+              ? data.learningStatus
+              : undefined,
+          masteryConfidence:
+            typeof data.masteryConfidence === "number"
+              ? Math.max(0, Math.min(100, Math.round(data.masteryConfidence)))
+              : undefined,
+          nextReviewAt:
+            typeof data.nextReviewAt === "string"
+              ? data.nextReviewAt
+              : undefined,
+          reviewTimingLabel:
+            typeof data.reviewTimingLabel === "string"
+              ? data.reviewTimingLabel
+              : undefined,
+          scheduleReason:
+            typeof data.scheduleReason === "string"
+              ? data.scheduleReason
+              : undefined,
+          outcomeExplanation:
+            typeof data.outcomeExplanation === "string"
+              ? data.outcomeExplanation
+              : undefined,
+          failureStreak:
+            typeof data.failureStreak === "number"
+              ? data.failureStreak
+              : undefined,
+          intervalMinutes:
+            typeof data.intervalMinutes === "number"
+              ? data.intervalMinutes
+              : undefined,
+          isLapse:
+            typeof data.isLapse === "boolean"
+              ? data.isLapse
+              : undefined,
           matchedKeywords: Array.isArray(matched_keywords) ? matched_keywords : [],
           missedKeywords: Array.isArray(missed_keywords) ? missed_keywords : [],
           keywordScore,
@@ -1378,14 +1900,23 @@ return () => clearDirty()
         })
         return next
       })
+
+      applyLocalCycleProgress(rule.id, score, data)
+
+      window.dispatchEvent(
+        new CustomEvent("lexora:learning-progress-updated", {
+          detail: { ruleId: rule.id, updatedAt: Date.now() },
+        })
+      )
     } catch (err) {
       console.error(err)
+      alert(err instanceof Error ? err.message : "The attempt could not be saved.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(submission?: { revealedAnswer?: boolean }) {
     if (selectedRuleIndex === null || isSubmitting || !currentUserId) return
     if (!rules[selectedRuleIndex]) return
 
@@ -1407,10 +1938,17 @@ return () => clearDirty()
           mode,
           exerciseMode: mode,
           trainingMode,
+          recallSeconds,
+          revealedAnswer: Boolean(submission?.revealedAnswer),
+          selfReported: false,
         }),
       })
 
       const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data?.error || "The attempt could not be saved.")
+      }
 
       const matched_keywords = data.matched_keywords ?? data.matchedBuzzwords ?? []
       const missed_keywords = data.missed_keywords ?? data.missedBuzzwords ?? []
@@ -1437,37 +1975,26 @@ return () => clearDirty()
       }
 
       setResult(normalized)
-      setAttempts((prev) => [...prev, score])
 
-      setRuleDifficulty((prev) => ({
-        ...prev,
-        [rule.id]: score,
-      }))
+      if (data.countsForPerformance) {
+        setAttempts((prev) => [...prev, score])
+        setRuleDifficulty((prev) => ({
+          ...prev,
+          [rule.id]: score,
+        }))
+      }
 
-      setRuleMastery((prev) => {
-        const previous = prev[rule.id] ?? 0
-        let change = 0
+      if (typeof data.masteryScore === "number") {
+        setRuleMastery((prev) => ({
+          ...prev,
+          [rule.id]: Math.max(0, Math.min(100, Math.round(data.masteryScore))),
+        }))
+      }
 
-        if (score >= 90) change = 10
-        else if (score >= 80) change = 6
-        else if (score >= 70) change = 3
-        else if (score >= 60) change = 0
-        else change = -8
-
-        const updated = Math.max(0, Math.min(100, previous + change))
-        return { ...prev, [rule.id]: updated }
-      })
-
-      const now = Date.now()
-      let delay = 0
-      if (score < 50) delay = 0
-      else if (score < 70 || recallSeconds > 40) delay = 1
-      else if (score < 85 || recallSeconds > 25) delay = 3
-      else if (score < 95 || recallSeconds > 15) delay = 7
-      else delay = 21
-
-      const nextReview = now + delay * 24 * 60 * 60 * 1000
-      setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+      const nextReview = Date.parse(String(data.nextReviewAt ?? ""))
+      if (Number.isFinite(nextReview)) {
+        setRuleSchedule((prev) => ({ ...prev, [rule.id]: nextReview }))
+      }
 
       if (score >= 70 && drillFromWeakAreasFromUrl) {
         setDirectWeakCompletedRuleIds((prev) =>
@@ -1478,13 +2005,15 @@ return () => clearDirty()
         setWeakAreaItems((prev) =>
           prev.filter((item) => String(item?.ruleId || item?.id || "").trim() !== rule.id)
         )
-      } else if (score < 65) {
+      } else if (data.countsForPerformance && score < 65) {
         setWeakRules((prev) => (prev.includes(rule.id) ? prev : [...prev, rule.id]))
       }
 
-      setRules((prev) =>
-        prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
-      )
+      if (data.countsForPerformance) {
+        setRules((prev) =>
+          prev.map((r, i) => (i === selectedRuleIndex ? { ...r, avgScore: score } : r))
+        )
+      }
 
       setSessionRuleResults((prev) => {
         const next = prev.filter((item) => item.ruleId !== rule.id)
@@ -1492,6 +2021,46 @@ return () => clearDirty()
           ruleId: rule.id,
           title: rule.title,
           score,
+          masteryScore:
+            typeof data.masteryScore === "number"
+              ? Math.max(0, Math.min(100, Math.round(data.masteryScore)))
+              : undefined,
+          learningStatus:
+            typeof data.learningStatus === "string"
+              ? data.learningStatus
+              : undefined,
+          masteryConfidence:
+            typeof data.masteryConfidence === "number"
+              ? Math.max(0, Math.min(100, Math.round(data.masteryConfidence)))
+              : undefined,
+          nextReviewAt:
+            typeof data.nextReviewAt === "string"
+              ? data.nextReviewAt
+              : undefined,
+          reviewTimingLabel:
+            typeof data.reviewTimingLabel === "string"
+              ? data.reviewTimingLabel
+              : undefined,
+          scheduleReason:
+            typeof data.scheduleReason === "string"
+              ? data.scheduleReason
+              : undefined,
+          outcomeExplanation:
+            typeof data.outcomeExplanation === "string"
+              ? data.outcomeExplanation
+              : undefined,
+          failureStreak:
+            typeof data.failureStreak === "number"
+              ? data.failureStreak
+              : undefined,
+          intervalMinutes:
+            typeof data.intervalMinutes === "number"
+              ? data.intervalMinutes
+              : undefined,
+          isLapse:
+            typeof data.isLapse === "boolean"
+              ? data.isLapse
+              : undefined,
           matchedKeywords: Array.isArray(matched_keywords) ? matched_keywords : [],
           missedKeywords: Array.isArray(missed_keywords) ? missed_keywords : [],
           keywordScore,
@@ -1500,8 +2069,17 @@ return () => clearDirty()
         })
         return next
       })
+
+      applyLocalCycleProgress(rule.id, score, data)
+
+      window.dispatchEvent(
+        new CustomEvent("lexora:learning-progress-updated", {
+          detail: { ruleId: rule.id, updatedAt: Date.now() },
+        })
+      )
     } catch (err) {
       console.error(err)
+      alert(err instanceof Error ? err.message : "The attempt could not be saved.")
     } finally {
       setIsSubmitting(false)
     }
@@ -1838,6 +2416,7 @@ return () => clearDirty()
     setAttempts([])
     setSessionRuleResults([])
     setDirectWeakCompletedRuleIds([])
+    setActiveRecommendationContext(null)
     setSessionStarted(true)
     setActiveTab("active")
     setAnswerStartTime(Date.now())
@@ -2023,9 +2602,13 @@ return () => clearDirty()
     }
 
     if (quizConfig.ruleFilter === "untrained") {
-      filtered = filtered.filter(
-        (r) => !ruleDifficulty[r.id] && !ruleMastery[r.id] && !r.avgScore
-      )
+      filtered = filtered.filter((rule) => {
+        if (effectiveMode === "study") {
+          return !rule.cycleCovered
+        }
+
+        return !rule.cycleAssessed
+      })
     }
 
     if (quizConfig.ruleFilter === "mastered") {
@@ -2044,82 +2627,214 @@ return () => clearDirty()
     return mergeUniqueRules(filtered)
   }
 
+  function updateRecommendedMinutes(value: number) {
+    const safeMinutes = Math.max(10, Math.min(120, Math.round(value || 30)))
+    setRecommendedMinutes(safeMinutes)
+
+    try {
+      localStorage.setItem("lexora_daily_session_minutes_v1", String(safeMinutes))
+    } catch (error) {
+      console.error("RECOMMENDED MINUTES SAVE ERROR:", error)
+    }
+
+    void loadRecommendedSession(safeMinutes)
+  }
+
+  async function returnToUpdatedPlan() {
+    setActiveTab("setup")
+    await Promise.all([refreshSubjectCoverage(), refreshRuleCycleState()])
+    await loadRecommendedSession(recommendedMinutes)
+  }
+
+  async function startRecommendedBlock(block: RecommendedSessionBlock) {
+    if (recommendationStartingId) return
+
+    try {
+      setRecommendationStartingId(block.id)
+
+      let availableRules = allRules
+      const availableIds = new Set(availableRules.map((rule) => rule.id))
+      const missingRule = block.ruleIds.some((ruleId) => !availableIds.has(ruleId))
+
+      if (missingRule || availableRules.length === 0) {
+        const response = await fetch("/api/get-all-rules", { cache: "no-store" })
+        const data = await response.json().catch(() => null)
+
+        if (!response.ok || !Array.isArray(data)) {
+          throw new Error("The recommended rules could not be loaded.")
+        }
+
+        availableRules = mergeUniqueRules(
+          data
+            .map((row: any) => normalizeRuleRow(row))
+            .filter((row: Rule) => row.id)
+        )
+        setAllRules(availableRules)
+      }
+
+      const ruleById = new Map(availableRules.map((rule) => [rule.id, rule]))
+      const finalRules = block.ruleIds
+        .map((ruleId) => ruleById.get(ruleId))
+        .filter((rule): rule is Rule => Boolean(rule))
+
+      if (finalRules.length === 0) {
+        throw new Error("No eligible rules remain in this recommended block.")
+      }
+
+      try {
+        sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
+      } catch (error) {
+        console.error("ACTIVE SESSION RESET ERROR:", error)
+      }
+
+      const effectiveMode = block.mode
+      const nextQueue = finalRules.map((_, index) => index)
+      const subjectIds = Array.from(
+        new Set(finalRules.map((rule) => rule.subject_id).filter(Boolean))
+      ) as string[]
+
+      setQuizConfig((current) => ({
+        ...current,
+        size: finalRules.length,
+        customSize: String(finalRules.length),
+        timed: effectiveMode === "timed",
+        subjectIds,
+        weakOnly: effectiveMode === "weak_focus",
+        order: effectiveMode === "weak_focus" ? "weakest" : "sequential",
+        ruleFilter: "all",
+      }))
+      setSelectedTopicIds([])
+      setTrainingMode(effectiveMode)
+      setSelectedSessionType(effectiveMode)
+      setRules(finalRules)
+      setTrainingQueue(nextQueue)
+      setSelectedRuleIndex(0)
+      setSelectedSubjectId(finalRules[0]?.subject_id ?? null)
+      setMode("typing")
+      setResult(null)
+      setAnswer("")
+      setSessionRuleResults([])
+      setSavedRuleIds([])
+      setReportedRuleIds([])
+      setSessionPaused(false)
+      setActiveRecommendationContext({
+        blockId: block.id,
+        blockTitle: block.title,
+        blockMinutes: block.minutes,
+        phaseLabel: recommendation?.phaseLabel ?? "Recommended Session",
+        plannedMinutes: recommendation?.todayProgress.plannedMinutes ?? recommendedMinutes,
+      })
+      setSessionStarted(true)
+      setActiveTab("active")
+      setAnswerStartTime(Date.now())
+      setStudySessionId(`${Date.now()}`)
+
+      if (effectiveMode === "timed") {
+        setRemainingSeconds(quizConfig.timePerQuestion)
+        setTimerStarted(false)
+      } else {
+        setRemainingSeconds(null)
+        setTimerStarted(false)
+      }
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "The recommended session could not be started."
+      )
+    } finally {
+      setRecommendationStartingId(null)
+    }
+  }
+
   async function startConfiguredSession(nextMode?: SessionType) {
+    if (configuredSessionStartingRef.current || sessionStarted) return
+
+    configuredSessionStartingRef.current = true
     const effectiveMode = nextMode ?? trainingMode
 
     try {
-      sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
-    } catch (error) {
-      console.error("ACTIVE SESSION RESET ERROR:", error)
-    }
+      try {
+        sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
+      } catch (error) {
+        console.error("ACTIVE SESSION RESET ERROR:", error)
+      }
 
-    let finalRules = await resolveRulesForSession(effectiveMode)
+      let finalRules = await resolveRulesForSession(effectiveMode)
 
-    if (finalRules.length === 0) {
-      alert("No rules found for this selection.")
-      return
-    }
+      if (finalRules.length === 0) {
+        alert(
+          effectiveMode === "study"
+            ? "No new rules are available for this selection in the current cycle. Choose Review All, another subject, or a different session type."
+            : "No eligible rules are available for this selection right now. Choose another subject, change the rule filter, or try again after a review becomes due."
+        )
+        return
+      }
 
-    if (quizConfig.order === "random") {
-      finalRules = shuffleArray(finalRules)
-    } else if (quizConfig.order === "weakest") {
-      finalRules = finalRules.sort((a, b) => {
-        const aScore = ruleDifficulty[a.id] ?? a.avgScore ?? 0
-        const bScore = ruleDifficulty[b.id] ?? b.avgScore ?? 0
-        return aScore - bScore
-      })
-    }
+      if (quizConfig.order === "random") {
+        finalRules = shuffleArray(finalRules)
+      } else if (quizConfig.order === "weakest") {
+        finalRules = finalRules.sort((a, b) => {
+          const aScore = ruleDifficulty[a.id] ?? a.avgScore ?? 0
+          const bScore = ruleDifficulty[b.id] ?? b.avgScore ?? 0
+          return aScore - bScore
+        })
+      }
 
-    if (quizConfig.size > 0) {
-      finalRules = finalRules.slice(0, quizConfig.size)
-    }
+      if (quizConfig.size > 0) {
+        finalRules = finalRules.slice(0, quizConfig.size)
+      }
 
-    if (finalRules.length === 0) {
-      alert("No rules found for this selection.")
-      return
-    }
+      if (finalRules.length === 0) {
+        alert("No eligible rules remain after applying the selected session size and filters.")
+        return
+      }
 
-    const nextQueue = buildTrainingQueue(
-      finalRules,
-      quizConfig.size,
-      weakRules,
-      quizConfig.order
-    )
+      const nextQueue = buildTrainingQueue(
+        finalRules,
+        quizConfig.size,
+        weakRules,
+        quizConfig.order
+      )
 
-    if (nextQueue.length === 0) {
-      alert("No rules found for this selection.")
-      return
-    }
+      if (nextQueue.length === 0) {
+        alert("No eligible rules remain in the session queue.")
+        return
+      }
 
-    setTrainingMode(effectiveMode)
-    setSelectedSessionType(effectiveMode)
-    setRules(finalRules)
-    setTrainingQueue(nextQueue)
-    setSelectedRuleIndex(nextQueue[0] ?? null)
-    setSelectedSubjectId(finalRules[nextQueue[0] ?? 0]?.subject_id ?? null)
-    setMode("typing")
-    setResult(null)
-    setAnswer("")
-    setSessionRuleResults([])
-    setSavedRuleIds([])
-    setReportedRuleIds([])
-    setSessionPaused(false)
-    setSessionStarted(true)
-    setAnswerStartTime(Date.now())
-    setStudySessionId(`${Date.now()}`)
+      setTrainingMode(effectiveMode)
+      setSelectedSessionType(effectiveMode)
+      setRules(finalRules)
+      setTrainingQueue(nextQueue)
+      setSelectedRuleIndex(nextQueue[0] ?? null)
+      setSelectedSubjectId(finalRules[nextQueue[0] ?? 0]?.subject_id ?? null)
+      setMode("typing")
+      setResult(null)
+      setAnswer("")
+      setSessionRuleResults([])
+      setSavedRuleIds([])
+      setReportedRuleIds([])
+      setSessionPaused(false)
+      setActiveRecommendationContext(null)
+      setSessionStarted(true)
+      setAnswerStartTime(Date.now())
+      setStudySessionId(`${Date.now()}`)
 
-    if (effectiveMode === "timed") {
-      setRemainingSeconds(quizConfig.timePerQuestion)
-      setTimerStarted(false)
-    } else {
-      setRemainingSeconds(null)
-      setTimerStarted(false)
-    }
+      if (effectiveMode === "timed") {
+        setRemainingSeconds(quizConfig.timePerQuestion)
+        setTimerStarted(false)
+      } else {
+        setRemainingSeconds(null)
+        setTimerStarted(false)
+      }
 
-    try {
-      sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
-    } catch (error) {
-      console.error("CLEAR STALE LIVE SESSION ERROR:", error)
+      try {
+        sessionStorage.removeItem(STORAGE_ACTIVE_SESSION)
+      } catch (error) {
+        console.error("CLEAR STALE LIVE SESSION ERROR:", error)
+      }
+    } finally {
+      configuredSessionStartingRef.current = false
     }
   }
 
@@ -2176,6 +2891,59 @@ return () => clearDirty()
     })
   }, [visibleSubjects, allRules, weakRules])
 
+  const learningCycleStats = useMemo(() => {
+    const totalRules = visibleSubjects.reduce(
+      (sum, subject) => sum + Number(subject.total_rules ?? 0),
+      0
+    )
+    const coveredRules = visibleSubjects.reduce(
+      (sum, subject) =>
+        sum + Number(subject.covered_rules ?? subject.completed_rules ?? 0),
+      0
+    )
+    const assessedRules = visibleSubjects.reduce(
+      (sum, subject) => sum + Number(subject.assessed_rules ?? 0),
+      0
+    )
+    const cycleNumber = visibleSubjects[0]?.cycle_number ?? 1
+    const percentage =
+      totalRules > 0 ? Math.round((coveredRules / totalRules) * 100) : 0
+
+    return {
+      totalRules,
+      coveredRules,
+      assessedRules,
+      cycleNumber,
+      percentage,
+      isComplete: totalRules > 0 && coveredRules >= totalRules,
+    }
+  }, [visibleSubjects])
+
+  const recommendationState = recommendation
+    ? recommendationPlanState(recommendation)
+    : null
+  const recommendationCounts = recommendation
+    ? recommendationCategoryCounts(recommendation)
+    : { dueReview: 0, priorityRule: 0, firstRecall: 0, newRule: 0 }
+  const primaryRecommendedBlock = recommendation
+    ? recommendation.blocks.find(
+        (block) => block.id === recommendation.primaryBlockId
+      ) ?? recommendation.blocks.find((block) => !block.completedToday) ?? null
+    : null
+  const recommendedPlanRuleCount = recommendation
+    ? recommendationRuleCount(recommendation)
+    : 0
+
+  const independentRecallAccuracy = useMemo(() => {
+    const values = allRules
+      .filter((rule) => rule.cycleAssessed)
+      .map((rule) => Number(ruleMastery[rule.id] ?? rule.avgScore))
+      .filter((value) => Number.isFinite(value))
+
+    if (values.length === 0) return null
+    return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+  }, [allRules, ruleMastery])
+
   const weakFocusSubjectCards = useMemo(() => {
     const subjectCounts = new Map<string, number>()
 
@@ -2218,6 +2986,10 @@ return () => clearDirty()
           subjectId: subject.id,
           subjectName: subject.name,
           count: nextCount,
+          coveredCount: 0,
+          assessedCount: 0,
+          passedCount: 0,
+          cycleComplete: false,
         })
       }
 
@@ -2300,7 +3072,6 @@ return () => clearDirty()
       setQuizConfig((prev) => ({
         ...prev,
         subjectIds: subjectCards.map((s) => s.id),
-        ruleFilter: "all",
         weakOnly: false,
       }))
       setSelectedTopicIds([])
@@ -2342,7 +3113,6 @@ return () => clearDirty()
       ...prev,
       subjectIds: [],
       weakOnly: false,
-      ruleFilter: "all",
     }))
     setSelectedTopicIds([])
   }
@@ -2528,19 +3298,595 @@ return () => clearDirty()
 
             {activeTab === "setup" && (
               <>
-                <div className="mb-5">
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
-                    Session Configuration
+                <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-violet-600">
+                      Learning Studio
+                    </div>
+                    <h1 className="mt-2 text-[30px] font-semibold tracking-[-0.045em] text-slate-950">
+                      Rule Training
+                    </h1>
+                    <p className="mt-2 max-w-2xl text-[14px] leading-6 text-slate-500">
+                      A focused daily memory plan, adapted to your review schedule, recall strength, and current learning cycle.
+                    </p>
                   </div>
-                  <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-900">
-                    Choose your session
-                  </h1>
-                  <p className="mt-1.5 text-[14px] text-slate-500">
-                    Pick the mode first, then choose whole subjects or specific topics.
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-expanded={cycleSettingsOpen}
+                      onClick={() => setCycleSettingsOpen((open) => !open)}
+                      className="inline-flex items-center gap-2 text-[12px] font-semibold text-slate-600 transition hover:text-violet-700"
+                    >
+                      Cycle settings
+                      <ChevronDown
+                        size={15}
+                        className={`transition ${cycleSettingsOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+
+                    {cycleSettingsOpen && (
+                      <div className="absolute right-0 top-8 z-30 w-64 rounded-[14px] border border-slate-200 bg-white p-2 shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
+                        <div className="px-3 py-2 text-[11px] leading-5 text-slate-500">
+                          Restarting resets cycle coverage only. Your attempt and mastery history stays intact.
+                        </div>
+                        <button
+                          type="button"
+                          disabled={cycleActionLoading}
+                          onClick={() => {
+                            setCycleSettingsOpen(false)
+                            void handleCycleAction("restart_current")
+                          }}
+                          className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          <RefreshCw size={14} />
+                          Restart Cycle {learningCycleStats.cycleNumber}
+                        </button>
+                        {learningCycleStats.isComplete && (
+                          <button
+                            type="button"
+                            disabled={cycleActionLoading}
+                            onClick={() => {
+                              setCycleSettingsOpen(false)
+                              void handleCycleAction("start_next")
+                            }}
+                            className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left text-[12px] font-semibold text-violet-700 transition hover:bg-violet-50 disabled:opacity-50"
+                          >
+                            <ArrowRight size={14} />
+                            Start Cycle {learningCycleStats.cycleNumber + 1}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mb-6 border-y border-slate-200 py-4">
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-600">
+                        <RefreshCw size={17} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                          <span className="text-[13px] font-semibold text-slate-900">
+                            Learning Cycle {learningCycleStats.cycleNumber}
+                          </span>
+                          <span className="text-[12px] text-slate-500">
+                            {learningCycleStats.coveredRules.toLocaleString()} of {learningCycleStats.totalRules.toLocaleString()} rules covered
+                          </span>
+                          <span className="text-[12px] text-slate-500">
+                            {learningCycleStats.assessedRules.toLocaleString()} independently recalled
+                          </span>
+                        </div>
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-violet-600 transition-all"
+                            style={{ width: `${learningCycleStats.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-left lg:text-right">
+                      <div className="text-[24px] font-semibold tracking-[-0.03em] text-slate-950">
+                        {learningCycleStats.percentage}%
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-500">Cycle coverage</div>
+                    </div>
+                  </div>
+                </div>
+
+                <section className="mb-7 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.07)]">
+                  <div className="grid xl:grid-cols-[minmax(0,1fr)_320px]">
+                    <div className="p-6 lg:p-8">
+                      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex min-w-0 items-start gap-4">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white shadow-[0_10px_28px_rgba(124,58,237,0.22)]">
+                            {recommendationState === "completed" ? (
+                              <CircleCheck size={22} />
+                            ) : (
+                              <Sparkles size={21} />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.13em] text-violet-700">
+                              Today&apos;s Recommended Session
+                            </div>
+                            <h2 className="mt-2 text-[27px] font-semibold tracking-[-0.04em] text-slate-950">
+                              {recommendationLoading
+                                ? "Building today’s plan…"
+                                : recommendationState === "completed"
+                                  ? "You completed today’s plan."
+                                  : recommendationState === "in_progress"
+                                    ? "Continue today’s plan."
+                                    : recommendation
+                                      ? "Your daily plan is ready."
+                                      : "Build your adaptive daily plan."}
+                            </h2>
+                            <p className="mt-3 max-w-2xl text-[13px] leading-6 text-slate-500">
+                              {recommendationState === "completed"
+                                ? "Your completed work remains recorded. Stop here, add more time, or choose optional practice without resetting today’s progress."
+                                : recommendation?.summary ??
+                                  "Lexora will prioritize due reviews, memory gaps, first recalls, and controlled new coverage."}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 lg:text-right">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-400">
+                            Time available today
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-3 text-[12px] lg:justify-end">
+                            {[10, 20, 30, 45, 60].map((minutes) => (
+                              <button
+                                key={minutes}
+                                type="button"
+                                onClick={() => updateRecommendedMinutes(minutes)}
+                                className={`border-b-2 px-0.5 pb-1.5 font-semibold transition ${
+                                  recommendedMinutes === minutes
+                                    ? "border-violet-600 text-slate-950"
+                                    : "border-transparent text-slate-500 hover:text-slate-900"
+                                }`}
+                              >
+                                {minutes}
+                              </button>
+                            ))}
+                            <label
+                              className={`flex items-center border-b-2 pb-1.5 transition ${
+                                ![10, 20, 30, 45, 60].includes(recommendedMinutes)
+                                  ? "border-violet-600"
+                                  : "border-transparent"
+                              }`}
+                            >
+                              <span className="mr-1 font-semibold text-slate-500">Custom</span>
+                              <input
+                                aria-label="Custom study minutes"
+                                type="number"
+                                min={10}
+                                max={120}
+                                value={recommendedMinutes}
+                                onChange={(event: { target: { value: string } }) =>
+                                  setRecommendedMinutes(
+                                    Math.max(10, Math.min(120, Number(event.target.value || 30)))
+                                  )
+                                }
+                                onBlur={() => updateRecommendedMinutes(recommendedMinutes)}
+                                className="w-9 bg-transparent text-center font-semibold text-slate-950 outline-none"
+                              />
+                              <span className="font-semibold text-slate-500">min</span>
+                            </label>
+                            <button
+                              type="button"
+                              title="Recalculate today’s plan"
+                              aria-label="Recalculate today’s plan"
+                              disabled={recommendationLoading}
+                              onClick={() => void loadRecommendedSession(recommendedMinutes)}
+                              className="mb-1 text-slate-400 transition hover:text-violet-700 disabled:opacity-50"
+                            >
+                              <RefreshCw
+                                size={16}
+                                className={recommendationLoading ? "animate-spin" : ""}
+                              />
+                            </button>
+                          </div>
+                          <div className="mt-2 text-[10px] text-slate-400">
+                            Changes today&apos;s recommendation only.
+                          </div>
+                        </div>
+                      </div>
+
+                      {recommendationError && (
+                        <div className="mt-6 border-l-2 border-rose-400 pl-3 text-[12px] leading-5 text-rose-600">
+                          {recommendationError}
+                        </div>
+                      )}
+
+                      {recommendationLocked ? (
+                        <div className="mt-7 border-t border-slate-200 pt-6">
+                          <div className="flex items-start gap-3">
+                            <Lock size={18} className="mt-0.5 text-slate-400" />
+                            <div>
+                              <div className="text-[13px] font-semibold text-slate-900">
+                                Adaptive daily plans are available with BLL access.
+                              </div>
+                              <div className="mt-1 text-[12px] leading-5 text-slate-500">
+                                Manual Study, Quiz, Timed, and Priority Review sessions remain available below.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : recommendation ? (
+                        <>
+                          {recommendationState === "completed" ? (
+                            <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                              {[
+                                {
+                                  label: "Studied today",
+                                  value: recommendation.todayProgress.studiedRules,
+                                  detail: "Coverage recorded",
+                                  icon: <BookOpen size={17} />,
+                                  tone: "bg-blue-50 text-blue-700",
+                                },
+                                {
+                                  label: "Recalled today",
+                                  value: recommendation.todayProgress.assessedRules,
+                                  detail: "Independent attempts",
+                                  icon: <BrainCircuit size={17} />,
+                                  tone: "bg-violet-50 text-violet-700",
+                                },
+                                {
+                                  label: "Reviews still due",
+                                  value: recommendation.totals.dueRules,
+                                  detail: recommendation.totals.overdueRules
+                                    ? `${recommendation.totals.overdueRules} overdue`
+                                    : "Nothing overdue",
+                                  icon: <Clock3 size={17} />,
+                                  tone: "bg-amber-50 text-amber-700",
+                                },
+                                {
+                                  label: "Rules remaining",
+                                  value: recommendationRemainingRules(recommendation),
+                                  detail: `Cycle ${recommendation.cycleNumber}`,
+                                  icon: <Layers3 size={17} />,
+                                  tone: "bg-emerald-50 text-emerald-700",
+                                },
+                              ].map((item) => (
+                                <div key={item.label} className="border-l border-slate-200 pl-4 first:border-l-0 first:pl-0 sm:first:border-l sm:first:pl-4 xl:first:border-l-0 xl:first:pl-0">
+                                  <div className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${item.tone}`}>
+                                    {item.icon}
+                                  </div>
+                                  <div className="mt-3 text-[25px] font-semibold tracking-[-0.04em] text-slate-950">
+                                    {item.value.toLocaleString()}
+                                  </div>
+                                  <div className="mt-1 text-[12px] font-semibold text-slate-700">
+                                    {item.label}
+                                  </div>
+                                  <div className="mt-1 text-[10px] text-slate-400">{item.detail}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                              {[
+                                {
+                                  label: "Reviews Due",
+                                  value: recommendationCounts.dueReview,
+                                  detail: recommendation.totals.overdueRules
+                                    ? `${recommendation.totals.overdueRules} overdue across your queue`
+                                    : "Scheduled for retrieval now",
+                                  icon: <Clock3 size={17} />,
+                                  tone: "border-amber-100 bg-amber-50/70 text-amber-700",
+                                },
+                                {
+                                  label: "Priority Rules",
+                                  value: recommendationCounts.priorityRule,
+                                  detail: "Weak or repeatedly missed",
+                                  icon: <Target size={17} />,
+                                  tone: "border-rose-100 bg-rose-50/70 text-rose-700",
+                                },
+                                {
+                                  label: "First Recall",
+                                  value: recommendationCounts.firstRecall,
+                                  detail: "Studied earlier, now test memory",
+                                  icon: <BrainCircuit size={17} />,
+                                  tone: "border-violet-100 bg-violet-50/70 text-violet-700",
+                                },
+                                {
+                                  label: "New Rules",
+                                  value: recommendationCounts.newRule,
+                                  detail: "New coverage in this cycle",
+                                  icon: <BookOpen size={17} />,
+                                  tone: "border-blue-100 bg-blue-50/70 text-blue-700",
+                                },
+                              ].map((item) => (
+                                <div key={item.label} className={`border p-4 ${item.tone}`}>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>{item.icon}</div>
+                                    <div className="text-[24px] font-semibold leading-none tracking-[-0.04em]">
+                                      {item.value}
+                                    </div>
+                                  </div>
+                                  <div className="mt-4 text-[12px] font-semibold text-slate-800">
+                                    {item.label}
+                                  </div>
+                                  <div className="mt-1 text-[10px] leading-4 text-slate-500">
+                                    {item.detail}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="mt-7 border-t border-slate-200 pt-5">
+                            <button
+                              type="button"
+                              aria-expanded={whyPlanOpen}
+                              onClick={() => setWhyPlanOpen((open) => !open)}
+                              className="flex w-full items-center justify-between gap-4 text-left"
+                            >
+                              <div>
+                                <div className="text-[12px] font-semibold text-slate-900">
+                                  Why this plan?
+                                </div>
+                                <div className="mt-1 text-[11px] text-slate-500">
+                                  See how Lexora selected and scheduled today&apos;s rules.
+                                </div>
+                              </div>
+                              <ChevronDown
+                                size={17}
+                                className={`shrink-0 text-slate-400 transition ${whyPlanOpen ? "rotate-180" : ""}`}
+                              />
+                            </button>
+
+                            {whyPlanOpen && (
+                              <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                                <div className="space-y-4 text-[11px] leading-5 text-slate-500">
+                                  <div>
+                                    <span className="font-semibold text-slate-800">Reviews Due:</span>{" "}
+                                    rules whose spaced-review date has arrived.
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-slate-800">Priority Rules:</span>{" "}
+                                    assessed rules with weak recall or repeated misses.
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-slate-800">First Recall:</span>{" "}
+                                    rules studied earlier and now ready for an independent memory check.
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-slate-800">New Rules:</span>{" "}
+                                    controlled new coverage that moves the current cycle forward.
+                                  </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                  {recommendation.blocks.flatMap((block) =>
+                                    (block.ruleExplanations ?? []).slice(0, 2)
+                                  ).slice(0, 4).map((item) => (
+                                    <div key={item.ruleId} className="grid gap-1 border-l-2 border-violet-200 pl-3 text-[10px] leading-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3">
+                                      <div className="min-w-0">
+                                        <div className="truncate font-semibold text-slate-700">
+                                          {item.title}
+                                        </div>
+                                        <div className="text-slate-500">
+                                          {item.statusLabel} · {item.reason}
+                                        </div>
+                                      </div>
+                                      <div className="font-medium text-violet-700 sm:text-right">
+                                        {item.timingLabel}
+                                      </div>
+                                    </div>
+                                  ))}
+                                  {recommendation.blocks.length === 0 && (
+                                    <div className="border-l-2 border-emerald-200 pl-3 text-[11px] leading-5 text-slate-500">
+                                      Today&apos;s required plan is complete. Adding time creates a new optional recommendation from the remaining eligible queue without deleting the completed work.
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-7 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                              <div className="text-[12px] font-semibold text-slate-900">
+                                {recommendationState === "completed"
+                                  ? `${recommendationCompletedMinutes(recommendation)} of ${recommendationRequestedMinutes(recommendation)} minutes completed`
+                                  : `${recommendedPlanRuleCount} rules · About ${recommendationRemainingMinutes(recommendation)} minutes`}
+                              </div>
+                              <div className="mt-1 text-[11px] text-slate-500">
+                                {recommendation.phaseLabel} · Cycle {recommendation.cycleNumber}
+                                {recommendation.daysUntilExam !== null
+                                  ? ` · ${recommendation.daysUntilExam} days to exam`
+                                  : ""}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                              {recommendationState === "completed" ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateRecommendedMinutes(
+                                        Math.min(120, recommendationRequestedMinutes(recommendation) + 10)
+                                      )
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-violet-600 px-5 py-3 text-[12px] font-semibold text-white transition hover:bg-violet-700"
+                                  >
+                                    <Sparkles size={14} />
+                                    Add 10 minutes
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedSessionType("weak_focus")
+                                      setTrainingMode("weak_focus")
+                                      window.setTimeout(() =>
+                                        document.getElementById("manual-session-modes")?.scrollIntoView({
+                                          behavior: "smooth",
+                                          block: "start",
+                                        }), 0
+                                      )
+                                    }}
+                                    className="inline-flex items-center justify-center gap-2 px-2 py-3 text-[12px] font-semibold text-violet-700 transition hover:text-violet-900"
+                                  >
+                                    Start Priority Review
+                                    <ArrowRight size={14} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={!primaryRecommendedBlock || recommendationStartingId !== null}
+                                    onClick={() =>
+                                      primaryRecommendedBlock
+                                        ? void startRecommendedBlock(primaryRecommendedBlock)
+                                        : undefined
+                                    }
+                                    className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-violet-600 px-5 py-3 text-[12px] font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+                                  >
+                                    <Play size={14} />
+                                    {recommendationStartingId
+                                      ? "Starting…"
+                                      : recommendationState === "in_progress"
+                                        ? "Continue Recommended Session"
+                                        : "Start Recommended Session"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      document.getElementById("manual-session-modes")?.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "start",
+                                      })
+                                    }
+                                    className="inline-flex items-center justify-center px-2 py-3 text-[12px] font-semibold text-slate-600 transition hover:text-violet-700"
+                                  >
+                                    Build a custom session
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="mt-7 text-[12px] text-slate-500">
+                          {recommendationLoading
+                            ? "Analyzing your current cycle and review queue…"
+                            : "Sign in to generate today’s recommendation."}
+                        </div>
+                      )}
+                    </div>
+
+                    <aside className="border-t border-slate-200 bg-slate-50/70 p-6 xl:border-l xl:border-t-0 lg:p-7">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Today at a glance
+                      </div>
+
+                      <div className="mt-6 space-y-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-[12px] font-semibold text-slate-800">Reviews due</div>
+                            <div className="mt-1 text-[10px] text-slate-500">
+                              {recommendation?.totals.overdueRules ?? 0} overdue
+                            </div>
+                          </div>
+                          <div className="text-[22px] font-semibold tracking-[-0.04em] text-slate-950">
+                            {recommendation?.totals.dueRules ?? 0}
+                          </div>
+                        </div>
+                        <div className="h-px bg-slate-200" />
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-[12px] font-semibold text-slate-800">Priority rules</div>
+                            <div className="mt-1 text-[10px] text-slate-500">
+                              {recommendation?.totals.repeatedFailureRules ?? 0} repeated struggles
+                            </div>
+                          </div>
+                          <div className="text-[22px] font-semibold tracking-[-0.04em] text-slate-950">
+                            {recommendation?.totals.weakRules ?? 0}
+                          </div>
+                        </div>
+                        <div className="h-px bg-slate-200" />
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <div className="text-[12px] font-semibold text-slate-800">Independent recall accuracy</div>
+                            <div className="mt-1 text-[10px] text-slate-500">Current assessed rules</div>
+                          </div>
+                          <div className="text-[22px] font-semibold tracking-[-0.04em] text-slate-950">
+                            {independentRecallAccuracy === null ? "—" : `${independentRecallAccuracy}%`}
+                          </div>
+                        </div>
+                        <div className="h-px bg-slate-200" />
+                        <div>
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="text-[12px] font-semibold text-slate-800">Cycle progress</div>
+                            <div className="text-[12px] font-semibold text-violet-700">
+                              {learningCycleStats.percentage}%
+                            </div>
+                          </div>
+                          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                            <div
+                              className="h-full rounded-full bg-violet-600"
+                              style={{ width: `${learningCycleStats.percentage}%` }}
+                            />
+                          </div>
+                          <div className="mt-2 text-[10px] text-slate-500">
+                            {learningCycleStats.coveredRules.toLocaleString()} of {learningCycleStats.totalRules.toLocaleString()} covered
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-7 border-t border-slate-200 pt-5">
+                        {recommendationState === "completed" ? (
+                          <>
+                            <div className="text-[12px] font-semibold text-slate-900">
+                              Continue with optional practice
+                            </div>
+                            <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                              Extra practice does not erase today’s completion. Lexora will build from the remaining eligible queue.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                document.getElementById("manual-session-modes")?.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "start",
+                                })
+                              }
+                              className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold text-violet-700 transition hover:text-violet-900"
+                            >
+                              View optional session modes
+                              <ArrowRight size={13} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-[12px] font-semibold text-slate-900">
+                              What happens next
+                            </div>
+                            <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                              After the session, the plan recalculates from your saved recall results. Missed rules return sooner; strong rules move farther apart.
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </aside>
+                  </div>
+                </section>
+
+                <div className="mb-4">
+                  <h2 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-950">
+                    Choose another session
+                  </h2>
+                  <p className="mt-1 text-[12px] text-slate-500">
+                    Use manual practice when you want a specific subject, mode, or extra review beyond today’s plan.
                   </p>
                 </div>
 
-                <div className="mb-5 grid grid-cols-1 gap-3 xl:grid-cols-4">
+                <div id="manual-session-modes" className="mb-5 scroll-mt-6 grid grid-cols-1 gap-3 xl:grid-cols-4">
                   <ModeTypeCard
                     active={selectedSessionType === "study"}
                     tone="study"
@@ -2577,8 +3923,8 @@ return () => clearDirty()
                   <ModeTypeCard
                     active={selectedSessionType === "weak_focus"}
                     tone="weak"
-                    title="Weak Focus"
-                    description="Auto targets your lowest scored rules."
+                    title="Priority Review"
+                    description="Automatically targets due and struggling rules."
                     icon={<Star size={15} />}
                     onClick={() => {
                       setSelectedSessionType("weak_focus")
@@ -2598,6 +3944,7 @@ return () => clearDirty()
                           <SubjectSelectorBlock
                             title="Choose Subjects and Topics"
                             count={previewSubjectNames.length + selectedTopicIds.length}
+                            mode={selectedSessionType}
                             subjectCards={subjectCards}
                             quizConfig={quizConfig}
                             applySubjectPreset={applySubjectPreset}
@@ -2621,6 +3968,20 @@ return () => clearDirty()
 
                           <OptionDivider />
 
+                          <FilterBlock
+                            value={quizConfig.ruleFilter}
+                            mode="study"
+                            onChange={(value) =>
+                              setQuizConfig((prev) => ({
+                                ...prev,
+                                ruleFilter: value,
+                                weakOnly: value === "weak",
+                              }))
+                            }
+                          />
+
+                          <OptionDivider />
+
                           <OrderBlock
                             order={quizConfig.order}
                             options={["sequential", "random"]}
@@ -2639,6 +4000,7 @@ return () => clearDirty()
                           <SubjectSelectorBlock
                             title="Choose Subjects and Topics"
                             count={previewSubjectNames.length + selectedTopicIds.length}
+                            mode={selectedSessionType}
                             subjectCards={subjectCards}
                             quizConfig={quizConfig}
                             applySubjectPreset={applySubjectPreset}
@@ -2675,6 +4037,7 @@ return () => clearDirty()
 
                           <FilterBlock
                             value={quizConfig.ruleFilter}
+                            mode="quiz"
                             onChange={(value) =>
                               setQuizConfig((prev) => ({
                                 ...prev,
@@ -2703,6 +4066,7 @@ return () => clearDirty()
                           <SubjectSelectorBlock
                             title="Choose Subjects and Topics"
                             count={previewSubjectNames.length + selectedTopicIds.length}
+                            mode={selectedSessionType}
                             subjectCards={subjectCards}
                             quizConfig={quizConfig}
                             applySubjectPreset={applySubjectPreset}
@@ -2774,6 +4138,7 @@ return () => clearDirty()
                           <SubjectSelectorBlock
                               title="Choose Weak Subjects and Topics"
                               count={previewSubjectNames.length + selectedTopicIds.length}
+                              mode={selectedSessionType}
                               subjectCards={weakFocusSubjectCards}
                               quizConfig={quizConfig}
                               applySubjectPreset={applySubjectPreset}
@@ -2820,7 +4185,7 @@ return () => clearDirty()
                               subjectIds: [],
                               weakOnly: false,
                               order: "sequential",
-                              ruleFilter: "all",
+                              ruleFilter: "untrained",
                               questionStyle: "prompt",
                             })
                             setSelectedTopicIds([])
@@ -2843,7 +4208,7 @@ return () => clearDirty()
                               ? "Start Quiz Session"
                               : selectedSessionType === "timed"
                                 ? "Start Timed Session"
-                                : "Start Weak Focus"}
+                                : "Start Priority Review"}
                         </button>
                       </div>
                     </div>
@@ -3077,6 +4442,98 @@ return () => clearDirty()
 
             {activeTab === "results" && (
               <div className="mx-auto max-w-[1080px]">
+                {latestCompletedSession && (
+                  <div className="mb-6 overflow-hidden rounded-[20px] border border-emerald-200 bg-white shadow-[0_14px_38px_rgba(15,23,42,0.06)]">
+                    <div className="border-b border-emerald-100 bg-[linear-gradient(135deg,#ECFDF5,#F5F3FF)] px-6 py-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-emerald-100 text-emerald-700">
+                            <CheckCircle2 size={22} />
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                              Session complete
+                            </div>
+                            <h2 className="mt-1 text-[18px] font-semibold text-slate-900">
+                              {latestCompletedSession.recommendationBlockTitle || `${getSessionTypeMeta(latestCompletedSession.mode).shortLabel} finished`}
+                            </h2>
+                            <p className="mt-1 text-[12px] text-slate-500">
+                              Your work was saved. Coverage, mastery evidence, weak areas, and today&apos;s recommendation are now being recalculated.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="rounded-[12px] border border-white/80 bg-white/80 px-3 py-2 text-center">
+                            <div className="text-[15px] font-semibold text-slate-900">{latestCompletedSession.completedCount}</div>
+                            <div className="text-[9px] uppercase tracking-[0.08em] text-slate-400">Rules</div>
+                          </div>
+                          <div className="rounded-[12px] border border-white/80 bg-white/80 px-3 py-2 text-center">
+                            <div className="text-[15px] font-semibold text-slate-900">
+                              {latestCompletedSession.finalScore === null ? "Study" : `${latestCompletedSession.finalScore}%`}
+                            </div>
+                            <div className="text-[9px] uppercase tracking-[0.08em] text-slate-400">Result</div>
+                          </div>
+                          <div className="rounded-[12px] border border-white/80 bg-white/80 px-3 py-2 text-center">
+                            <div className="text-[15px] font-semibold text-slate-900">{formatTimeShort(latestCompletedSession.totalTimeSec)}</div>
+                            <div className="text-[9px] uppercase tracking-[0.08em] text-slate-400">Time</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">What happens next</div>
+                        <div className="mt-1 text-[13px] font-semibold text-slate-900">
+                          {recommendationLoading
+                            ? "Updating your next recommendation…"
+                            : recommendation?.todayProgress.planComplete
+                              ? "Today’s recommended plan is complete."
+                              : recommendation?.blocks.find((block) => block.id === recommendation.primaryBlockId)?.title
+                                ? `Next: ${recommendation.blocks.find((block) => block.id === recommendation.primaryBlockId)?.title}`
+                                : "Return to setup to choose your next session."}
+                        </div>
+                        <div className="mt-1 text-[11px] leading-5 text-slate-500">
+                          {recommendation?.todayProgress.planComplete
+                            ? "Stop for today without pressure, or continue with optional manual practice."
+                            : recommendation
+                              ? `${recommendation.todayProgress.remainingMinutes} minutes remain in the daily budget you selected.`
+                              : "The plan will use your newest coverage and recall results."}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void returnToUpdatedPlan()}
+                          className="inline-flex items-center justify-center gap-2 rounded-[11px] border border-slate-200 bg-white px-4 py-2.5 text-[12px] font-semibold text-slate-700 transition hover:border-violet-300"
+                        >
+                          View updated plan
+                          <RefreshCw size={13} />
+                        </button>
+                        {recommendation &&
+                          !recommendation.todayProgress.planComplete &&
+                          recommendation.blocks.find((block) => block.id === recommendation.primaryBlockId) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextBlock = recommendation.blocks.find(
+                                  (block) => block.id === recommendation.primaryBlockId
+                                )
+                                if (nextBlock) void startRecommendedBlock(nextBlock)
+                              }}
+                              className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-violet-600 px-4 py-2.5 text-[12px] font-semibold text-white transition hover:bg-violet-700"
+                            >
+                              Start next block
+                              <ArrowRight size={13} />
+                            </button>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-2 text-[11px] font-medium text-slate-400">
                   All past training sessions
                 </div>
@@ -3575,6 +5032,7 @@ function OptionDivider() {
 function SubjectSelectorBlock({
   title,
   count,
+  mode,
   subjectCards,
   quizConfig,
   applySubjectPreset,
@@ -3589,6 +5047,7 @@ function SubjectSelectorBlock({
 }: {
   title: string
   count: number
+  mode: SessionType
   subjectCards: Array<Subject & { total: number; weak: number; group: "MBE" | "MEE" }>
   quizConfig: {
     subjectIds: string[]
@@ -3668,6 +5127,13 @@ function SubjectSelectorBlock({
             selectedTopicIds.includes(t.id)
           ).length
           const expanded = expandedSubjectIds.includes(subject.id)
+          const coveredRules = subject.covered_rules ?? subject.completed_rules ?? 0
+          const assessedRules = subject.assessed_rules ?? 0
+          const remainingRules =
+            mode === "study"
+              ? subject.remaining_study_rules ?? Math.max(0, subject.total - coveredRules)
+              : subject.remaining_quiz_rules ?? Math.max(0, subject.total - assessedRules)
+          const cycleComplete = Boolean(subject.cycle_complete)
 
           const activeTone =
             subject.group === "MBE"
@@ -3700,7 +5166,17 @@ function SubjectSelectorBlock({
 
                   <div className="mt-1 text-[12px] text-slate-400">
                     {subject.total} rules
+                    {cycleComplete
+                      ? " • Cycle complete"
+                      : ` • ${remainingRules} ${mode === "study" ? "new" : "not quizzed"}`}
                     {selectedTopicCount > 0 ? ` • ${selectedTopicCount} topics selected` : ""}
+                  </div>
+
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500"
+                      style={{ width: `${Math.max(0, Math.min(100, subject.cycle_progress_percentage ?? 0))}%` }}
+                    />
                   </div>
 
                   {!!subject.badge_text && (
@@ -3770,11 +5246,23 @@ function SubjectSelectorBlock({
                                 ? subject.group === "MBE"
                                   ? "border-blue-300 bg-blue-100 text-blue-700"
                                   : "border-emerald-300 bg-emerald-100 text-emerald-700"
-                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                                : topic.cycleComplete
+                                  ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:bg-emerald-50"
+                                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                             }`}
                           >
                             <span className="truncate">{topic.name}</span>
-                            <span className="text-[10px] opacity-70">{topic.count}</span>
+                            <span className="text-[10px] opacity-70">
+                              {topic.cycleComplete
+                                ? "Done"
+                                : `${Math.max(
+                                    0,
+                                    topic.count -
+                                      (mode === "study"
+                                        ? topic.coveredCount
+                                        : topic.assessedCount)
+                                  )} left`}
+                            </span>
                             {selected && <span className="text-[11px]">✓</span>}
                           </button>
                         )
@@ -3882,15 +5370,17 @@ function OrderBlock({
 
 function FilterBlock({
   value,
+  mode = "quiz",
   onChange,
 }: {
   value: SessionFilter
+  mode?: "study" | "quiz"
   onChange: (value: SessionFilter) => void
 }) {
   const items: { value: SessionFilter; label: string }[] = [
-    { value: "all", label: "All Rules" },
+    { value: "untrained", label: mode === "study" ? "New This Cycle" : "Not Quizzed This Cycle" },
+    { value: "all", label: "Review All" },
     { value: "weak", label: "Weak Only" },
-    { value: "untrained", label: "Untrained" },
     { value: "mastered", label: "Mastered" },
   ]
 
@@ -4198,6 +5688,10 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
         />
       </div>
 
+      <div className="rounded-[14px] border border-blue-200 bg-blue-50 px-4 py-3 text-[12px] leading-5 text-blue-800">
+        Session score measures only this session. Current mastery combines this result with prior attempts, evidence quality, consistency, and recall history. A perfect session can improve a rule without immediately removing it from Weaknesses.
+      </div>
+
       {item.missedKeywords.length > 0 && (
         <div className="rounded-[16px] border border-slate-200 bg-white px-5 py-4">
           <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500">
@@ -4248,6 +5742,15 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
                   ? `Missed: ${rule.missedKeywords.join(", ")}`
                   : "All keywords matched"
 
+              const learningSummary =
+                typeof rule.masteryScore === "number"
+                  ? `Mastery ${rule.masteryScore}% · ${formatLearningStatus(rule.learningStatus)}${
+                      typeof rule.masteryConfidence === "number"
+                        ? ` · Confidence ${rule.masteryConfidence}%`
+                        : ""
+                    }`
+                  : null
+
               return (
                 <div
                   key={rule.ruleId}
@@ -4258,6 +5761,22 @@ function HistoryDetail({ item }: { item: SessionHistoryItem }) {
                       {rule.title}
                     </div>
                     <div className="truncate text-[12px] text-slate-500">{sub}</div>
+                    {learningSummary && (
+                      <div className="mt-1 truncate text-[11px] text-blue-700">
+                        {learningSummary}
+                      </div>
+                    )}
+                    {rule.outcomeExplanation && (
+                      <div className="mt-1 text-[11px] leading-4 text-slate-600">
+                        {rule.outcomeExplanation}
+                      </div>
+                    )}
+                    {(rule.reviewTimingLabel || rule.scheduleReason) && (
+                      <div className="mt-1 text-[10px] leading-4 text-violet-700">
+                        {rule.reviewTimingLabel || "Review scheduled"}
+                        {rule.scheduleReason ? ` · ${rule.scheduleReason}` : ""}
+                      </div>
+                    )}
                   </div>
                   <span className={`text-[13px] font-bold ${scoreTone}`}>{rule.score}%</span>
                 </div>

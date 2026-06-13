@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { getApplicableRuleUniverse } from "@/lib/rules/registry"
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { createUserNotification, logUserActivity } from "@/lib/user-activity"
@@ -432,25 +433,31 @@ function buildCanonicalRuleCount(
   return canonicalRules.size
 }
 
-async function getCanonicalActiveRuleCount(ruleSet: RuleSet) {
-  const activeRules = await prisma.rules.findMany({
-    where: {
-      is_active: true,
-    },
-    select: {
-      id: true,
-      subject_id: true,
-      topic_id: true,
-      subtopic_id: true,
-      title: true,
-      prompt_question: true,
-      updated_at: true,
-      created_at: true,
-      rule_type: true,
-    },
+async function getApplicableRuleCountForPlan(params: {
+  jurisdictionCode: string
+  examRegimeCode: ExamRegime
+  examDate: Date
+  ruleSet: RuleSet
+}) {
+  const universe = await getApplicableRuleUniverse({
+    jurisdictionCode: params.jurisdictionCode,
+    examRegimeCode: params.examRegimeCode,
+    examDate: params.examDate,
   })
 
-  const packageCount = buildCanonicalRuleCount(activeRules, ruleSet)
+  const activeRules: ActiveRuleIdentity[] = universe.rules.map((rule) => ({
+    id: rule.id,
+    subject_id: rule.subjectId,
+    topic_id: rule.topicId,
+    subtopic_id: rule.subtopicId,
+    title: rule.title,
+    prompt_question: rule.promptQuestion,
+    updated_at: null,
+    created_at: null,
+    rule_type: rule.sourcePackage === "core" ? null : rule.sourcePackage,
+  }))
+
+  const packageCount = buildCanonicalRuleCount(activeRules, params.ruleSet)
 
   if (packageCount > 0) return packageCount
 
@@ -580,7 +587,12 @@ export async function POST(req: Request) {
       )
     }
 
-    const totalRules = await getCanonicalActiveRuleCount(ruleSet)
+    const totalRules = await getApplicableRuleCountForPlan({
+      jurisdictionCode: jurisdiction.code,
+      examRegimeCode: examRegime,
+      examDate,
+      ruleSet,
+    })
     const safeTotalRules = totalRules > 0 ? totalRules : 1
     const dailyRules = Math.max(1, Math.ceil(safeTotalRules / totalDays))
     const dailyMBE = 0
@@ -720,7 +732,12 @@ export async function GET(req: Request) {
     }
 
     const ruleSet = normalizeRuleSet(plan.ruleSet)
-    const totalRules = await getCanonicalActiveRuleCount(ruleSet)
+    const totalRules = await getApplicableRuleCountForPlan({
+      jurisdictionCode: plan.jurisdictionCode,
+      examRegimeCode: plan.examRegime as ExamRegime,
+      examDate: plan.examDate,
+      ruleSet,
+    })
     const safeTotalRules = totalRules > 0 ? totalRules : 1
 
     return NextResponse.json({

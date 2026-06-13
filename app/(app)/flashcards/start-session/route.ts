@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getApplicableRuleUniverseForUser } from "@/lib/rules/registry"
 
 export async function POST(req: Request) {
   try {
@@ -19,11 +20,25 @@ export async function POST(req: Request) {
         ? Math.min(limit, 100)
         : 20
 
+    const ruleUniverse = await getApplicableRuleUniverseForUser(userId)
+    const applicableRuleIds = ruleUniverse.rules.map((rule) => rule.id)
+
+    if (applicableRuleIds.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: "No published rules are available for this jurisdiction and exam date."
+      })
+    }
+
     const rules = await prisma.rules.findMany({
       where: {
+        id: {
+          in: applicableRuleIds
+        },
         subject_id: subjectId ?? undefined,
         topic_id: topicId ?? undefined,
-        is_active: true
+        is_active: true,
+        publication_status: "PUBLISHED"
       },
       orderBy: {
         created_at: "asc"

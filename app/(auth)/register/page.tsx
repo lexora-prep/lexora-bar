@@ -322,9 +322,30 @@ export default function RegisterPage() {
         return
       }
 
+      const postRegistrationPath =
+        selectedPlanId === "free"
+          ? "/dashboard"
+          : `/checkout?plan=${encodeURIComponent(selectedPlanId)}&registered=1`
+
+      const emailRedirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/confirm?next=${encodeURIComponent(postRegistrationPath)}`
+          : undefined
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
+        options: {
+          emailRedirectTo,
+          data: {
+            full_name: fullName.trim(),
+            law_school: lawSchool.trim(),
+            jurisdiction: jurisdiction.trim(),
+            exam_month: monthNumber,
+            exam_year: yearNumber,
+            selected_plan: selectedPlanId,
+          },
+        },
       })
 
       if (signUpError) {
@@ -407,13 +428,14 @@ export default function RegisterPage() {
         console.warn("Welcome email request failed.")
       })
 
-      if (selectedPlanId === "free") {
-        router.push("/dashboard")
-        router.refresh()
+      if (!data.session) {
+        setError(
+          "Account created. Please check your email to confirm your account, then continue."
+        )
         return
       }
 
-      router.push(`/checkout?plan=${selectedPlanId}&registered=1`)
+      router.push(postRegistrationPath)
       router.refresh()
     } catch (err) {
       console.error("REGISTER ERROR:", err)
@@ -509,9 +531,11 @@ export default function RegisterPage() {
                   </p>
 
                   {selectedPlanId !== "free" ? (
-                    <p className="mt-2 text-[10.5px] font-semibold leading-4 text-white/55">
-                      Taxes/VAT calculated separately at checkout.
-                    </p>
+                    <div className="mt-3 rounded-2xl border border-white/15 bg-white/10 p-3 text-[10.5px] font-semibold leading-4 text-white/70">
+                      Taxes/VAT are calculated separately at checkout. This plan
+                      renews automatically every month until canceled from your
+                      Subscription page.
+                    </div>
                   ) : null}
                 </div>
 
@@ -906,9 +930,15 @@ export default function RegisterPage() {
                       <CreditCard className="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
                         After registration, you will continue to Paddle checkout
-                        for the selected paid plan. Payment, invoices, cancellations, and refund processing are handled by
-                        Paddle as Merchant of Record. Taxes/VAT are calculated separately at
-                        checkout based on your location.
+                        for the selected paid plan. Your subscription renews
+                        automatically every month until canceled. You can cancel
+                        anytime from your Subscription page. If you do not cancel
+                        before the next billing date, Paddle will automatically
+                        charge your saved payment method for the next billing
+                        cycle. Payment, invoices, cancellations, and refund
+                        processing are handled by Paddle as Merchant of Record.
+                        Taxes/VAT are calculated separately at checkout based on
+                        your location.
                       </div>
                     </div>
                   ) : null}
