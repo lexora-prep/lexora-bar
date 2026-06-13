@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { User, GraduationCap, Scale, CalendarRange, Save } from "lucide-react"
+import { User, GraduationCap, CalendarRange, Save, LockKeyhole } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 const EXAM_MONTHS = [
@@ -92,6 +92,12 @@ export default function ProfilePage() {
   const [examMonth, setExamMonth] = useState("")
   const [examYear, setExamYear] = useState("")
 
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmNewPassword, setConfirmNewPassword] = useState("")
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -174,6 +180,48 @@ export default function ProfilePage() {
       alert("Failed to save profile.")
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handlePasswordChange() {
+    setPasswordError("")
+    setPasswordMessage("")
+
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters.")
+      return
+    }
+
+    if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
+      setPasswordError("Password must include a letter, a number, and a special character.")
+      return
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("Passwords do not match.")
+      return
+    }
+
+    try {
+      setPasswordSaving(true)
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+
+      if (error) {
+        setPasswordError(error.message || "Unable to update password.")
+        return
+      }
+
+      setNewPassword("")
+      setConfirmNewPassword("")
+      setPasswordMessage("Password updated successfully.")
+    } catch (err) {
+      console.error("PASSWORD UPDATE ERROR:", err)
+      setPasswordError("Unable to update password.")
+    } finally {
+      setPasswordSaving(false)
     }
   }
 
@@ -337,6 +385,82 @@ export default function ProfilePage() {
             <Save size={16} />
             {saving ? "Saving..." : "Save Profile"}
           </button>
+        </div>
+
+        <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-2 flex items-center gap-2">
+            <LockKeyhole size={18} className="text-violet-600" />
+            <h2 className="text-[16px] font-semibold text-slate-900">
+              Change Password
+            </h2>
+          </div>
+
+          <p className="mb-4 text-sm text-slate-500">
+            Update your password securely through Supabase authentication. Lexora Prep never stores or displays your password.
+          </p>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="New Password">
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(event) => {
+                  setNewPassword(event.target.value)
+                  setPasswordError("")
+                  setPasswordMessage("")
+                }}
+                placeholder="Enter new password"
+                autoComplete="new-password"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400"
+              />
+            </Field>
+
+            <Field label="Confirm Password">
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(event) => {
+                  setConfirmNewPassword(event.target.value)
+                  setPasswordError("")
+                  setPasswordMessage("")
+                }}
+                placeholder="Confirm new password"
+                autoComplete="new-password"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400"
+              />
+            </Field>
+          </div>
+
+          <div className="mt-3 text-xs text-slate-500">
+            Use at least 8 characters with a letter, number, and special character.
+          </div>
+
+          {passwordError ? (
+            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              {passwordError}
+            </div>
+          ) : null}
+
+          {passwordMessage ? (
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {passwordMessage}
+            </div>
+          ) : null}
+
+          <div className="mt-5 flex justify-end">
+            <button
+              onClick={handlePasswordChange}
+              disabled={passwordSaving}
+              className={`inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition ${
+                passwordSaving
+                  ? "cursor-not-allowed bg-slate-400"
+                  : "bg-slate-900 hover:bg-slate-800"
+              }`}
+            >
+              <LockKeyhole size={16} />
+              {passwordSaving ? "Updating..." : "Update Password"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
