@@ -91,24 +91,10 @@ export default function StrengthsWeaknessesTab({
   const hasAnyAnalysis =
     data.summary.totalScoredAttempts > 0
 
-  function startWeakFocus(rule: WeakRuleAnalytics) {
-    const params = new URLSearchParams({
-      mode: "weak_focus",
-      ruleId: rule.ruleId,
-      subject: rule.subjectName,
-      autoStart: "1",
-      returnTo: "/analytics",
-    })
+  function startSharedFocus() {
+    if (!focusSession?.route) return
 
-    if (rule.topicName) {
-      params.set("topic", rule.topicName)
-    }
-
-    if (rule.subtopicName) {
-      params.set("subtopic", rule.subtopicName)
-    }
-
-    router.push(`/rule-training?${params.toString()}`)
+    router.push(focusSession.route)
   }
 
   return (
@@ -379,9 +365,9 @@ export default function StrengthsWeaknessesTab({
           <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.08fr_0.92fr]">
             <GlassCard
               title="Next Best Action"
-              info="The recommendation uses the highest calculated weakness priority in this date range."
+              info="This recommendation comes from the same weak-focus queue used by Rule Training."
             >
-              {data.nextBestAction ? (
+              {focusSession ? (
                 <div className="flex min-h-[122px] flex-col justify-between gap-4 sm:flex-row sm:items-center">
                   <div className="flex min-w-0 items-start gap-3">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-600">
@@ -390,25 +376,23 @@ export default function StrengthsWeaknessesTab({
 
                     <div className="min-w-0">
                       <div className="text-[9px] font-normal text-slate-400">
-                        Start with
+                        Current weak-focus queue
                       </div>
 
                       <div className="mt-1 truncate text-[13px] font-normal text-[#11163c]">
-                        {data.nextBestAction.title}
+                        {focusSession.ruleTitle}
                       </div>
 
                       <div className="mt-1 text-[9px] font-normal text-slate-500">
-                        {data.nextBestAction.subjectName} ·{" "}
-                        {data.nextBestAction.accuracy}% {data.nextBestAction.usesLearningEngine ? "current mastery" : "recorded average"} ·{" "}
-                        {formatImpact(data.nextBestAction.impactPercentage)} impact
+                        {focusSession.subject}
+                        {focusSession.topic ? ` · ${focusSession.topic}` : ""}
+                        {typeof focusSession.accuracy === "number" ? ` · ${focusSession.accuracy}%` : ""}
+                        {typeof focusSession.attempts === "number" ? ` · ${focusSession.attempts} attempts` : ""}
                       </div>
 
-                      <div className={`mt-1 text-[8px] font-normal ${trendTextClass(data.nextBestAction.trend)}`}>
-                        Latest {data.nextBestAction.latestScore}%
-                        {data.nextBestAction.previousAccuracy !== null
-                          ? ` · Historical average ${data.nextBestAction.historicalAccuracy}% · ${formatAccuracyChange(data.nextBestAction.accuracyChange)}`
-                          : " · First scored attempt"}
-                        {` · ${trendLabel(data.nextBestAction.trend)}`}
+                      <div className="mt-1 text-[8px] font-normal text-slate-500">
+                        {focusSession.reviewTimingLabel || "Review timing will appear after enough review data."}
+                        {focusSession.learningStatusLabel ? ` · ${focusSession.learningStatusLabel}` : ""}
                       </div>
 
                       <div className="mt-2 flex items-start gap-2 text-[9px] font-normal leading-4 text-[#46516f]">
@@ -416,14 +400,14 @@ export default function StrengthsWeaknessesTab({
                           size={12}
                           className="mt-0.5 shrink-0 text-emerald-600"
                         />
-                        <span>{data.nextBestAction.recommendation}</span>
+                        <span>{focusSession.reason}</span>
                       </div>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => startWeakFocus(data.nextBestAction!)}
+                    onClick={startSharedFocus}
                     className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-[9px] font-normal text-white transition hover:bg-violet-700"
                   >
                     Start Now
@@ -431,28 +415,46 @@ export default function StrengthsWeaknessesTab({
                   </button>
                 </div>
               ) : (
-                <EmptyCompact text="A next action will appear after a rule meets the weakness criteria." />
+                <EmptyCompact
+                  text={
+                    focusLoading
+                      ? "Loading current weak-focus recommendation..."
+                      : "A next action will appear after a rule enters the weak-focus queue."
+                  }
+                />
               )}
             </GlassCard>
 
             <GlassCard
               title="Coaching Note"
-              info="The note is generated from the current highest-priority rule and its recorded misses."
+              info="The note explains the current shared weak-focus recommendation."
             >
-              {data.coachingNote ? (
+              {focusSession ? (
                 <div className="grid min-h-[122px] grid-cols-1 gap-4 sm:grid-cols-[1fr_0.95fr]">
                   <div className="text-[9px] font-normal leading-4 text-[#46516f]">
-                    {data.coachingNote.summary}
+                    {focusSession.reason}
                   </div>
 
                   <div className="space-y-2">
-                    {data.coachingNote.steps.map((step) => (
-                      <CoachingLine key={step} text={step} />
-                    ))}
+                    <CoachingLine text={`Rule: ${focusSession.ruleTitle}`} />
+                    <CoachingLine text={`Subject: ${focusSession.subject}${focusSession.topic ? ` · ${focusSession.topic}` : ""}`} />
+                    <CoachingLine
+                      text={
+                        focusSession.reviewTimingLabel
+                          ? `Review timing: ${focusSession.reviewTimingLabel}`
+                          : "Review timing will appear after enough review data."
+                      }
+                    />
                   </div>
                 </div>
               ) : (
-                <EmptyCompact text="A coaching note will appear after a priority weakness is identified." />
+                <EmptyCompact
+                  text={
+                    focusLoading
+                      ? "Loading current weak-focus coaching note..."
+                      : "Coaching notes appear after a rule enters the weak-focus queue."
+                  }
+                />
               )}
             </GlassCard>
           </section>
