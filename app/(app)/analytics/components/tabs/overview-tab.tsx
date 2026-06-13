@@ -230,7 +230,7 @@ export default function OverviewTab({
                 disabled={!focusRule}
                 className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 text-[12px] font-normal text-white shadow-[0_12px_22px_rgba(124,58,237,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none disabled:hover:translate-y-0"
               >
-                {focusRule ? "Start Today&apos;s Focus Session" : "Focus unavailable"}
+                {focusRule ? "Start Today’s Focus Session" : "Focus unavailable"}
                 {focusRule ? <ArrowRight size={14} /> : null}
               </button>
 
