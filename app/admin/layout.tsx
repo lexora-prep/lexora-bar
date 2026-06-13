@@ -3,40 +3,93 @@ import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import AdminShell from "./_components/AdminShell"
 
+type CachedAdminProfile = {
+  id: string
+  email: string | null
+  full_name: string | null
+  role: string | null
+  admin_role: string | null
+  is_admin: boolean | null
+  is_blocked: boolean | null
+  can_manage_questions: boolean | null
+  can_manage_rules: boolean | null
+  can_manage_users: boolean | null
+  can_manage_announcements: boolean | null
+  can_view_billing: boolean | null
+  can_manage_coupons: boolean | null
+  can_manage_settings: boolean | null
+  can_view_audit_log: boolean | null
+}
+
+type AdminCountsCache = {
+  expiresAt: number
+  totalUsers: number
+  paidSubscribers: number
+}
+
+const ADMIN_LAYOUT_PROFILE_CACHE_MS = 15_000
+const ADMIN_LAYOUT_COUNTS_CACHE_MS = 60_000
+
+const adminLayoutProfileCache = new Map<
+  string,
+  {
+    expiresAt: number
+    profile: CachedAdminProfile | null
+  }
+>()
+
+let adminLayoutCountsCache: AdminCountsCache | null = null
+
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const startedAt = Date.now()
+
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+
   if (!user) {
     redirect("/login")
   }
 
-  const profile = await prisma.profiles.findUnique({
-    where: { id: user.id },
-    select: {
-      id: true,
-      email: true,
-      full_name: true,
-      role: true,
-      admin_role: true,
-      is_admin: true,
-      is_blocked: true,
-      can_manage_questions: true,
-      can_manage_rules: true,
-      can_manage_users: true,
-      can_manage_announcements: true,
-      can_view_billing: true,
-      can_manage_coupons: true,
-      can_manage_settings: true,
-      can_view_audit_log: true,
-    },
-  })
+  const cachedProfile = adminLayoutProfileCache.get(user.id)
+  let profile: CachedAdminProfile | null = null
+
+  if (cachedProfile && cachedProfile.expiresAt > Date.now()) {
+    profile = cachedProfile.profile
+  } else {
+    profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        full_name: true,
+        role: true,
+        admin_role: true,
+        is_admin: true,
+        is_blocked: true,
+        can_manage_questions: true,
+        can_manage_rules: true,
+        can_manage_users: true,
+        can_manage_announcements: true,
+        can_view_billing: true,
+        can_manage_coupons: true,
+        can_manage_settings: true,
+        can_view_audit_log: true,
+      },
+    })
+
+    adminLayoutProfileCache.set(user.id, {
+      expiresAt: Date.now() + ADMIN_LAYOUT_PROFILE_CACHE_MS,
+      profile,
+    })
+
+  }
 
   if (
     !profile ||
@@ -48,27 +101,18 @@ export default async function AdminLayout({
 
   const isSuperAdmin = profile.admin_role === "super_admin"
 
-  const counts = await Promise.allSettled([
-    prisma.profiles.count({ where: { deleted_at: null } }),
-    prisma.profiles.count({
-      where: {
-        deleted_at: null,
-        is_blocked: false,
-        subscription_tier: {
-          in: ["pro", "monthly", "annual", "pro_monthly", "pro_annual", "premium"],
-        },
-      },
-    }),
-  ])
+  // Do not block every admin page render with global user/subscriber counts.
+  // Pages that need exact user metrics should fetch them inside that page.
+  const totalUsers = adminLayoutCountsCache?.totalUsers ?? 0
+  const paidSubscribers = adminLayoutCountsCache?.paidSubscribers ?? 0
 
-  const totalUsers = counts[0].status === "fulfilled" ? counts[0].value : 0
-  const paidSubscribers = counts[1].status === "fulfilled" ? counts[1].value : 0
+
 
   return (
     <AdminShell
       currentUser={{
         id: profile.id,
-        email: profile.email,
+        email: profile.email ?? "",
         fullName: profile.full_name,
         role: profile.role,
         adminRole: profile.admin_role,

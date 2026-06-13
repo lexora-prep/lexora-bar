@@ -34,6 +34,25 @@ export type NormalizedRuleInput = {
 
 type DbClient = Prisma.TransactionClient | PrismaClient
 
+type RuleAdminProfile = {
+  id: string
+  is_admin: boolean | null
+  role: string | null
+  admin_role: string | null
+  is_blocked: boolean | null
+  can_manage_rules: boolean | null
+}
+
+const RULE_ADMIN_PROFILE_CACHE_MS = 15_000
+
+const ruleAdminProfileCache = new Map<
+  string,
+  {
+    expiresAt: number
+    profile: RuleAdminProfile
+  }
+>()
+
 export async function requireRuleAdmin() {
   const supabase = await createClient()
   const {
@@ -48,17 +67,31 @@ export async function requireRuleAdmin() {
     }
   }
 
-  const profile = await prisma.profiles.findUnique({
-    where: { id: user.id },
-    select: {
-      id: true,
-      is_admin: true,
-      role: true,
-      admin_role: true,
-      is_blocked: true,
-      can_manage_rules: true,
-    },
-  })
+  const cachedProfile = ruleAdminProfileCache.get(user.id)
+  let profile: RuleAdminProfile | null = null
+
+  if (cachedProfile && cachedProfile.expiresAt > Date.now()) {
+    profile = cachedProfile.profile
+  } else {
+    profile = await prisma.profiles.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        is_admin: true,
+        role: true,
+        admin_role: true,
+        is_blocked: true,
+        can_manage_rules: true,
+      },
+    })
+
+    if (profile) {
+      ruleAdminProfileCache.set(user.id, {
+        expiresAt: Date.now() + RULE_ADMIN_PROFILE_CACHE_MS,
+        profile,
+      })
+    }
+  }
 
   const allowed =
     !!profile &&

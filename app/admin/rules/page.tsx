@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import {
   AlertCircle,
   Archive,
@@ -8,12 +10,14 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Clock3,
   Database,
   Download,
   FileSpreadsheet,
   Filter,
   History,
+  Info,
   LoaderCircle,
   Pencil,
   Plus,
@@ -24,16 +28,54 @@ import {
   X,
 } from "lucide-react"
 
+const JurisdictionSchedulePanel = dynamic(
+  () => import("@/components/admin/JurisdictionSchedulePanel"),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="rounded-[22px] border border-slate-200/80 bg-white p-6 shadow-sm">
+        <div className="h-5 w-48 animate-pulse rounded-full bg-slate-100" />
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-24 animate-pulse rounded-2xl border border-slate-100 bg-slate-50"
+            />
+          ))}
+        </div>
+      </section>
+    ),
+  }
+)
+
 type Metadata = {
-  jurisdictions: Array<{ id: string; code: string; name: string; jurisdiction_type: string }>
-  examRegimes: Array<{ id: string; code: string; name: string; description: string | null }>
+  jurisdictions: Array<{
+    id: string
+    code: string
+    name: string
+    jurisdiction_type: string
+  }>
+  examRegimes: Array<{
+    id: string
+    code: string
+    name: string
+    description: string | null
+    effective_from?: string | null
+    effective_until?: string | null
+  }>
   subjects: Array<{
     id: string
     name: string
     exam_status: string
     show_in_rule_training: boolean
     show_in_analytics: boolean
-    _count: { rules: number; topics: number }
+    applicable_count: number
+    stored_count: number
+    unassigned_count: number
+    _count: {
+      rules: number
+      topics: number
+    }
   }>
   batches: Array<{
     id: string
@@ -49,16 +91,25 @@ type Metadata = {
     created_at: string
     published_at: string | null
   }>
-  totals: { all: number; published: number; draft: number; archived: number; applicability: number }
+  totals: {
+    all: number
+    published: number
+    draft: number
+    archived: number
+    applicability: number
+    applicableRules: number
+    storedInventory: number
+    publishedStored: number
+  }
 }
 
 type RuleRow = {
   id: string
   external_key: string | null
   title: string
-  rule_text: string
+  rule_text?: string
   prompt_question: string | null
-  buzzwords: unknown
+  buzzwords?: unknown
   priority: string | null
   publication_status: string
   current_version: number
@@ -66,8 +117,8 @@ type RuleRow = {
   is_active: boolean
   updated_at: string
   subjects: { id: string; name: string } | null
-  topics: { id: string; name: string } | null
-  subtopics: { id: string; name: string } | null
+  topics?: { id: string; name: string } | null
+  subtopics?: { id: string; name: string } | null
   registry_applicability: Array<{
     id: string
     source_package: string
@@ -205,20 +256,432 @@ function SectionTitle({ title, description }: { title: string; description: stri
   )
 }
 
-function StatCard({ label, value, note, icon: Icon }: { label: string; value: number; note: string; icon: typeof Database }) {
+const METRIC_EXPLANATIONS: Record<string, string> = {
+  "All rules":
+    "Every rule record currently stored in the database. This can include historical, legacy, duplicated, or currently unassigned records and is not the student curriculum total.",
+  "Stored records":
+    "Every rule record currently stored in the database. Stored records are administrative inventory, not the number shown to a student.",
+  Published:
+    "Rule records whose publication status is Published and that have not been archived. Publication alone does not guarantee that a rule belongs to the current curriculum.",
+  Drafts:
+    "Rules saved for review that are not yet available to eligible users.",
+  Archived:
+    "Historical rules retained for version history. Archived rules are excluded from active training.",
+  Applicability:
+    "Active rule-to-curriculum links. These mappings determine whether a rule belongs to an exam regime or jurisdiction.",
+  "Applicable rules":
+    "Unique published rules currently connected to an active curriculum. This is the meaningful curriculum denominator.",
+  "Registry links":
+    "Active mappings connecting rules to jurisdictions, exam regimes, and curriculum subjects.",
+}
+
+function MetricTooltip({
+  label,
+  text,
+}: {
+  label: string
+  text: string
+}) {
+  const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(false)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const tooltipRef = useRef<HTMLDivElement | null>(null)
+  const closeTimerRef = useRef<number | null>(null)
+
+  const closeTooltip = useCallback((restoreFocus = false) => {
+    setVisible(false)
+
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current)
+    }
+
+    closeTimerRef.current = window.setTimeout(() => {
+      setMounted(false)
+      closeTimerRef.current = null
+      if (restoreFocus) triggerRef.current?.focus()
+    }, 150)
+  }, [])
+
+  const openTooltip = useCallback(() => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current
+      if (!trigger) return
+
+      const rect = trigger.getBoundingClientRect()
+      const width = 304
+      const estimatedHeight = 170
+      const viewportPadding = 12
+      const gap = 10
+      const preferredLeft = rect.left + rect.width / 2 - width / 2
+      const left = Math.min(
+        Math.max(viewportPadding, preferredLeft),
+        window.innerWidth - width - viewportPadding
+      )
+      const hasRoomBelow = rect.bottom + gap + estimatedHeight <= window.innerHeight - viewportPadding
+      const top = hasRoomBelow
+        ? rect.bottom + gap
+        : Math.max(viewportPadding, rect.top - estimatedHeight - gap)
+
+      setPosition({ top, left })
+    }
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node
+      if (
+        triggerRef.current?.contains(target) ||
+        tooltipRef.current?.contains(target)
+      ) {
+        return
+      }
+      closeTooltip()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        closeTooltip(true)
+      }
+    }
+
+    updatePosition()
+    const frame = window.requestAnimationFrame(() => setVisible(true))
+    window.addEventListener("resize", updatePosition)
+    window.addEventListener("scroll", updatePosition, true)
+    document.addEventListener("mousedown", handlePointerDown)
+    document.addEventListener("touchstart", handlePointerDown)
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener("resize", updatePosition)
+      window.removeEventListener("scroll", updatePosition, true)
+      document.removeEventListener("mousedown", handlePointerDown)
+      document.removeEventListener("touchstart", handlePointerDown)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [closeTooltip, mounted])
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current)
+      }
+    }
+  }, [])
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <span className="inline-flex">
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label={`Explain ${label}`}
+        aria-expanded={mounted}
+        onClick={(event) => {
+          event.stopPropagation()
+          if (mounted) closeTooltip()
+          else openTooltip()
+        }}
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-violet-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1"
+      >
+        <Info size={13} />
+      </button>
+
+      {mounted && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={tooltipRef}
+              role="dialog"
+              aria-label={`${label} explanation`}
+              style={{ top: position.top, left: position.left }}
+              className={[
+                "fixed z-[140] w-[304px] origin-top rounded-[16px] border border-slate-200 bg-white p-4 text-left",
+                "shadow-[0_22px_70px_rgba(15,23,42,0.22)] will-change-transform",
+                "transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                visible
+                  ? "translate-y-0 scale-100 opacity-100"
+                  : "-translate-y-1 scale-[0.97] opacity-0 pointer-events-none",
+              ].join(" ")}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <AlertCircle size={14} className="text-violet-600" />
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+                  </div>
+                  <p className="mt-2 text-[12px] leading-5 text-slate-600">{text}</p>
+                </div>
+
+                <button
+                  type="button"
+                  aria-label="Close explanation"
+                  onClick={() => closeTooltip(true)}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+    </span>
+  )
+}
+
+const STAT_EXPLANATIONS: Record<string, string> = {
+  "All rules":
+    "Unique published rules connected to the active curriculum. Historical and unassigned database rows are excluded.",
+  Published:
+    "Applicable curriculum rules currently published and available to eligible users.",
+  Drafts:
+    "Rule records saved for review but not yet published to any curriculum.",
+  Archived:
+    "Historical rule records retained for audit and version history.",
+  Applicability:
+    "Active dated links connecting rules to jurisdictions, exam regimes, and curriculum subjects.",
+}
+
+function StatCard({
+  label,
+  value,
+  note,
+  icon: Icon,
+}: {
+  label: string
+  value: number
+  note: string
+  icon: typeof Database
+}) {
+  const explanation =
+    STAT_EXPLANATIONS[label] ??
+    "Administrative rule-registry metric."
+
+  const iconTone =
+    label === "Applicability"
+      ? "from-emerald-400 to-teal-600"
+      : label === "Drafts"
+        ? "from-sky-400 to-blue-600"
+        : label === "Archived"
+          ? "from-slate-400 to-slate-600"
+          : "from-violet-400 to-fuchsia-600"
+
+  return (
+    <div className="min-h-[116px] rounded-[18px] border border-slate-200/90 bg-white px-5 py-4 shadow-[0_8px_28px_rgba(15,23,42,0.045)]">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-slate-500">{label}</p>
-          <p className="mt-2 text-[26px] font-semibold tracking-tight text-slate-950">{value.toLocaleString()}</p>
-          <p className="mt-1 text-[12px] text-slate-500">{note}</p>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+              {label}
+            </p>
+            <MetricTooltip label={label} text={explanation} />
+          </div>
+
+          <p className="mt-3 text-[25px] font-bold tracking-[-0.035em] text-slate-950">
+            {value.toLocaleString()}
+          </p>
+
+          <p className="mt-1 text-[11px] leading-4 text-slate-500">
+            {note}
+          </p>
         </div>
-        <div className="rounded-xl border border-violet-100 bg-violet-50 p-2.5 text-violet-700">
-          <Icon size={18} />
+
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-gradient-to-br ${iconTone} text-white shadow-[0_7px_20px_rgba(109,40,217,0.2)]`}
+        >
+          <Icon size={17} strokeWidth={1.9} />
         </div>
       </div>
     </div>
+  )
+}
+
+function subjectPresentation(status: string) {
+  const normalized = status.toLowerCase()
+
+  if (normalized.includes("removed")) {
+    return {
+      label: "REMOVED FROM MEE",
+      dot: "bg-amber-500",
+      text: "text-amber-700",
+    }
+  }
+
+  if (
+    normalized.includes("mpt") ||
+    normalized.includes("performance")
+  ) {
+    return {
+      label: "PERFORMANCE COMPONENT",
+      dot: "bg-sky-500",
+      text: "text-sky-700",
+    }
+  }
+
+  if (normalized.includes("jurisdiction")) {
+    return {
+      label: "JURISDICTION SPECIFIC",
+      dot: "bg-slate-400",
+      text: "text-slate-600",
+    }
+  }
+
+  return {
+    label: "CORE CURRICULUM",
+    dot: "bg-violet-600",
+    text: "text-violet-700",
+  }
+}
+
+function jurisdictionAccent(index: number) {
+  const accents = [
+    "border-amber-300 bg-amber-50/45 text-amber-900",
+    "border-blue-300 bg-blue-50/35 text-blue-800",
+    "border-violet-300 bg-violet-50/35 text-violet-800",
+    "border-rose-300 bg-rose-50/35 text-rose-800",
+    "border-emerald-300 bg-emerald-50/35 text-emerald-800",
+    "border-cyan-300 bg-cyan-50/35 text-cyan-800",
+  ]
+
+  return accents[index % accents.length]
+}
+
+
+const SUBJECT_EXPLANATIONS = {
+  Applicable:
+    "Unique active published rules connected to an active curriculum. This is the meaningful student-facing curriculum denominator.",
+  Stored:
+    "Physical rule inventory stored in public.rules. It can include legacy, inactive, and unassigned records and is administrative information only.",
+  Unassigned:
+    "Stored rules that are not connected to the active curriculum. These records must not increase student progress totals.",
+  Topics:
+    "Unique canonical topic count associated with the subject.",
+}
+
+function SubjectCoverage({ subjects }: { subjects: Metadata["subjects"] }) {
+  const normalizedSubjects = useMemo(() => {
+    const grouped = new Map<string, Metadata["subjects"][number]>()
+
+    for (const subject of subjects) {
+      const canonicalName = ["Trusts", "Wills", "Trusts and Estates"].includes(subject.name)
+        ? "Trusts and Estates"
+        : subject.name
+
+      const current = grouped.get(canonicalName)
+
+      if (!current) {
+        grouped.set(canonicalName, {
+          ...subject,
+          name: canonicalName,
+          _count: { ...subject._count },
+        })
+        continue
+      }
+
+      grouped.set(canonicalName, {
+        ...current,
+        applicable_count: current.applicable_count + subject.applicable_count,
+        stored_count: current.stored_count + subject.stored_count,
+        unassigned_count: current.unassigned_count + subject.unassigned_count,
+        show_in_rule_training:
+          current.show_in_rule_training || subject.show_in_rule_training,
+        show_in_analytics:
+          current.show_in_analytics || subject.show_in_analytics,
+        _count: {
+          rules: current._count.rules + subject._count.rules,
+          topics: current._count.topics + subject._count.topics,
+        },
+      })
+    }
+
+    return Array.from(grouped.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    )
+  }, [subjects])
+
+  return (
+    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_14px_44px_rgba(15,23,42,0.045)]">
+      <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 ring-1 ring-violet-100">
+            <BookOpen size={18} />
+          </div>
+          <div>
+            <h2 className="text-[17px] font-bold tracking-[-0.02em] text-slate-950">
+              Subject coverage
+            </h2>
+            <p className="mt-1 max-w-[760px] text-[12px] leading-5 text-slate-500">
+              Applicable is the unique published curriculum total. Stored includes legacy and inactive inventory. Unassigned records are administrative rows and must not be used as the student denominator.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-semibold text-slate-600">
+          <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-violet-600" />Core</span>
+          <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-amber-500" />Removed</span>
+          <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-sky-500" />Performance component</span>
+          <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-slate-400" />Jurisdiction-specific</span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-[980px] w-full text-left">
+          <thead className="bg-slate-50/80 text-[10px] uppercase tracking-[0.09em] text-slate-500">
+            <tr>
+              <th className="px-5 py-3.5 font-bold">Subject</th>
+              <th className="px-4 py-3.5 font-bold">Classification</th>
+              <th className="px-4 py-3.5 font-bold">
+                <span className="inline-flex items-center gap-1">Applicable <MetricTooltip label="Applicable" text={SUBJECT_EXPLANATIONS.Applicable} /></span>
+              </th>
+              <th className="px-4 py-3.5 font-bold">
+                <span className="inline-flex items-center gap-1">Stored <MetricTooltip label="Stored" text={SUBJECT_EXPLANATIONS.Stored} /></span>
+              </th>
+              <th className="px-4 py-3.5 font-bold">
+                <span className="inline-flex items-center gap-1">Unassigned <MetricTooltip label="Unassigned" text={SUBJECT_EXPLANATIONS.Unassigned} /></span>
+              </th>
+              <th className="px-4 py-3.5 font-bold">
+                <span className="inline-flex items-center gap-1">Topics <MetricTooltip label="Topics" text={SUBJECT_EXPLANATIONS.Topics} /></span>
+              </th>
+              <th className="px-4 py-3.5 font-bold">Training</th>
+              <th className="px-4 py-3.5 font-bold">Analytics</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {normalizedSubjects.map((subject) => {
+              const presentation = subjectPresentation(subject.exam_status)
+
+              return (
+                <tr key={subject.id + subject.name} className="hover:bg-slate-50/60">
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${presentation.dot}`} />
+                      <span className="text-[12px] font-semibold text-slate-900">{subject.name}</span>
+                    </div>
+                  </td>
+                  <td className={`px-4 py-3.5 text-[10px] font-bold ${presentation.text}`}>{presentation.label}</td>
+                  <td className="px-4 py-3.5 text-[12px] font-bold text-violet-700">{subject.applicable_count.toLocaleString()}</td>
+                  <td className="px-4 py-3.5 text-[12px] font-semibold text-slate-700">{subject.stored_count.toLocaleString()}</td>
+                  <td className="px-4 py-3.5 text-[12px] font-semibold text-amber-700">{subject.unassigned_count.toLocaleString()}</td>
+                  <td className="px-4 py-3.5 text-[12px] text-slate-700">{subject._count.topics.toLocaleString()}</td>
+                  <td className="px-4 py-3.5"><span className={subject.show_in_rule_training ? "text-[11px] font-semibold text-emerald-700" : "text-[11px] font-semibold text-slate-400"}>{subject.show_in_rule_training ? "Enabled" : "Disabled"}</span></td>
+                  <td className="px-4 py-3.5"><span className={subject.show_in_analytics ? "text-[11px] font-semibold text-emerald-700" : "text-[11px] font-semibold text-slate-400"}>{subject.show_in_analytics ? "Enabled" : "Disabled"}</span></td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 
@@ -228,13 +691,22 @@ export default function AdminRulesPage() {
   const [rows, setRows] = useState<RuleRow[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [showAllJurisdictions, setShowAllJurisdictions] = useState(false)
+  const [showAllRegimes, setShowAllRegimes] = useState(false)
+  const [showAllSubjects, setShowAllSubjects] = useState(false)
   const [q, setQ] = useState("")
   const [status, setStatus] = useState("all")
   const [subjectId, setSubjectId] = useState("all")
   const [regime, setRegime] = useState("all")
   const [jurisdiction, setJurisdiction] = useState("all")
   const [page, setPage] = useState(1)
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 })
+  const [pagination, setPagination] = useState({
+    page: 1,
+    totalPages: 1,
+    total: 0,
+    hasNextPage: false,
+    isApproximate: false,
+  })
   const [editorOpen, setEditorOpen] = useState(false)
   const [form, setForm] = useState<RuleForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
@@ -263,7 +735,7 @@ export default function AdminRulesPage() {
         regime,
         jurisdiction,
         page: String(page),
-        pageSize: "50",
+        pageSize: "25",
       })
       const response = await fetch(`/api/admin/rules?${params.toString()}`, { cache: "no-store" })
       const data = await response.json()
@@ -278,11 +750,27 @@ export default function AdminRulesPage() {
   }, [jurisdiction, page, q, regime, status, subjectId])
 
   useEffect(() => {
-    Promise.all([loadMetadata(), loadRules()]).catch((error) => {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "Rule management could not be loaded." })
-      setLoading(false)
+    let active = true
+
+    loadMetadata().catch((error) => {
+      if (!active) return
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Rule registry metadata could not be loaded.",
+      })
     })
-  }, [loadMetadata, loadRules])
+
+    return () => {
+      active = false
+    }
+  }, [loadMetadata])
+
+  useEffect(() => {
+    void loadRules()
+  }, [loadRules])
 
   const openNewRule = () => {
     setDetail(null)
@@ -308,7 +796,7 @@ export default function AdminRulesPage() {
         id: rule.id,
         externalKey: rule.external_key ?? "",
         title: rule.title,
-        ruleText: rule.rule_text,
+        ruleText: rule.rule_text ?? "",
         explanation: rule.explanation ?? "",
         promptQuestion: rule.prompt_question ?? "",
         subjectName: rule.subjects?.name ?? "",
@@ -422,17 +910,54 @@ export default function AdminRulesPage() {
   const syncRegistry = async () => {
     setSyncingRegistry(true)
     setMessage(null)
+
     try {
-      const response = await fetch("/api/admin/rules/registry/sync", { method: "POST" })
-      const data = await response.json()
-      if (!response.ok || !data.ok) throw new Error(data.error || "Jurisdictions could not be synchronized.")
+      const response = await fetch("/api/admin/rules/registry/sync", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+        },
+      })
+
+      const contentType = response.headers.get("content-type") ?? ""
+
+      const data = contentType.includes("application/json")
+        ? await response.json()
+        : {
+            ok: false,
+            error: await response.text(),
+          }
+
+      if (!response.ok || !data.ok) {
+        console.error("Registry synchronization failed:", data)
+
+        const rawMessage = String(data.error ?? "")
+        const transactionFailure =
+          /transaction already closed|transaction api error|transaction id is invalid|old closed transaction/i.test(
+            rawMessage
+          )
+
+        throw new Error(
+          transactionFailure
+            ? "The database connection closed while jurisdictions were being synchronized. The synchronization route now uses independent idempotent updates. Restart the development server and run the synchronization again."
+            : rawMessage || "Jurisdictions could not be synchronized."
+        )
+      }
+
       setMessage({
         type: "success",
-        text: `Registry synchronized: ${data.jurisdictionsCreated} created, ${data.jurisdictionsUpdated} updated, ${data.mappingsUpserted} exam mappings confirmed.`,
+        text: `Jurisdiction schedule synchronized. ${data.jurisdictionsCreated} created, ${data.jurisdictionsUpdated} updated, and ${data.mappingsUpserted} dated exam mappings confirmed.`,
       })
+
       await loadMetadata()
     } catch (error) {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "Jurisdictions could not be synchronized." })
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Jurisdictions could not be synchronized.",
+      })
     } finally {
       setSyncingRegistry(false)
     }
@@ -509,11 +1034,11 @@ export default function AdminRulesPage() {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="All rules" value={metadata?.totals.all ?? 0} note="Stored rule records" icon={Database} />
-          <StatCard label="Published" value={metadata?.totals.published ?? 0} note="Active for eligible users" icon={CheckCircle2} />
+          <StatCard label="All rules" value={metadata?.totals.all ?? 0} note="Applicable curriculum rules" icon={Database} />
+          <StatCard label="Published" value={metadata?.totals.published ?? 0} note="Published in active curriculum" icon={CheckCircle2} />
           <StatCard label="Drafts" value={metadata?.totals.draft ?? 0} note="Awaiting publication" icon={Clock3} />
           <StatCard label="Archived" value={metadata?.totals.archived ?? 0} note="Retained for history" icon={Archive} />
-          <StatCard label="Applicability" value={metadata?.totals.applicability ?? 0} note="Active curriculum links" icon={ShieldCheck} />
+          <StatCard label="Applicability" value={metadata?.totals.applicability ?? 0} note="Dated curriculum mappings" icon={ShieldCheck} />
         </div>
 
         {activeTab === "library" && (
@@ -584,12 +1109,14 @@ export default function AdminRulesPage() {
                         <tr key={row.id} className="align-top hover:bg-slate-50/70">
                           <td className="max-w-[560px] px-5 py-4">
                             <div className="font-medium text-slate-900">{row.title}</div>
-                            <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500">{row.rule_text}</div>
+                            <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-500">
+                              {row.prompt_question || "Open the rule to view full text."}
+                            </div>
                             <div className="mt-2 font-mono text-[10px] text-slate-400">{row.external_key ?? "No external key"}</div>
                           </td>
                           <td className="px-4 py-4 text-[12px] text-slate-600">
                             <div className="font-medium text-slate-800">{row.subjects?.name ?? "Unassigned"}</div>
-                            <div className="mt-1">{row.topics?.name ?? "General"}{row.subtopics?.name ? ` · ${row.subtopics.name}` : ""}</div>
+                            <div className="mt-1">Open rule to view topic details</div>
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               <Badge>{applicability?.jurisdiction?.code ?? "Global"}</Badge>
                               <Badge>{applicability?.exam_regime.code ?? "Unmapped"}</Badge>
@@ -709,37 +1236,9 @@ export default function AdminRulesPage() {
         )}
 
         {activeTab === "registry" && (
-          <div className="grid gap-5 xl:grid-cols-2">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <SectionTitle title="Jurisdictions and exam regimes" description="These registry records determine which rules are available for a user's selected jurisdiction and exam date." />
-                <button onClick={syncRegistry} disabled={syncingRegistry} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[12px] font-medium text-violet-800 hover:bg-violet-100 disabled:opacity-50">
-                  {syncingRegistry ? <LoaderCircle size={14} className="animate-spin" /> : <RefreshCw size={14} />} Sync scheduler jurisdictions
-                </button>
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {metadata?.jurisdictions.map((item) => (
-                  <div key={item.id} className="rounded-xl border border-slate-200 p-3"><div className="flex items-center justify-between"><div><p className="text-[12px] font-semibold text-slate-800">{item.code} · {item.name}</p><p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-slate-400">{item.jurisdiction_type}</p></div><CheckCircle2 size={16} className="text-emerald-600" /></div></div>
-                ))}
-              </div>
-              {!metadata?.jurisdictions.length && <p className="mt-5 rounded-xl bg-amber-50 p-4 text-[12px] text-amber-800">Only jurisdictions registered in the dynamic rule registry can receive jurisdiction-specific rule mappings.</p>}
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <SectionTitle title="Active exam regimes" description="Use these codes in manual entries and import files. Effective dates remain controlled by the registry foundation." />
-              <div className="mt-5 space-y-3">
-                {metadata?.examRegimes.map((item) => (
-                  <div key={item.id} className="rounded-xl border border-slate-200 p-3"><div className="flex items-start justify-between gap-3"><div><p className="text-[12px] font-semibold text-slate-800">{item.name}</p><p className="mt-1 font-mono text-[10px] text-violet-700">{item.code}</p>{item.description && <p className="mt-2 text-[11px] leading-4 text-slate-500">{item.description}</p>}</div><Badge tone="published">Active</Badge></div></div>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
-              <SectionTitle title="Subject coverage" description="Subjects are created automatically when an approved manual rule or validated import introduces a new jurisdiction-specific subject." />
-              <div className="mt-5 overflow-hidden rounded-xl border border-slate-200">
-                <table className="min-w-full text-left"><thead className="bg-slate-50 text-[10px] uppercase tracking-[0.08em] text-slate-500"><tr><th className="px-4 py-3">Subject</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Rules</th><th className="px-4 py-3">Topics</th><th className="px-4 py-3">Training</th><th className="px-4 py-3">Analytics</th></tr></thead><tbody className="divide-y divide-slate-100">{metadata?.subjects.map((item) => <tr key={item.id}><td className="px-4 py-3 text-[12px] font-medium text-slate-800">{item.name}</td><td className="px-4 py-3"><Badge>{item.exam_status}</Badge></td><td className="px-4 py-3 text-[12px] text-slate-600">{item._count.rules}</td><td className="px-4 py-3 text-[12px] text-slate-600">{item._count.topics}</td><td className="px-4 py-3 text-[12px] text-slate-600">{item.show_in_rule_training ? "Enabled" : "Hidden"}</td><td className="px-4 py-3 text-[12px] text-slate-600">{item.show_in_analytics ? "Enabled" : "Hidden"}</td></tr>)}</tbody></table>
-              </div>
-            </section>
+          <div className="space-y-5">
+            <JurisdictionSchedulePanel />
+            <SubjectCoverage subjects={metadata?.subjects ?? []} />
           </div>
         )}
       </div>
