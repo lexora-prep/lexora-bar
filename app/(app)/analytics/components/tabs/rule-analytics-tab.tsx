@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   CartesianGrid,
   Line,
@@ -25,6 +25,7 @@ import {
   TrendingUp,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import type { RecommendedFocusSession } from "@/lib/analytics/recommendation-engine"
 
 import type {
   ChartPoint,
@@ -74,6 +75,43 @@ export default function RuleAnalyticsTab({
   const router = useRouter()
 
   const [subjectsOpen, setSubjectsOpen] = useState(false)
+  const [focusSession, setFocusSession] = useState<RecommendedFocusSession | null>(null)
+  const [focusLoading, setFocusLoading] = useState(true)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadFocusSession() {
+      try {
+        setFocusLoading(true)
+
+        const response = await fetch("/api/rules/weak-focus?limit=1", {
+          cache: "no-store",
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          setFocusSession(null)
+          return
+        }
+
+        const payload = await response.json()
+        setFocusSession(payload?.focusSession ?? null)
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setFocusSession(null)
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setFocusLoading(false)
+        }
+      }
+    }
+
+    loadFocusSession()
+
+    return () => controller.abort()
+  }, [])
 
   const totalAttempts = safeNumber(dashboard?.ruleAttempts)
 
@@ -166,24 +204,18 @@ export default function RuleAnalyticsTab({
         first.accuracy - second.accuracy
     )
 
-  const recommendationRule =
-    primaryWeakArea?.rule ||
-    primaryWeakArea?.title ||
-    null
+  const recommendationRule = focusSession?.ruleTitle ?? null
 
   const recommendationAccuracy =
-    typeof primaryWeakArea?.accuracy === "number"
-      ? safeNumber(primaryWeakArea.accuracy)
+    typeof focusSession?.accuracy === "number"
+      ? safeNumber(focusSession.accuracy)
       : null
 
   const recommendationAttempts = safeNumber(
-    primaryWeakArea?.attempts
+    focusSession?.attempts
   )
 
-  const hasRecommendation = Boolean(
-    primaryWeakArea &&
-    recommendationRule
-  )
+  const hasRecommendation = Boolean(focusSession)
 
   const recommendationEvidence =
     recommendationAccuracy !== null
@@ -193,9 +225,9 @@ export default function RuleAnalyticsTab({
         : "Insufficient data"
 
   const focusTags = [
-    weakestSubject?.name,
-    primaryWeakArea?.topic,
-    primaryWeakArea?.subtopic,
+    focusSession?.subject,
+    focusSession?.topic,
+    focusSession?.subtopic,
     strongestSubject?.name,
   ]
     .filter(
@@ -215,9 +247,11 @@ export default function RuleAnalyticsTab({
             : `You recorded ${totalAttempts.toLocaleString()} attempts at ${currentScore}% independent recall accuracy. ${weakestRules.length > 0 ? `${weakestRules.length} highest-cost recall ${weakestRules.length === 1 ? "gap is" : "gaps are"} displayed below.` : "No confirmed weak rule is currently available."}`
         }
         nextStep={
-          primaryWeakArea && recommendationRule
-            ? `Start with ${primaryWeakArea.subject} — ${recommendationRule}. Complete the recall attempt before opening the answer.`
-            : "Continue independently scored recall until a reliable rule-level priority can be identified."
+          focusSession
+            ? `${focusSession.title}: ${focusSession.detail}.`
+            : focusLoading
+              ? "Loading the current weak-focus recommendation..."
+              : "Continue independently scored recall until a reliable rule-level priority can be identified."
         }
       />
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -573,12 +607,10 @@ export default function RuleAnalyticsTab({
               </div>
 
               <p className="mt-2 text-[11px] font-normal leading-5 text-[#30395a]">
-                {primaryWeakArea &&
-                recommendationRule ? (
+                {focusSession ? (
                   <>
-                    {primaryWeakArea.subject} contains
-                    your highest-priority weak rule:{" "}
-                    {recommendationRule}.
+                    {focusSession.subject} contains the current top rule in the shared weak-focus queue:{" "}
+                    {focusSession.ruleTitle}.
                     {recommendationAccuracy !== null
                       ? ` Recorded accuracy is ${recommendationAccuracy}% across ${recommendationAttempts} attempts.`
                       : recommendationAttempts > 0
@@ -626,13 +658,14 @@ export default function RuleAnalyticsTab({
               </h3>
 
               <p className="mt-1 text-[11px] font-normal leading-4 text-[#30395a]">
-                {hasRecommendation &&
-                primaryWeakArea ? (
+                {focusSession ? (
                   <>
-                    Start focused recall for{" "}
-                    {primaryWeakArea.subject}:{" "}
-                    {recommendationRule}.
+                    Start weak-focus recall for{" "}
+                    {focusSession.subject}:{" "}
+                    {focusSession.ruleTitle}.
                   </>
+                ) : focusLoading ? (
+                  "Loading the current weak-focus recommendation."
                 ) : (
                   "Not enough real rule-level data exists to generate a targeted session."
                 )}
@@ -642,9 +675,8 @@ export default function RuleAnalyticsTab({
             <RecommendationMetric
               label="Focus area"
               value={
-                hasRecommendation &&
-                primaryWeakArea
-                  ? primaryWeakArea.subject
+                focusSession
+                  ? focusSession.subject
                   : "Insufficient data"
               }
             />
@@ -660,13 +692,13 @@ export default function RuleAnalyticsTab({
 
             <button
               type="button"
-              disabled={!hasRecommendation}
+              disabled={!focusSession}
               onClick={() => {
-                if (!hasRecommendation) return
-                router.push("/rule-training")
+                if (!focusSession?.route) return
+                router.push(focusSession.route)
               }}
               className={`flex h-10 items-center gap-2 rounded-xl border px-4 text-[10px] font-normal transition ${
-                hasRecommendation
+                focusSession
                   ? "border-violet-600 bg-white text-violet-700 hover:bg-violet-50"
                   : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
               }`}
