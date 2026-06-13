@@ -39,6 +39,10 @@ type SidebarProps = {
   weakAreasCount?: number
 }
 
+const SHOW_MAIN_SETTINGS_NAV = false
+const SHOW_PROFILE_SETTINGS_LINK = false
+const SHOW_PROFILE_SUPPORT_LINK = false
+
 type MenuItem = {
   name: string
   href: string
@@ -216,12 +220,16 @@ export default function Sidebar({
       icon: RotateCcw,
       locked: false,
     },
-    {
-      name: "Settings",
-      href: "/settings",
-      icon: Settings,
-      locked: false,
-    },
+    ...(SHOW_MAIN_SETTINGS_NAV
+      ? [
+          {
+            name: "Settings",
+            href: "/settings",
+            icon: Settings,
+            locked: false,
+          },
+        ]
+      : []),
   ]
 
   const profileMenuItems = [
@@ -230,21 +238,29 @@ export default function Sidebar({
       href: "/profile",
       icon: User,
     },
-    {
-      name: "Settings",
-      href: "/settings",
-      icon: Settings,
-    },
+    ...(SHOW_PROFILE_SETTINGS_LINK
+      ? [
+          {
+            name: "Settings",
+            href: "/settings",
+            icon: Settings,
+          },
+        ]
+      : []),
     {
       name: "Subscription",
       href: "/subscription",
       icon: CreditCard,
     },
-    {
-      name: "Support",
-      href: "/support",
-      icon: LifeBuoy,
-    },
+    ...(SHOW_PROFILE_SUPPORT_LINK
+      ? [
+          {
+            name: "Support",
+            href: "/support",
+            icon: LifeBuoy,
+          },
+        ]
+      : []),
   ]
 
   const date = new Date().toLocaleDateString("en-US", {

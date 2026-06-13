@@ -4,21 +4,15 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertTriangle,
-  Bell,
-  CalendarRange,
   CheckCircle2,
   Crown,
-  Database,
-  GraduationCap,
-  Laptop,
+  Headphones,
   LockKeyhole,
+  LogOut,
   Mail,
-  Monitor,
   Save,
-  Shield,
-  Target,
+  ShieldCheck,
   User,
-  WalletCards,
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -26,8 +20,6 @@ const EXAM_MONTHS = [
   { value: 2, label: "February" },
   { value: 7, label: "July" },
 ]
-
-const EXAM_YEARS = Array.from({ length: 25 }, (_, i) => 2026 + i)
 
 type ProfileResponse = {
   id: string
@@ -45,59 +37,7 @@ type ProfileResponse = {
   mbe_access?: boolean
 }
 
-const STATES = [
-  "Alabama",
-  "Alaska",
-  "Arizona",
-  "Arkansas",
-  "California",
-  "Colorado",
-  "Connecticut",
-  "Delaware",
-  "District of Columbia",
-  "Florida",
-  "Georgia",
-  "Hawaii",
-  "Idaho",
-  "Illinois",
-  "Indiana",
-  "Iowa",
-  "Kansas",
-  "Kentucky",
-  "Louisiana",
-  "Maine",
-  "Maryland",
-  "Massachusetts",
-  "Michigan",
-  "Minnesota",
-  "Mississippi",
-  "Missouri",
-  "Montana",
-  "Nebraska",
-  "Nevada",
-  "New Hampshire",
-  "New Jersey",
-  "New Mexico",
-  "New York",
-  "North Carolina",
-  "North Dakota",
-  "Ohio",
-  "Oklahoma",
-  "Oregon",
-  "Pennsylvania",
-  "Rhode Island",
-  "South Carolina",
-  "South Dakota",
-  "Tennessee",
-  "Texas",
-  "Utah",
-  "Vermont",
-  "Virginia",
-  "Washington",
-  "West Virginia",
-  "Wisconsin",
-  "Wyoming",
-]
+type SettingsTab = "profile" | "security" | "subscription" | "support" | "danger"
 
 function formatPlan(plan?: string | null) {
   if (!plan || plan === "free") return "Free"
@@ -128,25 +68,31 @@ export default function ProfilePage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
+  const [activeTab, setActiveTab] = useState<SettingsTab>("profile")
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saveMessage, setSaveMessage] = useState("")
-  const [saveError, setSaveError] = useState("")
+  const [toast, setToast] = useState("")
 
+  const [profile, setProfile] = useState<ProfileResponse | null>(null)
   const [email, setEmail] = useState("")
   const [fullName, setFullName] = useState("")
   const [lawSchool, setLawSchool] = useState("")
   const [jurisdiction, setJurisdiction] = useState("")
   const [examMonth, setExamMonth] = useState("")
   const [examYear, setExamYear] = useState("")
-  const [profile, setProfile] = useState<ProfileResponse | null>(null)
 
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState("")
   const [passwordError, setPasswordError] = useState("")
+
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
+  const [deleteSuccess, setDeleteSuccess] = useState("")
+  const [devConfirmUrl, setDevConfirmUrl] = useState("")
 
   const planLabel = formatPlan(profile?.subscription_tier)
   const isPaid = planLabel !== "Free" || profile?.billing_status === "active"
@@ -159,6 +105,11 @@ export default function ProfilePage() {
         : isPaid
           ? "Monthly"
           : "None"
+
+  function showToast(message: string) {
+    setToast(message)
+    window.setTimeout(() => setToast(""), 2600)
+  }
 
   useEffect(() => {
     async function loadProfile() {
@@ -209,13 +160,11 @@ export default function ProfilePage() {
     loadProfile()
   }, [router, supabase])
 
-  async function handleSave() {
+  async function handleSaveProfile() {
     if (!userId) return
 
     try {
       setSaving(true)
-      setSaveError("")
-      setSaveMessage("")
 
       const res = await fetch("/api/profile", {
         method: "PATCH",
@@ -235,7 +184,7 @@ export default function ProfilePage() {
       const data = await res.json().catch(() => null)
 
       if (!res.ok) {
-        setSaveError(data?.error || data?.message || "Failed to save profile.")
+        showToast(data?.error || data?.message || "Failed to save profile.")
         return
       }
 
@@ -245,17 +194,14 @@ export default function ProfilePage() {
               ...prev,
               full_name: fullName,
               law_school: lawSchool,
-              jurisdiction,
-              exam_month: examMonth ? Number(examMonth) : null,
-              exam_year: examYear ? Number(examYear) : null,
             }
           : prev,
       )
 
-      setSaveMessage("Profile saved successfully.")
+      showToast("Profile saved.")
     } catch (err) {
       console.error("SAVE PROFILE ERROR:", err)
-      setSaveError("Failed to save profile.")
+      showToast("Failed to save profile.")
     } finally {
       setSaving(false)
     }
@@ -319,6 +265,7 @@ export default function ProfilePage() {
       setNewPassword("")
       setConfirmNewPassword("")
       setPasswordMessage("Password updated successfully. Use the new password the next time you log in.")
+      showToast("Password updated.")
     } catch (err) {
       console.error("PASSWORD UPDATE ERROR:", err)
       setPasswordError("Unable to update password. Please try again or use Forgot Password from the login page.")
@@ -327,64 +274,116 @@ export default function ProfilePage() {
     }
   }
 
+  async function signOutCurrentDevice() {
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
+
+  async function handleDeleteAccountRequest() {
+    try {
+      setDeleteError("")
+      setDeleteSuccess("")
+      setDevConfirmUrl("")
+
+      if (deleteConfirmText !== "DELETE") {
+        setDeleteError('Please type DELETE exactly to confirm.')
+        return
+      }
+
+      setDeleteLoading(true)
+
+      const res = await fetch("/api/account/delete-request", {
+        method: "POST",
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        setDeleteError(data?.error || data?.message || "Failed to start account deletion.")
+        return
+      }
+
+      setDeleteSuccess(data?.message || "Deletion request created. Check your email to confirm.")
+      if (data?.devConfirmUrl) {
+        setDevConfirmUrl(data.devConfirmUrl)
+      }
+      setDeleteConfirmText("")
+      showToast("Deletion request created.")
+    } catch (err) {
+      console.error("DELETE ACCOUNT ERROR:", err)
+      setDeleteError("Something went wrong while requesting account deletion.")
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
+  async function handleCancelDeletion() {
+    try {
+      setDeleteLoading(true)
+      setDeleteError("")
+      setDeleteSuccess("")
+      setDevConfirmUrl("")
+
+      const res = await fetch("/api/account/delete-cancel", {
+        method: "POST",
+      })
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        setDeleteError(data?.error || data?.message || "Failed to cancel deletion.")
+        return
+      }
+
+      setDeleteSuccess(data?.message || "Deletion cancelled.")
+      showToast("Deletion cancelled.")
+    } catch (err) {
+      console.error("CANCEL DELETE ERROR:", err)
+      setDeleteError("Something went wrong while cancelling deletion.")
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7F6F2] p-6 text-sm font-semibold text-slate-500">
+      <div className="min-h-screen bg-white p-6 text-sm text-slate-500">
         Loading account settings...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F6F2] text-[#10172A]">
-      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="hidden border-r border-slate-200/80 bg-white/70 p-6 backdrop-blur-xl lg:block">
-          <div className="mb-8 flex items-center gap-3">
-            <img src="/icon.png" alt="Lexora Prep" className="h-10 w-10 object-contain" />
-            <div>
-              <div className="text-[22px] font-black uppercase tracking-[0.16em] text-[#18213F]">
-                Lexora
-              </div>
-              <div className="text-[9px] font-black uppercase tracking-[0.55em] text-[#7C3AED]">
-                Prep
-              </div>
+    <div className="min-h-screen bg-white text-slate-950">
+      <div className="mx-auto grid max-w-[1180px] gap-8 px-6 py-8 lg:grid-cols-[220px_1fr]">
+        <aside className="h-fit border-r border-slate-200 pr-6">
+          <div className="mb-6">
+            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Account
+            </div>
+            <div className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+              Settings
             </div>
           </div>
 
-          <nav className="space-y-2">
-            <SidebarItem active icon={<User />} label="Profile" />
-            <SidebarItem icon={<Crown />} label="Subscription" />
-            <SidebarItem icon={<Target />} label="Study Preferences" />
-            <SidebarItem icon={<Bell />} label="Notifications" />
-            <SidebarItem icon={<Shield />} label="Security" />
-            <SidebarItem icon={<Database />} label="Privacy & Data" />
-            <SidebarItem icon={<Monitor />} label="Connected Devices" />
-            <SidebarItem danger icon={<AlertTriangle />} label="Danger Zone" />
+          <nav className="space-y-1">
+            <SettingsNavItem active={activeTab === "profile"} icon={<User />} label="Profile" onClick={() => setActiveTab("profile")} />
+            <SettingsNavItem active={activeTab === "security"} icon={<ShieldCheck />} label="Security" onClick={() => setActiveTab("security")} />
+            <SettingsNavItem active={activeTab === "subscription"} icon={<Crown />} label="Subscription" onClick={() => setActiveTab("subscription")} />
+            <SettingsNavItem active={activeTab === "support"} icon={<Headphones />} label="Support" onClick={() => setActiveTab("support")} />
+            <SettingsNavItem danger active={activeTab === "danger"} icon={<AlertTriangle />} label="Danger Zone" onClick={() => setActiveTab("danger")} />
           </nav>
 
-          <div className="mt-12 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="text-sm font-black text-slate-900">Need help?</div>
-            <p className="mt-2 text-xs font-medium leading-5 text-slate-500">
-              Visit Help Center or contact support for account issues.
-            </p>
-            <button
-              type="button"
-              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700 shadow-sm hover:border-violet-300 hover:text-violet-700"
-            >
-              Help Center
-            </button>
-          </div>
-
-          <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mt-8 border-t border-slate-200 pt-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-lg font-black text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#6D4AFF] text-sm font-semibold text-white">
                 {(fullName || email || "U").slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="truncate text-sm font-black text-slate-900">
+                <div className="truncate text-sm font-semibold text-slate-900">
                   {fullName || "User"}
                 </div>
-                <div className="truncate text-xs font-semibold text-slate-500">
+                <div className="truncate text-xs text-slate-500">
                   {planLabel} learner
                 </div>
               </div>
@@ -392,390 +391,419 @@ export default function ProfilePage() {
           </div>
         </aside>
 
-        <main className="p-4 md:p-8">
-          <div className="mx-auto max-w-[1180px]">
-            <div className="mb-7 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <h1 className="text-[30px] font-black tracking-[-0.04em] text-slate-950">
-                  Account Settings
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500">
-                  Manage your profile, study preferences, subscription, security, and account controls.
-                </p>
-              </div>
-
-              <div className="grid gap-2 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-4">
-                <StatusPill icon={<Crown />} label="Current plan" value={planLabel} />
-                <StatusPill icon={<CheckCircle2 />} label="Account status" value={accountStatus} success />
-                <StatusPill icon={<CheckCircle2 />} label="BLL access" value={isPaid ? "Enabled" : "Limited"} success={isPaid} />
-                <StatusPill icon={<Shield />} label="MBE access" value={profile?.mbe_access ? "Enabled" : "Not enabled"} success={Boolean(profile?.mbe_access)} />
-              </div>
+        <main className="min-w-0">
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">
+                {activeTab === "profile" ? "Profile" : null}
+                {activeTab === "security" ? "Security" : null}
+                {activeTab === "subscription" ? "Subscription" : null}
+                {activeTab === "support" ? "Support" : null}
+                {activeTab === "danger" ? "Danger Zone" : null}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                {activeTab === "profile"
+                  ? "Manage your personal information. Exam details are locked to protect your study plan."
+                  : null}
+                {activeTab === "security"
+                  ? "Manage your login password and current session."
+                  : null}
+                {activeTab === "subscription"
+                  ? "View your plan, access, billing controls, and included premium features."
+                  : null}
+                {activeTab === "support"
+                  ? "Support tickets are handled in the existing support center."
+                  : null}
+                {activeTab === "danger"
+                  ? "Permanent account actions require confirmation and support verification."
+                  : null}
+              </p>
             </div>
 
-            <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-              <Card>
-                <CardHeader icon={<User />} title="Profile Information" subtitle="Your personal and study information." />
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Full name">
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(event) => {
-                        setFullName(event.target.value)
-                        setSaveError("")
-                        setSaveMessage("")
-                      }}
-                      placeholder="Enter your full name"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    />
-                  </Field>
-
-                  <Field label="Email address">
-                    <input
-                      type="email"
-                      value={email}
-                      disabled
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500 outline-none"
-                    />
-                    <div className="mt-1 text-[11px] font-semibold text-slate-400">
-                      Email changes require verification through authentication.
-                    </div>
-                  </Field>
-
-                  <Field label="Law school">
-                    <input
-                      type="text"
-                      value={lawSchool}
-                      onChange={(event) => {
-                        setLawSchool(event.target.value)
-                        setSaveError("")
-                        setSaveMessage("")
-                      }}
-                      placeholder="Enter your law school"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    />
-                  </Field>
-
-                  <Field label="Jurisdiction">
-                    <select
-                      value={jurisdiction}
-                      onChange={(event) => {
-                        setJurisdiction(event.target.value)
-                        setSaveError("")
-                        setSaveMessage("")
-                      }}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    >
-                      <option value="">Select jurisdiction</option>
-                      {STATES.map((state) => (
-                        <option key={state} value={state}>
-                          {state}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-
-                  <Field label="Exam month">
-                    <select
-                      value={examMonth}
-                      onChange={(event) => {
-                        setExamMonth(event.target.value)
-                        setSaveError("")
-                        setSaveMessage("")
-                      }}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    >
-                      <option value="">Select month</option>
-                      {EXAM_MONTHS.map((month) => (
-                        <option key={month.value} value={month.value}>
-                          {month.label}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-
-                  <Field label="Exam year">
-                    <select
-                      value={examYear}
-                      onChange={(event) => {
-                        setExamYear(event.target.value)
-                        setSaveError("")
-                        setSaveMessage("")
-                      }}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    >
-                      <option value="">Select year</option>
-                      {EXAM_YEARS.map((year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </div>
-
-                {saveError ? <Notice tone="error">{saveError}</Notice> : null}
-                {saveMessage ? <Notice tone="success">{saveMessage}</Notice> : null}
-
-                <div className="mt-5 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#6D4AFF] px-5 text-sm font-black text-white shadow-[0_14px_28px_rgba(109,74,255,0.20)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-                  >
-                    <Save size={16} />
-                    {saving ? "Saving..." : "Save profile"}
-                  </button>
-                </div>
-
-                <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xl font-black text-white">
-                      {(fullName || email || "U").slice(0, 1).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="text-base font-black text-slate-950">
-                        {fullName || "Name not set"}
-                      </div>
-                      <div className="text-sm font-semibold text-slate-500">
-                        Preparing for {formatMonth(examMonth)} {examYear || "exam"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              <Card>
-                <CardHeader icon={<Crown />} title="Subscription" subtitle="Your plan and access overview." />
-
-                <div className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-5">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <InfoRow label="Current plan" value={planLabel} large />
-                    <InfoRow label="Renews on" value={formatDate(profile?.billing_period_ends_at)} />
-                    <InfoRow label="Billing cycle" value={billingCycle} />
-                    <InfoRow label="Member since" value={formatDate(profile?.created_at)} />
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {[
-                    "Rule Training",
-                    "Spaced Review",
-                    "Analytics",
-                    "Weak Area Tracking",
-                    "Reports",
-                    "PDF Export",
-                    "BLL Access",
-                    "Priority Support",
-                  ].map((item) => (
-                    <div key={item} className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                      <CheckCircle2 size={16} className="text-[#6D4AFF]" />
-                      {item}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/subscription")}
-                    className="h-11 rounded-xl border border-violet-200 bg-white px-4 text-sm font-black text-violet-700 shadow-sm hover:bg-violet-50"
-                  >
-                    Manage payment
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/subscription")}
-                    className="h-11 rounded-xl bg-[#6D4AFF] px-4 text-sm font-black text-white shadow-[0_14px_28px_rgba(109,74,255,0.20)] hover:bg-[#5B21B6]"
-                  >
-                    Change plan
-                  </button>
-                </div>
-              </Card>
-
-              <Card>
-                <CardHeader icon={<Target />} title="Study Preferences" subtitle="Customize your study experience." />
-
-                <PreferenceRow icon={<CalendarRange />} label="Exam date" value={`${formatMonth(examMonth)} ${examYear || ""}`.trim() || "Not set"} />
-                <PreferenceRow icon={<GraduationCap />} label="Jurisdiction" value={jurisdiction || "Not set"} />
-                <PreferenceRow icon={<Target />} label="Learner type" value={jurisdiction ? "UBE Candidate" : "Not set"} />
-                <PreferenceRow icon={<CheckCircle2 />} label="Auto-generate daily plan" value="Enabled" />
-
-
-              </Card>
-
-              <Card>
-                <CardHeader icon={<Bell />} title="Notifications" subtitle="Control how you receive updates." />
-
-                <ToggleRow label="Study reminders" description="Get reminders for scheduled study sessions." />
-                <ToggleRow label="Due review reminders" description="Receive reminders for due and overdue reviews." />
-                <ToggleRow label="Weekly progress report" description="Summary of your weekly study progress." />
-                <ToggleRow label="Product announcements" description="Important updates and new features." />
-
-
-              </Card>
-
-              <Card>
-                <CardHeader icon={<LockKeyhole />} title="Security" subtitle="Password and account protection." />
-
-                <p className="mb-4 text-sm font-medium leading-6 text-slate-500">
-                  Update your password securely through Supabase authentication. Lexora Prep never stores or displays your password.
-                </p>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="New password">
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(event) => {
-                        setNewPassword(event.target.value)
-                        setPasswordError("")
-                        setPasswordMessage("")
-                      }}
-                      placeholder="Enter new password"
-                      autoComplete="new-password"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    />
-                  </Field>
-
-                  <Field label="Confirm password">
-                    <input
-                      type="password"
-                      value={confirmNewPassword}
-                      onChange={(event) => {
-                        setConfirmNewPassword(event.target.value)
-                        setPasswordError("")
-                        setPasswordMessage("")
-                      }}
-                      placeholder="Confirm new password"
-                      autoComplete="new-password"
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    />
-                  </Field>
-                </div>
-
-                <div className="mt-3 text-xs font-semibold text-slate-500">
-                  Use at least 8 characters with a letter, number, and special character.
-                </div>
-
-                {passwordError ? <Notice tone="error">{passwordError}</Notice> : null}
-                {passwordMessage ? <Notice tone="success">{passwordMessage}</Notice> : null}
-
-                <div className="mt-5 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handlePasswordChange}
-                    disabled={passwordSaving}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-                  >
-                    <LockKeyhole size={16} />
-                    {passwordSaving ? "Updating..." : "Update password"}
-                  </button>
-                </div>
-              </Card>
-
-              <Card>
-                <CardHeader icon={<Database />} title="Privacy & Data" subtitle="Manage data controls and privacy settings." />
-
-                <PreferenceRow icon={<Database />} label="Account data" value="Stored securely" />
-                <PreferenceRow icon={<Shield />} label="Privacy controls" value="Available" />
-                <PreferenceRow icon={<Mail />} label="Email communication" value={email || "Not set"} />
-
-
-              </Card>
-
-              <Card>
-                <CardHeader icon={<Laptop />} title="Connected Devices" subtitle="Review active sessions and devices." />
-
-                <PreferenceRow icon={<Laptop />} label="Current session" value="Active browser session" />
-                <PreferenceRow icon={<Shield />} label="Session security" value="Managed by Supabase" />
-
-
-              </Card>
-
-              <Card>
-                <CardHeader danger icon={<AlertTriangle />} title="Danger Zone" subtitle="Account deletion and irreversible controls." />
-
-                <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold leading-6 text-red-700">
-                  Account deletion should require confirmation and should not be triggered from a fake button.
-                </div>
-
-
-              </Card>
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              Account {accountStatus.toLowerCase()}
             </div>
           </div>
+
+          {activeTab === "profile" ? (
+            <section className="max-w-[860px]">
+              <SectionHeader icon={<User />} title="Profile information" subtitle="Only name and law school are editable." />
+
+              <div className="mt-6 grid gap-x-8 gap-y-6 md:grid-cols-2">
+                <Field label="Full name">
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
+                    className={inputClass}
+                    placeholder="Enter your full name"
+                  />
+                </Field>
+
+                <Field label="Email address">
+                  <LockedText value={email || "Not set"} icon={<Mail size={15} />} />
+                  <p className="mt-2 text-xs text-slate-400">
+                    Email changes require verification through authentication.
+                  </p>
+                </Field>
+
+                <Field label="Law school">
+                  <input
+                    type="text"
+                    value={lawSchool}
+                    onChange={(event) => setLawSchool(event.target.value)}
+                    className={inputClass}
+                    placeholder="Enter your law school"
+                  />
+                </Field>
+
+                <Field label="Jurisdiction">
+                  <LockedText value={jurisdiction || "Not set"} />
+                </Field>
+
+                <Field label="Exam month">
+                  <LockedText value={formatMonth(examMonth)} />
+                </Field>
+
+                <Field label="Exam year">
+                  <LockedText value={examYear || "Not set"} />
+                </Field>
+              </div>
+
+              <div className="mt-6 border-l-2 border-violet-300 bg-violet-50/60 px-4 py-3 text-sm leading-6 text-violet-700">
+                Jurisdiction and exam date are locked because changing them can affect your rule universe, study plan, due reviews, and analytics. Contact support if these details need to be changed.
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  disabled={saving}
+                  className={primaryButtonClass}
+                >
+                  <Save size={16} />
+                  {saving ? "Saving..." : "Save profile"}
+                </button>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "security" ? (
+            <section className="max-w-[760px]">
+              <SectionHeader icon={<LockKeyhole />} title="Password management" subtitle="Password changes are handled by Supabase Auth." />
+
+              <div className="mt-6 grid gap-x-8 gap-y-6 md:grid-cols-2">
+                <Field label="Login email">
+                  <LockedText value={email || "Not set"} icon={<Mail size={15} />} />
+                </Field>
+
+                <Field label="Current session">
+                  <LockedText value="Current browser session" />
+                </Field>
+
+                <Field label="New password">
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(event) => {
+                      setNewPassword(event.target.value)
+                      setPasswordError("")
+                      setPasswordMessage("")
+                    }}
+                    className={inputClass}
+                    placeholder="Enter new password"
+                    autoComplete="new-password"
+                  />
+                </Field>
+
+                <Field label="Confirm password">
+                  <input
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(event) => {
+                      setConfirmNewPassword(event.target.value)
+                      setPasswordError("")
+                      setPasswordMessage("")
+                    }}
+                    className={inputClass}
+                    placeholder="Confirm new password"
+                    autoComplete="new-password"
+                  />
+                </Field>
+              </div>
+
+              <p className="mt-3 text-xs text-slate-500">
+                Use at least 8 characters with a letter, number, and special character.
+              </p>
+
+              {passwordError ? <InlineNotice tone="error">{passwordError}</InlineNotice> : null}
+              {passwordMessage ? <InlineNotice tone="success">{passwordMessage}</InlineNotice> : null}
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+                <button type="button" onClick={signOutCurrentDevice} className={secondaryButtonClass}>
+                  <LogOut size={16} />
+                  Sign out current device
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePasswordChange}
+                  disabled={passwordSaving}
+                  className={primaryButtonClass}
+                >
+                  <LockKeyhole size={16} />
+                  {passwordSaving ? "Updating..." : "Update password"}
+                </button>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "subscription" ? (
+            <section className="max-w-[820px]">
+              <SectionHeader icon={<Crown />} title="Subscription" subtitle="Your plan, billing controls, and included access." />
+
+              <div className="mt-6 overflow-hidden rounded-[26px] border border-violet-100 bg-white shadow-[0_24px_70px_rgba(109,74,255,0.10)]">
+                <div className="border-b border-violet-100 bg-gradient-to-br from-violet-50 via-white to-indigo-50 px-6 py-5">
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-[#6D4AFF]">
+                        <Crown size={22} />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold tracking-[-0.02em] text-slate-950">
+                          Your Subscription
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-500">
+                          Your plan and access overview.
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      {accountStatus}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div>
+                      <div className="text-xs font-medium text-slate-500">Current plan</div>
+                      <div className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">
+                        {planLabel}
+                      </div>
+                    </div>
+
+                    <div className="md:text-right">
+                      <div className="text-xs font-medium text-slate-500">Renews on</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">
+                        {formatDate(profile?.billing_period_ends_at)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-medium text-slate-500">Billing cycle</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">
+                        {billingCycle}
+                      </div>
+                    </div>
+
+                    <div className="md:text-right">
+                      <div className="text-xs font-medium text-slate-500">Member since</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">
+                        {formatDate(profile?.created_at)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="my-6 h-px bg-slate-200" />
+
+                  <div>
+                    <div className="text-sm font-semibold text-slate-950">Plan includes</div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {[
+                        "Full BLL rule access",
+                        "Rule Training",
+                        "Spaced repetition",
+                        "Weak rule targeting",
+                        "Study progress tracking",
+                        "Analytics",
+                        "Reports",
+                        "PDF export",
+                        "120 Golden Rules",
+                        "120 Golden Flashcards",
+                        "Priority support",
+                      ].map((feature) => (
+                        <div key={feature} className="flex items-center gap-3 text-sm font-medium text-slate-700">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 text-[#6D4AFF]">
+                            <CheckCircle2 size={13} />
+                          </span>
+                          {feature}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => router.push("/subscription")}
+                      className="inline-flex h-11 items-center justify-center rounded-xl border border-violet-200 bg-white px-5 text-sm font-semibold text-[#6D4AFF] transition-all duration-200 hover:-translate-y-0.5 hover:bg-violet-50 active:scale-[0.98]"
+                    >
+                      Manage payment
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => router.push("/subscription")}
+                      className="inline-flex h-11 items-center justify-center rounded-xl bg-[#6D4AFF] px-5 text-sm font-semibold text-white shadow-[0_16px_36px_rgba(109,74,255,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#5B21B6] active:scale-[0.98]"
+                    >
+                      Change plan
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "support" ? (
+            <section className="max-w-[760px]">
+              <SectionHeader icon={<Headphones />} title="Support center" subtitle="Use the existing support ticket system." />
+
+              <div className="mt-6 border-y border-slate-200 py-5">
+                <p className="max-w-2xl text-sm leading-6 text-slate-500">
+                  Billing issues, account issues, technical problems, content corrections, and subscription questions are handled through the existing support ticket page.
+                </p>
+              </div>
+
+              <div className="mt-6">
+                <button type="button" onClick={() => router.push("/support")} className={primaryButtonClass}>
+                  <Headphones size={16} />
+                  Open support center
+                </button>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === "danger" ? (
+            <section className="max-w-[760px]">
+              <SectionHeader danger icon={<AlertTriangle />} title="Danger zone" subtitle="Request permanent account deletion." />
+
+              <div className="mt-6 border-l-2 border-red-300 bg-red-50/70 px-4 py-3 text-sm leading-6 text-red-700">
+                Type DELETE to request account deletion. For safety, the system uses an email confirmation step before deletion is scheduled.
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                <Field label='Type "DELETE" to confirm'>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(event) => {
+                      setDeleteConfirmText(event.target.value)
+                      setDeleteError("")
+                      setDeleteSuccess("")
+                      setDevConfirmUrl("")
+                    }}
+                    className={inputClass}
+                    placeholder="DELETE"
+                  />
+                </Field>
+
+                <button
+                  type="button"
+                  onClick={handleDeleteAccountRequest}
+                  disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+                  className={dangerButtonClass}
+                >
+                  <AlertTriangle size={16} />
+                  {deleteLoading ? "Requesting..." : "Request deletion"}
+                </button>
+              </div>
+
+              {deleteError ? <InlineNotice tone="error">{deleteError}</InlineNotice> : null}
+              {deleteSuccess ? <InlineNotice tone="success">{deleteSuccess}</InlineNotice> : null}
+
+              {devConfirmUrl ? (
+                <div className="mt-4 text-sm">
+                  <a href={devConfirmUrl} className="font-semibold text-violet-600 underline underline-offset-4">
+                    Open development confirmation link
+                  </a>
+                </div>
+              ) : null}
+
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={handleCancelDeletion}
+                  disabled={deleteLoading}
+                  className={secondaryButtonClass}
+                >
+                  Cancel pending deletion
+                </button>
+              </div>
+            </section>
+          ) : null}
         </main>
       </div>
+
+      {toast ? (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-white px-5 py-4 text-sm font-semibold text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
+          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+          {toast}
+        </div>
+      ) : null}
     </div>
   )
 }
 
-function SidebarItem({
+const inputClass =
+  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-all duration-200 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+
+const primaryButtonClass =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#6D4AFF] px-5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(109,74,255,0.20)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#5B21B6] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+
+const secondaryButtonClass =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:text-[#6D4AFF] active:scale-[0.98]"
+
+const dangerButtonClass =
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 text-sm font-semibold text-red-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-50 active:scale-[0.98]"
+
+function SettingsNavItem({
   icon,
   label,
-  active = false,
+  active,
   danger = false,
+  onClick,
 }: {
   icon: ReactNode
   label: string
-  active?: boolean
+  active: boolean
   danger?: boolean
+  onClick: () => void
 }) {
   return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold ${
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 active:scale-[0.98] ${
         active
-          ? "bg-violet-50 text-[#6D4AFF]"
+          ? danger
+            ? "bg-red-50 text-red-600"
+            : "bg-violet-50 text-[#6D4AFF]"
           : danger
             ? "text-red-600 hover:bg-red-50"
-            : "text-slate-700 hover:bg-slate-50"
+            : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
       }`}
     >
       <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
       {label}
-    </div>
+    </button>
   )
 }
 
-function StatusPill({
-  icon,
-  label,
-  value,
-  success = false,
-}: {
-  icon: ReactNode
-  label: string
-  value: string
-  success?: boolean
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3">
-      <div
-        className={`flex h-10 w-10 items-center justify-center rounded-full ${
-          success ? "bg-emerald-50 text-emerald-600" : "bg-violet-50 text-[#6D4AFF]"
-        }`}
-      >
-        <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
-      </div>
-      <div>
-        <div className="text-[11px] font-bold text-slate-500">{label}</div>
-        <div className="mt-0.5 text-sm font-black text-slate-950">{value}</div>
-      </div>
-    </div>
-  )
-}
-
-function Card({ children }: { children: ReactNode }) {
-  return (
-    <section className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)] md:p-6">
-      {children}
-    </section>
-  )
-}
-
-function CardHeader({
+function SectionHeader({
   icon,
   title,
   subtitle,
@@ -787,17 +815,13 @@ function CardHeader({
   danger?: boolean
 }) {
   return (
-    <div className="mb-5 flex items-start gap-4">
-      <div
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
-          danger ? "bg-red-50 text-red-600" : "bg-violet-50 text-[#6D4AFF]"
-        }`}
-      >
-        <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+    <div className="flex items-start gap-4">
+      <div className={danger ? "text-red-500" : "text-[#6D4AFF]"}>
+        <span className="[&>svg]:h-6 [&>svg]:w-6">{icon}</span>
       </div>
       <div>
-        <h2 className="text-lg font-black tracking-[-0.03em] text-slate-950">{title}</h2>
-        <p className="mt-1 text-sm font-medium text-slate-500">{subtitle}</p>
+        <h2 className="text-xl font-semibold tracking-[-0.02em] text-slate-950">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-slate-500">{subtitle}</p>
       </div>
     </div>
   )
@@ -812,7 +836,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">
+      <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
         {label}
       </label>
       {children}
@@ -820,68 +844,37 @@ function Field({
   )
 }
 
+function LockedText({
+  value,
+  icon,
+}: {
+  value: string
+  icon?: ReactNode
+}) {
+  return (
+    <div className="flex h-11 items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-500">
+      <span>{value}</span>
+      <span className="text-slate-400">{icon || <LockKeyhole size={15} />}</span>
+    </div>
+  )
+}
+
 function InfoRow({
   label,
   value,
-  large = false,
 }: {
   label: string
-  value: string
-  large?: boolean
+  value: ReactNode
 }) {
   return (
-    <div>
-      <div className="text-xs font-bold text-slate-500">{label}</div>
-      <div className={large ? "mt-1 text-2xl font-black text-slate-950" : "mt-1 text-sm font-black text-slate-950"}>
-        {value}
-      </div>
+    <div className="grid min-h-[54px] grid-cols-[1fr_auto] items-center gap-4">
+      <div className="text-sm text-slate-500">{label}</div>
+      <div className="text-right text-sm font-medium text-slate-900">{value}</div>
     </div>
   )
 }
 
-function PreferenceRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode
-  label: string
-  value: string
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0">
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-[#6D4AFF]">
-          <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-        </div>
-        <div className="text-sm font-bold text-slate-700">{label}</div>
-      </div>
-      <div className="text-right text-sm font-bold text-slate-500">{value}</div>
-    </div>
-  )
-}
-
-function ToggleRow({
-  label,
-  description,
-}: {
-  label: string
-  description: string
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0">
-      <div>
-        <div className="text-sm font-black text-slate-800">{label}</div>
-        <div className="mt-0.5 text-xs font-medium text-slate-500">{description}</div>
-      </div>
-      <div className="flex h-6 w-11 items-center rounded-full bg-[#6D4AFF] p-1 shadow-inner">
-        <div className="h-4 w-4 rounded-full bg-white shadow-sm" />
-      </div>
-    </div>
-  )
-}
-
-function Notice({
+function InlineNotice({
   tone,
   children,
 }: {
@@ -890,10 +883,10 @@ function Notice({
 }) {
   return (
     <div
-      className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-bold leading-6 ${
+      className={`mt-4 border-l-2 px-4 py-3 text-sm leading-6 ${
         tone === "success"
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-red-200 bg-red-50 text-red-700"
+          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+          : "border-red-300 bg-red-50 text-red-700"
       }`}
     >
       {children}
