@@ -62,6 +62,17 @@ type RiskItem = {
   risk: "Low" | "Medium" | "High" | "Critical"
 }
 
+type WeakFocusRule = WeakArea & {
+  priorityReason?: string
+  recommendationReason?: string
+  reviewTimingLabel?: string
+  reviewTierLabel?: string
+  learningStatusLabel?: string
+  reviewAvailableNow?: boolean
+  failureStreak?: number
+  lastScore?: number | null
+}
+
 export default function OverviewTab({
   dashboard,
   chartData,
@@ -104,13 +115,68 @@ export default function OverviewTab({
   }, [])
 
   const displayName = getDisplayName(dashboard)
+  const [weakFocusRule, setWeakFocusRule] = useState<WeakFocusRule | null>(null)
+  const [weakFocusCount, setWeakFocusCount] = useState<number | null>(null)
+  const [weakFocusLoading, setWeakFocusLoading] = useState(true)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadWeakFocusRule() {
+      try {
+        setWeakFocusLoading(true)
+
+        const response = await fetch("/api/rules/weak-focus?limit=1", {
+          cache: "no-store",
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          setWeakFocusRule(null)
+          setWeakFocusCount(null)
+          return
+        }
+
+        const payload = await response.json()
+        const rule = payload?.rules?.[0] ?? payload?.weakAreas?.[0] ?? null
+        const count =
+          typeof payload?.count === "number"
+            ? payload.count
+            : Array.isArray(payload?.rules)
+              ? payload.rules.length
+              : Array.isArray(payload?.weakAreas)
+                ? payload.weakAreas.length
+                : null
+
+        setWeakFocusRule(rule)
+        setWeakFocusCount(count)
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setWeakFocusRule(null)
+          setWeakFocusCount(null)
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setWeakFocusLoading(false)
+        }
+      }
+    }
+
+    loadWeakFocusRule()
+
+    return () => controller.abort()
+  }, [])
+
   const readinessScore = getReadinessScore(dashboard, currentScore)
   const weakRuleCount = weakAreas.length
   const hasTrendData = chartData.some((point) => point.score > 0)
   const topWeakSubjects = getTopWeakSubjects(weakestSubject, weakAreas)
-  const focusTitle = getFocusTitle(primaryWeakArea, weakestSubject)
-  const focusDetail = getFocusDetail(primaryWeakArea)
-  const focusRoute = buildFocusRoute(primaryWeakArea)
+  const focusRule = weakFocusRule
+  const focusTitle = getFocusTitle(focusRule)
+  const focusDetail = getFocusDetail(focusRule)
+  const focusRoute = buildFocusRoute(focusRule)
+  const focusTimingLabel = focusRule?.reviewTimingLabel || null
+  const focusQueueCount = weakFocusCount ?? 0
   const subjectRisks = buildRiskItems(riskBuckets, strongSubjects, weakestSubject)
   const bestRangeLabel = getBestSessionRangeLabel(dashboard)
   const summary = buildSummary({
@@ -158,15 +224,22 @@ export default function OverviewTab({
             <div className="w-[250px]">
               <button
                 type="button"
-                onClick={() => router.push(focusRoute)}
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 text-[12px] font-normal text-white shadow-[0_12px_22px_rgba(124,58,237,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-800"
+                onClick={() => {
+                  if (focusRule) router.push(focusRoute)
+                }}
+                disabled={!focusRule}
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 text-[12px] font-normal text-white shadow-[0_12px_22px_rgba(124,58,237,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none disabled:hover:translate-y-0"
               >
-                Start Today&apos;s Focus Session
-                <ArrowRight size={14} />
+                {focusRule ? "Start Today&apos;s Focus Session" : "Focus unavailable"}
+                {focusRule ? <ArrowRight size={14} /> : null}
               </button>
 
               <div className="mt-1 text-center text-[10px] text-slate-500">
-                {bestRangeLabel ? `Estimated time: ${bestRangeLabel}` : "Estimated time appears after enough timed sessions"}
+                {focusTimingLabel
+                  ? `Review timing: ${focusTimingLabel}`
+                  : weakFocusLoading
+                    ? "Loading focus signal..."
+                    : "Review timing appears after enough weak-focus data"}
               </div>
             </div>
           </div>
@@ -321,14 +394,18 @@ export default function OverviewTab({
 
               <DriverRow
                 icon={<Target size={16} />}
-                title={getPrimaryWeakRuleLabel(primaryWeakArea)}
-                text={primaryWeakArea?.subject || "Weak rules appear after low recall."}
+                title={getPrimaryWeakRuleLabel(focusRule ?? undefined)}
+                text={
+                  focusRule?.subject
+                    ? `${focusRule.subject}${focusRule.topic ? ` · ${focusRule.topic}` : ""}`
+                    : "Requires real weak-focus data."
+                }
                 value={
-                  typeof (primaryWeakArea as any)?.accuracy === "number"
-                    ? `${(primaryWeakArea as any).accuracy}%`
+                  typeof (focusRule as any)?.accuracy === "number"
+                    ? `${(focusRule as any).accuracy}%`
                     : "—"
                 }
-                tone={primaryWeakArea ? "red" : "neutral"}
+                tone={focusRule ? "red" : "neutral"}
               />
 
               <DriverRow
@@ -347,7 +424,7 @@ export default function OverviewTab({
           icon={<Rocket size={16} className="text-violet-700" />}
           help="This explains the same focus session shown in the top banner."
         >
-          {primaryWeakArea || weakestSubject ? (
+          {focusRule ? (
             <div className="space-y-3">
               <div className="relative overflow-hidden rounded-2xl border border-violet-100/80 bg-white/75 p-3 shadow-[0_10px_26px_rgba(124,58,237,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur">
                 <div className="pointer-events-none absolute -left-12 -top-12 h-28 w-28 rounded-full bg-violet-100/80 blur-2xl" />
@@ -399,9 +476,9 @@ export default function OverviewTab({
                   <span className="font-normal text-[#10153d]">
                     Why this works:
                   </span>{" "}
-                  {primaryWeakArea || weakestSubject
-                    ? "This focus is based on your current weak-rule and subject-risk signals."
-                    : "Lexora will explain this once enough scored recall data exists."}
+                  {focusRule.recommendationReason ||
+                    focusRule.priorityReason ||
+                    `This rule is ranked first in the same weak-focus queue used by Rule Training. Current queue size: ${focusQueueCount}.`}
                 </div>
               </div>
             </div>
@@ -790,52 +867,52 @@ function getBestSessionRangeLabel(dashboard: DashboardData) {
     : null
 }
 
-function getFocusTitle(
-  primaryWeakArea?: WeakArea,
-  weakestSubject?: SubjectDiagnostic
-) {
-  if (primaryWeakArea?.subject) {
-    return `Review ${primaryWeakArea.subject} weak rules`
-  }
-
-  if (weakestSubject?.name) {
-    return `Review ${weakestSubject.name} weak rules`
+function getFocusTitle(focusRule?: WeakFocusRule | null) {
+  if (focusRule?.subject) {
+    return `Review ${focusRule.subject} weak rules`
   }
 
   return "More scored data needed"
 }
 
-function getFocusDetail(primaryWeakArea?: WeakArea) {
-  const rule = getPrimaryWeakRuleLabel(primaryWeakArea)
+function getFocusDetail(focusRule?: WeakFocusRule | null) {
+  const rule = getPrimaryWeakRuleLabel(focusRule ?? undefined)
 
-  if (primaryWeakArea && rule !== "No confirmed priority rule yet") {
-    return rule
+  if (focusRule && rule !== "No confirmed priority rule yet") {
+    const parts = [
+      rule,
+      focusRule.reviewTierLabel,
+      focusRule.learningStatusLabel,
+    ].filter(Boolean)
+
+    return parts.join(" · ")
   }
 
   return "Complete more scored recall attempts so Lexora can identify a reliable focus."
 }
 
-function getPrimaryWeakRuleLabel(primaryWeakArea?: WeakArea) {
-  if (!primaryWeakArea) return "No confirmed priority rule yet"
+function getPrimaryWeakRuleLabel(focusRule?: WeakArea) {
+  if (!focusRule) return "No confirmed priority rule yet"
 
   return (
-    (primaryWeakArea as any).rule ||
-    (primaryWeakArea as any).title ||
-    primaryWeakArea.topic ||
+    (focusRule as any).rule ||
+    (focusRule as any).title ||
+    focusRule.topic ||
     "No confirmed priority rule yet"
   )
 }
 
-function buildFocusRoute(primaryWeakArea?: WeakArea) {
+function buildFocusRoute(focusRule?: WeakFocusRule | null) {
   const params = new URLSearchParams()
 
-  params.set("mode", "priority")
+  params.set("mode", "weak-focus")
+  params.set("trainingMode", "weak_focus")
 
-  if (primaryWeakArea?.subject) {
-    params.set("subject", primaryWeakArea.subject)
+  if (focusRule?.subject) {
+    params.set("subject", focusRule.subject)
   }
 
-  const ruleId = (primaryWeakArea as any)?.ruleId
+  const ruleId = focusRule?.ruleId || focusRule?.id
 
   if (typeof ruleId === "string" && ruleId.trim()) {
     params.set("ruleId", ruleId)
@@ -891,11 +968,11 @@ function buildSummary({
   return {
     banner:
       accuracyStrong && hasWeakPressure
-        ? `You’re consistent and your recall accuracy is strong. Your readiness is being held back by weak rules in ${weakSubjectText}. Focus on those today to make the biggest impact.`
+        ? `You’re consistent and your recall accuracy is strong. The current weak-focus queue shows weak rules in ${weakSubjectText}.`
         : accuracyStrong
           ? "Your recall accuracy is strong. Keep practicing consistently and watch for new weak rules as more data comes in."
           : hasWeakPressure
-            ? `Your current priority is improving weak rules in ${weakSubjectText}. Focused recall will help stabilize your score.`
+            ? `The current weak-focus queue shows weak rules in ${weakSubjectText}.`
             : "Complete more scored recall attempts so Lexora can identify your strongest opportunities.",
     overallTitle: accuracyStrong
       ? "You’re performing well overall."
@@ -921,10 +998,10 @@ function buildSummary({
         ? `${weakRuleCount} weak ${weakRuleCount === 1 ? "rule is" : "rules are"} currently holding your readiness back.`
         : "No confirmed weak rules are currently shown for this range.",
     coachingInsight: bestRangeLabel
-      ? `Keep focused recall blocks around ${bestRangeLabel}.`
+      ? `Your measured best focused block is ${bestRangeLabel}.`
       : consistencyScore >= 4
-        ? "Your consistency score is currently strong; keep using scored recall so the signal remains reliable."
-        : "Your consistency score is still developing; complete scored recall across more active days.",
+        ? "Your current consistency score is strong based on recorded activity."
+        : "Your consistency score needs more recorded active days before a stronger pattern can be confirmed.",
   }
 }
 
