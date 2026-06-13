@@ -305,6 +305,7 @@ export async function GET() {
       applicableRules: applicableRuleCount,
       storedInventory: storedRules.length,
       publishedStored: activePublishedStored,
+      unassignedLegacy: Math.max(0, activePublishedStored - applicableRuleCount),
     },
   }
 

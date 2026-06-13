@@ -100,6 +100,7 @@ type Metadata = {
     applicableRules: number
     storedInventory: number
     publishedStored: number
+    unassignedLegacy: number
   }
 }
 
@@ -257,9 +258,9 @@ function SectionTitle({ title, description }: { title: string; description: stri
 }
 
 const METRIC_EXPLANATIONS: Record<string, string> = {
-  "All rules":
-    "Every rule record currently stored in the database. This can include historical, legacy, duplicated, or currently unassigned records and is not the student curriculum total.",
   "Stored records":
+    "Every rule record currently stored in the database. This can include historical, legacy, duplicated, or currently unassigned records and is not the student curriculum total.",
+  "Published stored records":
     "Every rule record currently stored in the database. Stored records are administrative inventory, not the number shown to a student.",
   Published:
     "Rule records whose publication status is Published and that have not been archived. Publication alone does not guarantee that a rule belongs to the current curriculum.",
@@ -440,7 +441,7 @@ function MetricTooltip({
 }
 
 const STAT_EXPLANATIONS: Record<string, string> = {
-  "All rules":
+  "Stored records":
     "Unique published rules connected to the active curriculum. Historical and unassigned database rows are excluded.",
   Published:
     "Applicable curriculum rules currently published and available to eligible users.",
@@ -1034,8 +1035,10 @@ export default function AdminRulesPage() {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="All rules" value={metadata?.totals.all ?? 0} note="Applicable curriculum rules" icon={Database} />
-          <StatCard label="Published" value={metadata?.totals.published ?? 0} note="Published in active curriculum" icon={CheckCircle2} />
+          <StatCard label="Applicable rules" value={metadata?.totals.applicableRules ?? metadata?.totals.all ?? 0} note="Student-facing curriculum denominator" icon={Database} />
+          <StatCard label="Published curriculum" value={metadata?.totals.published ?? 0} note="Published rules connected to active curriculum" icon={CheckCircle2} />
+          <StatCard label="Stored inventory" value={metadata?.totals.storedInventory ?? 0} note="Admin-only physical rule records" icon={Archive} />
+          <StatCard label="Unassigned legacy" value={metadata?.totals.unassignedLegacy ?? 0} note="Stored rows excluded from student totals" icon={AlertCircle} />
           <StatCard label="Drafts" value={metadata?.totals.draft ?? 0} note="Awaiting publication" icon={Clock3} />
           <StatCard label="Archived" value={metadata?.totals.archived ?? 0} note="Retained for history" icon={Archive} />
           <StatCard label="Applicability" value={metadata?.totals.applicability ?? 0} note="Dated curriculum mappings" icon={ShieldCheck} />
