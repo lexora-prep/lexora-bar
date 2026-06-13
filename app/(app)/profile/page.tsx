@@ -398,7 +398,6 @@ export default function ProfilePage() {
               <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">
                 {activeTab === "profile" ? "Profile" : null}
                 {activeTab === "security" ? "Security" : null}
-                {activeTab === "subscription" ? "Subscription" : null}
                 {activeTab === "support" ? "Support" : null}
                 {activeTab === "danger" ? "Danger Zone" : null}
               </h1>
@@ -409,10 +408,6 @@ export default function ProfilePage() {
                 {activeTab === "security"
                   ? "Update your password and manage the current session."
                   : null}
-                {activeTab === "subscription"
-                  ? "View billing details, plan access, and included premium features."
-                  : null}
-                {activeTab === "support" ? null : null}
                 {activeTab === "danger"
                   ? "Request deletion only after confirming the action."
                   : null}
