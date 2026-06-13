@@ -4,17 +4,19 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import {
   AlertTriangle,
+  Bell,
   CalendarRange,
   CheckCircle2,
   Crown,
+  Database,
   GraduationCap,
-  Headphones,
+  Laptop,
   LockKeyhole,
-  LogOut,
   Mail,
+  Monitor,
   Save,
-  ShieldCheck,
-  Trash2,
+  Shield,
+  Target,
   User,
   WalletCards,
 } from "lucide-react"
@@ -25,7 +27,7 @@ const EXAM_MONTHS = [
   { value: 7, label: "July" },
 ]
 
-type SettingsTab = "profile" | "subscription" | "security" | "support" | "danger"
+const EXAM_YEARS = Array.from({ length: 25 }, (_, i) => 2026 + i)
 
 type ProfileResponse = {
   id: string
@@ -43,6 +45,60 @@ type ProfileResponse = {
   mbe_access?: boolean
 }
 
+const STATES = [
+  "Alabama",
+  "Alaska",
+  "Arizona",
+  "Arkansas",
+  "California",
+  "Colorado",
+  "Connecticut",
+  "Delaware",
+  "District of Columbia",
+  "Florida",
+  "Georgia",
+  "Hawaii",
+  "Idaho",
+  "Illinois",
+  "Indiana",
+  "Iowa",
+  "Kansas",
+  "Kentucky",
+  "Louisiana",
+  "Maine",
+  "Maryland",
+  "Massachusetts",
+  "Michigan",
+  "Minnesota",
+  "Mississippi",
+  "Missouri",
+  "Montana",
+  "Nebraska",
+  "Nevada",
+  "New Hampshire",
+  "New Jersey",
+  "New Mexico",
+  "New York",
+  "North Carolina",
+  "North Dakota",
+  "Ohio",
+  "Oklahoma",
+  "Oregon",
+  "Pennsylvania",
+  "Rhode Island",
+  "South Carolina",
+  "South Dakota",
+  "Tennessee",
+  "Texas",
+  "Utah",
+  "Vermont",
+  "Virginia",
+  "Washington",
+  "West Virginia",
+  "Wisconsin",
+  "Wyoming",
+]
+
 function formatPlan(plan?: string | null) {
   if (!plan || plan === "free") return "Free"
   if (plan === "bll-monthly" || plan === "bll_monthly" || plan === "bll") return "BLL Monthly"
@@ -50,7 +106,7 @@ function formatPlan(plan?: string | null) {
   return plan
 }
 
-function formatExamMonth(value: string) {
+function formatMonth(value: string) {
   return EXAM_MONTHS.find((month) => String(month.value) === value)?.label || "Not set"
 }
 
@@ -72,29 +128,29 @@ export default function ProfilePage() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>("profile")
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState("")
+  const [saveMessage, setSaveMessage] = useState("")
+  const [saveError, setSaveError] = useState("")
 
-  const [profile, setProfile] = useState<ProfileResponse | null>(null)
   const [email, setEmail] = useState("")
   const [fullName, setFullName] = useState("")
   const [lawSchool, setLawSchool] = useState("")
   const [jurisdiction, setJurisdiction] = useState("")
   const [examMonth, setExamMonth] = useState("")
   const [examYear, setExamYear] = useState("")
+  const [profile, setProfile] = useState<ProfileResponse | null>(null)
 
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState("")
   const [passwordError, setPasswordError] = useState("")
-  const [deleteConfirm, setDeleteConfirm] = useState("")
 
   const planLabel = formatPlan(profile?.subscription_tier)
   const isPaid = planLabel !== "Free" || profile?.billing_status === "active"
+  const accountStatus = profile?.billing_status === "active" || isPaid ? "Active" : "Free"
   const billingCycle =
     profile?.billing_interval === "year"
       ? "Annual"
@@ -103,11 +159,6 @@ export default function ProfilePage() {
         : isPaid
           ? "Monthly"
           : "None"
-
-  function showToast(message: string) {
-    setToast(message)
-    window.setTimeout(() => setToast(""), 2600)
-  }
 
   useEffect(() => {
     async function loadProfile() {
@@ -158,11 +209,13 @@ export default function ProfilePage() {
     loadProfile()
   }, [router, supabase])
 
-  async function handleSaveProfile() {
+  async function handleSave() {
     if (!userId) return
 
     try {
       setSaving(true)
+      setSaveError("")
+      setSaveMessage("")
 
       const res = await fetch("/api/profile", {
         method: "PATCH",
@@ -182,7 +235,7 @@ export default function ProfilePage() {
       const data = await res.json().catch(() => null)
 
       if (!res.ok) {
-        showToast(data?.error || data?.message || "Failed to save profile.")
+        setSaveError(data?.error || data?.message || "Failed to save profile.")
         return
       }
 
@@ -192,14 +245,17 @@ export default function ProfilePage() {
               ...prev,
               full_name: fullName,
               law_school: lawSchool,
+              jurisdiction,
+              exam_month: examMonth ? Number(examMonth) : null,
+              exam_year: examYear ? Number(examYear) : null,
             }
           : prev,
       )
 
-      showToast("Profile saved.")
+      setSaveMessage("Profile saved successfully.")
     } catch (err) {
       console.error("SAVE PROFILE ERROR:", err)
-      showToast("Failed to save profile.")
+      setSaveError("Failed to save profile.")
     } finally {
       setSaving(false)
     }
@@ -263,7 +319,6 @@ export default function ProfilePage() {
       setNewPassword("")
       setConfirmNewPassword("")
       setPasswordMessage("Password updated successfully. Use the new password the next time you log in.")
-      showToast("Password updated.")
     } catch (err) {
       console.error("PASSWORD UPDATE ERROR:", err)
       setPasswordError("Unable to update password. Please try again or use Forgot Password from the login page.")
@@ -272,47 +327,61 @@ export default function ProfilePage() {
     }
   }
 
-  async function signOutCurrentDevice() {
-    await supabase.auth.signOut()
-    router.push("/login")
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-white p-6 text-sm font-semibold text-slate-500">
+      <div className="min-h-screen bg-[#F7F6F2] p-6 text-sm font-semibold text-slate-500">
         Loading account settings...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-950">
-      <div className="mx-auto grid w-full max-w-[1280px] gap-8 px-5 py-8 lg:grid-cols-[240px_1fr]">
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.05)] lg:sticky lg:top-6 lg:h-fit">
-          <div className="px-3 py-4">
-            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
-              Account
-            </div>
-            <div className="mt-1 text-lg font-black tracking-[-0.03em] text-slate-950">
-              Settings
+    <div className="min-h-screen bg-[#F7F6F2] text-[#10172A]">
+      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
+        <aside className="hidden border-r border-slate-200/80 bg-white/70 p-6 backdrop-blur-xl lg:block">
+          <div className="mb-8 flex items-center gap-3">
+            <img src="/icon.png" alt="Lexora Prep" className="h-10 w-10 object-contain" />
+            <div>
+              <div className="text-[22px] font-black uppercase tracking-[0.16em] text-[#18213F]">
+                Lexora
+              </div>
+              <div className="text-[9px] font-black uppercase tracking-[0.55em] text-[#7C3AED]">
+                Prep
+              </div>
             </div>
           </div>
 
-          <nav className="space-y-1.5">
-            <SettingsNavItem active={activeTab === "profile"} icon={<User />} label="Profile" onClick={() => setActiveTab("profile")} />
-            <SettingsNavItem active={activeTab === "subscription"} icon={<Crown />} label="Subscription" onClick={() => setActiveTab("subscription")} />
-            <SettingsNavItem active={activeTab === "security"} icon={<ShieldCheck />} label="Security" onClick={() => setActiveTab("security")} />
-            <SettingsNavItem active={activeTab === "support"} icon={<Headphones />} label="Support" onClick={() => setActiveTab("support")} />
-            <SettingsNavItem danger active={activeTab === "danger"} icon={<AlertTriangle />} label="Danger Zone" onClick={() => setActiveTab("danger")} />
+          <nav className="space-y-2">
+            <SidebarItem active icon={<User />} label="Profile" />
+            <SidebarItem icon={<Crown />} label="Subscription" />
+            <SidebarItem icon={<Target />} label="Study Preferences" />
+            <SidebarItem icon={<Bell />} label="Notifications" />
+            <SidebarItem icon={<Shield />} label="Security" />
+            <SidebarItem icon={<Database />} label="Privacy & Data" />
+            <SidebarItem icon={<Monitor />} label="Connected Devices" />
+            <SidebarItem danger icon={<AlertTriangle />} label="Danger Zone" />
           </nav>
 
-          <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="mt-12 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="text-sm font-black text-slate-900">Need help?</div>
+            <p className="mt-2 text-xs font-medium leading-5 text-slate-500">
+              Visit Help Center or contact support for account issues.
+            </p>
+            <button
+              type="button"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700 shadow-sm hover:border-violet-300 hover:text-violet-700"
+            >
+              Help Center
+            </button>
+          </div>
+
+          <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#6D4AFF] text-base font-black text-white">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-lg font-black text-white">
                 {(fullName || email || "U").slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="truncate text-sm font-black text-slate-950">
+                <div className="truncate text-sm font-black text-slate-900">
                   {fullName || "User"}
                 </div>
                 <div className="truncate text-xs font-semibold text-slate-500">
@@ -323,313 +392,342 @@ export default function ProfilePage() {
           </div>
         </aside>
 
-        <main className="min-w-0">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h1 className="text-[30px] font-black tracking-[-0.04em] text-slate-950">
-                {activeTab === "profile" ? "Profile" : null}
-                {activeTab === "subscription" ? "Subscription" : null}
-                {activeTab === "security" ? "Security" : null}
-                {activeTab === "support" ? "Support" : null}
-                {activeTab === "danger" ? "Danger Zone" : null}
-              </h1>
-              <p className="mt-2 max-w-xl text-sm font-medium leading-6 text-slate-500">
-                {activeTab === "profile"
-                  ? "Manage your personal information. Exam details are locked to protect your study plan."
-                  : null}
-                {activeTab === "subscription"
-                  ? "Review your plan, billing cycle, and payment controls."
-                  : null}
-                {activeTab === "security"
-                  ? "Manage password and login controls."
-                  : null}
-                {activeTab === "support"
-                  ? "Get help with your account, billing, or technical issues."
-                  : null}
-                {activeTab === "danger"
-                  ? "Permanent account actions that require confirmation."
-                  : null}
-              </p>
+        <main className="p-4 md:p-8">
+          <div className="mx-auto max-w-[1180px]">
+            <div className="mb-7 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <h1 className="text-[30px] font-black tracking-[-0.04em] text-slate-950">
+                  Account Settings
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+                  Manage your profile, study preferences, subscription, security, and account controls.
+                </p>
+              </div>
+
+              <div className="grid gap-2 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-4">
+                <StatusPill icon={<Crown />} label="Current plan" value={planLabel} />
+                <StatusPill icon={<CheckCircle2 />} label="Account status" value={accountStatus} success />
+                <StatusPill icon={<CheckCircle2 />} label="BLL access" value={isPaid ? "Enabled" : "Limited"} success={isPaid} />
+                <StatusPill icon={<Shield />} label="MBE access" value={profile?.mbe_access ? "Enabled" : "Not enabled"} success={Boolean(profile?.mbe_access)} />
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              <div className="text-xs font-black text-slate-600">
-                {isPaid ? "Account active" : "Free account"}
-              </div>
+            <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+              <Card>
+                <CardHeader icon={<User />} title="Profile Information" subtitle="Your personal and study information." />
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label="Full name">
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(event) => {
+                        setFullName(event.target.value)
+                        setSaveError("")
+                        setSaveMessage("")
+                      }}
+                      placeholder="Enter your full name"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                    />
+                  </Field>
+
+                  <Field label="Email address">
+                    <input
+                      type="email"
+                      value={email}
+                      disabled
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500 outline-none"
+                    />
+                    <div className="mt-1 text-[11px] font-semibold text-slate-400">
+                      Email changes require verification through authentication.
+                    </div>
+                  </Field>
+
+                  <Field label="Law school">
+                    <input
+                      type="text"
+                      value={lawSchool}
+                      onChange={(event) => {
+                        setLawSchool(event.target.value)
+                        setSaveError("")
+                        setSaveMessage("")
+                      }}
+                      placeholder="Enter your law school"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                    />
+                  </Field>
+
+                  <Field label="Jurisdiction">
+                    <select
+                      value={jurisdiction}
+                      onChange={(event) => {
+                        setJurisdiction(event.target.value)
+                        setSaveError("")
+                        setSaveMessage("")
+                      }}
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                    >
+                      <option value="">Select jurisdiction</option>
+                      {STATES.map((state) => (
+                        <option key={state} value={state}>
+                          {state}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Exam month">
+                    <select
+                      value={examMonth}
+                      onChange={(event) => {
+                        setExamMonth(event.target.value)
+                        setSaveError("")
+                        setSaveMessage("")
+                      }}
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                    >
+                      <option value="">Select month</option>
+                      {EXAM_MONTHS.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Exam year">
+                    <select
+                      value={examYear}
+                      onChange={(event) => {
+                        setExamYear(event.target.value)
+                        setSaveError("")
+                        setSaveMessage("")
+                      }}
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                    >
+                      <option value="">Select year</option>
+                      {EXAM_YEARS.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+
+                {saveError ? <Notice tone="error">{saveError}</Notice> : null}
+                {saveMessage ? <Notice tone="success">{saveMessage}</Notice> : null}
+
+                <div className="mt-5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#6D4AFF] px-5 text-sm font-black text-white shadow-[0_14px_28px_rgba(109,74,255,0.20)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                  >
+                    <Save size={16} />
+                    {saving ? "Saving..." : "Save profile"}
+                  </button>
+                </div>
+
+                <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xl font-black text-white">
+                      {(fullName || email || "U").slice(0, 1).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="text-base font-black text-slate-950">
+                        {fullName || "Name not set"}
+                      </div>
+                      <div className="text-sm font-semibold text-slate-500">
+                        Preparing for {formatMonth(examMonth)} {examYear || "exam"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card>
+                <CardHeader icon={<Crown />} title="Subscription" subtitle="Your plan and access overview." />
+
+                <div className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-5">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <InfoRow label="Current plan" value={planLabel} large />
+                    <InfoRow label="Renews on" value={formatDate(profile?.billing_period_ends_at)} />
+                    <InfoRow label="Billing cycle" value={billingCycle} />
+                    <InfoRow label="Member since" value={formatDate(profile?.created_at)} />
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {[
+                    "Rule Training",
+                    "Spaced Review",
+                    "Analytics",
+                    "Weak Area Tracking",
+                    "Reports",
+                    "PDF Export",
+                    "BLL Access",
+                    "Priority Support",
+                  ].map((item) => (
+                    <div key={item} className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                      <CheckCircle2 size={16} className="text-[#6D4AFF]" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/subscription")}
+                    className="h-11 rounded-xl border border-violet-200 bg-white px-4 text-sm font-black text-violet-700 shadow-sm hover:bg-violet-50"
+                  >
+                    Manage payment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/subscription")}
+                    className="h-11 rounded-xl bg-[#6D4AFF] px-4 text-sm font-black text-white shadow-[0_14px_28px_rgba(109,74,255,0.20)] hover:bg-[#5B21B6]"
+                  >
+                    Change plan
+                  </button>
+                </div>
+              </Card>
+
+              <Card>
+                <CardHeader icon={<Target />} title="Study Preferences" subtitle="Customize your study experience." />
+
+                <PreferenceRow icon={<CalendarRange />} label="Exam date" value={`${formatMonth(examMonth)} ${examYear || ""}`.trim() || "Not set"} />
+                <PreferenceRow icon={<GraduationCap />} label="Jurisdiction" value={jurisdiction || "Not set"} />
+                <PreferenceRow icon={<Target />} label="Learner type" value={jurisdiction ? "UBE Candidate" : "Not set"} />
+                <PreferenceRow icon={<CheckCircle2 />} label="Auto-generate daily plan" value="Enabled" />
+
+
+              </Card>
+
+              <Card>
+                <CardHeader icon={<Bell />} title="Notifications" subtitle="Control how you receive updates." />
+
+                <ToggleRow label="Study reminders" description="Get reminders for scheduled study sessions." />
+                <ToggleRow label="Due review reminders" description="Receive reminders for due and overdue reviews." />
+                <ToggleRow label="Weekly progress report" description="Summary of your weekly study progress." />
+                <ToggleRow label="Product announcements" description="Important updates and new features." />
+
+
+              </Card>
+
+              <Card>
+                <CardHeader icon={<LockKeyhole />} title="Security" subtitle="Password and account protection." />
+
+                <p className="mb-4 text-sm font-medium leading-6 text-slate-500">
+                  Update your password securely through Supabase authentication. Lexora Prep never stores or displays your password.
+                </p>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label="New password">
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(event) => {
+                        setNewPassword(event.target.value)
+                        setPasswordError("")
+                        setPasswordMessage("")
+                      }}
+                      placeholder="Enter new password"
+                      autoComplete="new-password"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                    />
+                  </Field>
+
+                  <Field label="Confirm password">
+                    <input
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(event) => {
+                        setConfirmNewPassword(event.target.value)
+                        setPasswordError("")
+                        setPasswordMessage("")
+                      }}
+                      placeholder="Confirm new password"
+                      autoComplete="new-password"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                    />
+                  </Field>
+                </div>
+
+                <div className="mt-3 text-xs font-semibold text-slate-500">
+                  Use at least 8 characters with a letter, number, and special character.
+                </div>
+
+                {passwordError ? <Notice tone="error">{passwordError}</Notice> : null}
+                {passwordMessage ? <Notice tone="success">{passwordMessage}</Notice> : null}
+
+                <div className="mt-5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handlePasswordChange}
+                    disabled={passwordSaving}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                  >
+                    <LockKeyhole size={16} />
+                    {passwordSaving ? "Updating..." : "Update password"}
+                  </button>
+                </div>
+              </Card>
+
+              <Card>
+                <CardHeader icon={<Database />} title="Privacy & Data" subtitle="Manage data controls and privacy settings." />
+
+                <PreferenceRow icon={<Database />} label="Account data" value="Stored securely" />
+                <PreferenceRow icon={<Shield />} label="Privacy controls" value="Available" />
+                <PreferenceRow icon={<Mail />} label="Email communication" value={email || "Not set"} />
+
+
+              </Card>
+
+              <Card>
+                <CardHeader icon={<Laptop />} title="Connected Devices" subtitle="Review active sessions and devices." />
+
+                <PreferenceRow icon={<Laptop />} label="Current session" value="Active browser session" />
+                <PreferenceRow icon={<Shield />} label="Session security" value="Managed by Supabase" />
+
+
+              </Card>
+
+              <Card>
+                <CardHeader danger icon={<AlertTriangle />} title="Danger Zone" subtitle="Account deletion and irreversible controls." />
+
+                <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold leading-6 text-red-700">
+                  Account deletion should require confirmation and should not be triggered from a fake button.
+                </div>
+
+
+              </Card>
             </div>
           </div>
-
-          {activeTab === "profile" ? (
-            <SectionCard>
-              <SectionHeader icon={<User />} title="Profile Information" subtitle="Only name and law school are editable." />
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <Field label="Full name">
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all duration-200 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    placeholder="Enter your full name"
-                  />
-                </Field>
-
-                <Field label="Email address">
-                  <input
-                    type="email"
-                    value={email}
-                    disabled
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500 outline-none"
-                  />
-                  <p className="mt-2 text-xs font-semibold text-slate-400">
-                    Email changes require verification through authentication.
-                  </p>
-                </Field>
-
-                <Field label="Law school">
-                  <input
-                    type="text"
-                    value={lawSchool}
-                    onChange={(event) => setLawSchool(event.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all duration-200 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    placeholder="Enter your law school"
-                  />
-                </Field>
-
-                <Field label="Jurisdiction">
-                  <LockedValue value={jurisdiction || "Not set"} />
-                </Field>
-
-                <Field label="Exam month">
-                  <LockedValue value={formatExamMonth(examMonth)} />
-                </Field>
-
-                <Field label="Exam year">
-                  <LockedValue value={examYear || "Not set"} />
-                </Field>
-              </div>
-
-              <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50 px-4 py-3 text-xs font-semibold leading-5 text-violet-700">
-                Jurisdiction and exam date are locked because changing them can affect your rule universe, study plan, due reviews, and analytics. Contact support if these details need to be changed.
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleSaveProfile}
-                  disabled={saving}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#6D4AFF] px-5 text-sm font-black text-white shadow-[0_14px_30px_rgba(109,74,255,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#5B21B6] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-                >
-                  <Save size={16} />
-                  {saving ? "Saving..." : "Save profile"}
-                </button>
-              </div>
-            </SectionCard>
-          ) : null}
-
-          {activeTab === "subscription" ? (
-            <SectionCard>
-              <SectionHeader icon={<WalletCards />} title="Subscription" subtitle="Your plan and payment controls." />
-
-              <div className="rounded-[28px] border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-5">
-                <div className="grid gap-5 md:grid-cols-4">
-                  <InfoBlock label="Current plan" value={planLabel} large />
-                  <InfoBlock label="Billing cycle" value={billingCycle} />
-                  <InfoBlock label="Renews on" value={formatDate(profile?.billing_period_ends_at)} />
-                  <InfoBlock label="BLL access" value={isPaid ? "Enabled" : "Limited"} />
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-3 md:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => router.push("/subscription")}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:text-[#6D4AFF] active:scale-[0.98]"
-                >
-                  Manage payment
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push("/subscription")}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#6D4AFF] px-5 text-sm font-black text-white shadow-[0_14px_30px_rgba(109,74,255,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#5B21B6] active:scale-[0.98]"
-                >
-                  Change plan
-                </button>
-              </div>
-
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold leading-5 text-slate-500">
-                Subscription billing, invoices, payment method updates, cancellation, and upgrades are managed through the Subscription page and Paddle.
-              </div>
-            </SectionCard>
-          ) : null}
-
-          {activeTab === "security" ? (
-            <SectionCard>
-              <SectionHeader icon={<LockKeyhole />} title="Password Management" subtitle="Change your password securely." />
-
-              <p className="mb-5 text-sm font-medium leading-6 text-slate-500">
-                Password changes are handled through Supabase authentication. Lexora Prep never stores or displays your password.
-              </p>
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <Field label="Current login email">
-                  <LockedValue value={email || "Not set"} />
-                </Field>
-
-                <Field label="Current device">
-                  <LockedValue value="Current browser session" />
-                </Field>
-
-                <Field label="New password">
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(event) => {
-                      setNewPassword(event.target.value)
-                      setPasswordError("")
-                      setPasswordMessage("")
-                    }}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all duration-200 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    placeholder="Enter new password"
-                    autoComplete="new-password"
-                  />
-                </Field>
-
-                <Field label="Confirm password">
-                  <input
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={(event) => {
-                      setConfirmNewPassword(event.target.value)
-                      setPasswordError("")
-                      setPasswordMessage("")
-                    }}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all duration-200 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    placeholder="Confirm new password"
-                    autoComplete="new-password"
-                  />
-                </Field>
-              </div>
-
-              <p className="mt-3 text-xs font-semibold text-slate-500">
-                Use at least 8 characters with a letter, number, and special character.
-              </p>
-
-              {passwordError ? <InlineNotice tone="error">{passwordError}</InlineNotice> : null}
-              {passwordMessage ? <InlineNotice tone="success">{passwordMessage}</InlineNotice> : null}
-
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
-                <button
-                  type="button"
-                  onClick={signOutCurrentDevice}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:text-[#6D4AFF] active:scale-[0.98]"
-                >
-                  <LogOut size={16} />
-                  Sign out current device
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handlePasswordChange}
-                  disabled={passwordSaving}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#6D4AFF] px-5 text-sm font-black text-white shadow-[0_14px_30px_rgba(109,74,255,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#5B21B6] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-                >
-                  <LockKeyhole size={16} />
-                  {passwordSaving ? "Updating..." : "Update password"}
-                </button>
-              </div>
-            </SectionCard>
-          ) : null}
-
-          {activeTab === "support" ? (
-            <SectionCard>
-              <SectionHeader icon={<Headphones />} title="Support" subtitle="Choose the issue type and open support." />
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <SupportCard title="Billing issue" description="Payment, invoice, plan, or cancellation question." />
-                <SupportCard title="Account issue" description="Login, password, profile, or access problem." />
-                <SupportCard title="Technical issue" description="Bug, broken page, performance, or data issue." />
-              </div>
-
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => router.push("/support")}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#6D4AFF] px-5 text-sm font-black text-white shadow-[0_14px_30px_rgba(109,74,255,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#5B21B6] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-                >
-                  <Headphones size={16} />
-                  Open support page
-                </button>
-              </div>
-            </SectionCard>
-          ) : null}
-
-          {activeTab === "danger" ? (
-            <SectionCard danger>
-              <SectionHeader danger icon={<AlertTriangle />} title="Danger Zone" subtitle="Permanent account actions." />
-
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-semibold leading-6 text-red-700">
-                Deleting an account can remove access and account data. This action should only be enabled after typed confirmation and after backend deletion logic is fully verified.
-              </div>
-
-              <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-                <Field label='Type "DELETE" to confirm'>
-                  <input
-                    type="text"
-                    value={deleteConfirm}
-                    onChange={(event) => setDeleteConfirm(event.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all duration-200 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    placeholder="DELETE"
-                  />
-                </Field>
-
-                <button
-                  type="button"
-                  disabled={deleteConfirm !== "DELETE"}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-black text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-red-200 disabled:hover:translate-y-0"
-                >
-                  <Trash2 size={16} />
-                  Delete account
-                </button>
-              </div>
-            </SectionCard>
-          ) : null}
         </main>
       </div>
-
-      {toast ? (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-white px-5 py-4 text-sm font-black text-slate-900 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-          {toast}
-        </div>
-      ) : null}
     </div>
   )
 }
 
-function SettingsNavItem({
+function SidebarItem({
   icon,
   label,
-  active,
+  active = false,
   danger = false,
-  onClick,
 }: {
   icon: ReactNode
   label: string
-  active: boolean
+  active?: boolean
   danger?: boolean
-  onClick: () => void
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black transition-all duration-200 active:scale-[0.98] ${
+    <div
+      className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold ${
         active
-          ? danger
-            ? "bg-red-50 text-red-600"
-            : "bg-violet-50 text-[#6D4AFF]"
+          ? "bg-violet-50 text-[#6D4AFF]"
           : danger
             ? "text-red-600 hover:bg-red-50"
             : "text-slate-700 hover:bg-slate-50"
@@ -637,29 +735,47 @@ function SettingsNavItem({
     >
       <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
       {label}
-    </button>
+    </div>
   )
 }
 
-function SectionCard({
-  children,
-  danger = false,
+function StatusPill({
+  icon,
+  label,
+  value,
+  success = false,
 }: {
-  children: ReactNode
-  danger?: boolean
+  icon: ReactNode
+  label: string
+  value: string
+  success?: boolean
 }) {
   return (
-    <section
-      className={`rounded-[30px] border bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.06)] md:p-7 ${
-        danger ? "border-red-200" : "border-slate-200"
-      }`}
-    >
+    <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3">
+      <div
+        className={`flex h-10 w-10 items-center justify-center rounded-full ${
+          success ? "bg-emerald-50 text-emerald-600" : "bg-violet-50 text-[#6D4AFF]"
+        }`}
+      >
+        <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+      </div>
+      <div>
+        <div className="text-[11px] font-bold text-slate-500">{label}</div>
+        <div className="mt-0.5 text-sm font-black text-slate-950">{value}</div>
+      </div>
+    </div>
+  )
+}
+
+function Card({ children }: { children: ReactNode }) {
+  return (
+    <section className="rounded-3xl border border-slate-200/90 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)] md:p-6">
       {children}
     </section>
   )
 }
 
-function SectionHeader({
+function CardHeader({
   icon,
   title,
   subtitle,
@@ -671,16 +787,16 @@ function SectionHeader({
   danger?: boolean
 }) {
   return (
-    <div className="mb-6 flex items-start gap-4">
+    <div className="mb-5 flex items-start gap-4">
       <div
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
           danger ? "bg-red-50 text-red-600" : "bg-violet-50 text-[#6D4AFF]"
         }`}
       >
         <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
       </div>
       <div>
-        <h2 className="text-xl font-black tracking-[-0.03em] text-slate-950">{title}</h2>
+        <h2 className="text-lg font-black tracking-[-0.03em] text-slate-950">{title}</h2>
         <p className="mt-1 text-sm font-medium text-slate-500">{subtitle}</p>
       </div>
     </div>
@@ -696,7 +812,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.13em] text-slate-400">
+      <label className="mb-2 block text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">
         {label}
       </label>
       {children}
@@ -704,16 +820,7 @@ function Field({
   )
 }
 
-function LockedValue({ value }: { value: string }) {
-  return (
-    <div className="flex h-11 items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-500">
-      <span>{value}</span>
-      <LockKeyhole size={15} className="text-slate-400" />
-    </div>
-  )
-}
-
-function InfoBlock({
+function InfoRow({
   label,
   value,
   large = false,
@@ -732,7 +839,49 @@ function InfoBlock({
   )
 }
 
-function InlineNotice({
+function PreferenceRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0">
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-[#6D4AFF]">
+          <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        </div>
+        <div className="text-sm font-bold text-slate-700">{label}</div>
+      </div>
+      <div className="text-right text-sm font-bold text-slate-500">{value}</div>
+    </div>
+  )
+}
+
+function ToggleRow({
+  label,
+  description,
+}: {
+  label: string
+  description: string
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0">
+      <div>
+        <div className="text-sm font-black text-slate-800">{label}</div>
+        <div className="mt-0.5 text-xs font-medium text-slate-500">{description}</div>
+      </div>
+      <div className="flex h-6 w-11 items-center rounded-full bg-[#6D4AFF] p-1 shadow-inner">
+        <div className="h-4 w-4 rounded-full bg-white shadow-sm" />
+      </div>
+    </div>
+  )
+}
+
+function Notice({
   tone,
   children,
 }: {
@@ -748,21 +897,6 @@ function InlineNotice({
       }`}
     >
       {children}
-    </div>
-  )
-}
-
-function SupportCard({
-  title,
-  description,
-}: {
-  title: string
-  description: string
-}) {
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-      <div className="text-sm font-black text-slate-950">{title}</div>
-      <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">{description}</p>
     </div>
   )
 }
