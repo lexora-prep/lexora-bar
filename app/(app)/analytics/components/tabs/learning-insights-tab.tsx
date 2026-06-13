@@ -492,19 +492,21 @@ export default function LearningInsightsTab({
             />
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl bg-violet-50 px-4 py-3 text-[10px] font-normal leading-4 text-[#46306f] lg:w-64">
+          <div className="relative h-[116px] overflow-hidden rounded-2xl bg-violet-50 px-4 py-3 text-[10px] font-normal leading-4 text-[#46306f] lg:w-64">
             <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-violet-200/40 blur-2xl" />
-            <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-violet-700">
-              <span className="relative flex h-7 w-7 items-center justify-center rounded-xl bg-white text-violet-700 shadow-sm">
+            <div className="mb-2 flex h-7 items-center gap-2 text-[13px] font-semibold text-violet-700">
+              <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white text-violet-700 shadow-sm">
                 <Sparkles size={14} />
                 <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400" />
               </span>
               Your Goal
             </div>
 
-            <p className="relative min-h-[42px] pr-1">
-              {typedGoalText}
-            </p>
+            <div className="relative h-[56px] overflow-hidden">
+              <p className="absolute inset-0 pr-1">
+                {typedGoalText}
+              </p>
+            </div>
           </div>
         </div>
       </section>
