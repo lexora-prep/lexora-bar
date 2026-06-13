@@ -2,26 +2,17 @@
 
 import type { ReactNode } from "react"
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
-import {
   AlertTriangle,
   ArrowRight,
   BookOpen,
   CalendarDays,
   CheckCircle2,
   Clock3,
-  FileText,
+  HelpCircle,
   Rocket,
-  Scale,
   ShieldCheck,
   Target,
+  TrendingDown,
   TrendingUp,
   Zap,
 } from "lucide-react"
@@ -34,16 +25,8 @@ import type {
   WeakArea,
 } from "../../types"
 import { safeNumber } from "../../lib/analytics-calculations"
-import { GlassCard } from "../shared/glass-card"
-import { AnalyticsInterpretation } from "../shared/analytics-interpretation"
-import {
-  EmptyCompact,
-  PremiumInline,
-} from "../shared/feedback-states"
-import {
-  ChartTooltip,
-  MiniSparkline,
-} from "../shared/chart-components"
+import { EmptyCompact } from "../shared/feedback-states"
+import { MiniSparkline } from "../shared/chart-components"
 
 type OverviewTabProps = {
   dashboard: DashboardData
@@ -63,14 +46,28 @@ type OverviewTabProps = {
   rangeLabelText: string
 }
 
+type SubjectLike = {
+  name?: string
+  subject?: string
+  accuracy?: number
+  weakRules?: number
+  weakRuleCount?: number
+  riskLevel?: string
+}
+
+type RiskItem = {
+  subject: string
+  accuracy: number
+  weakRules: number
+  risk: "Low" | "Medium" | "High" | "Critical"
+}
+
 export default function OverviewTab({
   dashboard,
   chartData,
-  trendLoading,
   currentScore,
   delta,
   canUseBLLAnalytics,
-  canUsePremiumAnalytics,
   strongSubjects,
   strongestSubject,
   weakestSubject,
@@ -78,481 +75,386 @@ export default function OverviewTab({
   primaryWeakArea,
   riskBuckets,
   consistencyScore,
-  rangeLabelText,
 }: OverviewTabProps) {
   const router = useRouter()
 
-  const weakCountDelta =
-    weakAreas.length > 0 ? weakAreas.length : 0
-
-  const hasTrendData = chartData.some(
-    (point) => point.score > 0
-  )
+  const displayName = getDisplayName(dashboard)
+  const readinessScore = getReadinessScore(dashboard, currentScore)
+  const weakRuleCount = weakAreas.length
+  const hasTrendData = chartData.some((point) => point.score > 0)
+  const topWeakSubjects = getTopWeakSubjects(weakestSubject, weakAreas)
+  const focusTitle = getFocusTitle(primaryWeakArea, weakestSubject)
+  const focusDetail = getFocusDetail(primaryWeakArea)
+  const focusRoute = buildFocusRoute(primaryWeakArea)
+  const subjectRisks = buildRiskItems(riskBuckets, strongSubjects, weakestSubject)
+  const bestRangeLabel = getBestSessionRangeLabel(dashboard)
+  const summary = buildSummary({
+    recallAccuracy: currentScore,
+    delta,
+    weakRuleCount,
+    consistencyScore,
+    topWeakSubjects,
+    bestRangeLabel,
+  })
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <AnalyticsInterpretation
-        title="How to use this overview"
-        measures="This page separates activity volume, independent recall accuracy, consistency, and current subject risk. A higher attempt count does not automatically mean stronger performance."
-        result={
-          safeNumber(dashboard.ruleAttempts) === 0
-            ? "No scored rule activity is available for the selected range."
-            : `Your current independent recall accuracy is ${currentScore}%. ${delta >= 0 ? `It increased by ${Math.abs(delta)} points` : `It decreased by ${Math.abs(delta)} points`} compared with the previous active day. ${weakAreas.length > 0 ? `${weakAreas.length} assessed weak ${weakAreas.length === 1 ? "area requires" : "areas require"} attention.` : "No assessed weak area is currently confirmed."}`
-        }
-        nextStep={
-          primaryWeakArea
-            ? `Prioritize ${primaryWeakArea.subject}${primaryWeakArea.topic ? ` — ${primaryWeakArea.topic}` : ""} in your next independent recall session.`
-            : "Continue completing independently scored rule attempts so Lexora can identify a reliable priority."
-        }
-      />
-      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr]">
-        <div className="relative overflow-hidden rounded-2xl border border-[#d9d0ff] bg-gradient-to-br from-[#f1eaff] via-white to-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
-          <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-violet-200/35 blur-2xl" />
+    <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <section className="rounded-2xl border border-[#e5ddfb] bg-gradient-to-br from-[#fbf9ff] via-white to-[#faf7ff] px-5 py-4 shadow-[0_8px_24px_rgba(52,35,110,0.04)]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+          <div>
+            <h2 className="text-[17px] font-normal tracking-[-0.03em] text-[#080d2f]">
+              Good evening{displayName ? `, ${displayName}` : ""} 👋
+            </h2>
 
-          <div className="relative">
-            <div className="flex items-center gap-2 text-[13px] font-normal text-[#10163f]">
-              BLL Readiness Score
+            <p className="mt-2 max-w-3xl text-[12px] leading-5 text-[#465571]">
+              {summary.banner}
+            </p>
+          </div>
 
-              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] text-slate-400">
-                i
-              </span>
+          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 border-l border-slate-200/80 pl-5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+              <Target size={21} />
             </div>
 
-            <div className="mt-6 flex items-end justify-between gap-4">
-              <div>
-                <div className="text-[52px] font-normal leading-none tracking-[-0.06em] text-violet-700">
-                  {currentScore}%
-                </div>
-
-                <div
-                  className={`mt-4 text-[12px] font-normal ${
-                    delta >= 0
-                      ? "text-emerald-600"
-                      : "text-rose-600"
-                  }`}
-                >
-                  {delta >= 0 ? "↑" : "↓"}{" "}
-                  {Math.abs(delta)} pts vs previous active day
-                </div>
+            <div className="min-w-0">
+              <div className="text-[11px] text-slate-500">
+                Today&apos;s Focus
               </div>
 
-              <div className="h-[86px] w-[145px]">
-                <MiniSparkline
-                  data={chartData}
-                  stroke="#7c3aed"
-                />
+              <div className="truncate text-[14px] font-normal text-[#10153d]">
+                {focusTitle}
+              </div>
+
+              <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500">
+                {focusDetail}
+              </p>
+            </div>
+
+            <div className="w-[250px]">
+              <button
+                type="button"
+                onClick={() => router.push(focusRoute)}
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 text-[12px] font-normal text-white shadow-[0_12px_22px_rgba(124,58,237,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-800"
+              >
+                Start Today&apos;s Focus Session
+                <ArrowRight size={14} />
+              </button>
+
+              <div className="mt-1 text-center text-[10px] text-slate-500">
+                Estimated time: {bestRangeLabel || "25–30 min"}
               </div>
             </div>
           </div>
         </div>
+      </section>
 
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          icon={<Target size={18} />}
-          title="BLL Score"
-          value={`${safeNumber(dashboard.bllScore)}%`}
+          icon={<Target size={16} />}
+          title="Readiness Score"
+          value={`${readinessScore}%`}
+          helper="Combined readiness signal from recall performance, weak rules, and recent activity."
           delta={delta}
           tone="violet"
+          sparkline={hasTrendData ? chartData : undefined}
         />
 
         <KpiCard
-          icon={<FileText size={18} />}
-          title="Rule Attempts"
-          value={safeNumber(
-            dashboard.ruleAttempts
-          ).toLocaleString()}
-          delta={safeNumber(dashboard.ruleAttempts)}
-          tone="blue"
-        />
-
-        <KpiCard
-          icon={<CheckCircle2 size={18} />}
-          title="Accuracy"
+          icon={<CheckCircle2 size={16} />}
+          title="Recall Accuracy"
           value={`${currentScore}%`}
+          helper="Correct scored recall attempts divided by total scored recall attempts."
           delta={delta}
           tone="green"
+          sparkline={hasTrendData ? chartData : undefined}
         />
 
         <KpiCard
-          icon={<AlertTriangle size={18} />}
-          title="Weak Areas"
-          value={weakAreas.length}
-          delta={weakCountDelta}
+          icon={<AlertTriangle size={16} />}
+          title="Weak Rules"
+          value={weakRuleCount}
+          helper="Unique weak or unstable rules that need repeated recall."
+          delta={weakRuleCount}
           tone="red"
           negative
+          sparkline={hasTrendData ? chartData : undefined}
         />
 
         <KpiCard
-          icon={<CalendarDays size={18} />}
-          title="Consistency Score"
+          icon={<ShieldCheck size={16} />}
+          title="Consistency"
           value={`${consistencyScore} / 5`}
+          helper="Recent active-day stability. Higher consistency makes readiness more reliable."
           delta={consistencyScore}
-          tone="purple"
+          tone="amber"
         />
       </section>
 
-      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_1.05fr_0.85fr]">
-        <GlassCard
-          title="AI Executive Summary"
-          badge="Lexora AI"
-          info="This section uses real analytics only. AI text is locked until the real AI insight endpoint is connected."
+      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_1fr_0.92fr]">
+        <PremiumCard
+          title="Today’s Performance Summary"
+          help="A compact rule-based summary from real analytics data."
         >
-          {canUsePremiumAnalytics ? (
-            <div>
-              <h2 className="text-[18px] font-normal leading-[1.35] tracking-[-0.03em] text-[#0a1038]">
-                AI insight engine is not connected yet.
-              </h2>
+          <div className="space-y-1">
+            <SummaryRow
+              icon={<CheckCircle2 size={18} />}
+              tone="green"
+              title={summary.overallTitle}
+              text={summary.overallText}
+            />
 
-              <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <SummaryMini
-                  icon={<TrendingUp size={22} />}
-                  title="Main Progress"
-                  text={
-                    delta >= 0
-                      ? `Your score improved by ${Math.abs(delta)} points recently.`
-                      : `Your score dropped by ${Math.abs(delta)} points recently.`
-                  }
-                  tone="green"
-                  onClick={() =>
-                    router.push("/analytics")
-                  }
-                />
+            <SummaryRow
+              icon={delta >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+              tone={delta >= 0 ? "green" : "red"}
+              title={summary.movementTitle}
+              text={summary.movementText}
+            />
 
-                <SummaryMini
-                  icon={<ShieldCheck size={22} />}
-                  title="Biggest Strength"
-                  text={
-                    strongestSubject
-                      ? `${strongestSubject.name} is your strongest subject.`
-                      : "No strength confirmed yet."
-                  }
-                  tone="green"
-                  onClick={() =>
-                    router.push("/rule-bank")
-                  }
-                />
+            <SummaryRow
+              icon={<Clock3 size={18} />}
+              tone="amber"
+              title="Study time quality"
+              text={summary.timeText}
+            />
 
-                <SummaryMini
-                  icon={<AlertTriangle size={22} />}
-                  title="Biggest Weakness"
-                  text={
-                    weakestSubject
-                      ? `${weakestSubject.name} needs the most attention.`
-                      : "No weak subject confirmed yet."
-                  }
-                  tone="red"
-                  onClick={() =>
-                    router.push("/weak-areas")
-                  }
-                />
+            <SummaryRow
+              icon={<AlertTriangle size={18} />}
+              tone={weakRuleCount > 0 ? "red" : "green"}
+              title="Weak rule pressure"
+              text={summary.weakText}
+            />
+          </div>
 
-                <SummaryMini
-                  icon={<Target size={22} />}
-                  title="Recommendation"
-                  text={
-                    primaryWeakArea
-                      ? `Focus on ${primaryWeakArea.subject}.`
-                      : "Complete more rules for a recommendation."
-                  }
-                  tone="purple"
-                  onClick={() =>
-                    router.push("/rule-training")
-                  }
-                />
-              </div>
+          <div className="mt-3 flex items-start gap-2 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-50 via-white to-violet-50 px-3 py-2.5 text-[12px] leading-5 text-violet-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+            <Clock3 size={14} className="mt-0.5 shrink-0 text-violet-600" />
+            <span>{summary.coachingInsight}</span>
+          </div>
+        </PremiumCard>
 
-              <div className="mt-6 rounded-xl bg-violet-50 p-4">
-                <div className="mb-3 text-[12px] font-normal text-[#11183d]">
-                  AI Performance Snapshot
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-                  <SnapshotMetric
-                    label="Accuracy"
-                    value={`${currentScore}%`}
-                  />
-
-                  <SnapshotMetric
-                    label="Strong Areas"
-                    value={strongSubjects.length}
-                  />
-
-                  <SnapshotMetric
-                    label="Consistency"
-                    value={`${consistencyScore} / 5`}
-                  />
-
-                  <SnapshotMetric
-                    label="Weak Risk"
-                    value={
-                      weakAreas.length > 0
-                        ? "High"
-                        : "Low"
-                    }
-                    danger={weakAreas.length > 0}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <PremiumInline text="Premium AI summary will appear here after the insight engine is connected." />
-          )}
-        </GlassCard>
-
-        <GlassCard
-          title="What’s Driving Your Score"
-          info="This is calculated from your real BLL subjects, latest score movement, and weak-area records."
+        <PremiumCard
+          title="What’s Driving Your Readiness"
+          help="Positive drivers and negative drivers from real score, subject, and weak-rule data."
         >
-          <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
+          <div className="space-y-4">
             <div>
-              <div className="mb-3 text-[13px] font-normal text-emerald-700">
-                Helping Your Score
+              <div className="mb-2 text-[12px] font-normal text-emerald-700">
+                Helping You
               </div>
 
               <DriverRow
-                icon={<BookOpen size={20} />}
-                title={
-                  strongestSubject?.name ||
-                  "No strong subject yet"
-                }
-                text={
-                  strongestSubject
-                    ? `${strongestSubject.accuracy}% accuracy`
-                    : "Complete more rules to calculate strengths."
-                }
-                value={
-                  strongestSubject
-                    ? `+${strongestSubject.accuracy}%`
-                    : "—"
-                }
+                icon={<ShieldCheck size={16} />}
+                title="Recall accuracy"
+                text={`${currentScore}% scored recall accuracy`}
+                value={`${currentScore}%`}
                 tone="green"
               />
 
               <DriverRow
-                icon={<Zap size={20} />}
-                title="Recent score movement"
-                text={
-                  delta >= 0
-                    ? "Recent BLL score is moving up."
-                    : "Recent BLL score decreased."
-                }
-                value={`${delta >= 0 ? "+" : "-"}${Math.abs(delta)} pts`}
-                tone={
-                  delta >= 0 ? "green" : "red"
-                }
-              />
-
-              <DriverRow
-                icon={<CalendarDays size={20} />}
+                icon={<CalendarDays size={16} />}
                 title="Consistency"
-                text="Recent activity is used to measure stability."
-                value={`${consistencyScore}/5`}
+                text="Recent activity is stabilizing your score."
+                value={`${Math.round((consistencyScore / 5) * 100)}%`}
                 tone="green"
+              />
+
+              <DriverRow
+                icon={<BookOpen size={16} />}
+                title={strongestSubject?.name || "Strong subjects"}
+                text={
+                  strongestSubject
+                    ? `${safeNumber(strongestSubject.accuracy)}% accuracy`
+                    : "Appears after more scored activity."
+                }
+                value={strongestSubject ? `${safeNumber(strongestSubject.accuracy)}%` : "—"}
+                tone={strongestSubject ? "green" : "neutral"}
               />
             </div>
 
             <div>
-              <div className="mb-3 text-[13px] font-normal text-rose-700">
-                Hurting Your Score
+              <div className="mb-2 text-[12px] font-normal text-rose-700">
+                Hurting You
               </div>
 
               <DriverRow
-                icon={<Scale size={20} />}
-                title={
-                  weakestSubject?.name ||
-                  "No weak subject yet"
-                }
+                icon={<AlertTriangle size={16} />}
+                title={weakestSubject?.name || "Weak subject"}
                 text={
                   weakestSubject
-                    ? `${weakestSubject.accuracy}% accuracy`
-                    : "Weak subjects appear after more attempts."
+                    ? `${safeNumber(weakestSubject.accuracy)}% accuracy`
+                    : "Appears after enough attempts."
                 }
-                value={
-                  weakestSubject
-                    ? `-${100 - weakestSubject.accuracy}%`
-                    : "—"
-                }
-                tone="red"
+                value={weakestSubject ? `${safeNumber(weakestSubject.accuracy)}%` : "—"}
+                tone={weakestSubject ? "red" : "neutral"}
               />
 
               <DriverRow
-                icon={<AlertTriangle size={20} />}
-                title={
-                  primaryWeakArea?.rule ||
-                  primaryWeakArea?.title ||
-                  "No weak rule yet"
-                }
-                text={
-                  primaryWeakArea?.subject ||
-                  "Weak rules appear after repeated low recall."
-                }
+                icon={<Target size={16} />}
+                title={getPrimaryWeakRuleLabel(primaryWeakArea)}
+                text={primaryWeakArea?.subject || "Weak rules appear after low recall."}
                 value={
-                  primaryWeakArea?.accuracy !== undefined
-                    ? `${primaryWeakArea.accuracy}%`
+                  typeof (primaryWeakArea as any)?.accuracy === "number"
+                    ? `${(primaryWeakArea as any).accuracy}%`
                     : "—"
                 }
-                tone="red"
+                tone={primaryWeakArea ? "red" : "neutral"}
               />
 
               <DriverRow
-                icon={<Clock3 size={20} />}
-                title="Unstable rules"
-                text="Rules below 70% accuracy need repeated recall."
-                value={weakAreas.length.toString()}
-                tone="red"
+                icon={<Zap size={16} />}
+                title="Weak rules"
+                text="Rules below the stability threshold need review."
+                value={weakRuleCount.toString()}
+                tone={weakRuleCount > 0 ? "red" : "green"}
               />
             </div>
           </div>
-        </GlassCard>
+        </PremiumCard>
 
-        <GlassCard
+        <PremiumCard
           title="Next Best Move"
-          icon={
-            <Rocket
-              size={18}
-              className="text-violet-700"
-            />
-          }
-          info="This action is based on the highest-priority real weak-area record."
+          icon={<Rocket size={16} className="text-violet-700" />}
+          help="This explains the same focus session shown in the top banner."
         >
-          {primaryWeakArea ? (
-            <div className="space-y-4">
-              <StepCard
+          {primaryWeakArea || weakestSubject ? (
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-violet-100 bg-violet-50/75 p-3">
+                <div className="text-[11px] text-violet-700">
+                  Focus
+                </div>
+
+                <div className="mt-1 text-[14px] font-normal text-[#10153d]">
+                  {focusTitle}
+                </div>
+
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                  {focusDetail}
+                </p>
+              </div>
+
+              <StepRow
                 step="1"
-                title={`Review ${primaryWeakArea.subject}`}
-                subtitle={
-                  primaryWeakArea.rule ||
-                  primaryWeakArea.title ||
-                  primaryWeakArea.topic ||
-                  "Focus on rules, exceptions, and common mistakes."
-                }
-                time="25 min"
+                title="Review weak rule"
+                text="Read the rule and understand the elements."
               />
 
-              <StepCard
+              <StepRow
                 step="2"
-                title="Then do targeted rule recall"
-                subtitle="Repeat the rule until recall becomes stable."
-                time="10 min"
+                title="Type from memory"
+                text="Reproduce the rule in your own words."
+              />
+
+              <StepRow
+                step="3"
+                title="Retest once"
+                text="Check whether recall improves."
               />
 
               <button
                 type="button"
-                onClick={() =>
-                  router.push("/rule-training")
-                }
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-violet-700 text-[13px] font-normal text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-800"
+                onClick={() => router.push(focusRoute)}
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-violet-700 text-[12px] font-normal text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-800"
               >
-                Start Recommended Session
-                <ArrowRight size={15} />
+                Start Today&apos;s Focus Session
+                <ArrowRight size={14} />
               </button>
 
-              <p className="text-center text-[12px] font-normal text-slate-500">
-                Estimated time: 35 minutes
-              </p>
+              <div className="rounded-xl bg-slate-50 p-3 text-[11px] leading-5 text-slate-600">
+                <span className="font-normal text-[#10153d]">
+                  Why this works:
+                </span>{" "}
+                This focus comes from your current weak-rule and subject-risk signals.
+              </div>
             </div>
           ) : (
-            <EmptyCompact text="Complete more rule training to generate your next best move." />
+            <EmptyCompact text="Complete more scored rule attempts to generate today’s focus explanation." />
           )}
-        </GlassCard>
+        </PremiumCard>
       </section>
 
-      <section className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <GlassCard
-          title="BLL Accuracy Trend"
-          subtitle={`Real trend from ${rangeLabelText.toLowerCase()}.`}
-          info="This chart comes from /api/trend-analytics and only shows real BLL rule-attempt activity."
+      <PremiumCard
+        title="Subject Risk Map"
+        help="Compact subject risk from current recall and weak-rule signals."
+        actionLabel="View all subjects"
+      >
+        {canUseBLLAnalytics ? (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-7">
+            {subjectRisks.length > 0 ? (
+              subjectRisks.map((item) => (
+                <SubjectRiskCard key={item.subject} item={item} />
+              ))
+            ) : (
+              <div className="col-span-full">
+                <EmptyCompact text="Complete more scored rule attempts to build a subject risk map." />
+              </div>
+            )}
+          </div>
+        ) : (
+          <EmptyCompact text="BLL analytics are not available for this account or range." />
+        )}
+      </PremiumCard>
+
+      <section className="flex flex-col gap-2 rounded-2xl border border-violet-100 bg-violet-50/70 px-4 py-3 text-[12px] text-violet-800 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Zap size={14} />
+          <span>
+            Insights update as you complete more scored recall attempts.
+          </span>
+        </div>
+
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 text-violet-700 transition-colors hover:text-violet-900"
         >
-          {trendLoading ? (
-            <EmptyCompact text="Loading selected date range..." />
-          ) : canUseBLLAnalytics && hasTrendData ? (
-            <div className="h-[195px]">
-              <ResponsiveContainer
-                width="100%"
-                height="100%"
-              >
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient
-                      id="overviewRealTrendGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="10%"
-                        stopColor="#7c3aed"
-                        stopOpacity={0.18}
-                      />
-
-                      <stop
-                        offset="95%"
-                        stopColor="#7c3aed"
-                        stopOpacity={0.02}
-                      />
-                    </linearGradient>
-                  </defs>
-
-                  <CartesianGrid
-                    stroke="#eef1f6"
-                    vertical={false}
-                  />
-
-                  <XAxis
-                    dataKey="date"
-                    tick={{
-                      fontSize: 11,
-                      fontWeight: 400,
-                    }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-
-                  <YAxis
-                    domain={[0, 100]}
-                    tick={{
-                      fontSize: 11,
-                      fontWeight: 400,
-                    }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-
-                  <Tooltip content={<ChartTooltip />} />
-
-                  <Area
-                    name="BLL Accuracy"
-                    type="monotone"
-                    dataKey="score"
-                    stroke="#7c3aed"
-                    strokeWidth={2}
-                    fill="url(#overviewRealTrendGradient)"
-                    dot={{
-                      r: 3,
-                      strokeWidth: 2,
-                      fill: "#fff",
-                    }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyCompact text="No BLL activity found for this selected date range." />
-          )}
-        </GlassCard>
-
-        <GlassCard
-          title="Subject Risk Map"
-          info="Subjects are grouped by real BLL accuracy: safe, maintenance, high risk, and critical."
-        >
-          {canUseBLLAnalytics ? (
-            <RiskMap buckets={riskBuckets} />
-          ) : (
-            <PremiumInline text="Upgrade to Black Letter Law Monthly to unlock subject risk analytics." />
-          )}
-        </GlassCard>
+          How analytics works
+          <HelpCircle size={14} />
+        </button>
       </section>
     </div>
+  )
+}
+
+function PremiumCard({
+  title,
+  children,
+  help,
+  icon,
+  actionLabel,
+}: {
+  title: string
+  children: ReactNode
+  help: string
+  icon?: ReactNode
+  actionLabel?: string
+}) {
+  return (
+    <section className="rounded-2xl border border-[#e3e8f3] bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.035)]">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          {icon ? (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-50">
+              {icon}
+            </div>
+          ) : null}
+
+          <h3 className="truncate text-[15px] font-normal tracking-[-0.02em] text-[#10153d]">
+            {title}
+          </h3>
+
+          <HelpPopover text={help} />
+        </div>
+
+        {actionLabel ? (
+          <button
+            type="button"
+            className="shrink-0 text-[11px] font-normal text-violet-700 transition-colors hover:text-violet-900"
+          >
+            {actionLabel} →
+          </button>
+        ) : null}
+      </div>
+
+      {children}
+    </section>
   )
 }
 
@@ -560,139 +462,113 @@ function KpiCard({
   icon,
   title,
   value,
+  helper,
   delta,
   tone,
   negative = false,
+  sparkline,
 }: {
   icon: ReactNode
   title: string
   value: string | number
+  helper: string
   delta?: number
-  tone: "violet" | "blue" | "green" | "red" | "purple"
+  tone: "violet" | "green" | "red" | "amber"
   negative?: boolean
-}) {
-  const toneClass =
-    tone === "blue"
-      ? "bg-blue-50 text-blue-600"
-      : tone === "green"
-        ? "bg-emerald-50 text-emerald-600"
-        : tone === "red"
-          ? "bg-rose-50 text-rose-600"
-          : "bg-violet-50 text-violet-700"
-
-  return (
-    <div className="rounded-2xl border border-[#e3e8f3] bg-white p-5 shadow-[0_8px_20px_rgba(15,23,42,0.035)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
-      <div
-        className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${toneClass}`}
-      >
-        {icon}
-      </div>
-
-      <div className="text-[12px] font-normal text-[#11183d]">
-        {title}
-      </div>
-
-      <div className="mt-2 text-[26px] font-normal tracking-[-0.04em] text-[#070c2d]">
-        {value}
-      </div>
-
-      <div
-        className={`mt-3 text-[12px] font-normal ${
-          negative
-            ? "text-rose-600"
-            : "text-emerald-600"
-        }`}
-      >
-        {typeof delta === "number"
-          ? `${delta >= 0 ? "↑" : "↓"} ${Math.abs(delta)}`
-          : "Real data"}
-      </div>
-
-      <div className="mt-1 text-[11px] font-normal text-slate-500">
-        vs previous period
-      </div>
-    </div>
-  )
-}
-
-function SummaryMini({
-  icon,
-  title,
-  text,
-  tone,
-  onClick,
-}: {
-  icon: ReactNode
-  title: string
-  text: string
-  tone: "green" | "red" | "purple"
-  onClick: () => void
+  sparkline?: ChartPoint[]
 }) {
   const toneClass =
     tone === "green"
-      ? "text-emerald-600"
+      ? "bg-emerald-50 text-emerald-600"
       : tone === "red"
-        ? "text-rose-600"
-        : "text-violet-700"
+        ? "bg-rose-50 text-rose-600"
+        : tone === "amber"
+          ? "bg-amber-50 text-amber-600"
+          : "bg-violet-50 text-violet-700"
+
+  const deltaClass = negative ? "text-rose-600" : "text-emerald-600"
 
   return (
-    <div className="border-r border-slate-100 last:border-r-0">
-      <div className={toneClass}>{icon}</div>
+    <div className="min-h-[118px] rounded-xl border border-[#e3e8f3] bg-white p-3 shadow-[0_6px_16px_rgba(15,23,42,0.025)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(15,23,42,0.05)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${toneClass}`}>
+          {icon}
+        </div>
 
-      <div
-        className={`mt-3 text-[11px] font-normal ${toneClass}`}
-      >
+        <HelpPopover text={helper} />
+      </div>
+
+      <div className="mt-2 flex items-center gap-1.5 text-[11px] font-normal text-[#11183d]">
         {title}
       </div>
 
-      <p className="mt-2 pr-3 text-[11px] font-normal leading-5 text-[#52617f]">
-        {text}
-      </p>
+      <div className="mt-2 flex items-end justify-between gap-3">
+        <div>
+          <div className="text-[24px] font-normal tracking-[-0.05em] text-[#070c2d]">
+            {value}
+          </div>
 
-      <button
-        type="button"
-        onClick={onClick}
-        className="mt-3 text-[11px] font-normal text-violet-700"
-      >
-        View details →
-      </button>
+          {typeof delta === "number" ? (
+            <div className={`mt-1.5 text-[10px] font-normal ${deltaClass}`}>
+              {delta >= 0 ? "↑" : "↓"} {Math.abs(delta)}
+              <span className="ml-1 text-slate-500">
+                vs previous period
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        {sparkline && sparkline.length > 0 ? (
+          <div className="h-10 w-16">
+            <MiniSparkline
+              data={sparkline}
+              stroke={
+                tone === "red"
+                  ? "#ef4444"
+                  : tone === "green"
+                    ? "#10b981"
+                    : "#7c3aed"
+              }
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
 
-function SnapshotMetric({
-  label,
-  value,
-  danger = false,
+function SummaryRow({
+  icon,
+  tone,
+  title,
+  text,
 }: {
-  label: string
-  value: string | number
-  danger?: boolean
+  icon: ReactNode
+  tone: "green" | "red" | "amber"
+  title: string
+  text: string
 }) {
+  const toneClass =
+    tone === "green"
+      ? "bg-emerald-50 text-emerald-600"
+      : tone === "red"
+        ? "bg-rose-50 text-rose-600"
+        : "bg-amber-50 text-amber-600"
+
   return (
-    <div>
-      <div className="text-[10px] font-normal text-slate-500">
-        {label}
+    <div className="flex gap-3 border-b border-slate-100 py-3 last:border-b-0">
+      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${toneClass}`}>
+        {icon}
       </div>
 
-      <div
-        className={`mt-1 text-[14px] font-normal ${
-          danger
-            ? "text-rose-600"
-            : "text-[#10163f]"
-        }`}
-      >
-        {value}
-      </div>
+      <div>
+        <div className="text-[13px] font-normal text-[#11183d]">
+          {title}
+        </div>
 
-      <div className="mt-2 h-1.5 rounded-full bg-slate-200">
-        <div
-          className={`h-1.5 w-2/3 rounded-full ${
-            danger
-              ? "bg-rose-500"
-              : "bg-violet-700"
-          }`}
-        />
+        <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
+          {text}
+        </p>
       </div>
     </div>
   )
@@ -709,202 +585,374 @@ function DriverRow({
   title: string
   text: string
   value: string
-  tone: "green" | "red"
+  tone: "green" | "red" | "neutral"
 }) {
   const toneClass =
     tone === "green"
       ? "bg-emerald-50 text-emerald-600"
-      : "bg-rose-50 text-rose-600"
+      : tone === "red"
+        ? "bg-rose-50 text-rose-600"
+        : "bg-slate-50 text-slate-500"
+
+  const valueClass =
+    tone === "green"
+      ? "text-emerald-600"
+      : tone === "red"
+        ? "text-rose-600"
+        : "text-slate-400"
 
   return (
-    <div className="mb-4 flex items-start gap-3">
-      <div
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${toneClass}`}
-      >
+    <div className="flex items-center gap-2 border-b border-slate-100 py-2.5 last:border-b-0">
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${toneClass}`}>
         {icon}
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="text-[12px] font-normal leading-5 text-[#11183d]">
-            {title}
-          </div>
-
-          <div
-            className={`text-[12px] font-normal ${
-              tone === "green"
-                ? "text-emerald-600"
-                : "text-rose-600"
-            }`}
-          >
-            {value}
-          </div>
+        <div className="truncate text-[12px] font-normal text-[#10153d]">
+          {title}
         </div>
 
-        <p className="mt-1 text-[11px] font-normal leading-4 text-[#66728e]">
+        <div className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-500">
           {text}
-        </p>
-
-        <div className="mt-2 h-1.5 rounded-full bg-slate-200">
-          <div
-            className={`h-1.5 w-4/5 rounded-full ${
-              tone === "green"
-                ? "bg-emerald-500"
-                : "bg-rose-500"
-            }`}
-          />
         </div>
+      </div>
+
+      <div className={`shrink-0 text-[11px] font-normal ${valueClass}`}>
+        {value}
       </div>
     </div>
   )
 }
 
-function StepCard({
+function StepRow({
   step,
   title,
-  subtitle,
-  time,
+  text,
 }: {
   step: string
   title: string
-  subtitle: string
-  time: string
-}) {
-  return (
-    <div className="rounded-xl bg-violet-50 p-4">
-      <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-700 text-lg font-normal text-white">
-          {step}
-        </div>
-
-        <div>
-          <div className="text-[13px] font-normal leading-5 text-[#11183d]">
-            {title}
-          </div>
-
-          <span className="mt-2 inline-flex rounded-md bg-violet-200 px-2 py-0.5 text-[11px] font-normal text-violet-700">
-            {time}
-          </span>
-
-          <p className="mt-3 text-[12px] font-normal leading-5 text-[#5d6882]">
-            {subtitle}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function RiskMap({
-  buckets,
-}: {
-  buckets: RiskBuckets
-}) {
-  return (
-    <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <RiskColumn
-        title="Safe"
-        text="Strong performance. Keep it up!"
-        tone="green"
-        items={buckets.safe}
-        button="Maintain"
-        href="/rule-bank"
-      />
-
-      <RiskColumn
-        title="Needs Maintenance"
-        text="Performing well, but needs consistent review."
-        tone="yellow"
-        items={buckets.maintenance}
-        button="Review this week"
-        href="/study-plan"
-      />
-
-      <RiskColumn
-        title="High Risk"
-        text="Focus soon to prevent further score impact."
-        tone="orange"
-        items={buckets.high}
-        button="Focus soon"
-        href="/weak-areas"
-      />
-
-      <RiskColumn
-        title="Critical"
-        text="Immediate focus recommended."
-        tone="red"
-        items={buckets.critical}
-        button="Start today"
-        href="/rule-training"
-      />
-    </div>
-  )
-}
-
-function RiskColumn({
-  title,
-  text,
-  tone,
-  items,
-  button,
-  href,
-}: {
-  title: string
   text: string
-  tone: "green" | "yellow" | "orange" | "red"
-  items: SubjectDiagnostic[]
-  button: string
-  href: string
 }) {
-  const router = useRouter()
+  return (
+    <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-2.5">
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-700 text-[11px] text-white">
+        {step}
+      </div>
 
-  const toneClass =
-    tone === "green"
-      ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-      : tone === "yellow"
-        ? "border-amber-100 bg-amber-50 text-amber-700"
-        : tone === "orange"
-          ? "border-orange-100 bg-orange-50 text-orange-700"
-          : "border-rose-100 bg-rose-50 text-rose-700"
+      <div>
+        <div className="text-[12px] font-normal text-[#11183d]">
+          {title}
+        </div>
+
+        <div className="mt-0.5 text-[10px] leading-4 text-slate-500">
+          {text}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SubjectRiskCard({ item }: { item: RiskItem }) {
+  const riskStyle =
+    item.risk === "Critical"
+      ? "border-rose-100 bg-rose-50/70 text-rose-700"
+      : item.risk === "High"
+        ? "border-orange-100 bg-orange-50/70 text-orange-700"
+        : item.risk === "Medium"
+          ? "border-amber-100 bg-amber-50/70 text-amber-700"
+          : "border-emerald-100 bg-emerald-50/70 text-emerald-700"
+
+  const barStyle =
+    item.risk === "Critical"
+      ? "bg-rose-500"
+      : item.risk === "High"
+        ? "bg-orange-500"
+        : item.risk === "Medium"
+          ? "bg-amber-500"
+          : "bg-emerald-500"
 
   return (
-    <div
-      className={`flex h-full min-h-[205px] flex-col rounded-xl border p-4 ${toneClass}`}
+    <button
+      type="button"
+      className={`min-h-[72px] rounded-lg border p-2 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${riskStyle}`}
     >
-      <div className="flex items-center gap-2 text-[13px] font-normal">
-        <CheckCircle2 size={16} />
-        {title}
+      <div className="truncate text-[10px] font-normal">
+        {item.subject}
       </div>
 
-      <p className="mt-2 min-h-[35px] text-[11px] font-normal leading-5">
-        {text}
-      </p>
-
-      <div className="mt-3 min-h-[70px] flex-1 space-y-2">
-        {items.length === 0 ? (
-          <div className="text-[11px] font-normal opacity-70">
-            No subjects yet.
-          </div>
-        ) : (
-          items.slice(0, 3).map((item) => (
-            <div
-              key={item.name}
-              className="flex items-center justify-between gap-2 text-[12px] font-normal text-[#11183d]"
-            >
-              <span>{item.name}</span>
-              <span>{item.accuracy}%</span>
-            </div>
-          ))
-        )}
+      <div className="mt-1.5 flex items-center justify-between gap-2 text-[9px]">
+        <span>Risk: {item.risk}</span>
+        <span>{item.accuracy}%</span>
       </div>
 
+      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/70">
+        <div
+          className={`h-full rounded-full ${barStyle}`}
+          style={{
+            width: `${Math.min(100, Math.max(4, item.accuracy))}%`,
+          }}
+        />
+      </div>
+
+      <div className="mt-1.5 truncate text-[9px] opacity-80">
+        {item.weakRules > 0
+          ? `${item.weakRules} weak ${item.weakRules === 1 ? "rule" : "rules"}`
+          : "No confirmed weak rules"}
+      </div>
+    </button>
+  )
+}
+
+function HelpPopover({ text }: { text: string }) {
+  return (
+    <div className="group relative shrink-0">
       <button
         type="button"
-        onClick={() => router.push(href)}
-        className="mt-auto h-9 w-full rounded-lg border border-current bg-white/50 text-[12px] font-normal"
+        aria-label="How to read this"
+        className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition-colors duration-200 hover:border-violet-200 hover:text-violet-700"
       >
-        {button}
+        <HelpCircle size={13} />
       </button>
+
+      <div className="pointer-events-none absolute right-0 top-7 z-30 w-64 translate-y-1 rounded-xl border border-violet-100 bg-white p-3 text-left text-[11px] leading-5 text-slate-600 opacity-0 shadow-[0_14px_35px_rgba(15,23,42,0.12)] transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+        <div className="mb-1 text-[12px] font-normal text-[#10153d]">
+          What this means
+        </div>
+
+        {text}
+      </div>
     </div>
   )
+}
+
+function getDisplayName(dashboard: DashboardData) {
+  const value =
+    (dashboard as any).fullName ??
+    (dashboard as any).full_name ??
+    (dashboard as any).name ??
+    (dashboard as any).profile?.full_name ??
+    (dashboard as any).profile?.fullName
+
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : ""
+}
+
+function getReadinessScore(
+  dashboard: DashboardData,
+  currentScore: number
+) {
+  const value = safeNumber(
+    (dashboard as any).readinessScore ??
+      (dashboard as any).bllReadinessScore ??
+      (dashboard as any).bllReadiness ??
+      currentScore
+  )
+
+  return Math.max(0, Math.min(100, value))
+}
+
+function getBestSessionRangeLabel(dashboard: DashboardData) {
+  const label =
+    (dashboard as any).bestSessionRangeLabel ??
+    (dashboard as any).recommendedSessionLengthLabel ??
+    (dashboard as any).recommendedBlockLabel
+
+  return typeof label === "string" && label.trim()
+    ? label.trim()
+    : null
+}
+
+function getFocusTitle(
+  primaryWeakArea?: WeakArea,
+  weakestSubject?: SubjectDiagnostic
+) {
+  if (primaryWeakArea?.subject) {
+    return `Review ${primaryWeakArea.subject} weak rules`
+  }
+
+  if (weakestSubject?.name) {
+    return `Review ${weakestSubject.name} weak rules`
+  }
+
+  return "Complete scored recall"
+}
+
+function getFocusDetail(primaryWeakArea?: WeakArea) {
+  const rule = getPrimaryWeakRuleLabel(primaryWeakArea)
+
+  if (primaryWeakArea && rule !== "Priority weak rule") {
+    return rule
+  }
+
+  return "Start a focused recall session with your highest-priority weak rules."
+}
+
+function getPrimaryWeakRuleLabel(primaryWeakArea?: WeakArea) {
+  if (!primaryWeakArea) return "Priority weak rule"
+
+  return (
+    (primaryWeakArea as any).rule ||
+    (primaryWeakArea as any).title ||
+    primaryWeakArea.topic ||
+    "Priority weak rule"
+  )
+}
+
+function buildFocusRoute(primaryWeakArea?: WeakArea) {
+  const params = new URLSearchParams()
+
+  params.set("mode", "priority")
+
+  if (primaryWeakArea?.subject) {
+    params.set("subject", primaryWeakArea.subject)
+  }
+
+  const ruleId = (primaryWeakArea as any)?.ruleId
+
+  if (typeof ruleId === "string" && ruleId.trim()) {
+    params.set("ruleId", ruleId)
+  }
+
+  return `/rule-training?${params.toString()}`
+}
+
+function getTopWeakSubjects(
+  weakestSubject: SubjectDiagnostic | undefined,
+  weakAreas: WeakArea[]
+) {
+  const subjects = new Map<string, number>()
+
+  if (weakestSubject?.name) {
+    subjects.set(weakestSubject.name, 1)
+  }
+
+  for (const area of weakAreas) {
+    if (!area.subject) continue
+    subjects.set(area.subject, (subjects.get(area.subject) ?? 0) + 1)
+  }
+
+  return Array.from(subjects.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([subject]) => subject)
+}
+
+function buildSummary({
+  recallAccuracy,
+  delta,
+  weakRuleCount,
+  consistencyScore,
+  topWeakSubjects,
+  bestRangeLabel,
+}: {
+  recallAccuracy: number
+  delta: number
+  weakRuleCount: number
+  consistencyScore: number
+  topWeakSubjects: string[]
+  bestRangeLabel: string | null
+}) {
+  const weakSubjectText =
+    topWeakSubjects.length > 0
+      ? topWeakSubjects.join(" and ")
+      : "your weakest subjects"
+
+  const accuracyStrong = recallAccuracy >= 80
+  const hasWeakPressure = weakRuleCount > 0
+
+  return {
+    banner:
+      accuracyStrong && hasWeakPressure
+        ? `You’re consistent and your recall accuracy is strong. Your readiness is being held back by weak rules in ${weakSubjectText}. Focus on those today to make the biggest impact.`
+        : accuracyStrong
+          ? "Your recall accuracy is strong. Keep practicing consistently and watch for new weak rules as more data comes in."
+          : hasWeakPressure
+            ? `Your current priority is improving weak rules in ${weakSubjectText}. Focused recall will help stabilize your score.`
+            : "Complete more scored recall attempts so Lexora can identify your strongest opportunities.",
+    overallTitle: accuracyStrong
+      ? "You’re performing well overall."
+      : "Your recall is still building.",
+    overallText: accuracyStrong
+      ? "Strong recall accuracy is helping your readiness. The main opportunity is reducing weak-rule pressure."
+      : "Your score needs more stable recall attempts before Lexora can confirm strong performance.",
+    movementTitle:
+      delta >= 0
+        ? "Your accuracy is improving."
+        : "Your accuracy recently declined.",
+    movementText:
+      delta >= 0
+        ? `Up ${Math.abs(delta)} points compared with the previous period.`
+        : `Down ${Math.abs(delta)} points compared with the previous period. Review weak rules before adding too much new coverage.`,
+    timeText: bestRangeLabel
+      ? `Your best measured focused block is ${bestRangeLabel}.`
+      : "Effective study time appears after session duration and scored recall data are available.",
+    weakText:
+      weakRuleCount > 0
+        ? `${weakRuleCount} weak ${weakRuleCount === 1 ? "rule is" : "rules are"} currently holding your readiness back.`
+        : "No confirmed weak rules are currently shown for this range.",
+    coachingInsight: bestRangeLabel
+      ? `Keep focused recall blocks around ${bestRangeLabel}.`
+      : consistencyScore >= 4
+        ? "Keep your study sessions consistent and prioritize scored recall over passive review."
+        : "Build consistency with short scored recall sessions across several days.",
+  }
+}
+
+function buildRiskItems(
+  riskBuckets: RiskBuckets,
+  strongSubjects: SubjectDiagnostic[],
+  weakestSubject?: SubjectDiagnostic
+): RiskItem[] {
+  const items: RiskItem[] = []
+
+  const addSubject = (
+    subject: SubjectLike | undefined,
+    fallbackRisk: RiskItem["risk"]
+  ) => {
+    if (!subject) return
+
+    const name = subject.name || subject.subject
+
+    if (!name || items.some((item) => item.subject === name)) {
+      return
+    }
+
+    const accuracy = Math.max(0, Math.min(100, safeNumber(subject.accuracy)))
+    const weakRules = Math.max(0, safeNumber(subject.weakRules ?? subject.weakRuleCount))
+
+    items.push({
+      subject: name,
+      accuracy,
+      weakRules,
+      risk: subject.riskLevel
+        ? normalizeRisk(subject.riskLevel)
+        : fallbackRisk,
+    })
+  }
+
+  const buckets = riskBuckets as any
+
+  for (const item of buckets?.critical ?? []) addSubject(item, "Critical")
+  for (const item of buckets?.high ?? []) addSubject(item, "High")
+  for (const item of buckets?.maintenance ?? buckets?.medium ?? []) addSubject(item, "Medium")
+  for (const item of buckets?.safe ?? buckets?.low ?? []) addSubject(item, "Low")
+
+  addSubject(weakestSubject as any, "Critical")
+
+  for (const subject of strongSubjects) {
+    addSubject(subject as any, "Low")
+  }
+
+  return items.slice(0, 14)
+}
+
+function normalizeRisk(value: string): RiskItem["risk"] {
+  const clean = value.toLowerCase()
+
+  if (clean.includes("critical")) return "Critical"
+  if (clean.includes("high")) return "High"
+  if (clean.includes("medium") || clean.includes("maintenance")) return "Medium"
+
+  return "Low"
 }
