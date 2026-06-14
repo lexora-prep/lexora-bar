@@ -342,7 +342,6 @@ export default function LearningInsightsTab({
           <div className="space-y-4">
             <PatternStep
               number="1"
-              icon={<Brain size={15} />}
               title="Review weak rule"
               text={
                 focusSession
@@ -352,13 +351,11 @@ export default function LearningInsightsTab({
             />
             <PatternStep
               number="2"
-              icon={<Keyboard size={15} />}
               title="Type from memory"
               text="Reproduce the rule in your own words before checking the answer."
             />
             <PatternStep
               number="3"
-              icon={<CheckCircle2 size={15} />}
               title="Retest once"
               text="Check your answer and repeat the rule if recall is still unstable."
             />
@@ -582,25 +579,20 @@ function LearningCard({
 
 function PatternStep({
   number,
-  icon,
   title,
   text,
 }: {
   number: string
-  icon: React.ReactNode
   title: string
   text: string
 }) {
   return (
-    <div className="grid grid-cols-[28px_34px_1fr] items-start gap-2.5">
-      <div className="flex h-8 w-5 items-start justify-center pt-0.5 text-[13px] font-semibold leading-none text-violet-700">
+    <div className="grid grid-cols-[22px_1fr] items-start gap-3">
+      <div className="pt-[2px] text-[12px] font-semibold leading-5 text-violet-700">
         {number}
       </div>
-      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
-        {icon}
-      </div>
       <div>
-        <div className="text-[11px] font-semibold text-[#10153d]">
+        <div className="text-[12px] font-semibold leading-5 text-[#10153d]">
           {title}
         </div>
         <div className="mt-0.5 text-[10px] font-normal leading-4 text-slate-500">
