@@ -128,6 +128,7 @@ export default function LearningInsightsTab({
   const [focusSession, setFocusSession] = useState<RecommendedFocusSession | null>(null)
   const [focusLoading, setFocusLoading] = useState(true)
   const [activeModeKey, setActiveModeKey] = useState<string | null>(null)
+  const [typedGoalText, setTypedGoalText] = useState("")
 
   useEffect(() => {
     const controller = new AbortController()
@@ -239,6 +240,24 @@ export default function LearningInsightsTab({
   const goalText = focusSession
     ? `Use the live weak-focus queue for ${focusSession.subject}. Repeat weak rules until recall becomes stable.`
     : "Keep recording scored recall attempts so Lexora can identify a reliable weak-focus path."
+
+  useEffect(() => {
+    const words = goalText.split(" ")
+    let index = 0
+
+    setTypedGoalText("")
+
+    const timer = window.setInterval(() => {
+      index += 1
+      setTypedGoalText(words.slice(0, index).join(" "))
+
+      if (index >= words.length) {
+        window.clearInterval(timer)
+      }
+    }, 85)
+
+    return () => window.clearInterval(timer)
+  }, [goalText])
 
   return (
     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -484,49 +503,13 @@ export default function LearningInsightsTab({
             </div>
 
             <div className="relative h-[56px] overflow-hidden">
-              <p
-                key={goalText}
-                className="goal-reveal absolute inset-0 pr-1"
-                style={{
-                  animationDuration: `${Math.min(3.6, Math.max(1.4, goalText.length * 0.025))}s`,
-                }}
-              >
+              <p className="pointer-events-none invisible absolute inset-0 pr-1">
                 {goalText}
               </p>
+              <p className="absolute inset-0 pr-1">
+                {typedGoalText}
+              </p>
             </div>
-
-            <style jsx>{`
-              .goal-reveal {
-                -webkit-mask-image: linear-gradient(90deg, #000 0 0);
-                mask-image: linear-gradient(90deg, #000 0 0);
-                -webkit-mask-repeat: no-repeat;
-                mask-repeat: no-repeat;
-                -webkit-mask-size: 0% 100%;
-                mask-size: 0% 100%;
-                animation-name: revealGoalText;
-                animation-timing-function: steps(42, end);
-                animation-fill-mode: forwards;
-              }
-
-              @keyframes revealGoalText {
-                from {
-                  -webkit-mask-size: 0% 100%;
-                  mask-size: 0% 100%;
-                }
-                to {
-                  -webkit-mask-size: 100% 100%;
-                  mask-size: 100% 100%;
-                }
-              }
-
-              @media (prefers-reduced-motion: reduce) {
-                .goal-reveal {
-                  animation: none;
-                  -webkit-mask-size: 100% 100%;
-                  mask-size: 100% 100%;
-                }
-              }
-            `}</style>
           </div>
         </div>
       </section>
@@ -610,7 +593,7 @@ function PatternStep({
 }) {
   return (
     <div className="grid grid-cols-[28px_34px_1fr] items-start gap-2.5">
-      <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-violet-100 bg-violet-50 text-[10px] font-semibold text-violet-700">
+      <div className="flex h-8 w-5 items-start justify-center pt-0.5 text-[13px] font-semibold leading-none text-violet-700">
         {number}
       </div>
       <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
